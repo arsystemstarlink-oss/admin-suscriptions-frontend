@@ -1,0 +1,61 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { plansApi } from '@/api/plans.api'
+import { qk } from '@/lib/query-keys'
+import type { CreatePlanRequest, UpdatePlanRequest } from '@/types/api'
+
+interface UsePlansParams {
+  search?: string
+  active?: boolean
+  limit?: number
+  offset?: number
+}
+
+export function usePlans(params?: UsePlansParams) {
+  return useQuery({
+    queryKey: [...qk.plans.lists, params],
+    queryFn: () => plansApi.list(params),
+  })
+}
+
+export function usePlanDetail(id: string) {
+  return useQuery({
+    queryKey: qk.plans.detail(id),
+    queryFn: () => plansApi.getById(id),
+    enabled: !!id,
+  })
+}
+
+export function useCreatePlan() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreatePlanRequest) => plansApi.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.plans.lists })
+    },
+  })
+}
+
+export function useUpdatePlan() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePlanRequest }) =>
+      plansApi.update(id, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.plans.lists })
+      qc.invalidateQueries({ queryKey: qk.plans.detail(variables.id) })
+    },
+  })
+}
+
+export function useDeletePlan() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => plansApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.plans.lists })
+    },
+  })
+}

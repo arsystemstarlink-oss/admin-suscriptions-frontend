@@ -69,38 +69,39 @@ export function TopDebtorsWidget() {
             {data.topDebtors.items.map((debtor) => (
               <div
                 key={debtor.clientId}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                className="flex flex-col gap-3 p-3 bg-muted rounded-lg border border-border"
               >
-                <div className="flex-1">
+                <div className="min-w-0">
                   <Button
                     variant="link"
                     onClick={() => navigate(`/config/clients/${debtor.clientId}`)}
-                    className="h-auto p-0 font-medium text-foreground hover:text-primary"
+                    className="h-auto p-0 font-medium text-foreground hover:text-primary text-left whitespace-normal"
                   >
                     {debtor.clientName}
                   </Button>
-                  <div className="flex items-center gap-3 mt-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                     <span className="text-sm text-muted-foreground">{debtor.clientPhone}</span>
                     <Badge variant="destructive" className="text-xs">
                       {debtor.overdueCount} períodos
                     </Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                      {formatCurrency(debtor.totalDebt)}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between sm:justify-end sm:gap-3">
+                  <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                    {formatCurrency(debtor.totalDebt)}
+                  </p>
                   <Button
                     size="sm"
                     variant="outline"
                     className="gap-1"
                     onClick={() => handlePay(debtor.clientId)}
                     disabled={loadingId === debtor.clientId}
+                    aria-label="Cobrar"
                   >
                     <DollarSign className="h-4 w-4 shrink-0" />
-                    {loadingId === debtor.clientId ? '...' : 'Cobrar'}
+                    <span className="hidden sm:inline">
+                      {loadingId === debtor.clientId ? '...' : 'Cobrar'}
+                    </span>
                   </Button>
                 </div>
               </div>
@@ -149,17 +150,17 @@ export function ExpiringSoonWidget() {
             {data.expiringSoon.items.map((item) => (
               <div
                 key={item.periodId}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg border border-border"
+                className="flex flex-col gap-3 p-3 bg-muted rounded-lg border border-border"
               >
-                <div className="flex-1">
+                <div className="min-w-0">
                   <Button
                     variant="link"
                     onClick={() => navigate(`/subscriptions/${item.subscriptionId}`)}
-                    className="h-auto p-0 font-medium text-foreground hover:text-primary"
+                    className="h-auto p-0 font-medium text-foreground hover:text-primary text-left whitespace-normal"
                   >
                     {item.clientName}
                   </Button>
-                  <div className="flex items-center gap-3 mt-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                     <span className="text-sm text-muted-foreground">Kit #{item.kitNumber}</span>
                     <span className="text-sm text-muted-foreground">{item.periodLabel}</span>
                     <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
@@ -167,20 +168,19 @@ export function ExpiringSoonWidget() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCurrency(item.amount)}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between sm:justify-end sm:gap-3">
+                  <p className="text-lg font-bold text-foreground">
+                    {formatCurrency(item.amount)}
+                  </p>
                   <Button
                     size="sm"
                     variant="outline"
                     className="gap-1"
                     onClick={() => handleOpenChat(item.clientPhone)}
+                    aria-label="Contactar"
                   >
                     <MessageSquare className="h-4 w-4 shrink-0" />
-                    Contactar
+                    <span className="hidden sm:inline">Contactar</span>
                   </Button>
                 </div>
               </div>

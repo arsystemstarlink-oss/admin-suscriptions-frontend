@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from 'next-themes'
 import App from './App.tsx'
+import { useAuthStore } from '@/stores/auth.store'
 import './index.css'
+
+useAuthStore.getState().loadFromStorage()
 
 const queryClient = new QueryClient({
   defaultOptions: {

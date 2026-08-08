@@ -84,18 +84,12 @@ export function AdminToolsPage() {
         </Card>
       ) : schedulerConfig ? (
         <>
-          <Card className={schedulerConfig.enabled ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' : 'border-border'}>
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div
-                    className={`h-14 w-14 rounded-xl flex items-center justify-center ${
-                      schedulerConfig.enabled ? 'bg-green-100 dark:bg-green-950' : 'bg-muted'
-                    }`}
-                  >
-                    <Clock
-                      className={`h-7 w-7 ${schedulerConfig.enabled ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
-                    />
+                  <div className="h-14 w-14 rounded-xl flex items-center justify-center bg-muted">
+                    <Clock className="h-7 w-7 text-muted-foreground" />
                   </div>
                   <div>
                     <CardTitle className="text-xl">Tarea Diaria</CardTitle>

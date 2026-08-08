@@ -55,11 +55,7 @@ export function PlansListPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Planes</h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">Catálogo de planes de suscripción</p>
-        </div>
+      <div className="flex justify-end">
         <Button asChild className="w-full md:w-auto">
           <Link to="/config/plans/new">
             <Plus className="h-4 w-4 md:mr-2 shrink-0" />

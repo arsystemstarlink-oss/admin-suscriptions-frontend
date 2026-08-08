@@ -75,11 +75,6 @@ export function AdminToolsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Administración</h1>
-        <p className="text-muted-foreground mt-1">Gestiona el sistema y tareas automáticas</p>
-      </div>
-
       {isLoadingScheduler ? (
         <Card>
           <CardContent className="py-12 text-center">

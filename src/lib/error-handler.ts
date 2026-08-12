@@ -79,6 +79,11 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'Sesión expirada, inicie sesión nuevamente.',
   },
+  USER_NOT_FOUND: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Usuario no encontrado. Su sesión podría estar expirada.',
+  },
   CLIENT_NOT_FOUND: {
     type: 'toast',
     variant: 'error',

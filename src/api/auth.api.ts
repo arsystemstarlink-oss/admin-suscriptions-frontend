@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { LoginRequest, LoginResponse, RefreshResponse } from '@/types/api'
+import type { LoginRequest, LoginResponse, MeResponse, RefreshResponse } from '@/types/api'
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
@@ -9,6 +9,11 @@ export const authApi = {
 
   refresh: async (refreshToken: string): Promise<RefreshResponse> => {
     const response = await api.post<RefreshResponse>('/auth/refresh', { refreshToken })
+    return response.data
+  },
+
+  me: async (): Promise<MeResponse> => {
+    const response = await api.get<MeResponse>('/auth/me')
     return response.data
   },
 }

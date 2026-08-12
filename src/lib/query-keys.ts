@@ -1,4 +1,7 @@
 export const qk = {
+  auth: {
+    me: ['auth', 'me'] as const,
+  },
   dashboard: {
     summary: ['dashboard', 'summary'] as const,
     alerts: ['dashboard', 'alerts'] as const,

@@ -22,7 +22,9 @@ export interface User {
   id: string
   name: string
   email: string
-  role: string
+  role: 'admin'
+  phone?: string
+  createdAt: string
 }
 
 export interface Client {
@@ -207,6 +209,10 @@ export interface LoginResponse {
   user: User
 }
 
+export interface MeResponse {
+  user: User
+}
+
 export interface RefreshRequest {
   refreshToken: string
 }
@@ -349,6 +355,7 @@ export interface EvaluateOverdueResponse {
 export type ErrorCode =
   | 'UNAUTHORIZED'
   | 'INVALID_CREDENTIALS'
+  | 'USER_NOT_FOUND'
   | 'INVALID_BILLING_DAY'
   | 'CLIENT_NOT_FOUND'
   | 'PLAN_NOT_FOUND'

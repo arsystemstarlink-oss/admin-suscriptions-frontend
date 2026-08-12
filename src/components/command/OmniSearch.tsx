@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Search, DollarSign, User } from 'lucide-react'
 import { formatCurrency, SUBSCRIPTION_STATUS_COLORS, SUBSCRIPTION_STATUS_LABELS, CLIENT_SUBSCRIPTION_STATUS_COLORS, CLIENT_SUBSCRIPTION_STATUS_LABELS } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import type { ClientWithStats, SubscriptionWithDetails } from '@/types/api'
 
 export function OmniSearch() {
@@ -108,7 +109,7 @@ export function OmniSearch() {
                       <User className="h-4 w-4 text-muted-foreground shrink-0" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{client.name}</p>
+                      <p className="text-sm font-medium text-foreground">{getClientFullName(client)}</p>
                       <p className="text-xs text-muted-foreground">{client.phone} • {client.email}</p>
                     </div>
                   </div>
@@ -135,7 +136,7 @@ export function OmniSearch() {
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {sub.client.name} • {sub.plan.name} • {formatCurrency(sub.plan.price)}/mes
+                        {getClientFullName(sub.client)} • {sub.plan.name} • {formatCurrency(sub.plan.price)}/mes
                       </p>
                     </div>
                   </div>

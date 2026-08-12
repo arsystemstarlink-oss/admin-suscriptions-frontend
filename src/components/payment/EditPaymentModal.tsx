@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatCurrency, formatDate, PAYMENT_METHOD_LABELS, BILLING_PERIOD_STATUS_COLORS } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod, type BillingPeriodWithDetails } from '@/types/api'
 import { Edit, CheckCircle } from 'lucide-react'
 
@@ -110,7 +111,7 @@ export function EditPaymentModal({ period, open, onOpenChange }: EditPaymentModa
             <div className="space-y-4">
               <div className="p-3 bg-muted rounded-lg border space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{period.client.name}</p>
+                  <p className="font-medium text-foreground">{getClientFullName(period.client)}</p>
                   <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
                     Pagado
                   </Badge>

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Search, FileText, AlertTriangle, Clock, CheckCircle2, CreditCard, Banknote, Calendar, Zap } from 'lucide-react'
 import { formatCurrency, formatDate, PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import type { BillingPeriodWithDetails } from '@/types/api'
 
 type ViewMode = 'action' | 'paid' | 'all'
@@ -109,7 +110,7 @@ export function BillingPeriodsPage() {
     if (search) {
       const searchLower = search.toLowerCase()
       periods = periods.filter(p => 
-        p.client.name.toLowerCase().includes(searchLower) ||
+        getClientFullName(p.client).toLowerCase().includes(searchLower) ||
         p.subscription.kitNumber.toLowerCase().includes(searchLower)
       )
     }
@@ -230,7 +231,7 @@ export function BillingPeriodsPage() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
-            <span className="truncate font-medium">{period.client.name}</span>
+            <span className="truncate font-medium">{getClientFullName(period.client)}</span>
             <span>Kit #{period.subscription.kitNumber}</span>
             <span>{period.plan.name}</span>
           </div>

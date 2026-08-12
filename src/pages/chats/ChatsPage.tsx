@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { MessageSquare, Send, Users, ArrowLeft } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, getClientFullName } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { whatsappApi } from '@/api/whatsapp.api'
@@ -185,7 +185,7 @@ export function ChatsPage() {
                 {sortedClients.map((client) => {
                   const summary = conversationSummaries.find((item) => item.phone === client.phone)
                   const latestMessage = summary?.latestMessage ?? null
-                  const initial = client.name.charAt(0).toUpperCase() || '?'
+                  const initial = getClientFullName(client).charAt(0).toUpperCase() || '?'
 
                   return (
                     <Button
@@ -216,7 +216,7 @@ export function ChatsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex min-w-0 items-center gap-2">
-                              <p className="font-medium text-foreground truncate">{client.name}</p>
+                              <p className="font-medium text-foreground truncate">{getClientFullName(client)}</p>
                               {latestMessage?.direction === 'INBOUND' && (
                                 <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
                               )}
@@ -293,7 +293,10 @@ export function ChatsPage() {
                   )}
                   <div>
                     <h2 className="font-semibold text-foreground">
-                      {clients.find((c) => c.phone === selectedPhone)?.name || selectedPhone}
+                      {(() => {
+                        const selectedClient = clients.find((c) => c.phone === selectedPhone)
+                        return selectedClient ? getClientFullName(selectedClient) : selectedPhone
+                      })()}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">{selectedPhone}</p>
                   </div>

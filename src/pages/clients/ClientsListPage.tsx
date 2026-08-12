@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Plus, Search, Users } from 'lucide-react'
 import { CLIENT_SUBSCRIPTION_STATUS_LABELS, CLIENT_SUBSCRIPTION_STATUS_COLORS } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 
 export function ClientsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -117,7 +118,7 @@ export function ClientsListPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-foreground truncate">{client.name}</p>
+                        <p className="font-medium text-foreground truncate">{getClientFullName(client)}</p>
                         <Badge className={CLIENT_SUBSCRIPTION_STATUS_COLORS[client.subscriptionStatus]}>
                           {CLIENT_SUBSCRIPTION_STATUS_LABELS[client.subscriptionStatus]}
                         </Badge>

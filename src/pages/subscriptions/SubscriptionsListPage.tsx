@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Plus, Search, Link2, RotateCcw } from 'lucide-react'
 import { formatCurrency, SUBSCRIPTION_STATUS_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import type { SubscriptionWithDetails } from '@/types/api'
 
 export function SubscriptionsListPage() {
@@ -29,7 +30,7 @@ export function SubscriptionsListPage() {
         if (!normalizedSearch) return true
 
         const haystack = [
-          sub.client.name,
+          getClientFullName(sub.client),
           sub.client.phone,
           sub.plan.name,
           sub.kitNumber,
@@ -188,7 +189,7 @@ export function SubscriptionsListPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-base font-semibold text-foreground">{sub.client.name}</p>
+                        <p className="text-base font-semibold text-foreground">{getClientFullName(sub.client)}</p>
                         <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getStatusClass(sub.status)}`}>
                           {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                         </span>

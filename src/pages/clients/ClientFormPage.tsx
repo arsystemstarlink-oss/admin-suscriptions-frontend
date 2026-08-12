@@ -12,7 +12,8 @@ import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 const clientSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido'),
+  firstName: z.string().min(1, 'El nombre es requerido'),
+  lastName: z.string().min(1, 'El apellido es requerido'),
   phone: z.string().min(1, 'El teléfono es requerido'),
   email: z.string().email('Correo inválido').optional().or(z.literal('')),
   address: z.string().optional(),
@@ -42,7 +43,8 @@ export function ClientFormPage() {
   useEffect(() => {
     if (isEdit && data) {
       reset({
-        name: data.client.name,
+        firstName: data.client.firstName,
+        lastName: data.client.lastName,
         phone: data.client.phone,
         email: data.client.email || '',
         address: data.client.address || '',
@@ -71,7 +73,7 @@ export function ClientFormPage() {
         toast.success('Cliente creado correctamente')
         navigate(`/config/clients/${newClient.id}`)
       }
-    } catch (err) {
+    } catch {
       setError('Error al guardar el cliente. Intente nuevamente.')
     }
   }
@@ -117,10 +119,18 @@ export function ClientFormPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre *</Label>
-                <Input id="name" {...register('name')} />
-                {errors.name && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+                <Label htmlFor="firstName">Nombre *</Label>
+                <Input id="firstName" {...register('firstName')} />
+                {errors.firstName && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{errors.firstName.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Apellido *</Label>
+                <Input id="lastName" {...register('lastName')} />
+                {errors.lastName && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{errors.lastName.message}</p>
                 )}
               </div>
 
@@ -140,7 +150,7 @@ export function ClientFormPage() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">Dirección</Label>
                 <Input id="address" {...register('address')} />
               </div>

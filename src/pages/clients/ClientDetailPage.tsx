@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Edit, ArrowLeft, Users, AlertTriangle, Trash2, DollarSign } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import { DeleteClientModal } from '@/components/modals/DeleteClientModal'
 import type { SubscriptionWithDetails } from '@/types/api'
 
@@ -45,7 +46,7 @@ export function ClientDetailPage() {
         period: {
           ...sub.currentPeriod,
           subscription: { id: sub.id, kitNumber: sub.kitNumber, status: sub.status },
-          client: { id: client.id, name: client.name, phone: client.phone, email: client.email },
+          client: { id: client.id, firstName: client.firstName, lastName: client.lastName, phone: client.phone, email: client.email },
           plan: sub.plan,
         },
       })
@@ -62,7 +63,7 @@ export function ClientDetailPage() {
             </Link>
           </Button>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">{client.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">{getClientFullName(client)}</h1>
             <p className="text-muted-foreground mt-1 text-sm md:text-base truncate">{client.email} • {client.phone}</p>
           </div>
         </div>
@@ -211,7 +212,11 @@ export function ClientDetailPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Nombre</p>
-                <p className="text-foreground">{client.name}</p>
+                <p className="text-foreground">{client.firstName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Apellido</p>
+                <p className="text-foreground">{client.lastName}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Correo</p>
@@ -244,7 +249,7 @@ export function ClientDetailPage() {
 
       <DeleteClientModal
         clientId={id!}
-        clientName={client.name}
+        clientName={getClientFullName(client)}
         open={showDeleteModal}
         onOpenChange={setShowDeleteModal}
       />

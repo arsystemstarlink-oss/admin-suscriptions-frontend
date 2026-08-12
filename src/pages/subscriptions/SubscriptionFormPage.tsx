@@ -15,6 +15,7 @@ import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
 
 const subscriptionSchema = z.object({
@@ -161,7 +162,7 @@ export function SubscriptionFormPage() {
                   <SelectContent>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
-                        {client.name} — {client.phone}
+                        {getClientFullName(client)} — {client.phone}
                       </SelectItem>
                     ))}
                   </SelectContent>

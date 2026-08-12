@@ -34,7 +34,7 @@ enum BillingPeriodStatus { PENDING, PAID, OVERDUE }
 
 ```typescript
 interface Client {
-  id: string; name: string; phone: string;
+  id: string; firstName: string; lastName: string; phone: string;
   email?: string; address?: string; notes?: string;
   createdAt: string;
 }
@@ -94,7 +94,7 @@ interface ClientWithStats extends Client {
 }
 
 interface SubscriptionWithDetails extends Subscription {
-  client: Pick<Client, 'id' | 'name' | 'phone' | 'email'>;
+  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'>;
   plan: Pick<Plan, 'id' | 'name' | 'price'>;
   currentPeriod?: BillingPeriod;
   totalPeriods: number; overduePeriods: number;
@@ -103,7 +103,7 @@ interface SubscriptionWithDetails extends Subscription {
 
 interface BillingPeriodWithDetails extends BillingPeriod {
   subscription: Pick<Subscription, 'id' | 'kitNumber' | 'status'>;
-  client: Pick<Client, 'id' | 'name' | 'phone' | 'email'>;
+  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'>;
   plan: Pick<Plan, 'id' | 'name' | 'price'>;
 }
 
@@ -121,10 +121,9 @@ interface DashboardSummary {
 
 interface DashboardAlerts {
   generatedAt: string;
-  expiringSoon: { count: number; description: string; items: AlertItem[] };
-  overdueDebt: { count: number; description: string; totalAmount: number; items: AlertItem[] };
-  suspended: { count: number; description: string };
-  topDebtors: { count: number; description: string; items: DebtorItem[] };
+  expiringSoon: { count: number; items: AlertItem[] };
+  overdue: { totalOverduePeriods: number; totalOverdueAmount: number; suspendedSubscriptions: number };
+  topDebtors: { count: number; items: DebtorItem[] };
 }
 
 interface AlertItem {
@@ -199,14 +198,14 @@ interface DebtorItem {
 **POST /clients**
 ```typescript
 // Request
-{ name: string; phone: string; email?: string; address?: string; notes?: string }
+{ firstName: string; lastName: string; phone: string; email?: string; address?: string; notes?: string }
 // Response 201 → Client
 ```
 
 **PUT /clients/:id**
 ```typescript
 // Request (partial)
-{ name?: string; phone?: string; email?: string; address?: string; notes?: string }
+{ firstName?: string; lastName?: string; phone?: string; email?: string; address?: string; notes?: string }
 // Response 200 → Client
 ```
 

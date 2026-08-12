@@ -27,9 +27,10 @@ export interface User {
 
 export interface Client {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   phone: string
-  email: string
+  email?: string
   address?: string
   notes?: string
   createdAt: string
@@ -82,7 +83,7 @@ export interface UpdateSchedulerConfigRequest {
 }
 
 export interface SubscriptionWithDetails extends Subscription {
-  client: Pick<Client, 'id' | 'name' | 'phone' | 'email'>
+  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'>
   plan: Pick<Plan, 'id' | 'name' | 'price'>
   currentPeriod?: BillingPeriod
   totalPeriods: number
@@ -121,7 +122,7 @@ export interface BillingPeriod {
 
 export interface BillingPeriodWithDetails extends BillingPeriod {
   subscription: Pick<Subscription, 'id' | 'kitNumber' | 'status'>
-  client: Pick<Client, 'id' | 'name' | 'phone' | 'email'>
+  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'>
   plan: Pick<Plan, 'id' | 'name' | 'price'>
 }
 
@@ -216,7 +217,8 @@ export interface RefreshResponse {
 }
 
 export interface CreateClientRequest {
-  name: string
+  firstName: string
+  lastName: string
   phone: string
   email?: string
   address?: string
@@ -224,7 +226,8 @@ export interface CreateClientRequest {
 }
 
 export interface UpdateClientRequest {
-  name?: string
+  firstName?: string
+  lastName?: string
   phone?: string
   email?: string
   address?: string

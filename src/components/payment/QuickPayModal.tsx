@@ -32,6 +32,7 @@ import {
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
 } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
 import { CheckCircle, DollarSign } from 'lucide-react'
 
@@ -118,7 +119,7 @@ export function QuickPayModal() {
             <div className="space-y-4">
               <div className="p-3 bg-muted rounded-lg border space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{period.client.name}</p>
+                  <p className="font-medium text-foreground">{getClientFullName(period.client)}</p>
                   <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
                     {BILLING_PERIOD_STATUS_LABELS[period.status]}
                   </Badge>

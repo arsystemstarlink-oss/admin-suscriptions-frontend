@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { ArrowLeft, Link2, AlertTriangle, Edit, Play, Pause, Plus, Trash2, DollarSign } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
+import { getClientFullName } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails } from '@/types/api'
 import { toast } from 'sonner'
@@ -135,7 +136,7 @@ export function SubscriptionDetailPage() {
               {subscription.hasDebt && <Badge variant="destructive">Con deuda</Badge>}
             </div>
             <p className="text-muted-foreground mt-1 text-sm md:text-base truncate">
-              {subscription.client.name} • {subscription.client.phone} • Plan: {subscription.plan.name}
+              {getClientFullName(subscription.client)} • {subscription.client.phone} • Plan: {subscription.plan.name}
               {subscription.accountNumber && <> • Cuenta: {subscription.accountNumber}</>}
             </p>
           </div>

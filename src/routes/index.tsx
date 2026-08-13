@@ -18,6 +18,9 @@ const SubscriptionFormPage = lazy(() => import('@/pages/subscriptions/Subscripti
 const SubscriptionEditPage = lazy(() => import('@/pages/subscriptions/SubscriptionEditPage').then(m => ({ default: m.SubscriptionEditPage })))
 const BillingPeriodsPage = lazy(() => import('@/pages/billing/BillingPeriodsPage').then(m => ({ default: m.BillingPeriodsPage })))
 const AdminToolsPage = lazy(() => import('@/pages/admin/AdminToolsPage').then(m => ({ default: m.AdminToolsPage })))
+const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
+const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
 const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))
 
 function PageLoader() {
@@ -35,6 +38,14 @@ export const router = createBrowserRouter(
     element: (
       <Suspense fallback={<PageLoader />}>
         <LoginPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/setup',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <SetupPage />
       </Suspense>
     ),
   },
@@ -111,6 +122,22 @@ export const router = createBrowserRouter(
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AdminToolsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'profile',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'admins',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminsPage />
               </Suspense>
             ),
           },

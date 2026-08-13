@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -269,6 +269,12 @@ export function LoginPage() {
               )}
             </Button>
           </form>
+          <p className="mt-5 text-center text-sm text-muted-foreground">
+            ¿Primera vez?{' '}
+            <Link to="/setup" className="font-medium text-primary hover:text-primary/80">
+              Crear el primer administrador
+            </Link>
+          </p>
         </div>
         
         <p className="mt-6 text-center text-xs text-muted-foreground">

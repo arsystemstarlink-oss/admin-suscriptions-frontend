@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { authApi } from '@/api/auth.api'
 import { qk } from '@/lib/query-keys'
 import { useAuthStore } from '@/stores/auth.store'
@@ -33,4 +33,21 @@ export function useMe(enabled = true) {
   }, [query.error, logout, hasUser])
 
   return query
+}
+
+export function useUpdateMe() {
+  const queryClient = useQueryClient()
+  const setUser = useAuthStore((s) => s.setUser)
+
+  return useMutation({
+    mutationFn: authApi.updateMe,
+    onSuccess: (data) => {
+      setUser(data.user)
+      queryClient.setQueryData(qk.auth.me, data)
+    },
+  })
+}
+
+export function useChangePassword() {
+  return useMutation({ mutationFn: authApi.changePassword })
 }

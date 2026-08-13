@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { User } from '@/types/api'
+import { authApi } from '@/api/auth.api'
 
 interface AuthState {
   accessToken: string | null
@@ -30,6 +31,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
+    const refreshToken = useAuthStore.getState().refreshToken
+    if (refreshToken) {
+      authApi.logout(refreshToken).catch(() => {})
+    }
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')

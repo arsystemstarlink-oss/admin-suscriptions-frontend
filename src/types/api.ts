@@ -25,6 +25,7 @@ export interface User {
   role: 'admin'
   phone?: string
   createdAt: string
+  lastLoginAt?: string
 }
 
 export interface Client {
@@ -213,6 +214,36 @@ export interface MeResponse {
   user: User
 }
 
+export interface UpdateMeRequest {
+  name?: string
+  email?: string
+  phone?: string
+  currentPassword?: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface ChangePasswordResponse {
+  message: string
+  accessToken: string
+  refreshToken: string
+}
+
+export interface CreateAdminRequest {
+  name: string
+  email: string
+  password: string
+  phone?: string
+}
+
+export interface CreateAdminResponse {
+  message: string
+  user: User
+}
+
 export interface RefreshRequest {
   refreshToken: string
 }
@@ -356,6 +387,14 @@ export type ErrorCode =
   | 'UNAUTHORIZED'
   | 'INVALID_CREDENTIALS'
   | 'USER_NOT_FOUND'
+  | 'EMAIL_TAKEN'
+  | 'INVALID_EMAIL'
+  | 'INVALID_PHONE'
+  | 'WEAK_PASSWORD'
+  | 'INVALID_PASSWORD'
+  | 'REFRESH_TOKEN_REVOKED'
+  | 'SETUP_DISABLED'
+  | 'INVALID_SETUP_KEY'
   | 'INVALID_BILLING_DAY'
   | 'CLIENT_NOT_FOUND'
   | 'PLAN_NOT_FOUND'

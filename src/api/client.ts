@@ -50,7 +50,11 @@ api.interceptors.response.use(
     const status = error.response?.status
     const errorCode = error.response?.data?.error?.code as string | undefined
 
-    if (status === 401 && errorCode === 'UNAUTHORIZED' && !originalRequest._retry) {
+    if (
+      status === 401 &&
+      (errorCode === 'UNAUTHORIZED' || errorCode === 'REFRESH_TOKEN_REVOKED') &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true
 
       if (isRefreshing) {
@@ -85,7 +89,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (status === 400 && errorCode) {
+    if ((status === 400 || status === 403 || status === 409) && errorCode) {
       const apiError: ApiError = {
         code: errorCode as ApiError['code'],
         message: error.response?.data?.error?.message || 'Error de negocio',

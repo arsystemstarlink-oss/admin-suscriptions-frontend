@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Link2, FileText, Settings, LogOut, MessageSquare, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Link2, FileText, Settings, LogOut, MessageSquare, ChevronRight, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
@@ -61,15 +61,22 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
         {(!collapsed || isMobile) ? (
           <div className="group relative rounded-lg border border-border bg-muted/50 p-3 transition-colors hover:bg-muted/80">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-primary to-primary/60 shadow-sm">
-                <span className="text-sm font-bold text-primary-foreground">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{user?.name || 'Usuario'}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
-              </div>
+              <NavLink
+                to="/config/profile"
+                onClick={isMobile ? onMobileClose : undefined}
+                className="flex items-center gap-3 flex-1 min-w-0"
+                title="Ver perfil"
+              >
+                <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-primary to-primary/60 shadow-sm">
+                  <span className="text-sm font-bold text-primary-foreground">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{user?.name || 'Usuario'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
+                </div>
+              </NavLink>
               <Button
                 variant="ghost"
                 size="icon"
@@ -82,7 +89,14 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
             </div>
           </div>
         ) : (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-1">
+            <NavLink
+              to="/config/profile"
+              className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title="Ver perfil"
+            >
+              <User className="h-4 w-4 shrink-0" />
+            </NavLink>
             <Button
               variant="ghost"
               size="icon"

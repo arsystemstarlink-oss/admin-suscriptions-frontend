@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { ClipboardList, Users, Package } from 'lucide-react'
+import { ClipboardList, Users, Package, User, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
 
@@ -28,6 +28,22 @@ const tabs = [
     subtitle: 'Catálogo de planes de suscripción',
     end: false,
   },
+  {
+    to: '/config/admins',
+    icon: UserPlus,
+    label: 'Admins',
+    title: 'Admins',
+    subtitle: 'Creación de administradores adicionales',
+    end: false,
+  },
+  {
+    to: '/config/profile',
+    icon: User,
+    label: 'Perfil',
+    title: 'Perfil',
+    subtitle: 'Información de tu cuenta de administrador',
+    end: false,
+  },
 ]
 
 export function SettingsLayout() {
@@ -48,7 +64,7 @@ export function SettingsLayout() {
         </div>
       )}
 
-      <nav className="grid w-full grid-cols-3 h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+      <nav className="grid w-full grid-cols-5 h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
@@ -56,15 +72,15 @@ export function SettingsLayout() {
             end={tab.end}
             className={({ isActive }) =>
               cn(
-                'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all hover:bg-muted hover:text-foreground',
+                'inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium transition-all hover:bg-muted hover:text-foreground',
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground'
               )
             }
           >
-            <tab.icon className="h-4 w-4 mr-2 shrink-0" />
-            <span>{tab.label}</span>
+            <tab.icon className="h-4 w-4 mr-1.5 shrink-0" />
+            <span className="hidden md:inline">{tab.label}</span>
           </NavLink>
         ))}
       </nav>

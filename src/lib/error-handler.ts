@@ -79,10 +79,50 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'Sesión expirada, inicie sesión nuevamente.',
   },
+  REFRESH_TOKEN_REVOKED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Sesión expirada, inicie sesión nuevamente.',
+  },
   USER_NOT_FOUND: {
     type: 'toast',
     variant: 'error',
     message: 'Usuario no encontrado. Su sesión podría estar expirada.',
+  },
+  EMAIL_TAKEN: {
+    type: 'field-error',
+    field: 'email',
+    message: 'Este correo ya está en uso.',
+  },
+  INVALID_EMAIL: {
+    type: 'field-error',
+    field: 'email',
+    message: 'El correo no es válido.',
+  },
+  INVALID_PHONE: {
+    type: 'field-error',
+    field: 'phone',
+    message: 'El teléfono no es válido. Use formato +58 seguido de 10 u 11 dígitos.',
+  },
+  INVALID_PASSWORD: {
+    type: 'field-error',
+    field: 'currentPassword',
+    message: 'La contraseña actual no es correcta.',
+  },
+  WEAK_PASSWORD: {
+    type: 'field-error',
+    field: 'newPassword',
+    message: 'La contraseña debe tener al menos 8 caracteres e incluir letras y números.',
+  },
+  SETUP_DISABLED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La configuración inicial no está habilitada.',
+  },
+  INVALID_SETUP_KEY: {
+    type: 'field-error',
+    field: 'setupKey',
+    message: 'La clave de configuración inicial no es válida.',
   },
   CLIENT_NOT_FOUND: {
     type: 'toast',

@@ -81,10 +81,11 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
                 variant="ghost"
                 size="icon"
                 onClick={logout}
-                className="h-8 w-8 shrink-0 text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                className="h-10 w-10 shrink-0 text-muted-foreground opacity-100 transition-all hover:bg-destructive/10 hover:text-destructive md:h-8 md:w-8 md:opacity-0 md:group-hover:opacity-100"
                 title="Cerrar sesión"
+                aria-label="Cerrar sesión"
               >
-                <LogOut className="h-3.5 w-3.5 shrink-0" />
+                <LogOut className="h-4 w-4 shrink-0 md:h-3.5 md:w-3.5" />
               </Button>
             </div>
           </div>
@@ -112,6 +113,15 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
     </div>
   )
 
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onMobileClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMobile, mobileOpen, onMobileClose])
+
   if (isMobile) {
     return (
       <>
@@ -119,12 +129,16 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
           <div
             className="fixed top-16 left-0 right-0 bottom-0 bg-black/60 z-40 md:hidden"
             onClick={onMobileClose}
+            aria-hidden="true"
           />
         )}
         <aside
+          role="dialog"
+          aria-modal={mobileOpen}
+          aria-label="Menú de navegación"
           className={cn(
-            'fixed top-16 left-0 bottom-0 z-50 w-64 bg-card border-r border-border shadow-lg transform transition-transform duration-300 md:hidden',
-            mobileOpen ? 'translate-x-0' : '-translate-x-full'
+            'fixed top-16 left-0 bottom-0 z-50 w-[min(16rem,85vw)] bg-card border-r border-border shadow-lg transform transition-transform duration-300 overscroll-contain md:hidden',
+            mobileOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
           )}
         >
           {sidebarContent}

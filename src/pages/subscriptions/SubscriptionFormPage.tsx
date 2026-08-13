@@ -297,7 +297,7 @@ export function SubscriptionFormPage() {
                               )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div className="space-y-2">
                                 <Label>Fecha inicio</Label>
                                 <Input
@@ -324,7 +324,7 @@ export function SubscriptionFormPage() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div className="space-y-2">
                                 <Label>Monto</Label>
                                 <Input

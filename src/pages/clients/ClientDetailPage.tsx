@@ -63,18 +63,28 @@ export function ClientDetailPage() {
             </Link>
           </Button>
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">{getClientFullName(client)}</h1>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base truncate">{client.email} • {client.phone}</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground break-words">{getClientFullName(client)}</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base break-all">
+              <span className="block sm:inline">{client.email}</span>
+              <span className="hidden sm:inline"> • </span>
+              <span className="block sm:inline">{client.phone}</span>
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/config/clients/${id}/edit`}>
+          <Button variant="outline" size="sm" className="min-h-10 min-w-10" asChild>
+            <Link to={`/config/clients/${id}/edit`} aria-label="Editar cliente">
               <Edit className="h-4 w-4 md:mr-2 shrink-0" />
               <span className="hidden md:inline">Editar</span>
             </Link>
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => setShowDeleteModal(true)}>
+          <Button
+            variant="destructive"
+            size="sm"
+            className="min-h-10 min-w-10"
+            aria-label="Eliminar cliente"
+            onClick={() => setShowDeleteModal(true)}
+          >
             <Trash2 className="h-4 w-4 md:mr-2 shrink-0" />
             <span className="hidden md:inline">Eliminar</span>
           </Button>

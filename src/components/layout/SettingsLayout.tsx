@@ -1,7 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { ClipboardList, Users, Package, User, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useEffect } from 'react'
 
 const tabs = [
   {
@@ -49,38 +48,41 @@ const tabs = [
 export function SettingsLayout() {
   const location = useLocation()
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [location.pathname])
-
-  const activeTab = tabs.find((tab) => location.pathname === tab.to)
+  const activeTab = tabs.find((tab) =>
+    tab.end ? location.pathname === tab.to : location.pathname.startsWith(tab.to)
+  )
 
   return (
     <div className="space-y-4 md:space-y-6">
       {activeTab && (
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{activeTab.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{activeTab.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">{activeTab.subtitle}</p>
         </div>
       )}
 
-      <nav className="grid w-full grid-cols-5 h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+      <nav
+        className="flex w-full gap-1 overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground scrollbar-hide sm:grid sm:grid-cols-5 sm:overflow-visible"
+        aria-label="Secciones de configuración"
+      >
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.end}
+            title={tab.label}
+            aria-label={tab.label}
             className={({ isActive }) =>
               cn(
-                'inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium transition-all hover:bg-muted hover:text-foreground',
+                'inline-flex min-h-10 min-w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all hover:bg-muted hover:text-foreground sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-2 sm:text-sm',
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground'
               )
             }
           >
-            <tab.icon className="h-4 w-4 mr-1.5 shrink-0" />
-            <span className="hidden md:inline">{tab.label}</span>
+            <tab.icon className="h-4 w-4 shrink-0" />
+            <span className="max-w-[4.5rem] truncate sm:max-w-none">{tab.label}</span>
           </NavLink>
         ))}
       </nav>

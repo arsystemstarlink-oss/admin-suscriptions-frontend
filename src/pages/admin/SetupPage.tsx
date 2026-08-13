@@ -1,8 +1,9 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Satellite, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { CreateAdminForm } from '@/components/admin/CreateAdminForm'
+import { BrandMark } from '@/components/brand/BrandMark'
 
 export function SetupPage() {
   const navigate = useNavigate()
@@ -13,12 +14,9 @@ export function SetupPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-6 py-8">
       <div className="w-full max-w-[560px] animate-fade-slide-up">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-            <Satellite className="h-7 w-7 text-primary-foreground shrink-0" />
+          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl bg-primary-800 px-5 py-3 dark:bg-primary-900">
+            <BrandMark size="lg" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            AR SYSTEM
-          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Configura tu sistema antes de comenzar
           </p>

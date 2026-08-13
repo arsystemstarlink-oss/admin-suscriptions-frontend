@@ -235,12 +235,12 @@ export function ChatsPage() {
                             </p>
                             <div className="flex items-center gap-1.5">
                               {latestMessage?.direction === 'INBOUND' && (
-                                <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                                <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                                   Nuevo
                                 </span>
                               )}
                               {client.hasDebt && (
-                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                                <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
                                   Deuda
                                 </Badge>
                               )}
@@ -384,7 +384,7 @@ export function ChatsPage() {
                 )}
               </div>
 
-              <div className="border-t border-border p-4 shrink-0">
+              <div className="border-t border-border p-3 sm:p-4 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <div className="flex gap-2">
                   <Input
                     placeholder={
@@ -396,12 +396,14 @@ export function ChatsPage() {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     disabled={sendMessageMutation.isPending || !canSendFreeMessage}
-                    className="flex-1"
+                    className="flex-1 min-h-11"
                   />
                   <Button
                     onClick={handleSendMessage}
                     disabled={!canSendFreeMessage || !message.trim() || sendMessageMutation.isPending}
                     size="icon"
+                    className="h-11 w-11 shrink-0"
+                    aria-label="Enviar mensaje"
                   >
                     <Send className="h-4 w-4 shrink-0" />
                   </Button>

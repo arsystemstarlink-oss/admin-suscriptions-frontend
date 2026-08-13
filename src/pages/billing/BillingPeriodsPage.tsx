@@ -295,15 +295,15 @@ export function BillingPeriodsPage() {
 
     return (
       <div className="space-y-3">
-        <div className={`flex items-center justify-between p-3 rounded-lg ${headerColor}`}>
-          <div className="flex items-center gap-2">
-            {icon}
-            <h3 className="font-semibold">{title}</h3>
-            <Badge variant="outline" className="ml-2">
+        <div className={`flex flex-col gap-2 p-3 rounded-lg sm:flex-row sm:items-center sm:justify-between ${headerColor}`}>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="shrink-0">{icon}</span>
+            <h3 className="font-semibold text-sm sm:text-base min-w-0 leading-snug">{title}</h3>
+            <Badge variant="outline" className="shrink-0">
               {periods.length}
             </Badge>
           </div>
-          <p className="font-bold">{formatCurrency(total)}</p>
+          <p className="font-bold shrink-0 text-sm sm:text-base">{formatCurrency(total)}</p>
         </div>
         <div className="space-y-2">
           {periods.map(period => renderPeriodCard(period))}

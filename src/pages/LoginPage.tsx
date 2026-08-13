@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, Satellite } from 'lucide-react'
+import { Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { BrandMark } from '@/components/brand/BrandMark'
+import { APP_NAME } from '@/lib/brand'
 
 const loginSchema = z.object({
   email: z.string()
@@ -119,12 +121,9 @@ export function LoginPage() {
         shakeError && "animate-shake"
       )}>
         <div className="text-center mb-8">
-          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-            <Satellite className="h-7 w-7 text-primary-foreground shrink-0" />
+          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl bg-primary-800 px-5 py-3 dark:bg-primary-900">
+            <BrandMark size="lg" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            AR SYSTEM
-          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Administra tus clientes, suscripciones y pagos desde un solo lugar
           </p>
@@ -278,7 +277,7 @@ export function LoginPage() {
         </div>
         
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          AR System © {new Date().getFullYear()}
+          {APP_NAME} © {new Date().getFullYear()}
         </p>
       </div>
     </div>

@@ -190,7 +190,7 @@ export function SubscriptionsListPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-base font-semibold text-foreground">{getClientFullName(sub.client)}</p>
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getStatusClass(sub.status)}`}>
+                        <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${getStatusClass(sub.status)}`}>
                           {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                         </span>
                       </div>
@@ -206,11 +206,11 @@ export function SubscriptionsListPage() {
 
                     <div className="flex shrink-0 flex-col items-end gap-1 text-right">
                       <div className="rounded-xl border border-primary-100 bg-white px-2 py-1 text-center shadow-sm text-primary-800 dark:border-primary-800 dark:bg-primary-900/50 dark:text-primary-100">
-                        <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Corte</div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Corte</div>
                         <div className="text-lg font-bold leading-none">{sub.billingDay}</div>
                       </div>
                       {sub.currentPeriod && sub.currentPeriod.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate) && (
-                        <span className="rounded-md px-1.5 py-0.5 text-[11px] font-medium text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50">
+                        <span className="rounded-md px-1.5 py-0.5 text-xs font-medium text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50">
                           {getExpiringLabel(sub.currentPeriod.endDate)}
                         </span>
                       )}

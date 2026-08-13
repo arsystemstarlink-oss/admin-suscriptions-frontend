@@ -5,6 +5,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Search, Menu, MessageSquare } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { BrandMark } from '@/components/brand/BrandMark'
 import { useClients } from '@/hooks/useClients'
 import { whatsappApi } from '@/api/whatsapp.api'
 import { qk } from '@/lib/query-keys'
@@ -77,17 +78,14 @@ export function TopBar({ isMobile, onMobileToggle }: TopBarProps) {
           </Button>
         )}
 
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl font-black tracking-wider text-secondary-500">AR</span>
-          <span className="text-xl font-bold tracking-wider text-primary-50 hidden sm:inline">SYSTEM</span>
-        </div>
+        <BrandMark size="md" hideSystemOnMobile className="text-primary-50" />
       </div>
 
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
           size="icon"
-          className="relative h-9 w-9 rounded-full bg-primary-700 border-primary-600 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800"
+          className="relative h-10 w-10 rounded-full bg-primary-700 border-primary-600 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800 sm:h-9 sm:w-9"
           onClick={() => navigate('/chats')}
           aria-label="Abrir chats"
         >
@@ -100,13 +98,13 @@ export function TopBar({ isMobile, onMobileToggle }: TopBarProps) {
         </Button>
         <Button
           variant="outline"
-          size="sm"
-          className="gap-2 w-48 sm:w-64 justify-start bg-primary-700 border-primary-600 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-primary-700 border-primary-600 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800 sm:h-9 sm:w-auto sm:rounded-md sm:px-3 sm:gap-2 sm:justify-start sm:min-w-[12rem]"
           onClick={openOmniSearch}
+          aria-label="Buscar"
         >
           <Search className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">Buscar... (Ctrl+K)</span>
-          <span className="sm:hidden">Buscar</span>
         </Button>
         <ThemeToggle />
       </div>

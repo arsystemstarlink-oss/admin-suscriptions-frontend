@@ -86,20 +86,20 @@ export function AdminToolsPage() {
         <>
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-14 w-14 rounded-xl flex items-center justify-center bg-muted">
-                    <Clock className="h-7 w-7 text-muted-foreground" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
+                  <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-muted shrink-0">
+                    <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-muted-foreground" />
                   </div>
-                  <div>
-                    <CardTitle className="text-xl">Tarea Diaria</CardTitle>
+                  <div className="min-w-0">
+                    <CardTitle className="text-lg sm:text-xl">Tarea Diaria</CardTitle>
                     <CardDescription className="mt-1">
                       Evalúa vencimientos y suspende suscripciones automáticamente
                     </CardDescription>
                   </div>
                 </div>
                 <Badge
-                  className={`text-sm px-4 py-1.5 ${
+                  className={`w-fit shrink-0 text-sm px-3 py-1.5 sm:px-4 ${
                     schedulerConfig.enabled
                       ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800'
                       : 'bg-muted text-muted-foreground border-border'
@@ -161,12 +161,12 @@ export function AdminToolsPage() {
                   <Label className="text-base font-semibold text-foreground mb-3 block">
                     Control del Programador
                   </Label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Button
                       variant={schedulerConfig.enabled ? 'destructive' : 'default'}
                       onClick={() => handleToggleScheduler(!schedulerConfig.enabled)}
                       disabled={updateSchedulerMutation.isPending}
-                      className="gap-2 min-w-35"
+                      className="gap-2 w-full sm:w-auto sm:min-w-35 shrink-0"
                     >
                       {schedulerConfig.enabled ? (
                         <>
@@ -192,9 +192,9 @@ export function AdminToolsPage() {
                   <Label className="text-base font-semibold text-foreground mb-3 block">
                     Horario de Ejecución
                   </Label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))}>
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-[4.5rem] sm:w-24">
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                       <SelectContent>
@@ -206,7 +206,7 @@ export function AdminToolsPage() {
                       </SelectContent>
                     </Select>
                     <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))}>
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-[4.5rem] sm:w-24">
                         <SelectValue placeholder="Min" />
                       </SelectTrigger>
                       <SelectContent>
@@ -218,7 +218,7 @@ export function AdminToolsPage() {
                       </SelectContent>
                     </Select>
                     <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')}>
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-[4.5rem] sm:w-24">
                         <SelectValue placeholder="AM/PM" />
                       </SelectTrigger>
                       <SelectContent>
@@ -229,6 +229,7 @@ export function AdminToolsPage() {
                     <Button
                       onClick={handleUpdateScheduler}
                       disabled={updateSchedulerMutation.isPending}
+                      className="w-full sm:w-auto"
                     >
                       {updateSchedulerMutation.isPending ? 'Guardando...' : 'Guardar'}
                     </Button>
@@ -242,12 +243,12 @@ export function AdminToolsPage() {
                   <Label className="text-base font-semibold text-foreground mb-3 block">
                     Ejecución Manual
                   </Label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <Button
                       variant="outline"
                       onClick={handleRunScheduler}
                       disabled={runSchedulerMutation.isPending}
-                      className="gap-2"
+                      className="gap-2 w-full sm:w-auto shrink-0"
                     >
                       <Zap className="h-4 w-4 shrink-0" />
                       {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}

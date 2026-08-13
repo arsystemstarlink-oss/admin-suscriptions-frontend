@@ -28,7 +28,7 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'favicon.ico', 'pwa-192.png', 'pwa-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'A|R SYSTEM',
-        short_name: 'AR SYSTEM',
+        short_name: 'A|R SYSTEM',
         description: 'A|R SYSTEM - Administración de suscripciones',
         theme_color: '#142C6B',
         background_color: '#ffffff',

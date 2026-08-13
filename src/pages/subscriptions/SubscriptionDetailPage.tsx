@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ArrowLeft, Link2, AlertTriangle, Edit, Play, Pause, Plus, Trash2, DollarSign } from 'lucide-react'
-import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
+import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails } from '@/types/api'
@@ -135,9 +135,16 @@ export function SubscriptionDetailPage() {
               </Badge>
               {subscription.hasDebt && <Badge variant="destructive">Con deuda</Badge>}
             </div>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base truncate">
-              {getClientFullName(subscription.client)} • {subscription.client.phone} • Plan: {subscription.plan.name}
-              {subscription.accountNumber && <> • Cuenta: {subscription.accountNumber}</>}
+            <p className="text-muted-foreground mt-1 text-sm md:text-base line-clamp-2 md:line-clamp-none">
+              <span className="block sm:inline">{getClientFullName(subscription.client)} • {subscription.client.phone}</span>
+              <span className="hidden sm:inline"> • </span>
+              <span className="block sm:inline">Plan: {subscription.plan.name}</span>
+              {subscription.accountNumber && (
+                <>
+                  <span className="hidden sm:inline"> • </span>
+                  <span className="block sm:inline">Cuenta: {subscription.accountNumber}</span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -145,6 +152,8 @@ export function SubscriptionDetailPage() {
           <Button
             variant="outline"
             size="sm"
+            className="min-h-10 min-w-10"
+            aria-label={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
             onClick={() => {
               setNewStatus(
                 subscription.status === SubscriptionStatus.ACTIVE
@@ -166,18 +175,31 @@ export function SubscriptionDetailPage() {
               </>
             )}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleGenerateNext} disabled={generateMutation.isPending}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-10"
+            aria-label="Generar próximo período"
+            onClick={handleGenerateNext}
+            disabled={generateMutation.isPending}
+          >
             <Plus className="h-4 w-4 md:mr-2 shrink-0" />
             <span className="hidden md:inline">{generateMutation.isPending ? 'Generando...' : 'Generar Próximo Período'}</span>
             <span className="md:hidden">Período</span>
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/subscriptions/${id}/edit`}>
+          <Button variant="outline" size="sm" className="min-h-10 min-w-10" asChild>
+            <Link to={`/subscriptions/${id}/edit`} aria-label="Editar suscripción">
               <Edit className="h-4 w-4 md:mr-2 shrink-0" />
               <span className="hidden md:inline">Editar</span>
             </Link>
           </Button>
-          <Button variant="outline" size="sm" className="text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-950/50 dark:hover:bg-red-950" onClick={() => setShowDeleteDialog(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-10 min-w-10 text-red-700 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-950/50 dark:hover:bg-red-950"
+            aria-label="Eliminar suscripción"
+            onClick={() => setShowDeleteDialog(true)}
+          >
             <Trash2 className="h-4 w-4 md:mr-2 shrink-0" />
             <span className="hidden md:inline">Eliminar</span>
           </Button>
@@ -273,7 +295,7 @@ export function SubscriptionDetailPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-left md:text-right">
+                      <div className="min-w-0 flex-1 text-left md:text-right">
                         <p className="font-semibold text-foreground">{formatCurrency(period.amount)}</p>
                         {period.paidAt && (
                           <p className="text-sm text-muted-foreground">
@@ -281,9 +303,9 @@ export function SubscriptionDetailPage() {
                           </p>
                         )}
                         {period.paymentMethod && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <p className="text-sm text-muted-foreground">
-                              {period.paymentMethod === 'INITIAL_PAYMENT' ? 'Pago inicial' : period.paymentMethod}
+                              {PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}
                             </p>
                             {period.paymentMethod === 'INITIAL_PAYMENT' && (
                               <Badge className="text-xs text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50">

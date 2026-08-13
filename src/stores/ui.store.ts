@@ -10,11 +10,13 @@ interface UIState {
   quickPayContext: QuickPayContext | null
   omniSearchOpen: boolean
   readChatTimestamps: Record<string, number>
+  billingActionCount: number
   openQuickPay: (context: QuickPayContext) => void
   closeQuickPay: () => void
   openOmniSearch: () => void
   closeOmniSearch: () => void
   markChatAsRead: (phone: string, readAt?: number) => void
+  setBillingActionCount: (count: number) => void
 }
 
 const READ_CHAT_STORAGE_KEY = 'ar-system-chat-read-timestamps'
@@ -44,6 +46,7 @@ export const useUIStore = create<UIState>((set) => ({
   quickPayContext: null,
   omniSearchOpen: false,
   readChatTimestamps: getStoredReadChatTimestamps(),
+  billingActionCount: 0,
 
   openQuickPay: (context) => set({ quickPayOpen: true, quickPayContext: context }),
   closeQuickPay: () => set({ quickPayOpen: false, quickPayContext: null }),
@@ -62,4 +65,5 @@ export const useUIStore = create<UIState>((set) => ({
         readChatTimestamps: nextReadChatTimestamps,
       }
     }),
+  setBillingActionCount: (count) => set({ billingActionCount: count }),
 }))

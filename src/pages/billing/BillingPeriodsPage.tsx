@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useBillingPeriods } from '@/hooks/useBilling'
 import { useUIStore } from '@/stores/ui.store'
@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Search, FileText, AlertTriangle, Clock, CheckCircle2, CreditCard, Banknote, Calendar, Zap } from 'lucide-react'
 import { formatCurrency, formatDate, PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
@@ -15,11 +14,15 @@ import type { BillingPeriodWithDetails } from '@/types/api'
 
 type ViewMode = 'action' | 'paid' | 'all'
 
-export function BillingPeriodsPage() {
+interface BillingPeriodsPageProps {
+  view: ViewMode
+}
+
+export function BillingPeriodsPage({ view: viewMode }: BillingPeriodsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
-  const [viewMode, setViewMode] = useState<ViewMode>('action')
   const { openQuickPay } = useUIStore()
+  const setBillingActionCount = useUIStore((s) => s.setBillingActionCount)
 
   const periodFilter = searchParams.get('period') || 'current'
 
@@ -91,6 +94,11 @@ export function BillingPeriodsPage() {
       totalExpiringSoon: expiringSoon.reduce((sum, p) => sum + p.amount, 0)
     }
   }, [allData])
+
+  useEffect(() => {
+    if (viewMode === 'paid') return
+    setBillingActionCount(metrics.countOverdue + metrics.countExpiringSoon)
+  }, [viewMode, metrics.countOverdue, metrics.countExpiringSoon, setBillingActionCount])
 
   // Filtrar períodos según vista
   const displayPeriods = useMemo(() => {
@@ -313,171 +321,135 @@ export function BillingPeriodsPage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header con métricas */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Centro de Cobranzas</h1>
-        <p className="text-muted-foreground mt-1 text-sm md:text-base">Gestión inteligente de pagos y facturación</p>
-      </div>
-
-      {/* Tabs de navegación */}
-      <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="action" className="gap-2">
-            <Zap className="h-4 w-4 shrink-0" />
-            <span className="hidden md:inline">Acción Requerida</span>
-            <span className="md:hidden">Acción</span>
-            {(displayPeriods.overdue.length + displayPeriods.pending.length) > 0 && (
-              <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                {displayPeriods.overdue.length + displayPeriods.pending.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="paid" className="gap-2">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span className="hidden md:inline">Pagados</span>
-            <span className="md:hidden">Pagados</span>
-          </TabsTrigger>
-          <TabsTrigger value="all" className="gap-2">
-            <FileText className="h-4 w-4 shrink-0" />
-            <span className="hidden md:inline">Todos</span>
-            <span className="md:hidden">Todos</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={viewMode} className="space-y-4">
-          {/* Filtros */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <div className="relative flex-1 w-full md:max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
-                  <Input
-                    placeholder="Buscar por cliente, kit..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                
-                <div className="w-full md:w-48">
-                  <Select value={periodFilter} onValueChange={handlePeriodFilter}>
-                    <SelectTrigger className="w-full">
-                      <Calendar className="h-4 w-4 mr-2 shrink-0" />
-                      <SelectValue placeholder="Seleccionar período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="current">
-                        {currentPeriod ? `Período actual (${currentPeriod})` : 'Período actual'}
-                      </SelectItem>
-                      <SelectItem value="all">Todos los períodos</SelectItem>
-                      {availablePeriods.map(period => (
-                        <SelectItem key={period} value={period}>
-                          {period}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Contenido */}
-          {isLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-muted animate-pulse rounded" />
-              ))}
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative flex-1 w-full md:max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
+              <Input
+                placeholder="Buscar por cliente, kit..."
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-9"
+              />
             </div>
-          ) : !allData || allData.periods.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 shrink-0" />
-                <p className="text-muted-foreground">No se encontraron períodos</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              {viewMode === 'action' && (
-                <>
-                  {renderSection(
-                    'Vencidos - Cobrar Inmediatamente',
-                    <AlertTriangle className="h-5 w-5 shrink-0" />,
-                    displayPeriods.overdue,
-                    metrics.totalOverdue,
-                    'border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-400'
-                  )}
-                  {renderSection(
-                    'Próximos a Vencer - Contactar Cliente',
-                    <Clock className="h-5 w-5 shrink-0" />,
-                    displayPeriods.pending,
-                    metrics.totalExpiringSoon,
-                    'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-400'
-                  )}
-                  {displayPeriods.overdue.length === 0 && displayPeriods.pending.length === 0 && (
-                    <Card>
-                      <CardContent className="py-12 text-center">
-                        <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/50">
-                          <CheckCircle2 className="h-12 w-12 shrink-0" />
-                        </div>
-                        <p className="text-foreground font-medium">¡Excelente! No hay acciones pendientes</p>
-                        <p className="text-muted-foreground text-sm mt-2">Todos los períodos están al día</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              )}
 
-              {viewMode === 'paid' && (
-                <>
-                  {renderSection(
-                    'Historial de Pagos',
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />,
-                    displayPeriods.paid,
-                    metrics.totalPaid,
-                    'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-400'
-                  )}
-                  {displayPeriods.paid.length === 0 && (
-                    <Card>
-                      <CardContent className="py-12 text-center">
-                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 shrink-0" />
-                        <p className="text-muted-foreground">No hay pagos registrados</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              )}
-
-              {viewMode === 'all' && (
-                <>
-                  {renderSection(
-                    'Vencidos',
-                    <AlertTriangle className="h-5 w-5 shrink-0" />,
-                    displayPeriods.overdue,
-                    metrics.totalOverdue,
-                    'border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-400'
-                  )}
-                  {renderSection(
-                    'Pendientes',
-                    <Clock className="h-5 w-5 shrink-0" />,
-                    displayPeriods.pending,
-                    metrics.totalPending,
-                    'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-400'
-                  )}
-                  {renderSection(
-                    'Pagados',
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />,
-                    displayPeriods.paid,
-                    metrics.totalPaid,
-                    'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-400'
-                  )}
-                </>
-              )}
+            <div className="w-full md:w-48">
+              <Select value={periodFilter} onValueChange={handlePeriodFilter}>
+                <SelectTrigger className="w-full">
+                  <Calendar className="h-4 w-4 mr-2 shrink-0" />
+                  <SelectValue placeholder="Seleccionar período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">
+                    {currentPeriod ? `Período actual (${currentPeriod})` : 'Período actual'}
+                  </SelectItem>
+                  <SelectItem value="all">Todos los períodos</SelectItem>
+                  {availablePeriods.map(period => (
+                    <SelectItem key={period} value={period}>
+                      {period}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-20 bg-muted animate-pulse rounded" />
+          ))}
+        </div>
+      ) : !allData || allData.periods.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 shrink-0" />
+            <p className="text-muted-foreground">No se encontraron períodos</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {viewMode === 'action' && (
+            <>
+              {renderSection(
+                'Vencidos - Cobrar Inmediatamente',
+                <AlertTriangle className="h-5 w-5 shrink-0" />,
+                displayPeriods.overdue,
+                metrics.totalOverdue,
+                'border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-400'
+              )}
+              {renderSection(
+                'Próximos a Vencer - Contactar Cliente',
+                <Clock className="h-5 w-5 shrink-0" />,
+                displayPeriods.pending,
+                metrics.totalExpiringSoon,
+                'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-400'
+              )}
+              {displayPeriods.overdue.length === 0 && displayPeriods.pending.length === 0 && (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/50">
+                      <CheckCircle2 className="h-12 w-12 shrink-0" />
+                    </div>
+                    <p className="text-foreground font-medium">¡Excelente! No hay acciones pendientes</p>
+                    <p className="text-muted-foreground text-sm mt-2">Todos los períodos están al día</p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
-        </TabsContent>
-      </Tabs>
+
+          {viewMode === 'paid' && (
+            <>
+              {renderSection(
+                'Historial de Pagos',
+                <CheckCircle2 className="h-5 w-5 shrink-0" />,
+                displayPeriods.paid,
+                metrics.totalPaid,
+                'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-400'
+              )}
+              {displayPeriods.paid.length === 0 && (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 shrink-0" />
+                    <p className="text-muted-foreground">No hay pagos registrados</p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {viewMode === 'all' && (
+            <>
+              {renderSection(
+                'Vencidos',
+                <AlertTriangle className="h-5 w-5 shrink-0" />,
+                displayPeriods.overdue,
+                metrics.totalOverdue,
+                'border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-400'
+              )}
+              {renderSection(
+                'Pendientes',
+                <Clock className="h-5 w-5 shrink-0" />,
+                displayPeriods.pending,
+                metrics.totalPending,
+                'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-400'
+              )}
+              {renderSection(
+                'Pagados',
+                <CheckCircle2 className="h-5 w-5 shrink-0" />,
+                displayPeriods.paid,
+                metrics.totalPaid,
+                'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/50 dark:text-emerald-400'
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

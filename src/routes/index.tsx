@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useSearchParams } from 'react-router-dom'
 import { AuthGuard } from '@/guards/AuthGuard'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
@@ -17,6 +17,7 @@ const SubscriptionDetailPage = lazy(() => import('@/pages/subscriptions/Subscrip
 const SubscriptionFormPage = lazy(() => import('@/pages/subscriptions/SubscriptionFormPage').then(m => ({ default: m.SubscriptionFormPage })))
 const SubscriptionEditPage = lazy(() => import('@/pages/subscriptions/SubscriptionEditPage').then(m => ({ default: m.SubscriptionEditPage })))
 const BillingPeriodsPage = lazy(() => import('@/pages/billing/BillingPeriodsPage').then(m => ({ default: m.BillingPeriodsPage })))
+const BillingLayout = lazy(() => import('@/components/layout/BillingLayout').then(m => ({ default: m.BillingLayout })))
 const AdminToolsPage = lazy(() => import('@/pages/admin/AdminToolsPage').then(m => ({ default: m.AdminToolsPage })))
 const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
@@ -29,6 +30,12 @@ function PageLoader() {
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
     </div>
   )
+}
+
+function BillingIndexRedirect() {
+  const [searchParams] = useSearchParams()
+  const status = searchParams.get('status')
+  return <Navigate to={status === 'PAID' ? '/billing/paid' : '/billing/action'} replace />
 }
 
 export const router = createBrowserRouter(
@@ -105,9 +112,39 @@ export const router = createBrowserRouter(
         path: 'billing',
         element: (
           <Suspense fallback={<PageLoader />}>
-            <BillingPeriodsPage />
+            <BillingLayout />
           </Suspense>
         ),
+        children: [
+          {
+            index: true,
+            element: <BillingIndexRedirect />,
+          },
+          {
+            path: 'action',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <BillingPeriodsPage view="action" />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'paid',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <BillingPeriodsPage view="paid" />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'all',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <BillingPeriodsPage view="all" />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: 'config',

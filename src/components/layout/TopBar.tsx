@@ -79,7 +79,7 @@ export function TopBar({ isMobile, onMobileToggle }: TopBarProps) {
 
         <div className="flex items-center gap-1.5">
           <span className="text-xl font-black tracking-wider text-secondary-500">AR</span>
-          <span className="text-xl font-semibold tracking-wider text-primary-50 hidden sm:inline">SISTEMA</span>
+          <span className="text-xl font-bold tracking-wider text-primary-50 hidden sm:inline">SYSTEM</span>
         </div>
       </div>
 

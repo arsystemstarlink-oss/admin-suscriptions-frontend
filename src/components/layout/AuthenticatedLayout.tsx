@@ -6,9 +6,17 @@ import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 
+const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
+
+function getInitialCollapsed(): boolean {
+  if (typeof window === 'undefined') return false
+  if (window.innerWidth < 1024) return true
+  return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'
+}
+
 export function AuthenticatedLayout() {
   useTokenRefresh()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -20,6 +28,14 @@ export function AuthenticatedLayout() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  const toggleSidebar = () => {
+    setCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next))
+      return next
+    })
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
@@ -33,7 +49,7 @@ export function AuthenticatedLayout() {
           isMobile={isMobile}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
-          onToggleSidebar={() => setCollapsed(!collapsed)}
+          onToggleSidebar={toggleSidebar}
         />
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <Outlet />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Users, CreditCard, Settings } from 'lucide-react';
+import { Home, MessageSquare, CreditCard, Settings } from 'lucide-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 export default function MobileAppShell({ children }: { children?: React.ReactNode }) {
@@ -11,7 +11,7 @@ export default function MobileAppShell({ children }: { children?: React.ReactNod
     const path = location.pathname;
     if (path === '/' || path === '/dashboard') return 'home';
     if (path.startsWith('/subscriptions')) return 'subs';
-    if (path.startsWith('/clients')) return 'clients';
+    if (path.startsWith('/chats')) return 'chats';
     if (path.startsWith('/settings') || path.startsWith('/plans')) return 'settings';
     return 'home';
   };
@@ -21,7 +21,7 @@ export default function MobileAppShell({ children }: { children?: React.ReactNod
   const navItems = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/' },
     { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
-    { id: 'clients', icon: Users, label: 'Clientes', path: '/clients' },
+    { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats' },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/plans' }, // Apuntando a planes por ahora como ejemplo de ajustes
   ];
 

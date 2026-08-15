@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -17,6 +17,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from '@/components/ui/drawer'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,7 +42,7 @@ import {
 } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
-import { CheckCircle, DollarSign } from 'lucide-react'
+import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft } from 'lucide-react'
 
 const createPaymentSchema = (minDate: string) =>
   z.object({
@@ -58,6 +66,14 @@ export function QuickPayModal() {
   const { quickPayOpen, quickPayContext, closeQuickPay } = useUIStore()
   const [showSuccess, setShowSuccess] = useState(false)
   const [reactivated, setReactivated] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const period = quickPayContext?.period
   const registerPayment = useRegisterPayment(period?.id || '')
@@ -106,6 +122,171 @@ export function QuickPayModal() {
 
   if (!period) return null
 
+  const FormContent = () => (
+    <form id="quick-pay-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-4 md:px-0">
+      
+      {/* Resumen del Período */}
+      <div className="p-4 bg-primary-50 dark:bg-primary-900/40 rounded-xl border border-primary-100 dark:border-primary-800/60 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-semibold text-primary-900 dark:text-primary-50 truncate pr-2">{getClientFullName(period.client)}</p>
+          <Badge className={`shrink-0 ${BILLING_PERIOD_STATUS_COLORS[period.status]}`}>
+            {BILLING_PERIOD_STATUS_LABELS[period.status]}
+          </Badge>
+        </div>
+        
+        <div className="flex flex-col gap-1 text-sm text-primary-600 dark:text-primary-300">
+          <div className="flex justify-between items-center">
+            <span>Kit #{period.subscription.kitNumber} - {period.plan.name}</span>
+            <span className="font-bold text-base text-primary-900 dark:text-primary-50">{formatCurrency(period.amount)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span>{period.periodLabel}</span>
+            <span>Venció: <span className="font-medium text-red-600 dark:text-red-400">{formatDate(period.endDate)}</span></span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <Badge className={SUBSCRIPTION_STATUS_COLORS[period.subscription.status]}>
+            {SUBSCRIPTION_STATUS_LABELS[period.subscription.status]}
+          </Badge>
+        </div>
+      </div>
+
+      <Separator className="bg-primary-100 dark:bg-primary-800" />
+
+      {/* Formulario Mobile-First */}
+      <div className="space-y-4">
+        
+        {/* Fecha */}
+        <div className="space-y-1.5">
+          <Label className="text-primary-800 dark:text-primary-200">Fecha de Pago *</Label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400 shrink-0" />
+            <Input
+              type="date"
+              {...register('paidAt')}
+              min={minPaidAt}
+              className="pl-9 h-12 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+            />
+          </div>
+          {errors.paidAt && (
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.paidAt.message}</p>
+          )}
+        </div>
+
+        {/* Método */}
+        <div className="space-y-1.5">
+          <Label className="text-primary-800 dark:text-primary-200">Método de Pago *</Label>
+          <Select onValueChange={(value) => setValue('paymentMethod', value)}>
+            <SelectTrigger className="h-12 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary-400" />
+                <SelectValue placeholder="Seleccione método" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(PAYMENT_METHOD_LABELS)
+                .filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
+                .map(([key, label]) => (
+                  <SelectItem key={key} value={key} className="py-3">
+                    {label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          {errors.paymentMethod && (
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.paymentMethod.message}</p>
+          )}
+        </div>
+
+        {/* Notas */}
+        <div className="space-y-1.5">
+          <Label className="text-primary-800 dark:text-primary-200">Notas (opcional)</Label>
+          <div className="relative">
+            <AlignLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400 shrink-0" />
+            <Input
+              placeholder="Referencia, observación..."
+              {...register('notes')}
+              className="pl-9 h-12 bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+            />
+          </div>
+        </div>
+      </div>
+    </form>
+  )
+
+  const SuccessState = () => (
+    <div className="py-10 text-center space-y-4 px-4">
+      <div className="mx-auto h-20 w-20 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+        <CheckCircle className="h-10 w-10 shrink-0" />
+      </div>
+      <div>
+        <h3 className="text-xl font-bold text-primary-900 dark:text-primary-50">Pago Registrado</h3>
+        <p className="text-primary-600 dark:text-primary-300 mt-2 font-medium">
+          {formatCurrency(period.amount)} — {period.periodLabel}
+        </p>
+      </div>
+      {reactivated && (
+        <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-300 p-4 mt-4 mx-auto max-w-sm">
+          <CheckCircle className="h-5 w-5 shrink-0" />
+          <p className="text-sm font-semibold">
+            Suscripción reactivada automáticamente
+          </p>
+        </div>
+      )}
+    </div>
+  )
+
+  // MOBILE: Drawer (Bottom Sheet)
+  if (isMobile) {
+    return (
+      <Drawer open={quickPayOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DrawerContent>
+          {!showSuccess ? (
+            <>
+              <DrawerHeader className="text-left px-4">
+                <DrawerTitle>Registrar Pago</DrawerTitle>
+                <DrawerDescription>Confirma los datos para procesar el pago</DrawerDescription>
+              </DrawerHeader>
+              
+              <div className="overflow-y-auto overflow-x-hidden max-h-[60vh] pb-4">
+                <FormContent />
+              </div>
+              
+              <DrawerFooter className="border-t border-primary-100 dark:border-primary-800 mt-0 pt-4">
+                <Button 
+                  type="submit" 
+                  form="quick-pay-form" 
+                  className="w-full h-14 text-base font-semibold bg-primary-800 hover:bg-primary-900 text-white dark:bg-primary-700 dark:hover:bg-primary-600 shadow-md active:scale-95 transition-transform touch-manipulation" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    'Procesando...'
+                  ) : (
+                    <>
+                      <DollarSign className="h-5 w-5 mr-2 shrink-0" />
+                      Cobrar {formatCurrency(period.amount)}
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full h-12 mt-2 text-primary-600 dark:text-primary-400" 
+                  onClick={handleClose}
+                >
+                  Cancelar
+                </Button>
+              </DrawerFooter>
+            </>
+          ) : (
+            <SuccessState />
+          )}
+        </DrawerContent>
+      </Drawer>
+    )
+  }
+
+  // DESKTOP: Dialog (Modal)
   return (
     <Dialog open={quickPayOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-md">
@@ -116,127 +297,26 @@ export function QuickPayModal() {
               <DialogDescription>Confirme los datos del pago</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg border space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{getClientFullName(period.client)}</p>
-                  <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
-                    {BILLING_PERIOD_STATUS_LABELS[period.status]}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>Kit #{period.subscription.kitNumber}</span>
-                  <span>{period.plan.name}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{period.periodLabel}</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(period.amount)}</span>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Venció: {formatDate(period.endDate)}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={SUBSCRIPTION_STATUS_COLORS[period.subscription.status]}>
-                    {SUBSCRIPTION_STATUS_LABELS[period.subscription.status]}
-                  </Badge>
-                </div>
-              </div>
+            <FormContent />
 
-              <Separator />
-
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Monto</Label>
-                  <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
-                    {formatCurrency(period.amount)}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Fecha de Pago *</Label>
-                  <Input
-                    type="date"
-                    {...register('paidAt')}
-                    min={minPaidAt}
-                  />
-                  {errors.paidAt && (
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors.paidAt.message}</p>
-                  )}
-                  {minPaidAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Fecha mínima: {formatDate(minPaidAt)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Método de Pago *</Label>
-                  <Select onValueChange={(value) => setValue('paymentMethod', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione método" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(PAYMENT_METHOD_LABELS)
-                        .filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
-                        .map(([key, label]) => (
-                          <SelectItem key={key} value={key}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.paymentMethod && (
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors.paymentMethod.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Notas (opcional)</Label>
-                  <Input
-                    placeholder="Referencia, observación..."
-                    {...register('notes')}
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <Button type="button" variant="outline" className="flex-1" onClick={handleClose}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className="flex-1 gap-2" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      'Procesando...'
-                    ) : (
-                      <>
-                        <DollarSign className="h-4 w-4 shrink-0" />
-                        Cobrar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
+            <div className="flex justify-end gap-3 pt-4 border-t mt-6">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" form="quick-pay-form" className="gap-2" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  'Procesando...'
+                ) : (
+                  <>
+                    <DollarSign className="h-4 w-4 shrink-0" />
+                    Cobrar {formatCurrency(period.amount)}
+                  </>
+                )}
+              </Button>
             </div>
           </>
         ) : (
-          <div className="py-8 text-center space-y-4">
-            <div className="mx-auto h-16 w-16 rounded-full bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 flex items-center justify-center">
-              <CheckCircle className="h-8 w-8 shrink-0" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Pago Registrado</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {formatCurrency(period.amount)} — {period.periodLabel}
-              </p>
-            </div>
-            {reactivated && (
-              <div className="flex items-center justify-center gap-2 rounded-lg border border-primary-100 bg-white text-primary-900 dark:border-primary-800 dark:bg-primary-900/50 dark:text-primary-50 p-3">
-                <CheckCircle className="h-4 w-4 shrink-0 text-primary-800 dark:text-primary-100" />
-                <p className="text-sm font-medium">
-                  Suscripción reactivada automáticamente
-                </p>
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">Cerrando automáticamente...</p>
-          </div>
+          <SuccessState />
         )}
       </DialogContent>
     </Dialog>

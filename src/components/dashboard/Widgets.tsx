@@ -4,11 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate } from '@/lib/constants'
-import { AlertTriangle, MessageSquare, DollarSign } from 'lucide-react'
+import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -19,7 +16,8 @@ export function TopDebtorsWidget() {
   const navigate = useNavigate()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
-  const handlePay = async (clientId: string) => {
+  const handlePay = async (clientId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     setLoadingId(clientId)
     try {
       const result = await queryClient.fetchQuery({
@@ -41,75 +39,83 @@ export function TopDebtorsWidget() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-            <CardTitle className="text-lg">Top Deudores</CardTitle>
+    <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-primary-100 dark:border-primary-800">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
           </div>
-          {data && (
-            <Badge variant="destructive">
-              {data.topDebtors.count}
-            </Badge>
-          )}
+          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50">Top Deudores</h2>
         </div>
-      </CardHeader>
-      <CardContent>
+        {data && data.topDebtors.count > 0 && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
+            {data.topDebtors.count}
+          </span>
+        )}
+      </div>
+
+      <div className="p-2">
         {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-muted animate-pulse rounded" />
+          <div className="space-y-2 px-2 pb-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex justify-between items-center h-[72px] bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
         ) : !data || data.topDebtors.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No hay deudores registrados</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+            <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center mb-3">
+              <DollarSign className="h-6 w-6 text-emerald-500" />
+            </div>
+            <p className="text-sm font-medium text-primary-800 dark:text-primary-100">No hay deudores</p>
+            <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">Todos los clientes están al día.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {data.topDebtors.items.map((debtor) => (
               <div
                 key={debtor.clientId}
-                className="flex flex-col gap-3 p-3 bg-muted rounded-lg border border-border"
+                onClick={() => navigate(`/clients/${debtor.clientId}`)}
+                className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 active:bg-primary-50 dark:active:bg-primary-800 transition-colors touch-manipulation cursor-pointer group"
               >
-                <div className="min-w-0">
-                  <Button
-                    variant="link"
-                    onClick={() => navigate(`/config/clients/${debtor.clientId}`)}
-                    className="h-auto p-0 font-medium text-foreground hover:text-primary text-left whitespace-normal"
-                  >
-                    {debtor.clientName}
-                  </Button>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                    <span className="text-sm text-muted-foreground">{debtor.clientPhone}</span>
-                    <Badge variant="destructive" className="text-xs">
-                      {debtor.overdueCount} períodos
-                    </Badge>
+                <div className="min-w-0 flex-1 pr-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm text-primary-900 dark:text-primary-50 truncate pr-2 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors">
+                      {debtor.clientName}
+                    </p>
+                    <p className="font-bold text-red-600 dark:text-red-400 whitespace-nowrap">
+                      {formatCurrency(debtor.totalDebt)}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-1 text-xs">
+                    <span className="text-primary-500 dark:text-primary-400 truncate max-w-[120px]">{debtor.clientPhone}</span>
+                    <span className="text-primary-300 dark:text-primary-600">•</span>
+                    <span className="text-red-600 dark:text-red-400 font-medium px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950">
+                      {debtor.overdueCount} vencidos
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end sm:gap-3">
-                  <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                    {formatCurrency(debtor.totalDebt)}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1"
-                    onClick={() => handlePay(debtor.clientId)}
+
+                <div className="shrink-0 flex items-center">
+                  <button
+                    onClick={(e) => handlePay(debtor.clientId, e)}
                     disabled={loadingId === debtor.clientId}
+                    className="flex items-center justify-center h-10 w-10 sm:w-auto sm:px-3 rounded-lg bg-primary-800 text-white dark:bg-primary-700 active:scale-95 transition-transform touch-manipulation shadow-sm disabled:opacity-50"
                     aria-label="Cobrar"
                   >
-                    <DollarSign className="h-4 w-4 shrink-0" />
-                    <span className="hidden sm:inline">
+                    <DollarSign className="h-4 w-4 sm:mr-1 shrink-0" />
+                    <span className="hidden sm:inline text-sm font-semibold">
                       {loadingId === debtor.clientId ? '...' : 'Cobrar'}
                     </span>
-                  </Button>
+                  </button>
+                  <ChevronRight className="h-5 w-5 text-primary-300 dark:text-primary-600 ml-2 hidden sm:block group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -117,77 +123,86 @@ export function ExpiringSoonWidget() {
   const { data, isLoading } = useDashboardAlerts()
   const navigate = useNavigate()
 
-  const handleOpenChat = (phone: string) => {
+  const handleOpenChat = (phone: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     navigate(`/chats?phone=${encodeURIComponent(phone)}`)
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0" />
-            <CardTitle className="text-lg">Vencimientos Próximos</CardTitle>
+    <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-primary-100 dark:border-primary-800">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+            <Calendar className="h-4 w-4 shrink-0" />
           </div>
-          {data && (
-            <Badge variant="secondary">
-              {data.expiringSoon.count}
-            </Badge>
-          )}
+          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50">Vencimientos Próximos</h2>
         </div>
-      </CardHeader>
-      <CardContent>
+        {data && data.expiringSoon.count > 0 && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+            {data.expiringSoon.count}
+          </span>
+        )}
+      </div>
+
+      <div className="p-2">
         {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-muted animate-pulse rounded" />
+          <div className="space-y-2 px-2 pb-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex justify-between items-center h-[72px] bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
         ) : !data || data.expiringSoon.items.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">No hay vencimientos próximos</p>
+          <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+            <div className="h-12 w-12 rounded-full bg-primary-50 dark:bg-primary-800/50 flex items-center justify-center mb-3">
+              <Calendar className="h-6 w-6 text-primary-300 dark:text-primary-600" />
+            </div>
+            <p className="text-sm font-medium text-primary-800 dark:text-primary-100">Sin vencimientos cercanos</p>
+            <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">No hay cobros pendientes a corto plazo.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {data.expiringSoon.items.map((item) => (
               <div
                 key={item.periodId}
-                className="flex flex-col gap-3 p-3 bg-muted rounded-lg border border-border"
+                onClick={() => navigate(`/subscriptions/${item.subscriptionId}`)}
+                className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 active:bg-primary-50 dark:active:bg-primary-800 transition-colors touch-manipulation cursor-pointer group"
               >
-                <div className="min-w-0">
-                  <Button
-                    variant="link"
-                    onClick={() => navigate(`/subscriptions/${item.subscriptionId}`)}
-                    className="h-auto p-0 font-medium text-foreground hover:text-primary text-left whitespace-normal"
-                  >
-                    {item.clientName}
-                  </Button>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                    <span className="text-sm text-muted-foreground">Kit #{item.kitNumber}</span>
-                    <span className="text-sm text-muted-foreground">{item.periodLabel}</span>
-                    <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                <div className="min-w-0 flex-1 pr-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm text-primary-900 dark:text-primary-50 truncate pr-2 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors">
+                      {item.clientName}
+                    </p>
+                    <p className="font-bold text-primary-900 dark:text-primary-50 whitespace-nowrap">
+                      {formatCurrency(item.amount)}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs">
+                    <span className="text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-1.5 py-0.5 rounded">
+                      Kit #{item.kitNumber}
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400 font-medium px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950">
                       Vence: {formatDate(item.endDate)}
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between sm:justify-end sm:gap-3">
-                  <p className="text-lg font-bold text-foreground">
-                    {formatCurrency(item.amount)}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1"
-                    onClick={() => handleOpenChat(item.clientPhone)}
-                    aria-label="Contactar"
+
+                <div className="shrink-0 flex items-center">
+                  <button
+                    onClick={(e) => handleOpenChat(item.clientPhone, e)}
+                    className="flex items-center justify-center h-10 w-10 sm:w-auto sm:px-3 rounded-lg bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-900 active:bg-green-100 transition-colors touch-manipulation shadow-sm"
+                    aria-label="WhatsApp"
                   >
-                    <MessageSquare className="h-4 w-4 shrink-0" />
-                    <span className="hidden sm:inline">Contactar</span>
-                  </Button>
+                    <MessageSquare className="h-4 w-4 sm:mr-1 shrink-0" />
+                    <span className="hidden sm:inline text-sm font-semibold">WhatsApp</span>
+                  </button>
+                  <ChevronRight className="h-5 w-5 text-primary-300 dark:text-primary-600 ml-2 hidden sm:block group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

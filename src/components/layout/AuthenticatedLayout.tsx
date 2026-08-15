@@ -5,6 +5,7 @@ import { TopBar } from './TopBar'
 import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
+import MobileAppShell from './MobileAppShell'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -41,6 +42,16 @@ export function AuthenticatedLayout() {
       localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next))
       return next
     })
+  }
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileAppShell />
+        <OmniSearch />
+        <QuickPayModal />
+      </>
+    )
   }
 
   return (

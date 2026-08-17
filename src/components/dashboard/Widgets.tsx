@@ -42,19 +42,25 @@ export function TopDebtorsWidget() {
 
   return (
     <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-primary-100 dark:border-primary-800">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
+      <button
+        onClick={() => navigate('/subscriptions?hasOverdue=true')}
+        className="w-full flex items-center justify-between p-4 border-b border-primary-100 dark:border-primary-800 group text-left"
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="p-1.5 rounded-lg bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400 shrink-0">
             <AlertTriangle className="h-4 w-4 shrink-0" />
-          </div>
-          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50">Top Deudores</h2>
-        </div>
-        {data && data.topDebtors.count > 0 && (
-          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
-            {data.topDebtors.count}
           </span>
-        )}
-      </div>
+          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors truncate">Top Deudores</h2>
+        </span>
+        <span className="flex items-center gap-2 shrink-0">
+          {data && data.topDebtors.count > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
+              {data.topDebtors.count}
+            </span>
+          )}
+          <ChevronRight className="h-5 w-5 text-primary-300 dark:text-primary-600 hidden sm:block group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </button>
 
       <div className="p-2">
         {isLoading ? (
@@ -132,19 +138,25 @@ export function ExpiringSoonWidget() {
 
   return (
     <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-primary-100 dark:border-primary-800">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
+      <button
+        onClick={() => navigate('/subscriptions?expiring=true')}
+        className="w-full flex items-center justify-between p-4 border-b border-primary-100 dark:border-primary-800 group text-left"
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="p-1.5 rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400 shrink-0">
             <Calendar className="h-4 w-4 shrink-0" />
-          </div>
-          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50">Vencimientos Próximos</h2>
-        </div>
-        {data && data.expiringSoon.count > 0 && (
-          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
-            {data.expiringSoon.count}
           </span>
-        )}
-      </div>
+          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors truncate">Vencimientos Próximos</h2>
+        </span>
+        <span className="flex items-center gap-2 shrink-0">
+          {data && data.expiringSoon.count > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+              {data.expiringSoon.count}
+            </span>
+          )}
+          <ChevronRight className="h-5 w-5 text-primary-300 dark:text-primary-600 hidden sm:block group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </button>
 
       <div className="p-2">
         {isLoading ? (

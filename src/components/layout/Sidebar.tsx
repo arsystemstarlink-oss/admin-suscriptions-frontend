@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Link2, FileText, Settings, LogOut, MessageSquare, ChevronRight, User } from 'lucide-react'
+import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils'
 import { useEffect } from 'react'
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 
 const navItems = [
   { to: '/subscriptions', icon: Link2, label: 'Suscripciones' },
-  { to: '/billing', icon: FileText, label: 'Facturación' },
   { to: '/', icon: LayoutDashboard, label: 'Panel' },
   { to: '/chats', icon: MessageSquare, label: 'Mensajes' },
   { to: '/config', icon: Settings, label: 'Configuración' },

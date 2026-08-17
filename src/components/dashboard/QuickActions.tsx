@@ -31,7 +31,7 @@ export function QuickActions() {
       </button>
 
       <button
-        onClick={() => navigate('/billing')}
+        onClick={() => navigate('/subscriptions?hasOverdue=true')}
         className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-white border border-primary-100 shadow-sm active:scale-[0.98] active:bg-primary-50 transition-all touch-manipulation dark:bg-primary-900/50 dark:border-primary-800 dark:active:bg-primary-800"
       >
         <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mb-2">

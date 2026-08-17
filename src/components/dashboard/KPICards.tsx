@@ -67,7 +67,7 @@ export function KPICards() {
       icon: DollarSign,
       iconClass: 'text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950',
       subtitle: `${data.billingPeriods.paid} pagados`,
-      href: '/billing?status=PAID',
+      href: '/subscriptions',
     },
     {
       title: 'Deuda Total',
@@ -75,7 +75,7 @@ export function KPICards() {
       icon: AlertTriangle,
       iconClass: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950',
       subtitle: `${formatCurrency(data.financial.totalOverdue)} vencida`,
-      href: '/billing?status=OVERDUE',
+      href: '/subscriptions?hasOverdue=true',
     },
     {
       title: 'Períodos Vencidos',
@@ -83,7 +83,7 @@ export function KPICards() {
       icon: AlertCircle,
       iconClass: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950',
       subtitle: data.billingPeriods.overdue > 0 ? formatCurrency(data.financial.totalOverdue) : 'Sin deuda',
-      href: '/billing?status=OVERDUE',
+      href: '/subscriptions?hasOverdue=true',
     },
     {
       title: 'Planes Activos',

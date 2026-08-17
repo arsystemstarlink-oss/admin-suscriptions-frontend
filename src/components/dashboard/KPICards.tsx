@@ -11,16 +11,17 @@ export function KPICards() {
 
   if (isLoading) {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory no-scrollbar touch-pan-x -mx-4 px-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:mx-0 md:px-0">
+      <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory no-scrollbar touch-pan-x -mx-4 px-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:mx-0 md:px-0">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="min-w-[200px] w-[80vw] md:w-auto snap-center">
+          <div key={i} className="min-w-[150px] w-[42vw] md:w-auto snap-center">
             <Card className="h-full bg-white dark:bg-primary-900/50 border-primary-100 dark:border-primary-800">
-              <CardHeader className="pb-2">
-                <div className="h-4 w-24 bg-primary-100 dark:bg-primary-800 rounded animate-pulse" />
+              <CardHeader className="flex flex-row items-center gap-2 pb-1 pt-3 px-3 space-y-0">
+                <div className="h-7 w-7 bg-primary-100 dark:bg-primary-800 rounded-lg animate-pulse" />
+                <div className="h-3 w-20 bg-primary-100 dark:bg-primary-800 rounded animate-pulse" />
               </CardHeader>
-              <CardContent>
-                <div className="h-8 w-16 bg-primary-100 dark:bg-primary-800 rounded animate-pulse mb-2" />
-                <div className="h-3 w-32 bg-primary-50 dark:bg-primary-800/50 rounded animate-pulse" />
+              <CardContent className="px-3 pb-3">
+                <div className="h-6 w-14 bg-primary-100 dark:bg-primary-800 rounded animate-pulse mb-2" />
+                <div className="h-3 w-24 bg-primary-50 dark:bg-primary-800/50 rounded animate-pulse" />
               </CardContent>
             </Card>
           </div>
@@ -98,20 +99,20 @@ export function KPICards() {
   return (
     <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory no-scrollbar touch-pan-x -mx-4 px-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:mx-0 md:px-0">
       {cards.map((card) => (
-        <div key={card.title} className="min-w-[220px] w-[75vw] md:w-auto snap-center shrink-0">
+        <div key={card.title} className="min-w-[150px] w-[42vw] md:w-auto snap-center shrink-0">
           <Card
             className="h-full cursor-pointer active:scale-95 transition-transform touch-manipulation border-primary-100 bg-white shadow-sm dark:bg-primary-900/50 dark:border-primary-800 flex flex-col justify-center"
             onClick={() => navigate(card.href)}
           >
-            <CardHeader className="flex flex-row items-center gap-3 pb-2 pt-4 px-4 space-y-0">
-              <div className={`p-2 rounded-xl shrink-0 ${card.iconClass}`}>
-                <card.icon className="h-5 w-5" />
+            <CardHeader className="flex flex-row items-center gap-2 pb-1 pt-3 px-3 space-y-0">
+              <div className={`p-1.5 rounded-lg shrink-0 ${card.iconClass}`}>
+                <card.icon className="h-4 w-4" />
               </div>
-              <CardTitle className="text-sm font-semibold text-primary-600 dark:text-primary-400 truncate">{card.title}</CardTitle>
+              <CardTitle className="text-xs font-semibold text-primary-600 dark:text-primary-400 truncate leading-tight">{card.title}</CardTitle>
             </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <p className="text-2xl font-bold text-primary-900 dark:text-primary-50">{card.value}</p>
-              <p className="text-xs font-medium text-primary-500 dark:text-primary-400 mt-1 h-4">
+            <CardContent className="px-3 pb-3">
+              <p className="text-xl font-bold text-primary-900 dark:text-primary-50 leading-none">{card.value}</p>
+              <p className="text-[11px] font-medium text-primary-500 dark:text-primary-400 mt-1.5 h-3.5 truncate">
                 {card.subtitle || ''}
               </p>
             </CardContent>

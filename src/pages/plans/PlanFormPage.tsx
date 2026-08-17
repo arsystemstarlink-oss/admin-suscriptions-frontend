@@ -59,11 +59,11 @@ export function PlanFormPage() {
       if (isEdit && id) {
         await updateMutation.mutateAsync({ id, data: payload })
         toast.success('Plan actualizado correctamente')
-        navigate('/config/plans')
+        navigate('/subscriptions/plans')
       } else {
         await createMutation.mutateAsync(payload)
         toast.success('Plan creado correctamente')
-        navigate('/config/plans')
+        navigate('/subscriptions/plans')
       }
     } catch {
       setError('Error al guardar el plan. Intente nuevamente.')
@@ -83,7 +83,7 @@ export function PlanFormPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/config/plans">
+          <Link to="/subscriptions/plans">
             <ArrowLeft className="h-5 w-5 shrink-0" />
           </Link>
         </Button>
@@ -142,7 +142,7 @@ export function PlanFormPage() {
                 {isSubmitting ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link to="/config/plans">Cancelar</Link>
+                <Link to="/subscriptions/plans">Cancelar</Link>
               </Button>
             </div>
           </form>

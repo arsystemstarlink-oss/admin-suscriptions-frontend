@@ -66,7 +66,7 @@ export function PlansListPage() {
       }}
       filters={
         <>
-          <FilterPill active={false} onClick={() => navigate('/config/plans/new')}>
+          <FilterPill active={false} onClick={() => navigate('/subscriptions/plans/new')}>
             <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
             Nuevo Plan
           </FilterPill>
@@ -113,7 +113,7 @@ export function PlansListPage() {
               {plan.active ? 'Desactivar' : 'Activar'}
             </Button>
             <Button variant="outline" size="icon" asChild>
-              <Link to={`/config/plans/${plan.id}/edit`}>
+              <Link to={`/subscriptions/plans/${plan.id}/edit`}>
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>

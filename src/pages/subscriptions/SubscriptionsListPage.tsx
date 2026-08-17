@@ -123,8 +123,6 @@ export function SubscriptionsListPage() {
     <div className="flex flex-col gap-4 pb-20">
       
       <PageToolbar
-        title="Suscripciones"
-        description="Gestión de suscripciones de clientes"
         searchProps={{
           value: search,
           onChange: handleSearch,

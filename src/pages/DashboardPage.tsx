@@ -31,7 +31,7 @@ export function DashboardPage() {
         {summary && (
           <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar touch-pan-x -mx-4 px-4 pb-2 md:mx-0 md:px-0 md:flex-col md:overflow-visible">
             
-            <div className="min-w-[70vw] sm:min-w-[280px] snap-center shrink-0">
+            <div className="min-w-[70vw] sm:min-w-70 snap-center shrink-0">
               <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-4 h-full">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mb-2">
                   <TrendingDown className="h-4 w-4" />
@@ -44,7 +44,7 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="min-w-[70vw] sm:min-w-[280px] snap-center shrink-0">
+            <div className="min-w-[70vw] sm:min-w-70 snap-center shrink-0">
               <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-2xl p-4 h-full">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-red-600 dark:text-red-500 flex items-center gap-1.5 mb-2">
                   <AlertCircle className="h-4 w-4" />
@@ -57,7 +57,7 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="min-w-[70vw] sm:min-w-[280px] snap-center shrink-0">
+            <div className="min-w-[70vw] sm:min-w-70 snap-center shrink-0">
               <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl p-4 h-full">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-500 flex items-center gap-1.5 mb-2">
                   <DollarSign className="h-4 w-4" />

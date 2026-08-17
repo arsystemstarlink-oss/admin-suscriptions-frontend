@@ -73,11 +73,11 @@ export function ClientFormPage() {
       if (isEdit && id) {
         await updateMutation.mutateAsync({ id, data: payload })
         toast.success('Cliente actualizado correctamente')
-        navigate(`/config/clients/${id}`)
+        navigate(`/subscriptions/clients/${id}`)
       } else {
         const newClient = await createMutation.mutateAsync(payload)
         toast.success('Cliente creado correctamente')
-        navigate(`/config/clients/${newClient.id}`)
+        navigate(`/subscriptions/clients/${newClient.id}`)
       }
     } catch {
       setError('Error al guardar el cliente. Intente nuevamente.')
@@ -97,7 +97,7 @@ export function ClientFormPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link to={isEdit ? `/config/clients/${id}` : '/config/clients'}>
+          <Link to={isEdit ? `/subscriptions/clients/${id}` : '/subscriptions/clients'}>
             <ArrowLeft className="h-5 w-5 shrink-0" />
           </Link>
         </Button>
@@ -202,7 +202,7 @@ export function ClientFormPage() {
                 {isSubmitting ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link to={isEdit ? `/config/clients/${id}` : '/config/clients'}>Cancelar</Link>
+                <Link to={isEdit ? `/subscriptions/clients/${id}` : '/subscriptions/clients'}>Cancelar</Link>
               </Button>
             </div>
           </form>

@@ -44,7 +44,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
       )}
 
       <nav
-        className="flex w-full gap-3 overflow-x-auto rounded-2xl bg-white p-2 text-muted-foreground scrollbar-hide sm:grid sm:overflow-visible border border-primary-100 dark:bg-primary-900/50 dark:border-primary-800"
+        className="grid w-full gap-3 rounded-2xl bg-white p-2 text-muted-foreground border border-primary-100 dark:bg-primary-900/50 dark:border-primary-800"
         style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         aria-label="Secciones"
       >
@@ -57,7 +57,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
             aria-label={tab.label}
             className={({ isActive }) =>
               cn(
-                'inline-flex min-w-[5rem] shrink-0 flex-col items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-medium transition-all sm:min-w-0',
+                'inline-flex min-w-0 flex-col items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-medium transition-all',
                 'hover:shadow-sm hover:border-primary/40',
                 isActive
                   ? 'bg-primary-50 dark:bg-primary-800/50 shadow-sm ring-1 ring-primary/20 border border-transparent'

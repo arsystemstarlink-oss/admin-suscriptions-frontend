@@ -117,7 +117,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-6 py-8">
       <div className={cn(
-        "w-full max-w-[420px] animate-fade-slide-up",
+        "w-full max-w-105 animate-fade-slide-up",
         shakeError && "animate-shake"
       )}>
         <div className="text-center mb-8">

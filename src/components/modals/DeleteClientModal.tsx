@@ -32,7 +32,7 @@ export function DeleteClientModal({ clientId, clientName, open, onOpenChange }: 
       await deleteMutation.mutateAsync(clientId)
       toast.success('Cliente eliminado correctamente')
       onOpenChange(false)
-      navigate('/config/clients')
+      navigate('/subscriptions/clients')
     } catch (err: any) {
       if (err.code === 'CLIENT_HAS_ACTIVE_SUBSCRIPTIONS') {
         setError('No puede eliminar un cliente con suscripciones activas. Suspéndalas o elimínelas primero.')

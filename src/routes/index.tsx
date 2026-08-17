@@ -18,6 +18,7 @@ const SubscriptionFormPage = lazy(() => import('@/pages/subscriptions/Subscripti
 const SubscriptionEditPage = lazy(() => import('@/pages/subscriptions/SubscriptionEditPage').then(m => ({ default: m.SubscriptionEditPage })))
 const BillingPeriodsPage = lazy(() => import('@/pages/billing/BillingPeriodsPage').then(m => ({ default: m.BillingPeriodsPage })))
 const BillingLayout = lazy(() => import('@/components/layout/BillingLayout').then(m => ({ default: m.BillingLayout })))
+const SubscriptionsLayout = lazy(() => import('@/components/layout/SubscriptionsLayout').then(m => ({ default: m.SubscriptionsLayout })))
 const AdminToolsPage = lazy(() => import('@/pages/admin/AdminToolsPage').then(m => ({ default: m.AdminToolsPage })))
 const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
@@ -80,33 +81,99 @@ export const router = createBrowserRouter(
         path: 'subscriptions',
         element: (
           <Suspense fallback={<PageLoader />}>
-            <SubscriptionsListPage />
+            <SubscriptionsLayout />
           </Suspense>
         ),
-      },
-      {
-        path: 'subscriptions/new',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <SubscriptionFormPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'subscriptions/:id',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <SubscriptionDetailPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'subscriptions/:id/edit',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <SubscriptionEditPage />
-          </Suspense>
-        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SubscriptionsListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'new',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SubscriptionFormPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ':id',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SubscriptionDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: ':id/edit',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <SubscriptionEditPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'clients',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientsListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'clients/new',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientFormPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'clients/:id',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientDetailPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'clients/:id/edit',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ClientFormPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'plans',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlansListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'plans/new',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlanFormPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'plans/:id/edit',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PlanFormPage />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: 'billing',
@@ -178,62 +245,6 @@ export const router = createBrowserRouter(
               </Suspense>
             ),
           },
-          {
-            path: 'clients',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <ClientsListPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'clients/new',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <ClientFormPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'clients/:id',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <ClientDetailPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'clients/:id/edit',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <ClientFormPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'plans',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <PlansListPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'plans/new',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <PlanFormPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'plans/:id/edit',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <PlanFormPage />
-              </Suspense>
-            ),
-          },
         ],
       },
       {
@@ -246,19 +257,35 @@ export const router = createBrowserRouter(
       },
       {
         path: 'clients',
-        element: <Navigate to="/config/clients" replace />,
+        element: <Navigate to="/subscriptions/clients" replace />,
       },
       {
         path: 'clients/*',
-        element: <Navigate to="/config/clients" replace />,
+        element: <Navigate to="/subscriptions/clients" replace />,
       },
       {
         path: 'plans',
-        element: <Navigate to="/config/plans" replace />,
+        element: <Navigate to="/subscriptions/plans" replace />,
       },
       {
         path: 'plans/*',
-        element: <Navigate to="/config/plans" replace />,
+        element: <Navigate to="/subscriptions/plans" replace />,
+      },
+      {
+        path: 'config/clients',
+        element: <Navigate to="/subscriptions/clients" replace />,
+      },
+      {
+        path: 'config/clients/*',
+        element: <Navigate to="/subscriptions/clients" replace />,
+      },
+      {
+        path: 'config/plans',
+        element: <Navigate to="/subscriptions/plans" replace />,
+      },
+      {
+        path: 'config/plans/*',
+        element: <Navigate to="/subscriptions/plans" replace />,
       },
     ],
   },

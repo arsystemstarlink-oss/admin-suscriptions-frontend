@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
-import { UserCog, ShieldCheck, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
+import { UserCog, ShieldCheck, ChevronDown, ChevronUp, Pencil, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { SectionHeader, FormGroup } from '@/components/design-system'
 import type { ApiError } from '@/types/api'
@@ -51,6 +51,7 @@ type PasswordForm = z.infer<typeof passwordSchema>
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const setTokens = useAuthStore((s) => s.setTokens)
+  const logout = useAuthStore((s) => s.logout)
   const updateMutation = useUpdateMe()
   const passwordMutation = useChangePassword()
   const [showDetails, setShowDetails] = useState(false)
@@ -176,15 +177,23 @@ export function ProfilePage() {
             <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
               <span className="text-lg font-bold text-primary-700 dark:text-primary-300">{initials}</span>
             </div>
-            <div className="min-w-0">
-              <h3 className="font-semibold text-lg sm:text-xl">{user.name}</h3>
-              <p className="text-sm text-primary-500 dark:text-primary-400 mt-1">{user.email}</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-lg sm:text-xl truncate">{user.name}</h3>
+              <p className="text-sm text-primary-500 dark:text-primary-400 mt-1 truncate">{user.email}</p>
             </div>
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
               <Badge variant="secondary" className="text-xs">
                 <ShieldCheck className="h-3 w-3 mr-1 shrink-0" />
                 Administrador
               </Badge>
+              <button
+                onClick={logout}
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md text-primary-500 dark:text-primary-400 transition-colors hover:bg-destructive/10 hover:text-destructive dark:hover:text-red-400"
+                title="Cerrar sesión"
+                aria-label="Cerrar sesión"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+              </button>
             </div>
           </div>
 

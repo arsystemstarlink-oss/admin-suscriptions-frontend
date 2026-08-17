@@ -121,16 +121,16 @@ export function LoginPage() {
         shakeError && "animate-shake"
       )}>
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl bg-primary-800 px-5 py-3 dark:bg-primary-900">
+          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-lg bg-primary-800 px-5 py-3 dark:bg-primary-900">
             <BrandMark size="lg" />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Administra tus clientes, suscripciones y pagos desde un solo lugar
+           Administra tus clientes, suscripciones y pagos desde un solo lugar
           </p>
         </div>
         
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="mb-6">
+          <div className="text-center mb-6">
             <h2 className="text-lg font-semibold text-foreground">Iniciar sesión</h2>
             <p className="text-sm text-muted-foreground">Accede a tu cuenta</p>
           </div>

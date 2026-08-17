@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
@@ -17,7 +16,6 @@ function getInitialCollapsed(): boolean {
 }
 
 export function AuthenticatedLayout() {
-  useTokenRefresh()
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)

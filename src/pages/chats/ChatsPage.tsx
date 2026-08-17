@@ -307,7 +307,7 @@ export function ChatsPage() {
             isMobile
               ? cn(
                   'fixed inset-x-0 z-40 flex flex-col bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 transition-transform duration-300 ease-out',
-                  'top-[var(--mobile-header-h)] bottom-[var(--mobile-nav-h)] h-[calc(100dvh-var(--mobile-header-h)-var(--mobile-nav-h))]',
+                  'top-(--mobile-header-h) bottom-(--mobile-nav-h) h-[calc(100dvh-var(--mobile-header-h)-var(--mobile-nav-h))]',
                   selectedPhone ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
                 )
               : 'flex'

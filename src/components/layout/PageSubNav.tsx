@@ -1,6 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 export interface PageSubNavTab {
@@ -45,7 +44,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
       )}
 
       <nav
-        className="flex w-full gap-1 overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground scrollbar-hide sm:grid sm:overflow-visible"
+        className="flex w-full gap-3 overflow-x-auto rounded-2xl bg-white p-2 text-muted-foreground scrollbar-hide sm:grid sm:overflow-visible border border-primary-100 dark:bg-primary-900/50 dark:border-primary-800"
         style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
         aria-label="Secciones"
       >
@@ -58,23 +57,34 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
             aria-label={tab.label}
             className={({ isActive }) =>
               cn(
-                'inline-flex min-h-10 min-w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all hover:bg-muted hover:text-foreground sm:min-w-0 sm:flex-row sm:gap-1.5 sm:px-2 sm:text-sm',
-                isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
+                'inline-flex min-w-[5rem] shrink-0 flex-col items-center justify-center gap-2 rounded-xl px-3 py-3 text-xs font-medium transition-all sm:min-w-0',
+                'hover:shadow-sm hover:border-primary/40',
+                isActive
+                  ? 'bg-primary-50 dark:bg-primary-800/50 shadow-sm ring-1 ring-primary/20 border border-transparent'
+                  : 'bg-transparent border border-transparent'
               )
             }
           >
             {({ isActive }) => (
               <>
-                <tab.icon className="h-4 w-4 shrink-0" />
-                <span className="max-w-[4.5rem] truncate sm:max-w-none">{tab.label}</span>
-                {tab.badge != null && tab.badge > 0 && (
-                  <Badge
-                    variant={isActive ? 'destructive' : 'outline'}
-                    className="ml-0.5 h-4 min-w-4 px-1 text-[10px] leading-none sm:ml-1"
-                  >
-                    {tab.badge > 99 ? '99+' : tab.badge}
-                  </Badge>
-                )}
+                <div
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors sm:h-12 sm:w-12',
+                    isActive
+                      ? 'bg-primary-100 dark:bg-primary-700 text-primary-600 dark:text-primary-200'
+                      : 'bg-primary-50 dark:bg-primary-900 text-muted-foreground'
+                  )}
+                >
+                  <tab.icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
+                </div>
+                <span
+                  className={cn(
+                    'text-xs font-medium sm:text-sm',
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {tab.label}
+                </span>
               </>
             )}
           </NavLink>

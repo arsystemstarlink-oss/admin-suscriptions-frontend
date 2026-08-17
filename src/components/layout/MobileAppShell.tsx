@@ -2,10 +2,13 @@ import React from 'react';
 import { Home, MessageSquare, CreditCard, Settings } from 'lucide-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
+import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
+import { HeaderActions } from './HeaderActions';
 
-export default function MobileAppShell({ children }: { children?: React.ReactNode }) {
+export default function MobileAppShell({ children, onOpenSearch }: { children?: React.ReactNode; onOpenSearch?: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const unreadChatsCount = useUnreadChatsCount();
 
   // Determinar la tab activa basada en la ruta
   const getActiveTab = () => {
@@ -30,14 +33,9 @@ export default function MobileAppShell({ children }: { children?: React.ReactNod
     <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent]">
       
       {/* Header Fijo con Glassmorphism */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-white/80 text-primary-900 border-b border-primary-100 dark:bg-primary-950/80 dark:text-primary-50 dark:border-primary-800 backdrop-blur-md transition-colors">
+      <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 backdrop-blur-md transition-colors">
         <BrandMark size="md" hideSystemOnMobile className="text-primary-50" />
-        <button 
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-100 text-primary-900 dark:bg-primary-800 dark:text-primary-50 active:scale-95 transition-transform touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-600"
-          aria-label="Perfil de usuario"
-        >
-          <span className="text-sm font-medium">AD</span>
-        </button>
+        <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? (() => {})} />
       </header>
 
       {/* Contenedor Principal (Scroll) */}

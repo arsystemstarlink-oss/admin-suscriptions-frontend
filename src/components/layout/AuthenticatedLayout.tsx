@@ -6,6 +6,7 @@ import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
+import { useUIStore } from '@/stores/ui.store'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -44,10 +45,12 @@ export function AuthenticatedLayout() {
     })
   }
 
+  const { openOmniSearch } = useUIStore()
+
   if (isMobile) {
     return (
       <>
-        <MobileAppShell />
+        <MobileAppShell onOpenSearch={openOmniSearch} />
         <OmniSearch />
         <QuickPayModal />
       </>

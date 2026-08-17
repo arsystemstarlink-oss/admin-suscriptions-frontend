@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, MessageSquare, CreditCard, Settings } from 'lucide-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { BrandMark } from '../brand/BrandMark';
 
 export default function MobileAppShell({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
@@ -22,15 +23,15 @@ export default function MobileAppShell({ children }: { children?: React.ReactNod
     { id: 'home', icon: Home, label: 'Inicio', path: '/' },
     { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
     { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats' },
-    { id: 'settings', icon: Settings, label: 'Ajustes', path: '/plans' }, // Apuntando a planes por ahora como ejemplo de ajustes
+    { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent]">
+    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent]">
       
       {/* Header Fijo con Glassmorphism */}
       <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-white/80 text-primary-900 border-b border-primary-100 dark:bg-primary-950/80 dark:text-primary-50 dark:border-primary-800 backdrop-blur-md transition-colors">
-        <h1 className="text-xl font-semibold tracking-tight">Cargat</h1>
+        <BrandMark size="md" hideSystemOnMobile className="text-primary-50" />
         <button 
           className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-100 text-primary-900 dark:bg-primary-800 dark:text-primary-50 active:scale-95 transition-transform touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-600"
           aria-label="Perfil de usuario"
@@ -57,7 +58,7 @@ export default function MobileAppShell({ children }: { children?: React.ReactNod
               <li key={item.id} className="flex-1 flex justify-center">
                 <button
                   onClick={() => navigate(item.path)}
-                  className="flex flex-col items-center justify-center w-full min-h-[44px] py-2 gap-1 active:scale-95 transition-transform touch-manipulation focus:outline-none"
+                  className="flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 active:scale-95 transition-transform touch-manipulation focus:outline-none"
                   aria-label={item.label}
                   aria-selected={isActive}
                   role="tab"

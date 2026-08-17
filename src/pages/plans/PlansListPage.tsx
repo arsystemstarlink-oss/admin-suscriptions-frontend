@@ -66,10 +66,6 @@ export function PlansListPage() {
       }}
       filters={
         <>
-          <FilterPill active={false} onClick={() => navigate('/subscriptions/plans/new')}>
-            <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Nuevo Plan
-          </FilterPill>
           <FilterPill active={activeFilter === 'true'} onClick={() => handleFilter(activeFilter === 'true' ? null : 'true')}>
             Activos
           </FilterPill>
@@ -77,6 +73,12 @@ export function PlansListPage() {
             Inactivos
           </FilterPill>
         </>
+      }
+      primaryAction={
+        <Button onClick={() => navigate('/subscriptions/plans/new')} className="h-10">
+          <Plus className="h-4 w-4 mr-1.5 shrink-0" />
+          Nuevo
+        </Button>
       }
       isLoading={isLoading}
       isEmpty={isEmpty}

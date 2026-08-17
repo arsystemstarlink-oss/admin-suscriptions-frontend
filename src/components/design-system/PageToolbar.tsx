@@ -11,11 +11,12 @@ interface PageToolbarProps {
     placeholder: string
   }
   filters?: ReactNode
+  primaryAction?: ReactNode
   actions?: ReactNode
   className?: string
 }
 
-export function PageToolbar({ title, description, searchProps, filters, actions, className }: PageToolbarProps) {
+export function PageToolbar({ title, description, searchProps, filters, primaryAction, actions, className }: PageToolbarProps) {
   return (
     <div className={cn('sticky top-0 z-20 flex flex-col bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md mb-2 px-4', className)}>
       <div className="flex items-center justify-between py-3">
@@ -37,11 +38,16 @@ export function PageToolbar({ title, description, searchProps, filters, actions,
       </div>
 
       <div className="pb-3">
-        <SearchInput
-          value={searchProps.value}
-          onChange={searchProps.onChange}
-          placeholder={searchProps.placeholder}
-        />
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <SearchInput
+              value={searchProps.value}
+              onChange={searchProps.onChange}
+              placeholder={searchProps.placeholder}
+            />
+          </div>
+          {primaryAction && <div className="shrink-0">{primaryAction}</div>}
+        </div>
         {filters && (
           <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar touch-pan-x">
             {filters}

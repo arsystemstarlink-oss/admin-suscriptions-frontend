@@ -44,20 +44,24 @@ export function ListPageLayout({
 }: ListPageLayoutProps) {
   return (
     <div className={cn('flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]', className)}>
-      {(title || description || primaryAction) && title && (
+      {(title || description) && title && (
         <PageHeader
           title={title}
           description={description}
-          actions={primaryAction}
         />
       )}
 
       <div className="sticky top-0 z-10 px-4 py-2 backdrop-blur-md">
-        <SearchInput
-          value={searchProps.value}
-          onChange={searchProps.onChange}
-          placeholder={searchProps.placeholder}
-        />
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <SearchInput
+              value={searchProps.value}
+              onChange={searchProps.onChange}
+              placeholder={searchProps.placeholder}
+            />
+          </div>
+          {primaryAction && <div className="shrink-0">{primaryAction}</div>}
+        </div>
         {filters && (
           <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar touch-pan-x">
             {filters}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
 import { Users, Phone, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { getClientFullName } from '@/lib/utils'
@@ -53,10 +54,6 @@ export function ClientsListPage() {
       }}
       filters={
         <>
-          <FilterPill active={false} onClick={() => navigate('/clients/new')}>
-            <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Nuevo Cliente
-          </FilterPill>
           <FilterPill active={subscriptionStatus === 'ACTIVE'} onClick={() => handleFilter('subscriptionStatus', subscriptionStatus === 'ACTIVE' ? null : 'ACTIVE')}>
             Activos
           </FilterPill>
@@ -67,6 +64,12 @@ export function ClientsListPage() {
             Con Deuda
           </FilterPill>
         </>
+      }
+      primaryAction={
+        <Button onClick={() => navigate('/subscriptions/clients/new')} className="h-10">
+          <Plus className="h-4 w-4 mr-1.5 shrink-0" />
+          Nuevo
+        </Button>
       }
       isLoading={isLoading}
       isEmpty={isEmpty}

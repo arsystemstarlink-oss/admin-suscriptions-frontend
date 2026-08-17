@@ -24,7 +24,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     }
 
     return (
-      <div className={cn('relative', className)}>
+      <div className="relative">
         <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-medium text-muted-foreground">
           {VE_COUNTRY_CODE}
         </span>
@@ -37,7 +37,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           data-1p-ignore
           data-lpignore="true"
           placeholder="416-100-56-06"
-          className="pl-12"
+          className={cn('pl-12', className)}
           value={formatVenezuelanPhone(nationalDigits)}
           onChange={handleChange}
           onBlur={onBlur}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
+import { Button } from '@/components/ui/button'
 import { Plus, Link2, RotateCcw, Box, Phone, Calendar } from 'lucide-react'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
@@ -128,6 +129,14 @@ export function SubscriptionsListPage() {
           onChange: handleSearch,
           placeholder: "Buscar kit, cliente, o teléfono..."
         }}
+        primaryAction={
+          <Button asChild className="h-10">
+            <Link to="/subscriptions/new">
+              <Plus className="h-4 w-4 mr-1.5 shrink-0" />
+              Nuevo
+            </Link>
+          </Button>
+        }
         filters={
           <>
             <FilterPill active={statusFilter === 'ACTIVE'} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
@@ -231,14 +240,6 @@ export function SubscriptionsListPage() {
         </div>
       )}
 
-      {/* Floating Action Button (FAB) Mobile */}
-      <Link 
-        to="/subscriptions/new"
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+70px)] right-4 flex items-center justify-center h-14 w-14 rounded-full bg-primary-800 text-white shadow-lg active:scale-95 transition-transform touch-manipulation z-40 dark:bg-primary-700"
-        aria-label="Nueva Suscripción"
-      >
-        <Plus size={24} strokeWidth={2.5} />
-      </Link>
     </div>
   )
 }

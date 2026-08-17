@@ -81,7 +81,7 @@ const EmailInput = React.forwardRef<HTMLInputElement, EmailInputProps>(
     const showSuggestions = open && suggestions.length > 0 && !isComplete
 
     return (
-      <div className={cn('relative', className)}>
+      <div className="relative">
         <Input
           {...props}
           ref={setRefs}
@@ -91,6 +91,7 @@ const EmailInput = React.forwardRef<HTMLInputElement, EmailInputProps>(
           data-1p-ignore
           data-lpignore="true"
           placeholder="nombre@correo.com"
+          className={className}
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}

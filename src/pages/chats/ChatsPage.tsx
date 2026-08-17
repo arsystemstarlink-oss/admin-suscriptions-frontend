@@ -167,7 +167,7 @@ export function ChatsPage() {
       <PageHeader
         title="Mensajes"
         description="Conversaciones de WhatsApp con clientes"
-        className={cn(isMobile && selectedPhone ? 'hidden' : 'block')}
+        className="block"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
@@ -278,7 +278,7 @@ export function ChatsPage() {
               <CardHeader className={cn(
                 "shrink-0",
                 isMobile && selectedPhone
-                  ? "sticky top-0 z-20 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md -mx-4 px-4 border-b border-primary-100 dark:border-primary-800"
+                  ? "sticky top-0 z-20 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md px-4 border-b border-primary-100 dark:border-primary-800"
                   : "border-b border-primary-100 dark:border-primary-800"
               )}>
                 <div className="flex items-center justify-between gap-3">
@@ -392,6 +392,11 @@ export function ChatsPage() {
               </div>
 
               <div className="border-t border-primary-100 dark:border-primary-800 p-3 sm:p-4 shrink-0">
+                <p className="text-xs mb-2 text-muted-foreground">
+                  {canSendFreeMessage
+                    ? 'Solo puedes enviar mensajes libres si el cliente escribió en las últimas 24h'
+                    : 'Este chat está bloqueado para mensajes libres porque el cliente no ha escrito en las últimas 24h. Usa un template.'}
+                </p>
                 <div className="flex gap-2">
                   <Input
                     placeholder={
@@ -415,11 +420,6 @@ export function ChatsPage() {
                     <Send className="h-4 w-4 shrink-0" />
                   </Button>
                 </div>
-                <p className="text-xs mt-2 text-muted-foreground">
-                  {canSendFreeMessage
-                    ? 'Solo puedes enviar mensajes libres si el cliente escribió en las últimas 24h'
-                    : 'Este chat está bloqueado para mensajes libres porque el cliente no ha escrito en las últimas 24h. Usa un template.'}
-                </p>
               </div>
             </>
           )}

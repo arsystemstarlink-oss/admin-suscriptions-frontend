@@ -80,7 +80,7 @@ export function ClientsListPage() {
         return (
           <ListCard
             key={client.id}
-            onClick={() => {}}
+            onClick={() => navigate(`/subscriptions/clients/${client.id}`)}
           >
             <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
               <div className="relative shrink-0">

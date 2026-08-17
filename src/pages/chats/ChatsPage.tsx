@@ -26,6 +26,7 @@ export function ChatsPage() {
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { markChatAsRead } = useUIStore()
+  const { readChatTimestamps } = useUIStore()
 
   const { data: clientsData, isLoading: clientsLoading } = useClients({ limit: 100 })
   const { data: messagesData, isLoading: messagesLoading } = useWhatsAppMessages(selectedPhone)
@@ -88,18 +89,28 @@ export function ChatsPage() {
   }, [clients, conversationSummaries])
 
   const latestConversationPhone = useMemo(() => {
-    let chosenPhone: string | null = clientPhones[0] || null
+    let chosenPhone: string | null = null
     let latestTimestamp = -Infinity
+    const twentyFourHoursInMs = 24 * 60 * 60 * 1000
 
     conversationSummaries.forEach((summary) => {
-      if (summary.latestTimestamp > latestTimestamp) {
+      const phone = summary.phone
+      if (!phone || !summary.latestMessage) return
+
+      const isInbound = summary.latestMessage.direction === 'INBOUND'
+      const messageAge = Date.now() - new Date(summary.latestMessage.createdAt).getTime()
+      const isRecent = messageAge <= twentyFourHoursInMs
+      const lastReadAt = readChatTimestamps[phone] ?? -Infinity
+      const isUnread = summary.latestTimestamp > lastReadAt
+
+      if (isInbound && isRecent && isUnread && summary.latestTimestamp > latestTimestamp) {
         latestTimestamp = summary.latestTimestamp
-        chosenPhone = summary.phone
+        chosenPhone = phone
       }
     })
 
     return chosenPhone
-  }, [clientPhones, conversationSummaries])
+  }, [conversationSummaries, readChatTimestamps])
 
   useEffect(() => {
     const checkMobile = () => {

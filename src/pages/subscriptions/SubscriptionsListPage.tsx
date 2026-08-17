@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
-import { Input } from '@/components/ui/input'
-import { Plus, Search, Link2, RotateCcw, Box, Phone, Calendar } from 'lucide-react'
+import { Plus, Link2, RotateCcw, Box, Phone, Calendar } from 'lucide-react'
+import { PageToolbar } from '@/components/design-system/PageToolbar'
+import { FilterPill } from '@/components/design-system/FilterPill'
+import { EmptyState } from '@/components/design-system/EmptyState'
 import { formatCurrency, SUBSCRIPTION_STATUS_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import type { SubscriptionWithDetails } from '@/types/api'
@@ -120,71 +122,42 @@ export function SubscriptionsListPage() {
   return (
     <div className="flex flex-col gap-4 pb-20">
       
-      {/* Search Header (Sticky en móvil) */}
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-400 shrink-0" />
-          <Input
-            placeholder="Buscar kit, cliente, o teléfono..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="pl-10 h-12 bg-white dark:bg-primary-900 border-primary-100 dark:border-primary-800 rounded-xl text-base shadow-sm focus-visible:ring-secondary-600"
-          />
-        </div>
-        
-        {/* Pills / Filters (Scrollable) */}
-        <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar touch-pan-x">
-          <button
-            onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors active:scale-95 touch-manipulation flex items-center gap-1.5 ${
-              statusFilter === 'ACTIVE'
-                ? 'bg-primary-800 text-white dark:bg-primary-700'
-                : 'bg-white text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700'
-            }`}
-          >
-            Activas
-          </button>
-          <button
-            onClick={() => handleFilter('status', statusFilter === 'SUSPENDED' ? null : 'SUSPENDED')}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors active:scale-95 touch-manipulation flex items-center gap-1.5 ${
-              statusFilter === 'SUSPENDED'
-                ? 'bg-primary-800 text-white dark:bg-primary-700'
-                : 'bg-white text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700'
-            }`}
-          >
-            Suspendidas
-          </button>
-          <button
-            onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}
-            className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors active:scale-95 touch-manipulation flex items-center gap-1.5 ${
-              hasOverdue === true
-                ? 'bg-red-600 text-white dark:bg-red-700'
-                : 'bg-white text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700'
-            }`}
-          >
-            Con Deuda
-          </button>
-          {hasActiveFilters && (
-            <button 
-              onClick={clearAllFilters} 
-              className="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-400 flex items-center gap-1 active:scale-95 touch-manipulation"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Limpiar
-            </button>
-          )}
-        </div>
-      </div>
+      <PageToolbar
+        title="Suscripciones"
+        description="Gestión de suscripciones de clientes"
+        searchProps={{
+          value: search,
+          onChange: handleSearch,
+          placeholder: "Buscar kit, cliente, o teléfono..."
+        }}
+        filters={
+          <>
+            <FilterPill active={statusFilter === 'ACTIVE'} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
+              Activas
+            </FilterPill>
+            <FilterPill active={statusFilter === 'SUSPENDED'} onClick={() => handleFilter('status', statusFilter === 'SUSPENDED' ? null : 'SUSPENDED')}>
+              Suspendidas
+            </FilterPill>
+            <FilterPill active={hasOverdue === true} variant="destructive" onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}>
+              Con Deuda
+            </FilterPill>
+            {hasActiveFilters && (
+              <FilterPill variant="secondary" onClick={clearAllFilters}>
+                <RotateCcw className="h-3.5 w-3.5" />
+                Limpiar
+              </FilterPill>
+            )}
+          </>
+        }
+      />
 
       {/* Lista de Suscripciones (List Tiles) */}
       {!data || visibleSubscriptions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Link2 className="h-16 w-16 text-primary-200 dark:text-primary-800 mb-4" />
-          <h3 className="text-lg font-medium text-primary-800 dark:text-primary-100">Sin suscripciones</h3>
-          <p className="text-sm text-primary-500 dark:text-primary-400 mt-1 max-w-[250px]">
-            No encontramos resultados. Modifica los filtros o añade una nueva.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Link2 className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+          title="Sin suscripciones"
+          description="No encontramos resultados. Modifica los filtros o añade una nueva."
+        />
       ) : (
         <div className="space-y-3">
           {visibleSubscriptions.map((sub) => (

@@ -28,4 +28,8 @@ export const qk = {
   whatsapp: {
     messages: (phone: string) => ['whatsapp', 'messages', phone] as const,
   },
+  admins: {
+    lists: ['admins', 'list'] as const,
+    detail: (id: string) => ['admins', id, 'detail'] as const,
+  },
 } as const

@@ -11,6 +11,8 @@ import { MessageSquare, Send, Users, ArrowLeft } from 'lucide-react'
 import { cn, getClientFullName } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/design-system/PageHeader'
+import { EmptyState } from '@/components/design-system/EmptyState'
 import { whatsappApi } from '@/api/whatsapp.api'
 import { qk } from '@/lib/query-keys'
 import type { WhatsAppMessage } from '@/types/api'
@@ -150,25 +152,19 @@ export function ChatsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4 md:gap-6">
-      <div className={cn('shrink-0', isMobile && selectedPhone ? 'hidden' : 'block')}>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Mensajes</h1>
-        <p className="text-muted-foreground mt-1 text-sm md:text-base">
-          Conversaciones de WhatsApp con clientes
-        </p>
-      </div>
+    <div className="flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]">
+      <PageHeader
+        title="Mensajes"
+        description="Conversaciones de WhatsApp con clientes"
+        className={cn(isMobile && selectedPhone ? 'hidden' : 'block')}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-        <Card
-          className={cn(
-            'md:col-span-1 flex flex-col overflow-hidden h-full min-h-0',
-            isMobile && selectedPhone ? 'hidden' : 'block'
-          )}
-        >
-          <CardHeader className="border-b border-border shrink-0">
+        <Card className="md:col-span-1 flex flex-col overflow-hidden h-full min-h-0 rounded-2xl border border-primary-100 dark:border-primary-800 bg-white dark:bg-primary-900/50 shadow-sm">
+          <CardHeader className="border-b border-primary-100 dark:border-primary-800 shrink-0">
             <h2 className="font-semibold text-foreground">Conversaciones</h2>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto p-0">
+          <CardContent className="flex-1 overflow-y-auto p-2">
             {clientsLoading ? (
               <div className="space-y-3 p-4">
                 {[...Array(5)].map((_, i) => (
@@ -176,36 +172,35 @@ export function ChatsPage() {
                 ))}
               </div>
             ) : clients.length === 0 ? (
-              <div className="text-center py-12 px-4">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 shrink-0" />
-                <p className="text-muted-foreground text-sm">No hay clientes disponibles</p>
-              </div>
+              <EmptyState
+                icon={<Users className="h-12 w-12 text-muted-foreground" />}
+                title="No hay clientes disponibles"
+              />
             ) : (
-              <div className="space-y-1 p-2">
+              <div className="space-y-1">
                 {sortedClients.map((client) => {
                   const summary = conversationSummaries.find((item) => item.phone === client.phone)
                   const latestMessage = summary?.latestMessage ?? null
                   const initial = getClientFullName(client).charAt(0).toUpperCase() || '?'
 
                   return (
-                    <Button
+                    <button
                       key={client.id}
                       type="button"
-                      variant="ghost"
                       onClick={() => {
-                      setSelectedPhone(client.phone)
-                      if (searchParams.get('phone')) {
-                        const next = new URLSearchParams(searchParams)
-                        next.delete('phone')
-                        setSearchParams(next, { replace: true })
-                      }
-                      markChatAsRead(client.phone, Date.now())
-                    }}
+                        setSelectedPhone(client.phone)
+                        if (searchParams.get('phone')) {
+                          const next = new URLSearchParams(searchParams)
+                          next.delete('phone')
+                          setSearchParams(next, { replace: true })
+                        }
+                        markChatAsRead(client.phone, Date.now())
+                      }}
                       className={cn(
-                        'h-auto w-full justify-start text-left p-3 rounded-xl border transition-all duration-200',
+                        'h-auto w-full justify-start text-left p-3 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm',
                         selectedPhone === client.phone
                           ? 'bg-sky-50/90 dark:bg-sky-950/40 border-primary/70 shadow-md shadow-primary/10 hover:bg-sky-50/90 dark:hover:bg-sky-950/40'
-                          : 'bg-card border-border hover:bg-muted/70'
+                          : 'bg-white dark:bg-primary-900/50 border-primary-100 dark:border-primary-800 hover:bg-muted/70'
                       )}
                     >
                       <div className="flex items-start gap-3">
@@ -248,7 +243,7 @@ export function ChatsPage() {
                           </div>
                         </div>
                       </div>
-                    </Button>
+                    </button>
                   )
                 })}
               </div>
@@ -256,27 +251,28 @@ export function ChatsPage() {
           </CardContent>
         </Card>
 
-        <Card
-          className={cn(
-            'md:col-span-2 flex flex-col overflow-hidden h-full min-h-0',
-            isMobile && !selectedPhone ? 'hidden' : 'block'
-          )}
-        >
+        <Card className={cn(
+          'md:col-span-2 flex flex-col overflow-hidden h-full min-h-0 rounded-3xl border border-primary-100 dark:border-primary-800 bg-white dark:bg-primary-900/50 shadow-sm',
+          isMobile && !selectedPhone ? 'hidden' : 'block'
+        )}>
           {!selectedPhone ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4 shrink-0" />
-                <p className="text-muted-foreground">Selecciona una conversación</p>
-              </div>
+              <EmptyState
+                icon={<MessageSquare className="h-16 w-16 text-muted-foreground" />}
+                title="Selecciona una conversación"
+              />
             </div>
           ) : (
             <>
-              <CardHeader className="border-b border-border shrink-0">
+              <CardHeader className={cn(
+                "shrink-0",
+                isMobile && selectedPhone
+                  ? "sticky top-0 z-20 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md -mx-4 px-4 border-b border-primary-100 dark:border-primary-800"
+                  : "border-b border-primary-100 dark:border-primary-800"
+              )}>
                 <div className="flex items-center justify-between gap-3">
                   {isMobile && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={() => {
                         setSelectedPhone(null)
                         if (searchParams.get('phone')) {
@@ -285,11 +281,11 @@ export function ChatsPage() {
                           setSearchParams(next, { replace: true })
                         }
                       }}
-                      className="md:hidden"
+                      className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm active:scale-95 transition-transform touch-manipulation"
                       aria-label="Volver a conversaciones"
                     >
-                      <ArrowLeft className="h-4 w-4 shrink-0" />
-                    </Button>
+                      <ArrowLeft className="h-5 w-5 shrink-0" />
+                    </button>
                   )}
                   <div>
                     <h2 className="font-semibold text-foreground">
@@ -311,10 +307,10 @@ export function ChatsPage() {
                     ))}
                   </div>
                 ) : sortedMessages.length === 0 ? (
-                  <div className="text-center py-12">
-                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4 shrink-0" />
-                    <p className="text-muted-foreground text-sm">No hay mensajes en esta conversación</p>
-                  </div>
+                  <EmptyState
+                    icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}
+                    title="No hay mensajes en esta conversación"
+                  />
                 ) : (
                   sortedMessages.map((msg) => {
                     const isOutbound = msg.direction === 'OUTBOUND'
@@ -384,7 +380,7 @@ export function ChatsPage() {
                 )}
               </div>
 
-              <div className="border-t border-border p-3 sm:p-4 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <div className="border-t border-primary-100 dark:border-primary-800 p-3 sm:p-4 shrink-0">
                 <div className="flex gap-2">
                   <Input
                     placeholder={

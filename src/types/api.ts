@@ -28,6 +28,50 @@ export interface User {
   lastLoginAt?: string
 }
 
+export interface Admin {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  role: 'admin'
+  createdAt: string
+  lastLoginAt?: string
+}
+
+export interface AdminsListResponse {
+  admins: Admin[]
+  pagination: Pagination
+}
+
+export interface AdminDetailResponse {
+  admin: Admin
+}
+
+export interface CreateAdminRequest {
+  name: string
+  email: string
+  password: string
+  phone?: string
+}
+
+export interface CreateAdminResponse {
+  message: string
+  user: User
+}
+
+export interface UpdateAdminRequest {
+  name?: string
+  email?: string
+  phone?: string
+  newPassword?: string
+}
+
+export interface UpdateAdminResponse {
+  admin: Admin
+  accessToken?: string
+  refreshToken?: string
+}
+
 export interface Client {
   id: string
   firstName: string

@@ -5,10 +5,12 @@ import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, ArrowLeft, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, canPayCurrentPeriod } from '@/lib/utils'
 import { DeleteClientModal } from '@/components/modals/DeleteClientModal'
+import { DetailNav } from '@/components/design-system/DetailNav'
+import { EmptyState } from '@/components/design-system/EmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
 
 export function ClientDetailPage() {
@@ -72,29 +74,21 @@ export function ClientDetailPage() {
   return (
     <div className="flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]">
       
-      {/* Sticky Top Nav Mobile */}
-      <div className="sticky top-0 z-20 flex items-center justify-between py-3 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md mb-2 -mx-4 px-4">
-        <Link 
-          to="/clients" 
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm active:scale-95 transition-transform touch-manipulation"
-        >
-          <ArrowLeft className="h-5 w-5 shrink-0" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <Link 
-            to={`/clients/${id}/edit`}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm active:scale-95 transition-transform touch-manipulation"
-          >
-            <Edit className="h-4 w-4 shrink-0" />
-          </Link>
-          <button 
-            onClick={() => setShowDeleteModal(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 shadow-sm active:scale-95 transition-transform touch-manipulation"
-          >
-            <Trash2 className="h-4 w-4 shrink-0" />
-          </button>
-        </div>
-      </div>
+      <DetailNav
+        backTo="/clients"
+        actions={
+          <>
+            <Button variant="outline" size="icon" asChild className="rounded-full bg-white dark:bg-primary-900 border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm">
+              <Link to={`/clients/${id}/edit`}>
+                <Edit className="h-4 w-4 shrink-0" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => setShowDeleteModal(true)} className="rounded-full bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 shadow-sm">
+              <Trash2 className="h-4 w-4 shrink-0" />
+            </Button>
+          </>
+        }
+      />
 
       {/* Perfil del Cliente */}
       <div className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-3xl p-5 shadow-sm">
@@ -151,10 +145,10 @@ export function ClientDetailPage() {
 
         <TabsContent value="subscriptions" className="mt-4 space-y-4">
           {subscriptions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center bg-white dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 rounded-2xl">
-              <Box className="h-12 w-12 text-primary-200 dark:text-primary-800 mb-3" />
-              <p className="text-primary-600 dark:text-primary-400 font-medium">Este cliente no tiene suscripciones</p>
-            </div>
+            <EmptyState
+              icon={<Box className="h-12 w-12 text-primary-200 dark:text-primary-800" />}
+              title="Este cliente no tiene suscripciones"
+            />
           ) : (
             <div className="space-y-3">
               {subscriptions.map((sub) => (

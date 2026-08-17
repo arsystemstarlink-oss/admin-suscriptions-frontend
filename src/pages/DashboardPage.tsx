@@ -4,18 +4,17 @@ import { QuickActions } from '@/components/dashboard/QuickActions'
 import { useDashboardSummary } from '@/hooks/useDashboard'
 import { formatCurrency } from '@/lib/constants'
 import { TrendingDown, DollarSign, AlertCircle } from 'lucide-react'
+import { PageHeader } from '@/components/design-system/PageHeader'
 
 export function DashboardPage() {
   const { data: summary } = useDashboardSummary()
 
   return (
     <div className="flex flex-col gap-6 pb-20">
-      
-      {/* Header Info */}
-      <div className="bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md pt-2 pb-2">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary-900 dark:text-primary-50">Panel</h1>
-        <p className="text-sm font-medium text-primary-500 dark:text-primary-400 mt-1">Centro de operaciones del sistema</p>
-      </div>
+      <PageHeader
+        title="Panel"
+        description="Centro de operaciones del sistema"
+      />
 
       <QuickActions />
 

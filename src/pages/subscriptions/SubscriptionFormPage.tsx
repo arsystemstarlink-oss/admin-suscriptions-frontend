@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Plus, Trash2, Box, CalendarDays, DollarSign, Clock, Users, Hash } from 'lucide-react'
+import { Plus, Trash2, Box, CalendarDays, DollarSign, Clock, Users, Hash } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
+import { DetailNav } from '@/components/design-system/DetailNav'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
@@ -127,19 +128,16 @@ export function SubscriptionFormPage() {
 
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-slate-50 dark:bg-primary-950 -mx-4 px-4 pt-2">
-      {/* Sticky Header Mobile */}
-      <div className="sticky top-0 z-20 flex items-center gap-3 py-3 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md mb-4 -mx-4 px-4">
-        <Link 
-          to="/subscriptions" 
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm active:scale-95 transition-transform touch-manipulation"
-        >
-          <ArrowLeft className="h-5 w-5 shrink-0" />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-primary-900 dark:text-primary-50">Nueva Suscripción</h1>
-          <p className="text-sm text-primary-500 dark:text-primary-400">Asociar cliente a plan</p>
-        </div>
-      </div>
+      <DetailNav
+        backTo="/subscriptions"
+        className="mb-4"
+        title={
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-primary-900 dark:text-primary-50">Nueva Suscripción</h1>
+            <p className="text-sm text-primary-500 dark:text-primary-400">Asociar cliente a plan</p>
+          </div>
+        }
+      />
 
       <form id="subscription-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (

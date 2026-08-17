@@ -25,6 +25,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['favicon.svg', 'favicon.ico', 'pwa-192.png', 'pwa-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'A|R SYSTEM',
@@ -42,16 +45,8 @@ export default defineConfig({
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
-      workbox: {
-        navigateFallback: 'index.html',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
-            options: { cacheName: 'html-cache' },
-          },
-        ],
       },
     }),
     spaFallback(),

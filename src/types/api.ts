@@ -458,6 +458,8 @@ export type ErrorCode =
   | 'INVALID_PERIOD_RANGE'
   | 'INVALID_AMOUNT'
   | 'OVERLAPPING_PERIODS'
+  | 'VAPID_NOT_CONFIGURED'
+  | 'PUSH_SUBSCRIPTION_NOT_FOUND'
 
 export interface ApiError {
   code: ErrorCode
@@ -497,4 +499,28 @@ export interface SendMessageResponse {
 export interface MessagesByPhoneResponse {
   messages: WhatsAppMessage[]
   total: number
+}
+
+export interface PushSubscriptionInfo {
+  id: string
+  endpoint: string
+  userAgent: string
+  createdAt: string
+}
+
+export interface PushSubscriptionsListResponse {
+  subscriptions: PushSubscriptionInfo[]
+}
+
+export interface RegisterPushSubscriptionResponse {
+  subscription: PushSubscriptionInfo
+}
+
+export interface VapidPublicKeyResponse {
+  vapidPublicKey: string
+}
+
+export interface SendTestPushResponse {
+  message: string
+  sent: number
 }

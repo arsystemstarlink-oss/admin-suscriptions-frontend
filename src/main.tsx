@@ -2,9 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from 'next-themes'
+import { registerSW } from 'virtual:pwa-register'
 import App from './App.tsx'
 import { useAuthStore } from '@/stores/auth.store'
 import './index.css'
+
+registerSW({ immediate: true })
 
 useAuthStore.getState().loadFromStorage()
 

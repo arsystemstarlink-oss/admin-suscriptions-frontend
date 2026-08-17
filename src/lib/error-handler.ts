@@ -190,6 +190,16 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'Los períodos se superponen',
   },
+  VAPID_NOT_CONFIGURED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Las notificaciones push no están configuradas en el servidor.',
+  },
+  PUSH_SUBSCRIPTION_NOT_FOUND: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'La suscripción push no existe en el servidor.',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {

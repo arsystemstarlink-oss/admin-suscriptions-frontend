@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { ClipboardList, User, UserPlus } from 'lucide-react'
+import { ClipboardList, User, UserPlus, Bell } from 'lucide-react'
 
 const tabs: PageSubNavTab[] = [
   {
@@ -17,6 +17,14 @@ const tabs: PageSubNavTab[] = [
     label: 'Admins',
     title: 'Admins',
     subtitle: 'Creación de administradores adicionales',
+    end: false,
+  },
+  {
+    to: '/config/notifications',
+    icon: Bell,
+    label: 'Notificaciones',
+    title: 'Notificaciones',
+    subtitle: 'Recibe alertas en tu dispositivo',
     end: false,
   },
   {

@@ -16,7 +16,7 @@ export default function MobileAppShell({ children, onOpenSearch }: { children?: 
     if (path === '/' || path === '/dashboard') return 'home';
     if (path.startsWith('/subscriptions')) return 'subs';
     if (path.startsWith('/chats')) return 'chats';
-    if (path.startsWith('/settings') || path.startsWith('/plans')) return 'settings';
+    if (path.startsWith('/config') || path.startsWith('/settings') || path.startsWith('/plans')) return 'settings';
     return 'home';
   };
 

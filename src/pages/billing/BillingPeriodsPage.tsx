@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, FileText, AlertTriangle, Clock, CheckCircle2, CreditCard, Banknote, Calendar, Zap } from 'lucide-react'
 import { formatCurrency, formatDate, PAYMENT_METHOD_LABELS } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, hasOlderUnpaidPeriod } from '@/lib/utils'
 import type { BillingPeriodWithDetails } from '@/types/api'
 
 type ViewMode = 'action' | 'paid' | 'all'
@@ -219,6 +219,7 @@ export function BillingPeriodsPage({ view: viewMode }: BillingPeriodsPageProps) 
   const renderPeriodCard = (period: BillingPeriodWithDetails) => {
     const urgency = getUrgencyLevel(period)
     const urgencyColor = getUrgencyColor(urgency)
+    const blocked = hasOlderUnpaidPeriod(period, allData?.periods ?? [])
     
     return (
       <div
@@ -282,6 +283,8 @@ export function BillingPeriodsPage({ view: viewMode }: BillingPeriodsPageProps) 
               size="sm" 
               className="gap-2 shadow-md" 
               onClick={() => handlePay(period)}
+              disabled={blocked}
+              title={blocked ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
             >
               <Zap className="h-4 w-4 shrink-0" />
               <span>Cobrar</span>

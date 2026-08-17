@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Search, DollarSign, User } from 'lucide-react'
 import { formatCurrency, SUBSCRIPTION_STATUS_COLORS, SUBSCRIPTION_STATUS_LABELS, CLIENT_SUBSCRIPTION_STATUS_COLORS, CLIENT_SUBSCRIPTION_STATUS_LABELS } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, canPayCurrentPeriod } from '@/lib/utils'
 import type { ClientWithStats, SubscriptionWithDetails } from '@/types/api'
 
 export function OmniSearch() {
@@ -141,7 +141,7 @@ export function OmniSearch() {
                     </div>
                   </div>
                   {sub.hasDebt && sub.currentPeriod && sub.currentPeriod.status !== 'PAID' && (
-                    <Button size="sm" className="gap-1" onClick={() => handleOpenQuickPay(sub)}>
+                    <Button size="sm" className="gap-1" onClick={() => handleOpenQuickPay(sub)} disabled={!canPayCurrentPeriod(sub)}>
                       <DollarSign className="h-3 w-3 shrink-0" />
                       Cobrar
                     </Button>

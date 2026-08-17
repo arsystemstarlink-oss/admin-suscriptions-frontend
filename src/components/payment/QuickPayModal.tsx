@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUIStore } from '@/stores/ui.store'
-import { useRegisterPayment } from '@/hooks/useBilling'
+import { useRegisterPayment, useBillingPeriods } from '@/hooks/useBilling'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -40,9 +40,9 @@ import {
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
 } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, hasOlderUnpaidPeriod } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
-import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft } from 'lucide-react'
+import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle } from 'lucide-react'
 
 const createPaymentSchema = (minDate: string) =>
   z.object({
@@ -77,6 +77,14 @@ export function QuickPayModal() {
 
   const period = quickPayContext?.period
   const registerPayment = useRegisterPayment(period?.id || '')
+  const { data: subscriptionPeriods } = useBillingPeriods(
+    { subscriptionId: period?.subscriptionId },
+    !!period?.subscriptionId
+  )
+
+  const blocked = period && subscriptionPeriods
+    ? hasOlderUnpaidPeriod(period, subscriptionPeriods.periods)
+    : false
 
   // Validar que la fecha de pago no sea anterior al inicio del período
   const minPaidAt = period?.startDate ? period.startDate.split('T')[0] : ''
@@ -125,6 +133,15 @@ export function QuickPayModal() {
   const FormContent = () => (
     <form id="quick-pay-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5 px-4 md:px-0">
       
+      {blocked && (
+        <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-300">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+          <p className="text-sm font-medium">
+            Existen períodos anteriores pendientes o vencidos. Debes cobrarlos primero antes de registrar este pago.
+          </p>
+        </div>
+      )}
+
       {/* Resumen del Período */}
       <div className="p-4 bg-primary-50 dark:bg-primary-900/40 rounded-xl border border-primary-100 dark:border-primary-800/60 space-y-3">
         <div className="flex items-center justify-between">
@@ -257,7 +274,7 @@ export function QuickPayModal() {
                   type="submit" 
                   form="quick-pay-form" 
                   className="w-full h-14 text-base font-semibold bg-primary-800 hover:bg-primary-900 text-white dark:bg-primary-700 dark:hover:bg-primary-600 shadow-md active:scale-95 transition-transform touch-manipulation" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || blocked}
                 >
                   {isSubmitting ? (
                     'Procesando...'
@@ -303,7 +320,7 @@ export function QuickPayModal() {
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button type="submit" form="quick-pay-form" className="gap-2" disabled={isSubmitting}>
+              <Button type="submit" form="quick-pay-form" className="gap-2" disabled={isSubmitting || blocked}>
                 {isSubmitting ? (
                   'Procesando...'
                 ) : (

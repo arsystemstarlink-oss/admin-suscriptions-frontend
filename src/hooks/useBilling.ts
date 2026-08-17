@@ -15,10 +15,11 @@ interface UseBillingPeriodsParams {
   offset?: number
 }
 
-export function useBillingPeriods(params?: UseBillingPeriodsParams) {
+export function useBillingPeriods(params?: UseBillingPeriodsParams, enabled = true) {
   return useQuery({
     queryKey: [...qk.billing.lists, params],
     queryFn: () => billingApi.list(params),
+    enabled,
   })
 }
 
@@ -63,11 +64,8 @@ export function useRegisterPayment(periodId: string) {
     onSuccess: (response) => {
       qc.invalidateQueries({ queryKey: qk.billing.lists })
       qc.invalidateQueries({ queryKey: qk.billing.detail(periodId) })
-
-      if (response.subscription.reactivated) {
-        qc.invalidateQueries({ queryKey: qk.subscriptions.detail(response.subscription.id) })
-        qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
-      }
+      qc.invalidateQueries({ queryKey: qk.subscriptions.detail(response.subscription.id) })
+      qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
 
       qc.invalidateQueries({ queryKey: qk.clients.lists })
       qc.invalidateQueries({ queryKey: qk.dashboard.summary })
@@ -108,9 +106,10 @@ export function useUpdateBillingPeriod() {
   return useMutation({
     mutationFn: ({ periodId, data }: { periodId: string; data: UpdateBillingPeriodRequest }) =>
       billingApi.updatePeriod(periodId, data),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: qk.billing.lists })
       qc.invalidateQueries({ queryKey: qk.billing.detail(variables.periodId) })
+      qc.invalidateQueries({ queryKey: qk.subscriptions.detail(data.subscription.id) })
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       toast.success('Datos de pago actualizados')
     },

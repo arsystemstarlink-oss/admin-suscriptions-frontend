@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Edit, ArrowLeft, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, canPayCurrentPeriod } from '@/lib/utils'
 import { DeleteClientModal } from '@/components/modals/DeleteClientModal'
 import type { SubscriptionWithDetails } from '@/types/api'
 
@@ -215,6 +215,8 @@ export function ClientDetailPage() {
                       <Button
                         className="flex-1 h-11 text-sm font-semibold bg-primary-800 hover:bg-primary-900 text-white dark:bg-primary-700 active:scale-95 touch-manipulation"
                         onClick={() => handlePaySubscription(sub)}
+                        disabled={!canPayCurrentPeriod(sub)}
+                        title={!canPayCurrentPeriod(sub) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
                       >
                         <DollarSign className="h-4 w-4 mr-1 shrink-0" />
                         Cobrar

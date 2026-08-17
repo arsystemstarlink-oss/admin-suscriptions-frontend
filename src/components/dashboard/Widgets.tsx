@@ -21,12 +21,14 @@ export function TopDebtorsWidget() {
     setLoadingId(clientId)
     try {
       const result = await queryClient.fetchQuery({
-        queryKey: [...qk.billing.lists, { clientId, status: 'OVERDUE', limit: 1 }],
-        queryFn: () => billingApi.list({ clientId, status: 'OVERDUE', limit: 1 }),
+        queryKey: [...qk.billing.lists, { clientId, status: 'OVERDUE', limit: 200 }],
+        queryFn: () => billingApi.list({ clientId, status: 'OVERDUE', limit: 200 }),
         staleTime: 0,
       })
       if (result.periods.length > 0) {
-        const period = result.periods[0]
+        const period = result.periods.reduce((oldest, p) =>
+          new Date(p.startDate).getTime() < new Date(oldest.startDate).getTime() ? p : oldest
+        )
         openQuickPay({ period })
       } else {
         toast.info('No hay períodos vencidos para este cliente')

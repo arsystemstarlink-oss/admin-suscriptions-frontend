@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { ArrowLeft, AlertTriangle, Edit, Play, Pause, Plus, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, hasOlderUnpaidPeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails } from '@/types/api'
 import { toast } from 'sonner'
@@ -290,6 +290,8 @@ export function SubscriptionDetailPage() {
           <Button 
             className="w-full sm:w-auto shrink-0 shadow-sm bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700 dark:hover:bg-amber-600 h-11" 
             onClick={() => handlePayPeriod(subscription.currentPeriod!)}
+            disabled={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods)}
+            title={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
           >
             <DollarSign className="h-4 w-4 mr-1 shrink-0" />
             Cobrar Ahora
@@ -410,9 +412,11 @@ export function SubscriptionDetailPage() {
                         size="sm"
                         className="h-10 px-4 bg-primary-800 text-white dark:bg-primary-700 shadow-sm active:scale-95 touch-manipulation font-semibold"
                         onClick={() => handlePayPeriod(period)}
+                        disabled={hasOlderUnpaidPeriod(period, billingPeriods)}
+                        title={hasOlderUnpaidPeriod(period, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
                       >
                         <DollarSign className="h-4 w-4 mr-1 shrink-0" />
-                        Cobrar
+                        Pagar
                       </Button>
                     ) : (
                       <Button

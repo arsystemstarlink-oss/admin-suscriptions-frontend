@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { useWhatsAppMessages, useSendMessage } from '@/hooks/useWhatsApp'
+import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations } from '@/hooks/useWhatsApp'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +31,7 @@ export function ChatsPage() {
 
   const { data: clientsData, isLoading: clientsLoading } = useClients({ limit: 100 })
   const { data: messagesData, isLoading: messagesLoading } = useWhatsAppMessages(selectedPhone)
+  const { data: conversationsData } = useWhatsAppConversations()
   const sendMessageMutation = useSendMessage()
 
   const clients = clientsData?.clients || []
@@ -48,6 +49,11 @@ export function ChatsPage() {
   const clientPhones = useMemo(
     () => clients.map((client) => client.phone).filter(Boolean),
     [clients]
+  )
+
+  const unknownConversations = useMemo(
+    () => (conversationsData?.conversations || []).filter((conv) => !clientPhones.includes(conv.phone)),
+    [conversationsData, clientPhones]
   )
 
   const conversationQueries = useQueries({
@@ -81,37 +87,68 @@ export function ChatsPage() {
     })
   }, [clientPhones, conversationQueries])
 
-  const sortedClients = useMemo(() => {
-    return [...clients].sort((a, b) => {
-      const aSummary = conversationSummaries.find((item) => item.phone === a.phone)
-      const bSummary = conversationSummaries.find((item) => item.phone === b.phone)
-      return (bSummary?.latestTimestamp ?? -Infinity) - (aSummary?.latestTimestamp ?? -Infinity)
+  type ConversationItem = {
+    key: string
+    phone: string
+    name: string
+    hasDebt: boolean
+    latestMessage: WhatsAppMessage | null
+    latestTimestamp: number
+  }
+
+  const conversationItems = useMemo<ConversationItem[]>(() => {
+    const items: ConversationItem[] = clients.map((client) => {
+      const summary = conversationSummaries.find((item) => item.phone === client.phone)
+
+      return {
+        key: client.id,
+        phone: client.phone,
+        name: getClientFullName(client),
+        hasDebt: !!client.hasDebt,
+        latestMessage: summary?.latestMessage ?? null,
+        latestTimestamp: summary?.latestTimestamp ?? -Infinity,
+      }
     })
-  }, [clients, conversationSummaries])
+
+    unknownConversations.forEach((conv) => {
+      const client = conv.clientId ? clients.find((c) => c.id === conv.clientId) : undefined
+
+      items.push({
+        key: `conv:${conv.phone}`,
+        phone: conv.phone,
+        name: client ? getClientFullName(client) : conv.profileName || conv.phone,
+        hasDebt: !!client?.hasDebt,
+        latestMessage: conv.lastMessage,
+        latestTimestamp: new Date(conv.lastMessage.createdAt).getTime(),
+      })
+    })
+
+    return items.sort((a, b) => b.latestTimestamp - a.latestTimestamp)
+  }, [clients, conversationSummaries, unknownConversations])
 
   const latestConversationPhone = useMemo(() => {
     let chosenPhone: string | null = null
     let latestTimestamp = -Infinity
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000
 
-    conversationSummaries.forEach((summary) => {
-      const phone = summary.phone
-      if (!phone || !summary.latestMessage) return
+    conversationItems.forEach((item) => {
+      const phone = item.phone
+      if (!phone || !item.latestMessage) return
 
-      const isInbound = summary.latestMessage.direction === 'INBOUND'
-      const messageAge = Date.now() - new Date(summary.latestMessage.createdAt).getTime()
+      const isInbound = item.latestMessage.direction === 'INBOUND'
+      const messageAge = Date.now() - new Date(item.latestMessage.createdAt).getTime()
       const isRecent = messageAge <= twentyFourHoursInMs
       const lastReadAt = readChatTimestamps[phone] ?? -Infinity
-      const isUnread = summary.latestTimestamp > lastReadAt
+      const isUnread = item.latestTimestamp > lastReadAt
 
-      if (isInbound && isRecent && isUnread && summary.latestTimestamp > latestTimestamp) {
-        latestTimestamp = summary.latestTimestamp
+      if (isInbound && isRecent && isUnread && item.latestTimestamp > latestTimestamp) {
+        latestTimestamp = item.latestTimestamp
         chosenPhone = phone
       }
     })
 
     return chosenPhone
-  }, [conversationSummaries, readChatTimestamps])
+  }, [conversationItems, readChatTimestamps])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -181,7 +218,9 @@ export function ChatsPage() {
   }
 
   const selectedClient = clients.find((c) => c.phone === selectedPhone)
-  const selectedClientName = selectedClient ? getClientFullName(selectedClient) : selectedPhone
+  const selectedClientName = selectedClient
+    ? getClientFullName(selectedClient)
+    : conversationItems.find((item) => item.phone === selectedPhone)?.name || selectedPhone
 
   const openConversation = (phone: string) => {
     setSelectedPhone(phone)
@@ -219,36 +258,35 @@ export function ChatsPage() {
             <h2 className="font-semibold text-foreground">Conversaciones</h2>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-2">
-            {clientsLoading ? (
+            {clientsLoading && conversationItems.length === 0 ? (
               <div className="space-y-3 p-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="h-16 bg-muted animate-pulse rounded" />
                 ))}
               </div>
-            ) : clients.length === 0 ? (
+            ) : conversationItems.length === 0 ? (
               <EmptyState
                 icon={<Users className="h-12 w-12 text-muted-foreground" />}
-                title="No hay clientes disponibles"
+                title="No hay conversaciones disponibles"
               />
             ) : (
               <div className="space-y-1">
-                {sortedClients.map((client) => {
-                  const summary = conversationSummaries.find((item) => item.phone === client.phone)
-                  const latestMessage = summary?.latestMessage ?? null
-                  const initial = getClientFullName(client).charAt(0).toUpperCase() || '?'
+                {conversationItems.map((item) => {
+                  const latestMessage = item.latestMessage
+                  const initial = item.name.charAt(0).toUpperCase() || '?'
                   const isUnread =
                     !!latestMessage &&
                     latestMessage.direction === 'INBOUND' &&
-                    summary!.latestTimestamp > (readChatTimestamps[client.phone] ?? -Infinity)
+                    item.latestTimestamp > (readChatTimestamps[item.phone] ?? -Infinity)
 
                   return (
                     <button
-                      key={client.id}
+                      key={item.key}
                       type="button"
-                      onClick={() => openConversation(client.phone)}
+                      onClick={() => openConversation(item.phone)}
                       className={cn(
                         'h-auto w-full justify-start text-left p-3 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm',
-                        selectedPhone === client.phone
+                        selectedPhone === item.phone
                           ? 'bg-sky-50/90 dark:bg-sky-950/40 border-primary/70 shadow-md shadow-primary/10 hover:bg-sky-50/90 dark:hover:bg-sky-950/40'
                           : 'bg-white dark:bg-primary-900/50 border-primary-100 dark:border-primary-800 hover:bg-muted/70'
                       )}
@@ -261,7 +299,7 @@ export function ChatsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex min-w-0 items-center gap-2">
-                              <p className="font-medium text-foreground truncate">{getClientFullName(client)}</p>
+                              <p className="font-medium text-foreground truncate">{item.name}</p>
                               {isUnread && (
                                 <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
                               )}
@@ -276,7 +314,7 @@ export function ChatsPage() {
 
                           <div className="mt-1 flex items-center justify-between gap-2">
                             <p className="text-xs text-muted-foreground truncate">
-                              {latestMessage?.body || client.phone}
+                              {latestMessage?.body || item.phone}
                             </p>
                             <div className="flex items-center gap-1.5">
                               {isUnread && (
@@ -284,7 +322,7 @@ export function ChatsPage() {
                                   Nuevo
                                 </span>
                               )}
-                              {client.hasDebt && (
+                              {item.hasDebt && (
                                 <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
                                   Deuda
                                 </Badge>

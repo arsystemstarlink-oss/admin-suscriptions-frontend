@@ -11,6 +11,13 @@ export function useWhatsAppMessages(phone: string | null) {
   })
 }
 
+export function useWhatsAppConversations() {
+  return useQuery({
+    queryKey: qk.whatsapp.conversations,
+    queryFn: () => whatsappApi.getConversations(),
+  })
+}
+
 export function useSendMessage() {
   const qc = useQueryClient()
 
@@ -18,6 +25,7 @@ export function useSendMessage() {
     mutationFn: (data: SendMessageRequest) => whatsappApi.sendMessage(data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.to) })
+      qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
     },
   })
 }

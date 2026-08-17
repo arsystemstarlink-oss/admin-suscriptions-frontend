@@ -501,6 +501,19 @@ export interface MessagesByPhoneResponse {
   total: number
 }
 
+export interface WhatsAppConversation {
+  phone: string
+  clientId?: string
+  profileName?: string
+  lastMessage: WhatsAppMessage
+  messageCount: number
+}
+
+export interface ConversationsResponse {
+  conversations: WhatsAppConversation[]
+  total: number
+}
+
 export interface PushSubscriptionInfo {
   id: string
   endpoint: string

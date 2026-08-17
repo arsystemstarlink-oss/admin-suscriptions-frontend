@@ -502,6 +502,7 @@ interface DebtorItem {
 | Metodo | Path | Auth | Descripcion |
 |--------|------|------|-------------|
 | POST | /api/whatsapp/send | Bearer admin | Enviar mensaje (texto o template) |
+| GET | /api/whatsapp/conversations | Bearer admin | Conversaciones agrupadas por teléfono (incluye números sin cliente) |
 | GET | /api/whatsapp/messages/:phone | Bearer admin | Historial de mensajes por teléfono |
 | POST | /communications/webhook | Firma Twilio | Webhook para recibir mensajes de Twilio |
 

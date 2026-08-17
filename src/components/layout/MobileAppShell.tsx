@@ -30,7 +30,7 @@ export default function MobileAppShell({ children, onOpenSearch }: { children?: 
   ];
 
   return (
-    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent]">
+    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),1rem)+3.25rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
       
       {/* Header Fijo con Glassmorphism */}
       <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 backdrop-blur-md transition-colors">

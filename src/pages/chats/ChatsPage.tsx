@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
@@ -25,6 +25,7 @@ export function ChatsPage() {
   const [message, setMessage] = useState('')
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const { markChatAsRead } = useUIStore()
   const { readChatTimestamps } = useUIStore()
 
@@ -136,9 +137,26 @@ export function ChatsPage() {
     }
   }, [selectedPhone, markChatAsRead])
 
+  useEffect(() => {
+    if (!isMobile || !selectedPhone) return
+    const main = document.querySelector('main')
+    const previousOverflow = main instanceof HTMLElement ? main.style.overflow : ''
+    if (main instanceof HTMLElement) main.style.overflow = 'hidden'
+    return () => {
+      if (main instanceof HTMLElement) main.style.overflow = previousOverflow
+    }
+  }, [isMobile, selectedPhone])
+
   const sortedMessages = [...messages].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   )
+
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
+  }, [selectedPhone, sortedMessages.length, messagesLoading])
 
   const handleSendMessage = async () => {
     if (!selectedPhone || !message.trim()) return
@@ -162,17 +180,42 @@ export function ChatsPage() {
     }
   }
 
+  const selectedClient = clients.find((c) => c.phone === selectedPhone)
+  const selectedClientName = selectedClient ? getClientFullName(selectedClient) : selectedPhone
+
+  const openConversation = (phone: string) => {
+    setSelectedPhone(phone)
+    if (searchParams.get('phone')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('phone')
+      setSearchParams(next, { replace: true })
+    }
+    markChatAsRead(phone, Date.now())
+  }
+
+  const closeConversation = () => {
+    setSelectedPhone(null)
+    if (searchParams.get('phone')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('phone')
+      setSearchParams(next, { replace: true })
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]">
+    <div className="flex flex-col gap-4 md:min-h-0 md:h-[calc(100vh-8rem)]">
       <PageHeader
         title="Mensajes"
         description="Conversaciones de WhatsApp con clientes"
-        className="block"
+        className={cn('block', isMobile && selectedPhone && 'hidden')}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-        <Card className="md:col-span-1 flex flex-col overflow-hidden h-full min-h-0 rounded-2xl border border-primary-100 dark:border-primary-800 bg-white dark:bg-primary-900/50 shadow-sm">
-          <CardHeader className="border-b border-primary-100 dark:border-primary-800 shrink-0">
+      <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
+        <Card className={cn(
+          'md:col-span-1 flex flex-col overflow-hidden min-h-0 rounded-2xl border border-primary-100 dark:border-primary-800 bg-white dark:bg-primary-900/50 shadow-sm',
+          isMobile && selectedPhone && 'hidden'
+        )}>
+          <CardHeader className="border-b border-primary-100 dark:border-primary-800 shrink-0 py-4 px-4">
             <h2 className="font-semibold text-foreground">Conversaciones</h2>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-2">
@@ -193,20 +236,16 @@ export function ChatsPage() {
                   const summary = conversationSummaries.find((item) => item.phone === client.phone)
                   const latestMessage = summary?.latestMessage ?? null
                   const initial = getClientFullName(client).charAt(0).toUpperCase() || '?'
+                  const isUnread =
+                    !!latestMessage &&
+                    latestMessage.direction === 'INBOUND' &&
+                    summary!.latestTimestamp > (readChatTimestamps[client.phone] ?? -Infinity)
 
                   return (
                     <button
                       key={client.id}
                       type="button"
-                      onClick={() => {
-                        setSelectedPhone(client.phone)
-                        if (searchParams.get('phone')) {
-                          const next = new URLSearchParams(searchParams)
-                          next.delete('phone')
-                          setSearchParams(next, { replace: true })
-                        }
-                        markChatAsRead(client.phone, Date.now())
-                      }}
+                      onClick={() => openConversation(client.phone)}
                       className={cn(
                         'h-auto w-full justify-start text-left p-3 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm',
                         selectedPhone === client.phone
@@ -223,7 +262,7 @@ export function ChatsPage() {
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex min-w-0 items-center gap-2">
                               <p className="font-medium text-foreground truncate">{getClientFullName(client)}</p>
-                              {latestMessage?.direction === 'INBOUND' && (
+                              {isUnread && (
                                 <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
                               )}
                             </div>
@@ -240,8 +279,8 @@ export function ChatsPage() {
                               {latestMessage?.body || client.phone}
                             </p>
                             <div className="flex items-center gap-1.5">
-                              {latestMessage?.direction === 'INBOUND' && (
-                                <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                              {isUnread && (
+                                <span className="rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 px-1.5 py-0.5 text-xs font-medium">
                                   Nuevo
                                 </span>
                               )}
@@ -262,168 +301,161 @@ export function ChatsPage() {
           </CardContent>
         </Card>
 
-        <Card className={cn(
-          'md:col-span-2 flex flex-col overflow-hidden h-full min-h-0 rounded-3xl border border-primary-100 dark:border-primary-800 bg-white dark:bg-primary-900/50 shadow-sm',
-          isMobile && !selectedPhone ? 'hidden' : 'block'
-        )}>
-          {!selectedPhone ? (
-            <div className="flex-1 flex items-center justify-center">
-              <EmptyState
-                icon={<MessageSquare className="h-16 w-16 text-muted-foreground" />}
-                title="Selecciona una conversación"
-              />
-            </div>
-          ) : (
-            <>
-              <CardHeader className={cn(
-                "shrink-0",
-                isMobile && selectedPhone
-                  ? "sticky top-0 z-20 bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md px-4 border-b border-primary-100 dark:border-primary-800"
-                  : "border-b border-primary-100 dark:border-primary-800"
-              )}>
-                <div className="flex items-center justify-between gap-3">
-                  {isMobile && (
-                    <button
-                      onClick={() => {
-                        setSelectedPhone(null)
-                        if (searchParams.get('phone')) {
-                          const next = new URLSearchParams(searchParams)
-                          next.delete('phone')
-                          setSearchParams(next, { replace: true })
-                        }
-                      }}
-                      className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm active:scale-95 transition-transform touch-manipulation"
-                      aria-label="Volver a conversaciones"
-                    >
-                      <ArrowLeft className="h-5 w-5 shrink-0" />
-                    </button>
-                  )}
-                  <div>
-                    <h2 className="font-semibold text-foreground">
-                      {(() => {
-                        const selectedClient = clients.find((c) => c.phone === selectedPhone)
-                        return selectedClient ? getClientFullName(selectedClient) : selectedPhone
-                      })()}
+        <div
+          className={cn(
+            'md:col-span-2 min-h-0',
+            isMobile
+              ? cn(
+                  'fixed inset-x-0 z-40 flex flex-col bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 transition-transform duration-300 ease-out',
+                  'top-[var(--mobile-header-h)] bottom-[var(--mobile-nav-h)] h-[calc(100dvh-var(--mobile-header-h)-var(--mobile-nav-h))]',
+                  selectedPhone ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
+                )
+              : 'flex'
+          )}
+          aria-hidden={isMobile && !selectedPhone}
+        >
+          <Card className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-none border-0 bg-white text-primary-800 shadow-none dark:bg-primary-950 dark:text-primary-50 md:rounded-3xl md:border md:border-primary-100 md:bg-white md:shadow-sm dark:md:border-primary-800 dark:md:bg-primary-900/50">
+            {!selectedPhone ? (
+              <div className="hidden flex-1 items-center justify-center md:flex">
+                <EmptyState
+                  icon={<MessageSquare className="h-16 w-16 text-muted-foreground" />}
+                  title="Selecciona una conversación"
+                />
+              </div>
+            ) : (
+              <>
+                <header className="flex h-14 shrink-0 items-center gap-3 border-b border-primary-100 bg-white px-3 text-primary-800 dark:border-primary-800 dark:bg-primary-900 dark:text-primary-50 md:h-16 md:px-5">
+                  <button
+                    type="button"
+                    onClick={closeConversation}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-800 dark:bg-primary-800 dark:text-primary-50 active:scale-95 transition-transform touch-manipulation md:hidden"
+                    aria-label="Volver a conversaciones"
+                  >
+                    <ArrowLeft className="h-5 w-5 shrink-0" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-base font-semibold leading-tight text-primary-900 dark:text-primary-50">
+                      {selectedClientName}
                     </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">{selectedPhone}</p>
+                    <p className="truncate text-xs text-primary-500 dark:text-primary-400">{selectedPhone}</p>
                   </div>
-                </div>
-              </CardHeader>
+                </header>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messagesLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-12 bg-muted animate-pulse rounded" />
-                    ))}
-                  </div>
-                ) : sortedMessages.length === 0 ? (
-                  <EmptyState
-                    icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}
-                    title="No hay mensajes en esta conversación"
-                  />
-                ) : (
-                  sortedMessages.map((msg) => {
-                    const isOutbound = msg.direction === 'OUTBOUND'
+                <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 md:px-4 md:py-4 space-y-3">
+                  {messagesLoading ? (
+                    <div className="space-y-3">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="h-12 bg-muted animate-pulse rounded" />
+                      ))}
+                    </div>
+                  ) : sortedMessages.length === 0 ? (
+                    <EmptyState
+                      icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}
+                      title="No hay mensajes en esta conversación"
+                    />
+                  ) : (
+                    sortedMessages.map((msg) => {
+                      const isOutbound = msg.direction === 'OUTBOUND'
 
-                    return (
-                      <div
-                        key={msg.id}
-                        className={cn(
-                          'flex',
-                          isOutbound ? 'justify-end' : 'justify-start'
-                        )}
-                      >
+                      return (
                         <div
+                          key={msg.id}
                           className={cn(
-                            'max-w-[78%] rounded-2xl px-4 py-3 shadow-sm',
-                            isOutbound
-                              ? 'bg-sky-500 dark:bg-sky-700 text-white'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50'
+                            'flex',
+                            isOutbound ? 'justify-end' : 'justify-start'
                           )}
                         >
-                          <div className="flex items-center justify-between gap-3 mb-1">
-                            <span
-                              className={cn(
-                                'text-[10px] font-semibold uppercase tracking-wide',
-                                isOutbound ? 'text-white/85' : 'text-slate-500 dark:text-slate-300'
-                              )}
-                            >
-                              {isOutbound ? 'Tú' : 'Cliente'}
-                            </span>
-                            <span
-                              className={cn(
-                                'text-[11px]',
-                                isOutbound ? 'text-white/75' : 'text-slate-500 dark:text-slate-300'
-                              )}
-                            >
-                              {format(new Date(msg.createdAt), 'HH:mm')}
-                            </span>
-                          </div>
-
-                          <p className="text-sm whitespace-pre-wrap wrap-break-word leading-6 text-current">{msg.body}</p>
-
                           <div
                             className={cn(
-                              'mt-2 flex items-center justify-end gap-2 text-[11px]',
-                              isOutbound ? 'text-white/80' : 'text-slate-500 dark:text-slate-300'
+                              'max-w-[78%] rounded-2xl px-4 py-3 shadow-sm',
+                              isOutbound
+                                ? 'bg-sky-500 dark:bg-sky-700 text-white'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50'
                             )}
                           >
-                            {isOutbound && (
-                              <span>
-                                {msg.status === 'FAILED'
-                                  ? 'No enviado'
-                                  : msg.status === 'READ'
-                                    ? 'Leído'
-                                    : msg.status === 'DELIVERED'
-                                      ? 'Entregado'
-                                      : 'Enviado'}
+                            <div className="flex items-center justify-between gap-3 mb-1">
+                              <span
+                                className={cn(
+                                  'text-[10px] font-semibold uppercase tracking-wide',
+                                  isOutbound ? 'text-white/85' : 'text-slate-500 dark:text-slate-300'
+                                )}
+                              >
+                                {isOutbound ? 'Tú' : 'Cliente'}
                               </span>
-                            )}
-                            {msg.status === 'FAILED' && !isOutbound && (
-                              <span className="text-red-500">Error</span>
-                            )}
+                              <span
+                                className={cn(
+                                  'text-[11px]',
+                                  isOutbound ? 'text-white/75' : 'text-slate-500 dark:text-slate-300'
+                                )}
+                              >
+                                {format(new Date(msg.createdAt), 'HH:mm')}
+                              </span>
+                            </div>
+
+                            <p className="text-sm whitespace-pre-wrap wrap-break-word leading-6 text-current">{msg.body}</p>
+
+                            <div
+                              className={cn(
+                                'mt-2 flex items-center justify-end gap-2 text-[11px]',
+                                isOutbound ? 'text-white/80' : 'text-slate-500 dark:text-slate-300'
+                              )}
+                            >
+                              {isOutbound && (
+                                <span>
+                                  {msg.status === 'FAILED'
+                                    ? 'No enviado'
+                                    : msg.status === 'READ'
+                                      ? 'Leído'
+                                      : msg.status === 'DELIVERED'
+                                        ? 'Entregado'
+                                        : 'Enviado'}
+                                </span>
+                              )}
+                              {msg.status === 'FAILED' && !isOutbound && (
+                                <span className="text-red-500">Error</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-
-              <div className="border-t border-primary-100 dark:border-primary-800 p-3 sm:p-4 shrink-0">
-                <p className="text-xs mb-2 text-muted-foreground">
-                  {canSendFreeMessage
-                    ? 'Solo puedes enviar mensajes libres si el cliente escribió en las últimas 24h'
-                    : 'Este chat está bloqueado para mensajes libres porque el cliente no ha escrito en las últimas 24h. Usa un template.'}
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder={
-                      canSendFreeMessage
-                        ? 'Escribe un mensaje...'
-                        : 'El cliente no ha escrito en las últimas 24h'
-                    }
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    disabled={sendMessageMutation.isPending || !canSendFreeMessage}
-                    className="flex-1 min-h-11"
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!canSendFreeMessage || !message.trim() || sendMessageMutation.isPending}
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    aria-label="Enviar mensaje"
-                  >
-                    <Send className="h-4 w-4 shrink-0" />
-                  </Button>
+                      )
+                    })
+                  )}
                 </div>
-              </div>
-            </>
-          )}
-        </Card>
+
+                <div className="shrink-0 border-t border-primary-100 bg-white px-3 py-3 text-primary-800 dark:border-primary-800 dark:bg-primary-900 dark:text-primary-50 md:px-4 md:py-4">
+                  <p className="mb-2 text-xs text-primary-500 dark:text-primary-400">
+                    {canSendFreeMessage
+                      ? 'Puedes responder porque el cliente escribió en las últimas 24h'
+                      : 'Bloqueado: el cliente no ha escrito en las últimas 24h. Usa un template.'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder={
+                        canSendFreeMessage
+                          ? 'Escribe un mensaje...'
+                          : 'El cliente no ha escrito en las últimas 24h'
+                      }
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      disabled={sendMessageMutation.isPending || !canSendFreeMessage}
+                      className="flex-1 h-11"
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!canSendFreeMessage || !message.trim() || sendMessageMutation.isPending}
+                      size="icon"
+                      className="h-11 w-11 shrink-0"
+                      aria-label="Enviar mensaje"
+                    >
+                      <Send className="h-4 w-4 shrink-0" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   )

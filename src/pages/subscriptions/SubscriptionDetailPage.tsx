@@ -1,7 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useSubscriptionDetail, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
-import { useGenerateNextPeriod } from '@/hooks/useBilling'
 import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { AlertTriangle, Edit, Play, Pause, Plus, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
+import { AlertTriangle, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, hasOlderUnpaidPeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
@@ -38,7 +37,6 @@ export function SubscriptionDetailPage() {
   const { data, isLoading, error } = useSubscriptionDetail(id!)
   const updateMutation = useUpdateSubscription()
   const deleteMutation = useDeleteSubscription()
-  const generateMutation = useGenerateNextPeriod()
   const { openQuickPay } = useUIStore()
   
   const [showStatusDialog, setShowStatusDialog] = useState(false)
@@ -100,16 +98,6 @@ export function SubscriptionDetailPage() {
       setNewStatus(null)
     } catch {
       toast.error('Error al cambiar el estado de la suscripción')
-    }
-  }
-
-  const handleGenerateNext = async () => {
-    if (!id) return
-
-    try {
-      await generateMutation.mutateAsync(id)
-    } catch {
-      // Error handled in hook
     }
   }
 
@@ -211,6 +199,27 @@ export function SubscriptionDetailPage() {
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setNewStatus(
+                  subscription.status === SubscriptionStatus.ACTIVE
+                    ? SubscriptionStatus.SUSPENDED
+                    : SubscriptionStatus.ACTIVE
+                )
+                setShowStatusDialog(true)
+              }}
+              className="rounded-full bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900 text-amber-600 dark:text-amber-400 shadow-sm"
+              title={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
+              aria-label={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
+            >
+              {subscription.status === SubscriptionStatus.ACTIVE ? (
+                <Pause className="h-4 w-4 shrink-0" />
+              ) : (
+                <Play className="h-4 w-4 shrink-0" />
+              )}
+            </Button>
             <Button variant="outline" size="icon" onClick={() => setShowDeleteDialog(true)} className="rounded-full bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 shadow-sm">
               <Trash2 className="h-4 w-4 shrink-0" />
             </Button>
@@ -292,38 +301,6 @@ export function SubscriptionDetailPage() {
           </Button>
         </div>
       )}
-
-      {/* Acciones Rápidas */}
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          variant="outline"
-          className="h-14 font-semibold active:scale-95 transition-transform bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300"
-          onClick={() => {
-            setNewStatus(
-              subscription.status === SubscriptionStatus.ACTIVE
-                ? SubscriptionStatus.SUSPENDED
-                : SubscriptionStatus.ACTIVE
-            )
-            setShowStatusDialog(true)
-          }}
-        >
-          {subscription.status === SubscriptionStatus.ACTIVE ? (
-            <><Pause className="h-5 w-5 mr-2" /> Suspender</>
-          ) : (
-            <><Play className="h-5 w-5 mr-2" /> Reactivar</>
-          )}
-        </Button>
-        
-        <Button
-          variant="outline"
-          className="h-14 font-semibold active:scale-95 transition-transform bg-white dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-primary-700 dark:text-primary-300"
-          onClick={handleGenerateNext}
-          disabled={generateMutation.isPending}
-        >
-          <Plus className="h-5 w-5 mr-2 shrink-0" />
-          {generateMutation.isPending ? 'Creando...' : 'Crear Período'}
-        </Button>
-      </div>
 
       {/* Mini KPIs Horizontales */}
       <div className="flex gap-3 overflow-x-auto no-scrollbar touch-pan-x -mx-4 px-4 snap-x snap-mandatory pt-2">

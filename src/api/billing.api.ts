@@ -3,7 +3,6 @@ import type {
   BillingPeriodWithDetails,
   PayRequest,
   PayResponse,
-  BillingPeriod,
   UpdateBillingPeriodRequest,
   Pagination,
 } from '@/types/api'
@@ -42,11 +41,6 @@ export const billingApi = {
 
   payPeriod: async (id: string, data: PayRequest): Promise<PayResponse> => {
     const response = await api.post<PayResponse>(`/billing-periods/${id}/pay`, data)
-    return response.data
-  },
-
-  generateNext: async (subscriptionId: string): Promise<BillingPeriod> => {
-    const response = await api.post<BillingPeriod>(`/billing-periods/generate-next/${subscriptionId}`)
     return response.data
   },
 }

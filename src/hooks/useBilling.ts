@@ -125,19 +125,3 @@ export function useUpdateBillingPeriod() {
     },
   })
 }
-
-export function useGenerateNextPeriod() {
-  const qc = useQueryClient()
-
-  return useMutation({
-    mutationFn: (subscriptionId: string) => billingApi.generateNext(subscriptionId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.billing.lists })
-      qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
-      toast.success('Período generado correctamente')
-    },
-    onError: () => {
-      toast.error('No se puede generar el próximo período')
-    },
-  })
-}

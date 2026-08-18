@@ -10,7 +10,7 @@ interface FormGroupProps {
 
 export function FormGroup({ children, label, description, className }: FormGroupProps) {
   return (
-    <div className={cn('p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800', className)}>
+    <div className={cn('p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800', className)}>
       {(label || description) && (
         <div className="mb-3">
           {label && (

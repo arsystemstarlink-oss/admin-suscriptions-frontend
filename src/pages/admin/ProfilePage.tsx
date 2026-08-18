@@ -14,9 +14,9 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
-import { UserCog, ShieldCheck, ChevronDown, ChevronUp, Pencil, LogOut } from 'lucide-react'
+import { UserCog, ShieldCheck, ChevronDown, ChevronUp, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
-import { SectionHeader, FormGroup } from '@/components/design-system'
+import { FormGroup } from '@/components/design-system'
 import type { ApiError } from '@/types/api'
 
 const profileSchema = z.object({
@@ -173,19 +173,22 @@ export function ProfilePage() {
   return (
     <div className="space-y-4 md:space-y-6">
       <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
-            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
-              <span className="text-lg font-bold text-primary-700 dark:text-primary-300">{initials}</span>
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
+                <span className="text-lg sm:text-xl font-bold text-primary-700 dark:text-primary-300">{initials}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-lg sm:text-xl truncate">{user.name}</h3>
+                <p className="text-sm text-primary-500 dark:text-primary-400 truncate">{user.email}</p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-lg sm:text-xl truncate">{user.name}</h3>
-              <p className="text-sm text-primary-500 dark:text-primary-400 mt-1 truncate">{user.email}</p>
-            </div>
-            <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-2 sm:ml-auto shrink-0">
               <Badge variant="secondary" className="text-xs">
                 <ShieldCheck className="h-3 w-3 mr-1 shrink-0" />
-                Administrador
+                <span className="hidden sm:inline">Administrador</span>
+                <span className="sm:hidden">Admin</span>
               </Badge>
               <button
                 onClick={logout}
@@ -210,20 +213,20 @@ export function ProfilePage() {
                 <ChevronDown className="h-4 w-4 text-primary-400" />
               )}
             </button>
-            
+
             {showDetails && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Rol</p>
-                  <p className="text-lg font-semibold text-primary-900 dark:text-primary-50">Administrador</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
+                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Rol</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">Admin</p>
                 </div>
-                <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Miembro desde</p>
-                  <p className="text-lg font-semibold text-primary-900 dark:text-primary-50">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
+                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Miembro desde</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
                 </div>
-                <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Último acceso</p>
-                  <p className="text-lg font-semibold text-primary-900 dark:text-primary-50">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
+                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Último acceso</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
                 </div>
               </div>
             )}
@@ -232,25 +235,24 @@ export function ProfilePage() {
       </Card>
 
       <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
-        <CardHeader className="p-5">
-          <div className="flex items-center justify-between">
-            <SectionHeader
-              title="Editar Perfil"
-              icon={<UserCog className="h-5 w-5" />}
-            />
+        <CardHeader className="p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <UserCog className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+              <h2 className="font-semibold text-lg truncate">Editar Perfil</h2>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsEditingProfile(!isEditingProfile)}
               className="shrink-0"
             >
-              <Pencil className="h-4 w-4 mr-2 shrink-0" />
               {isEditingProfile ? 'Cancelar' : 'Editar'}
             </Button>
           </div>
         </CardHeader>
         {isEditingProfile ? (
-          <CardContent className="p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4" autoComplete="new-password">
               <FormGroup label="Datos personales" description="Información pública de tu cuenta">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -332,26 +334,26 @@ export function ProfilePage() {
               </FormGroup>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" disabled={isSavingProfile}>
+                <Button type="submit" disabled={isSavingProfile} className="w-full sm:w-auto">
                   {isSavingProfile ? 'Guardando...' : 'Guardar cambios'}
                 </Button>
               </div>
             </form>
           </CardContent>
         ) : (
-          <CardContent className="p-5 pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Nombre</p>
-                <p className="font-semibold text-primary-900 dark:text-primary-50">{user.name}</p>
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
+                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mb-1">Nombre</p>
+                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">{user.name}</p>
               </div>
-              <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Correo</p>
-                <p className="font-semibold text-primary-900 dark:text-primary-50">{user.email}</p>
+              <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
+                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mb-1">Correo</p>
+                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">{user.email}</p>
               </div>
-              <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 md:col-span-2">
-                <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Teléfono</p>
-                <p className="font-semibold text-primary-900 dark:text-primary-50">{user.phone || '—'}</p>
+              <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 md:col-span-2">
+                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mb-1">Teléfono</p>
+                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">{user.phone || '—'}</p>
               </div>
             </div>
           </CardContent>
@@ -359,25 +361,24 @@ export function ProfilePage() {
       </Card>
 
       <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
-        <CardHeader className="p-5">
-          <div className="flex items-center justify-between">
-            <SectionHeader
-              title="Seguridad"
-              icon={<ShieldCheck className="h-5 w-5" />}
-            />
+        <CardHeader className="p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShieldCheck className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+              <h2 className="font-semibold text-lg truncate">Seguridad</h2>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsEditingSecurity(!isEditingSecurity)}
               className="shrink-0"
             >
-              <Pencil className="h-4 w-4 mr-2 shrink-0" />
               {isEditingSecurity ? 'Cancelar' : 'Cambiar'}
             </Button>
           </div>
         </CardHeader>
         {isEditingSecurity ? (
-          <CardContent className="p-5 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <form onSubmit={handlePasswordSubmit(onPasswordSubmit)} className="space-y-4" autoComplete="new-password">
               <FormGroup label="Cambiar contraseña" description="Actualiza tu credencial de acceso">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -432,28 +433,26 @@ export function ProfilePage() {
               </FormGroup>
 
               <div className="flex items-center gap-3 pt-2">
-                <Button type="submit" disabled={isSavingPassword}>
+                <Button type="submit" disabled={isSavingPassword} className="w-full sm:w-auto">
                   {isSavingPassword ? 'Actualizando...' : 'Cambiar contraseña'}
                 </Button>
               </div>
             </form>
           </CardContent>
         ) : (
-          <CardContent className="p-5 pt-0">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="h-5 w-5 text-primary-600 dark:text-primary-300" />
-                </div>
-                <div>
-                  <p className="text-sm text-primary-500 dark:text-primary-400">Contraseña</p>
-                  <p className="font-semibold text-primary-900 dark:text-primary-50">••••••••</p>
-                </div>
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
+            <div className="flex items-center gap-3 p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
+              <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
+                <ShieldCheck className="h-5 w-5 text-primary-600 dark:text-primary-300" />
               </div>
-              <p className="text-xs text-primary-500 dark:text-primary-400">
-                Por seguridad, la contraseña no se muestra. Puedes cambiarla cuando lo necesites.
-              </p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400">Contraseña</p>
+                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">••••••••</p>
+              </div>
             </div>
+            <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mt-3">
+              Por seguridad, la contraseña no se muestra. Puedes cambiarla cuando lo necesites.
+            </p>
           </CardContent>
         )}
       </Card>

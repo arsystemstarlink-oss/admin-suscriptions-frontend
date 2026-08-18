@@ -18,6 +18,21 @@ import { qk } from '@/lib/query-keys'
 import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
 
+const isSameDay = (date: Date, reference: Date = new Date()): boolean =>
+  date.getFullYear() === reference.getFullYear() &&
+  date.getMonth() === reference.getMonth() &&
+  date.getDate() === reference.getDate()
+
+const formatChatTime = (iso: string): string => {
+  const date = new Date(iso)
+  return isSameDay(date) ? format(date, 'HH:mm') : format(date, 'd MMM')
+}
+
+const formatMessageTime = (iso: string): string => {
+  const date = new Date(iso)
+  return isSameDay(date) ? format(date, 'HH:mm') : format(date, 'd MMM, HH:mm')
+}
+
 export function ChatsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const phoneFromUrl = searchParams.get('phone')
@@ -307,7 +322,7 @@ export function ChatsPage() {
 
                             {latestMessage && (
                               <span className="text-[11px] text-muted-foreground">
-                                {format(new Date(latestMessage.createdAt), 'HH:mm')}
+                                {formatChatTime(latestMessage.createdAt)}
                               </span>
                             )}
                           </div>
@@ -426,7 +441,7 @@ export function ChatsPage() {
                                   isOutbound ? 'text-white/75' : 'text-slate-500 dark:text-slate-300'
                                 )}
                               >
-                                {format(new Date(msg.createdAt), 'HH:mm')}
+                                {formatMessageTime(msg.createdAt)}
                               </span>
                             </div>
 

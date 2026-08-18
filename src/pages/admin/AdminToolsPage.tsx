@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
-  Play,
   Clock,
   CheckCircle,
   XCircle,
@@ -14,7 +13,6 @@ import {
   Pause,
 } from 'lucide-react'
 import { formatDate } from '@/lib/constants'
-import { SectionHeader } from '@/components/design-system/SectionHeader'
 
 function parseCronToTime(cron: string): { hour12: number; minute: number; period: 'AM' | 'PM' } {
   const parts = cron.split(' ')
@@ -86,21 +84,21 @@ export function AdminToolsPage() {
       ) : schedulerConfig ? (
         <>
           <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
-            <CardHeader className="p-5">
+            <CardHeader className="p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
-                  <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
-                    <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-primary-600 dark:text-primary-300" />
+                  <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
+                    <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-primary-600 dark:text-primary-300" />
                   </div>
                   <div className="min-w-0">
                     <CardTitle className="text-lg sm:text-xl">Tarea Diaria</CardTitle>
-                    <CardDescription className="mt-1">
+                    <CardDescription className="text-xs sm:text-sm mt-0.5">
                       Evalúa vencimientos y suspende suscripciones automáticamente
                     </CardDescription>
                   </div>
                 </div>
                 <Badge
-                  className={`w-fit shrink-0 text-sm px-3 py-1.5 sm:px-4 ${
+                  className={`w-fit shrink-0 text-xs sm:text-sm px-2.5 py-1 sm:px-3 sm:py-1.5 ${
                     schedulerConfig.enabled
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900'
                       : 'bg-primary-100 text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-400 dark:border-primary-700'
@@ -120,140 +118,129 @@ export function AdminToolsPage() {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="p-5 pt-0 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Horario</p>
-                  <p className="text-lg font-semibold text-primary-900 dark:text-primary-50">
+            <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0 space-y-5 sm:space-y-6">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Horario</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
                     {formatTimeDisplay(selectedHour12, selectedMinute, selectedPeriod)}
                   </p>
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mt-1">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
                     Diario
                   </p>
                 </div>
 
-                <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Última ejecución</p>
-                  <p className="text-lg font-semibold text-primary-900 dark:text-primary-50">
+                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Última ejecución</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
                     {schedulerConfig.lastRun ? formatDate(schedulerConfig.lastRun) : 'Nunca'}
                   </p>
                   {schedulerConfig.lastRun && (
-                    <p className="text-sm text-primary-500 dark:text-primary-400 mt-1">
+                    <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
                       {getTimeAgo(schedulerConfig.lastRun)}
                     </p>
                   )}
                 </div>
 
-                <div className="p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mb-1">Estado</p>
-                  <p className="text-lg font-semibold text-primary-900 dark:text-primary-50">
+                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Estado</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
                     {schedulerConfig.enabled ? 'Automático' : 'Manual'}
                   </p>
-                  <p className="text-sm text-primary-500 dark:text-primary-400 mt-1">
+                  <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
                     {schedulerConfig.enabled
-                      ? 'Se ejecuta según horario'
-                      : 'Solo ejecución manual'}
+                      ? 'Por horario'
+                      : 'Solo manual'}
                   </p>
                 </div>
               </div>
 
-              <div className="border-t border-primary-100 dark:border-primary-800 pt-6 space-y-5">
-                <SectionHeader
-                  title="Control del Programador"
-                  icon={<Pause className="h-5 w-5" />}
-                  action={
-                    <Button
-                      variant={schedulerConfig.enabled ? 'destructive' : 'default'}
-                      onClick={() => handleToggleScheduler(!schedulerConfig.enabled)}
-                      disabled={updateSchedulerMutation.isPending}
-                      className="gap-2 w-full sm:w-auto sm:min-w-35 shrink-0"
-                    >
-                      {schedulerConfig.enabled ? (
-                        <>
-                          <Pause className="h-4 w-4 shrink-0" />
-                          Desactivar
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 shrink-0" />
-                          Activar
-                        </>
-                      )}
-                    </Button>
-                  }
-                />
-                <p className="text-sm text-primary-500 dark:text-primary-400">
-                  {schedulerConfig.enabled
-                    ? 'El sistema evaluará vencimientos automáticamente según el horario configurado'
-                    : 'El sistema no ejecutará evaluaciones automáticas. Puedes ejecutarlas manualmente'}
-                </p>
+              <div className="border-t border-primary-100 dark:border-primary-800 pt-5 sm:pt-6 space-y-5 sm:space-y-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Pause className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+                    <h3 className="font-semibold text-base">Control del Programador</h3>
+                  </div>
+                  <Button
+                    variant={schedulerConfig.enabled ? 'destructive' : 'default'}
+                    onClick={() => handleToggleScheduler(!schedulerConfig.enabled)}
+                    disabled={updateSchedulerMutation.isPending}
+                    className="w-full sm:w-auto sm:min-w-35"
+                  >
+                    {schedulerConfig.enabled ? 'Desactivar' : 'Activar'}
+                  </Button>
+                  <p className="text-sm text-primary-500 dark:text-primary-400">
+                    {schedulerConfig.enabled
+                      ? 'El sistema evaluará vencimientos automáticamente según el horario configurado'
+                      : 'El sistema no ejecutará evaluaciones automáticas. Puedes ejecutarlas manualmente'}
+                  </p>
+                </div>
 
-                <SectionHeader
-                  title="Horario de Ejecución"
-                  icon={<Clock className="h-5 w-5" />}
-                />
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                  <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))}>
-                    <SelectTrigger className="w-[4.5rem] sm:w-24 bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                      <SelectValue placeholder="Hora" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {i + 1}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))}>
-                    <SelectTrigger className="w-[4.5rem] sm:w-24 bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                      <SelectValue placeholder="Min" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <SelectItem key={i} value={i.toString()}>
-                          {i.toString().padStart(2, '0')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')}>
-                    <SelectTrigger className="w-[4.5rem] sm:w-24 bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                      <SelectValue placeholder="AM/PM" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AM">AM</SelectItem>
-                      <SelectItem value="PM">PM</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+                    <h3 className="font-semibold text-base">Horario de Ejecución</h3>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))}>
+                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                        <SelectValue placeholder="Hora" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))}>
+                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                        <SelectValue placeholder="Min" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 60 }, (_, i) => (
+                          <SelectItem key={i} value={i.toString()}>
+                            {i.toString().padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')}>
+                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                        <SelectValue placeholder="AM/PM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button
                     onClick={handleUpdateScheduler}
                     disabled={updateSchedulerMutation.isPending}
-                    className="w-full sm:w-auto"
+                    className="w-full"
                   >
                     {updateSchedulerMutation.isPending ? 'Guardando...' : 'Guardar'}
                   </Button>
+                  <p className="text-xs text-primary-500 dark:text-primary-400">
+                    Se ejecutará diariamente a la hora seleccionada
+                  </p>
                 </div>
-                <p className="text-xs text-primary-500 dark:text-primary-400 mt-2">
-                  Se ejecutará diariamente a la hora seleccionada
-                </p>
 
-                <div className="border-t border-primary-100 dark:border-primary-800 pt-5">
-                  <SectionHeader
-                    title="Ejecución Manual"
-                    icon={<Zap className="h-5 w-5" />}
-                    action={
-                      <Button
-                        variant="outline"
-                        onClick={handleRunScheduler}
-                        disabled={runSchedulerMutation.isPending}
-                        className="gap-2 w-full sm:w-auto shrink-0"
-                      >
-                        <Zap className="h-4 w-4 shrink-0" />
-                        {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}
-                      </Button>
-                    }
-                  />
+                <div className="border-t border-primary-100 dark:border-primary-800 pt-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+                    <h3 className="font-semibold text-base">Ejecución Manual</h3>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleRunScheduler}
+                    disabled={runSchedulerMutation.isPending}
+                    className="w-full sm:w-auto"
+                  >
+                    {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}
+                  </Button>
                   <p className="text-sm text-primary-500 dark:text-primary-400">
                     Ejecuta la Tarea Diaria inmediatamente, sin importar el estado del scheduler
                   </p>

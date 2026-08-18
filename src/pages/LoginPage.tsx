@@ -28,7 +28,7 @@ type LoginForm = z.infer<typeof loginSchema>
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { setTokens, setUser, user } = useAuthStore()
+  const { setTokens, setUser, user, isAuthenticated } = useAuthStore()
   
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -38,6 +38,12 @@ export function LoginPage() {
   const [shakeError, setShakeError] = useState(false)
   
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true })
+    }
+  }, [isAuthenticated, from, navigate])
   
   const {
     register,

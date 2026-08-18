@@ -10,13 +10,14 @@ export const api = axios.create({
   },
 })
 
-let isRefreshing = false
-let refreshSubscribers: Array<(token: string) => void> = []
+const REFRESH_LOCK_KEY = 'authRefreshLock'
+const REFRESH_VERSION_KEY = 'authRefreshVersion'
+const REFRESH_LOCK_TIMEOUT_MS = 15_000
 
-function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token))
-  refreshSubscribers = []
-}
+const TAB_ID =
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2)
 
 function getStoredTokens() {
   const accessToken = localStorage.getItem('accessToken')
@@ -24,15 +25,54 @@ function getStoredTokens() {
   return { accessToken, refreshToken }
 }
 
+function getRefreshVersion() {
+  return Number(localStorage.getItem(REFRESH_VERSION_KEY) ?? '0')
+}
+
 function setStoredTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem('accessToken', accessToken)
   localStorage.setItem('refreshToken', refreshToken)
+  localStorage.setItem(REFRESH_VERSION_KEY, String(getRefreshVersion() + 1))
 }
 
 function clearStoredTokens() {
   localStorage.removeItem('accessToken')
   localStorage.removeItem('refreshToken')
   localStorage.removeItem('user')
+  localStorage.removeItem(REFRESH_LOCK_KEY)
+  localStorage.removeItem(REFRESH_VERSION_KEY)
+}
+
+function acquireRefreshLock(): boolean {
+  const now = Date.now()
+  try {
+    const lockRaw = localStorage.getItem(REFRESH_LOCK_KEY)
+    if (lockRaw) {
+      const lock = JSON.parse(lockRaw) as { tabId: string; startedAt: number }
+      if (lock.tabId === TAB_ID) return true
+      if (now - lock.startedAt < REFRESH_LOCK_TIMEOUT_MS) return false
+    }
+    localStorage.setItem(REFRESH_LOCK_KEY, JSON.stringify({ tabId: TAB_ID, startedAt: now }))
+    return true
+  } catch {
+    return true
+  }
+}
+
+function releaseRefreshLock() {
+  try {
+    const lockRaw = localStorage.getItem(REFRESH_LOCK_KEY)
+    if (lockRaw) {
+      const lock = JSON.parse(lockRaw) as { tabId: string }
+      if (lock.tabId === TAB_ID) localStorage.removeItem(REFRESH_LOCK_KEY)
+    }
+  } catch {
+    // lock corrupto; se ignora
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 api.interceptors.request.use((config) => {
@@ -57,27 +97,32 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true
 
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          refreshSubscribers.push((newToken: string) => {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`
-            resolve(api(originalRequest))
-          })
-        })
-      }
+      const versionAtError = getRefreshVersion()
 
-      isRefreshing = true
+      while (!acquireRefreshLock()) {
+        await sleep(150)
+        if (getRefreshVersion() !== versionAtError) {
+          const { accessToken } = getStoredTokens()
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`
+          return api(originalRequest)
+        }
+      }
 
       try {
         const { refreshToken } = getStoredTokens()
         if (!refreshToken) throw new Error('No refresh token')
+
+        if (getRefreshVersion() !== versionAtError) {
+          const { accessToken } = getStoredTokens()
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`
+          return api(originalRequest)
+        }
 
         const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refreshToken,
         })
 
         setStoredTokens(data.accessToken, data.refreshToken)
-        onRefreshed(data.accessToken)
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
         return api(originalRequest)
       } catch {
@@ -85,7 +130,7 @@ api.interceptors.response.use(
         window.location.href = `${import.meta.env.BASE_URL}login`
         return Promise.reject(error)
       } finally {
-        isRefreshing = false
+        releaseRefreshLock()
       }
     }
 

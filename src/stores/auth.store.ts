@@ -49,6 +49,16 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (accessToken && refreshToken) {
       set({ accessToken, refreshToken, user, isAuthenticated: true })
+    } else if (useAuthStore.getState().isAuthenticated) {
+      set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false })
     }
   },
 }))
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'accessToken' || event.key === 'refreshToken' || event.key === 'user') {
+      useAuthStore.getState().loadFromStorage()
+    }
+  })
+}

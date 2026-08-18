@@ -104,6 +104,16 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     field: 'phone',
     message: 'El teléfono no es válido. Use formato +58 seguido de 10 u 11 dígitos.',
   },
+  INVALID_DNI: {
+    type: 'field-error',
+    field: 'dni',
+    message: 'Cédula inválida. Use formato V-12345678 o J-123456789 (7-9 dígitos).',
+  },
+  DNI_TAKEN: {
+    type: 'field-error',
+    field: 'dni',
+    message: 'Ya existe un cliente registrado con esa cédula de identidad.',
+  },
   INVALID_PASSWORD: {
     type: 'field-error',
     field: 'currentPassword',

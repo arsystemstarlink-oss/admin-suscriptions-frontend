@@ -111,7 +111,12 @@ export function EditPaymentModal({ period, open, onOpenChange }: EditPaymentModa
             <div className="space-y-4">
               <div className="p-3 bg-muted rounded-lg border space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-foreground">{getClientFullName(period.client)}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">{getClientFullName(period.client)}</p>
+                    {period.client?.dni && (
+                      <p className="text-xs text-muted-foreground">C.I. {period.client.dni}</p>
+                    )}
+                  </div>
                   <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
                     Pagado
                   </Badge>

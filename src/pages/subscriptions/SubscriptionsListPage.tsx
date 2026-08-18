@@ -59,6 +59,7 @@ export function SubscriptionsListPage() {
         const haystack = [
           getClientFullName(sub.client),
           sub.client.phone,
+          sub.client.dni || '',
           sub.plan.name,
           sub.kitNumber,
         ]
@@ -271,6 +272,9 @@ export function SubscriptionsListPage() {
                   <div className="flex items-center gap-2 mt-1 text-primary-500 dark:text-primary-400 text-sm">
                     <Phone className="h-3.5 w-3.5" />
                     <span>{sub.client.phone}</span>
+                    {sub.client.dni && (
+                      <span className="text-xs">• C.I. {sub.client.dni}</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col items-end shrink-0 gap-1.5">

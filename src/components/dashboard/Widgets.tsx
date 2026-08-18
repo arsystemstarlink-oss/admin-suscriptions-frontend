@@ -97,7 +97,12 @@ export function TopDebtorsWidget() {
                   
                   <div className="flex items-center gap-2 mt-1 text-xs">
                     <span className="text-primary-500 dark:text-primary-400 truncate max-w-[120px]">{debtor.clientPhone}</span>
-                    <span className="text-primary-300 dark:text-primary-600">•</span>
+                    {debtor.clientDni && (
+                      <>
+                        <span className="text-primary-300 dark:text-primary-600">•</span>
+                        <span className="text-primary-500 dark:text-primary-400 truncate max-w-[100px]">C.I. {debtor.clientDni}</span>
+                      </>
+                    )}
                     <span className="text-red-600 dark:text-red-400 font-medium px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950">
                       {debtor.overdueCount} vencidos
                     </span>
@@ -195,6 +200,11 @@ export function ExpiringSoonWidget() {
                     <span className="text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-1.5 py-0.5 rounded">
                       Kit #{item.kitNumber}
                     </span>
+                    {item.clientDni && (
+                      <span className="text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-1.5 py-0.5 rounded">
+                        C.I. {item.clientDni}
+                      </span>
+                    )}
                     <span className="text-amber-600 dark:text-amber-400 font-medium px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950">
                       Vence: {formatDate(item.endDate)}
                     </span>

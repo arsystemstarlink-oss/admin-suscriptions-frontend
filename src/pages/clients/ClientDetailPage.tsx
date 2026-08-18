@@ -5,7 +5,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod } from '@/lib/utils'
 import { DeleteClientModal } from '@/components/modals/DeleteClientModal'
@@ -58,7 +58,7 @@ export function ClientDetailPage() {
         period: {
           ...sub.currentPeriod,
           subscription: { id: sub.id, kitNumber: sub.kitNumber, status: sub.status },
-          client: { id: client.id, firstName: client.firstName, lastName: client.lastName, phone: client.phone, email: client.email },
+          client: { id: client.id, firstName: client.firstName, lastName: client.lastName, phone: client.phone, dni: client.dni, email: client.email },
           plan: sub.plan,
         },
       })
@@ -104,6 +104,11 @@ export function ClientDetailPage() {
               <span className="flex items-center gap-1.5 truncate">
                 <Phone className="h-3.5 w-3.5 shrink-0" /> {client.phone}
               </span>
+              {client.dni && (
+                <span className="flex items-center gap-1.5 truncate">
+                  <CreditCard className="h-3.5 w-3.5 shrink-0" /> C.I. {client.dni}
+                </span>
+              )}
               <span className="flex items-center gap-1.5 truncate">
                 <Mail className="h-3.5 w-3.5 shrink-0" /> {client.email}
               </span>
@@ -229,6 +234,16 @@ export function ClientDetailPage() {
         <TabsContent value="info">
           <div className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl p-5 space-y-4 shadow-sm">
             
+            <div className="flex items-start gap-3">
+              <CreditCard className="h-5 w-5 text-primary-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-primary-500 uppercase tracking-wide">Cédula de Identidad</p>
+                <p className="text-sm text-primary-900 dark:text-primary-100 font-medium mt-0.5 leading-snug">
+                  {client.dni || <span className="text-primary-400 italic font-normal">Sin especificar</span>}
+                </p>
+              </div>
+            </div>
+
             <div className="flex items-start gap-3">
               <MapPin className="h-5 w-5 text-primary-400 shrink-0 mt-0.5" />
               <div>

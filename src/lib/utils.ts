@@ -10,6 +10,18 @@ export function getClientFullName(client: { firstName: string; lastName: string 
   return `${client.firstName} ${client.lastName}`.trim()
 }
 
+export function normalizeDni(raw: string): string {
+  const cleaned = raw.trim().toUpperCase().replace(/[^VJ0-9-]/g, '')
+  const prefix = cleaned.match(/[VJ]/)?.[0] ?? ''
+  const digits = cleaned.replace(/[^0-9]/g, '')
+  if (!digits) return ''
+  return prefix ? `${prefix}-${digits}` : digits
+}
+
+export function isValidDni(dni: string): boolean {
+  return /^[VJ]-\d{7,9}$/.test(dni)
+}
+
 export function getInitial(value: string | null | undefined, fallback = '?'): string {
   const trimmed = value?.trim()
   if (!trimmed) return fallback

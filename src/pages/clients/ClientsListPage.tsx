@@ -115,6 +115,12 @@ export function ClientsListPage() {
                       {client.phone}
                     </span>
                   )}
+                  {client.dni && (
+                    <span className="flex items-center gap-1 shrink-0">
+                      <CreditCardIcon size={14} />
+                      C.I. {client.dni}
+                    </span>
+                  )}
                   {client.totalSubscriptions > 0 && (
                     <span className="flex items-center gap-1 shrink-0">
                       <CreditCardIcon size={14} />

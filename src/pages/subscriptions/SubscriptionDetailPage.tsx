@@ -260,6 +260,7 @@ export function SubscriptionDetailPage() {
             </p>
             <p className="text-xs text-primary-500 dark:text-primary-400 truncate flex items-center gap-1 mt-0.5">
               <Phone className="h-3 w-3" /> {subscription.client.phone}
+              {subscription.client.dni && ` • C.I. ${subscription.client.dni}`}
             </p>
           </div>
         </div>

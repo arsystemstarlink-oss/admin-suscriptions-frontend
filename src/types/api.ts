@@ -77,6 +77,7 @@ export interface Client {
   firstName: string
   lastName: string
   phone: string
+  dni?: string
   email?: string
   address?: string
   notes?: string
@@ -130,7 +131,7 @@ export interface UpdateSchedulerConfigRequest {
 }
 
 export interface SubscriptionWithDetails extends Subscription {
-  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'>
+  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'dni' | 'email'>
   plan: Pick<Plan, 'id' | 'name' | 'price'>
   currentPeriod?: BillingPeriod
   totalPeriods: number
@@ -169,7 +170,7 @@ export interface BillingPeriod {
 
 export interface BillingPeriodWithDetails extends BillingPeriod {
   subscription: Pick<Subscription, 'id' | 'kitNumber' | 'status'>
-  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'>
+  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'dni' | 'email'>
   plan: Pick<Plan, 'id' | 'name' | 'price'>
 }
 
@@ -197,12 +198,14 @@ export interface AlertItem {
   kitNumber: string
   clientName: string
   clientPhone: string
+  clientDni?: string
 }
 
 export interface DebtorItem {
   clientId: string
   clientName: string
   clientPhone: string
+  clientDni?: string
   totalDebt: number
   overdueCount: number
 }
@@ -301,6 +304,7 @@ export interface CreateClientRequest {
   firstName: string
   lastName: string
   phone: string
+  dni?: string
   email?: string
   address?: string
   notes?: string
@@ -310,6 +314,7 @@ export interface UpdateClientRequest {
   firstName?: string
   lastName?: string
   phone?: string
+  dni?: string | null
   email?: string
   address?: string
   notes?: string
@@ -434,6 +439,8 @@ export type ErrorCode =
   | 'EMAIL_TAKEN'
   | 'INVALID_EMAIL'
   | 'INVALID_PHONE'
+  | 'INVALID_DNI'
+  | 'DNI_TAKEN'
   | 'WEAK_PASSWORD'
   | 'INVALID_PASSWORD'
   | 'REFRESH_TOKEN_REVOKED'

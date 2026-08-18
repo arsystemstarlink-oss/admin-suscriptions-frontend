@@ -163,7 +163,7 @@ export function SubscriptionFormPage() {
               <SelectContent>
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id} className="py-3">
-                    {getClientFullName(client)} — {client.phone}
+                    {getClientFullName(client)} — {client.phone}{client.dni ? ` — C.I. ${client.dni}` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

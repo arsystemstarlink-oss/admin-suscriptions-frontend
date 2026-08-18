@@ -82,7 +82,7 @@ export function OmniSearch() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar cliente, kit, teléfono..."
+            placeholder="Buscar cliente, kit, teléfono, cédula..."
             className="h-12 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
@@ -110,7 +110,7 @@ export function OmniSearch() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-foreground">{getClientFullName(client)}</p>
-                      <p className="text-xs text-muted-foreground">{client.phone} • {client.email}</p>
+                      <p className="text-xs text-muted-foreground">{client.phone}{client.dni ? ` • C.I. ${client.dni}` : ''}{client.email ? ` • ${client.email}` : ''}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

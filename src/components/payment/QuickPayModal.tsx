@@ -145,7 +145,12 @@ export function QuickPayModal() {
       {/* Resumen del Período */}
       <div className="p-4 bg-primary-50 dark:bg-primary-900/40 rounded-xl border border-primary-100 dark:border-primary-800/60 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-primary-900 dark:text-primary-50 truncate pr-2">{getClientFullName(period.client)}</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-primary-900 dark:text-primary-50 truncate pr-2">{getClientFullName(period.client)}</p>
+            {period.client?.dni && (
+              <p className="text-xs text-primary-500 dark:text-primary-400 font-medium">C.I. {period.client.dni}</p>
+            )}
+          </div>
           <Badge className={`shrink-0 ${BILLING_PERIOD_STATUS_COLORS[period.status]}`}>
             {BILLING_PERIOD_STATUS_LABELS[period.status]}
           </Badge>

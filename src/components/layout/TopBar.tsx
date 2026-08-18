@@ -30,7 +30,7 @@ export function TopBar({ isMobile, onMobileToggle, onOpenSearch }: TopBarProps) 
           </Button>
         )}
 
-        <BrandMark size="md" hideSystemOnMobile className="text-primary-50" />
+        <BrandMark size="md" className="text-primary-50" />
       </div>
 
       <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? openOmniSearch} />

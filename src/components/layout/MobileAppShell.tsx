@@ -36,7 +36,7 @@ export default function MobileAppShell({ children, onOpenSearch }: { children?: 
       
       {/* Header Fijo con Glassmorphism */}
       <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 backdrop-blur-md transition-colors">
-        <BrandMark size="md" hideSystemOnMobile className="text-primary-50" />
+        <BrandMark size="sm" className="text-primary-50" />
         <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? (() => {})} />
       </header>
 

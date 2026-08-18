@@ -29,7 +29,7 @@ export function BrandMark({
   return (
     <span
       className={cn(
-        'inline-flex items-baseline gap-1.5 font-bold tracking-wider text-white',
+        'inline-flex shrink-0 items-baseline gap-1.5 font-bold tracking-wider text-white',
         sizeMap[size],
         className,
       )}

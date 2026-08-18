@@ -6,8 +6,8 @@ const tabs: PageSubNavTab[] = [
   {
     to: '/config',
     icon: ClipboardList,
-    label: 'Tarea Diaria',
-    title: 'Tarea Diaria',
+    label: 'Ejecutador',
+    title: 'Ejecutador de Tareas',
     subtitle: 'Gestiona el sistema y tareas automáticas',
     end: true,
   },

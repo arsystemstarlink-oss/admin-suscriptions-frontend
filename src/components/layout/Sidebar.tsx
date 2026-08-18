@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn, getInitial } from '@/lib/utils'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
@@ -11,6 +11,82 @@ const navItems = [
   { to: '/chats', icon: MessageSquare, label: 'Mensajes' },
   { to: '/config', icon: Settings, label: 'Configuración' },
 ]
+
+function CollapsedAccountMenu({
+  name,
+  email,
+  onLogout,
+}: {
+  name: string
+  email: string
+  onLogout: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative flex justify-center">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Menú de cuenta"
+        title={name}
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-800 text-white shadow-sm transition-colors hover:bg-primary-700 dark:bg-primary-700 dark:text-white dark:hover:bg-primary-600"
+      >
+        <span className="text-sm font-bold">{getInitial(name, 'U')}</span>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute bottom-0 left-full z-50 ml-2 w-56 rounded-lg border border-primary-100 bg-white p-2 text-primary-800 shadow-lg dark:border-primary-800 dark:bg-primary-900 dark:text-primary-100"
+        >
+          <div className="border-b border-primary-100 px-2 py-2 dark:border-primary-800">
+            <p className="truncate text-sm font-semibold">{name}</p>
+            {email ? (
+              <p className="truncate text-xs text-primary-600 dark:text-primary-300">{email}</p>
+            ) : null}
+          </div>
+          <NavLink
+            role="menuitem"
+            to="/config/profile"
+            onClick={() => setOpen(false)}
+            className="mt-1 flex items-center gap-2 rounded-md px-2 py-2 text-sm text-primary-800 hover:bg-primary-50 dark:text-primary-100 dark:hover:bg-primary-800"
+          >
+            <User className="h-4 w-4 shrink-0" />
+            Ver perfil
+          </NavLink>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onLogout}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/50"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Cerrar sesión
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface SidebarProps {
   collapsed: boolean
@@ -89,24 +165,11 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
             </div>
           </div>
         ) : (
-          <div className="flex justify-center gap-1">
-            <NavLink
-              to="/config/profile"
-              className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              title="Ver perfil"
-            >
-              <User className="h-4 w-4 shrink-0" />
-            </NavLink>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={logout}
-              className="text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              title="Cerrar sesión"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-            </Button>
-          </div>
+          <CollapsedAccountMenu
+            name={user?.name || 'Usuario'}
+            email={user?.email || ''}
+            onLogout={logout}
+          />
         )}
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUpdateMe, useChangePassword } from '@/hooks/useAuth'
 import { getErrorHandler } from '@/lib/error-handler'
 import { formatDate } from '@/lib/constants'
+import { getInitial } from '@/lib/utils'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -122,7 +123,7 @@ export function ProfilePage() {
     )
   }
 
-  const initials = user.name?.charAt(0).toUpperCase() || 'U'
+  const initials = getInitial(user.name, 'U')
 
   const onProfileSubmit = async (data: ProfileForm) => {
     const emailChanged = data.email.toLowerCase() !== user.email.toLowerCase()

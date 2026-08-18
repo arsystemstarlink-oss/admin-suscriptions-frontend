@@ -6,6 +6,7 @@ import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
 import { useUIStore } from '@/stores/ui.store'
+import { cn } from '@/lib/utils'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -44,6 +45,7 @@ export function AuthenticatedLayout() {
   }
 
   const { openOmniSearch } = useUIStore()
+  const isChatsPage = location.pathname.startsWith('/chats')
 
   if (isMobile) {
     return (
@@ -71,7 +73,10 @@ export function AuthenticatedLayout() {
         />
         <main
           ref={mainRef}
-          className="flex-1 overflow-auto p-4 md:p-6 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          className={cn(
+            'flex-1 p-4 md:p-6 pb-[max(1rem,env(safe-area-inset-bottom))]',
+            isChatsPage ? 'flex min-h-0 flex-col overflow-hidden' : 'overflow-auto'
+          )}
         >
           <Outlet />
         </main>

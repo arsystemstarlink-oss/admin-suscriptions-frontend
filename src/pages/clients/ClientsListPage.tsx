@@ -5,7 +5,7 @@ import { Users, Phone, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, getInitial } from '@/lib/utils'
 
 export function ClientsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -78,7 +78,7 @@ export function ClientsListPage() {
       emptyDescription="No encontramos resultados. Modifica los filtros o añade uno nuevo."
     >
       {data?.clients.map((client) => {
-        const initial = client.firstName ? client.firstName.charAt(0).toUpperCase() : '?'
+        const initial = getInitial(client.firstName)
         
         return (
           <ListCard

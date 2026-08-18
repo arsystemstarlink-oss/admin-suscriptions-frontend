@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName, canPayCurrentPeriod } from '@/lib/utils'
+import { getClientFullName, getInitial, canPayCurrentPeriod } from '@/lib/utils'
 import { DeleteClientModal } from '@/components/modals/DeleteClientModal'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -50,7 +50,7 @@ export function ClientDetailPage() {
   }
 
   const { client, subscriptions, summary } = data
-  const initial = client.firstName ? client.firstName.charAt(0).toUpperCase() : '?'
+  const initial = getInitial(client.firstName)
 
   const handlePaySubscription = (sub: SubscriptionWithDetails) => {
     if (sub.currentPeriod && sub.currentPeriod.status !== 'PAID') {

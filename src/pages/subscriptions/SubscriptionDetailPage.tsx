@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { AlertTriangle, Edit, Play, Pause, Plus, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName, hasOlderUnpaidPeriod } from '@/lib/utils'
+import { getClientFullName, getInitial, hasOlderUnpaidPeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails } from '@/types/api'
 import { toast } from 'sonner'
@@ -243,7 +243,7 @@ export function SubscriptionDetailPage() {
 
         <div className="p-3 rounded-xl bg-slate-50 dark:bg-primary-950 border border-primary-100 dark:border-primary-800 flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-primary-200/50 dark:bg-primary-800 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
-            {subscription.client.firstName.charAt(0).toUpperCase()}
+            {getInitial(subscription.client.firstName)}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-bold text-primary-900 dark:text-primary-50 truncate">

@@ -4,6 +4,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
 import { HeaderActions } from './HeaderActions';
+import { cn } from '@/lib/utils';
 
 export default function MobileAppShell({ children, onOpenSearch }: { children?: React.ReactNode; onOpenSearch?: () => void }) {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function MobileAppShell({ children, onOpenSearch }: { children?: 
   };
 
   const activeTab = getActiveTab();
+  const isChatsPage = location.pathname.startsWith('/chats');
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/' },
@@ -39,8 +41,18 @@ export default function MobileAppShell({ children, onOpenSearch }: { children?: 
       </header>
 
       {/* Contenedor Principal (Scroll) */}
-      <main className="flex-1 overflow-y-auto touch-pan-y overscroll-y-contain pb-[calc(80px+env(safe-area-inset-bottom))]">
-        <div className="px-4 py-6 flex flex-col gap-4">
+      <main
+        className={cn(
+          'flex-1 min-h-0 touch-pan-y overscroll-y-contain pb-[calc(80px+env(safe-area-inset-bottom))]',
+          isChatsPage ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'
+        )}
+      >
+        <div
+          className={cn(
+            'px-4 py-6 flex flex-col gap-4',
+            isChatsPage && 'flex-1 min-h-0 overflow-hidden'
+          )}
+        >
           {children || <Outlet />}
         </div>
       </main>

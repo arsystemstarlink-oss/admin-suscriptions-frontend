@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { MessageSquare, Send, Users, ArrowLeft } from 'lucide-react'
-import { cn, getClientFullName } from '@/lib/utils'
+import { cn, getClientFullName, getInitial } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/design-system/PageHeader'
@@ -257,11 +257,11 @@ export function ChatsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 md:min-h-0 md:h-[calc(100vh-8rem)]">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       <PageHeader
         title="Mensajes"
         description="Conversaciones de WhatsApp con clientes"
-        className={cn('block', isMobile && selectedPhone && 'hidden')}
+        className={cn('block shrink-0', isMobile && selectedPhone && 'hidden')}
       />
 
       <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
@@ -272,7 +272,7 @@ export function ChatsPage() {
           <CardHeader className="border-b border-primary-100 dark:border-primary-800 shrink-0 py-4 px-4">
             <h2 className="font-semibold text-foreground">Conversaciones</h2>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto p-2">
+          <CardContent className="min-h-0 flex-1 overflow-y-auto p-2">
             {clientsLoading && conversationItems.length === 0 ? (
               <div className="space-y-3 p-4">
                 {[...Array(5)].map((_, i) => (
@@ -288,7 +288,7 @@ export function ChatsPage() {
               <div className="space-y-1">
                 {conversationItems.map((item) => {
                   const latestMessage = item.latestMessage
-                  const initial = item.name.charAt(0).toUpperCase() || '?'
+                  const initial = getInitial(item.name)
                   const isUnread =
                     !!latestMessage &&
                     latestMessage.direction === 'INBOUND' &&

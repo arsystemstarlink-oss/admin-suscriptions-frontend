@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
-import { cn } from '@/lib/utils'
+import { cn, getInitial } from '@/lib/utils'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -68,7 +68,7 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
               >
                 <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-primary to-primary/60 shadow-sm">
                   <span className="text-sm font-bold text-primary-foreground">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    {getInitial(user?.name, 'U')}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">

@@ -10,6 +10,26 @@ export function getClientFullName(client: { firstName: string; lastName: string 
   return `${client.firstName} ${client.lastName}`.trim()
 }
 
+export function getInitial(value: string | null | undefined, fallback = '?'): string {
+  const trimmed = value?.trim()
+  if (!trimmed) return fallback
+
+  const firstGrapheme = getFirstGrapheme(trimmed)
+  if (!firstGrapheme) return fallback
+
+  return firstGrapheme.toLocaleUpperCase('es')
+}
+
+function getFirstGrapheme(value: string): string | undefined {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    const first = segmenter.segment(value)[Symbol.iterator]().next().value
+    return first?.segment
+  }
+
+  return Array.from(value)[0]
+}
+
 export function hasOlderUnpaidPeriod(
   period: Pick<BillingPeriod, 'id' | 'subscriptionId' | 'startDate'>,
   allPeriods: Pick<BillingPeriod, 'id' | 'subscriptionId' | 'startDate' | 'status'>[]

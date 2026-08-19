@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Package, Edit, Trash2, Plus } from 'lucide-react'
 import { formatCurrency } from '@/lib/constants'
 import { toast } from 'sonner'
-import { DeletePlanModal } from '@/components/modals/DeletePlanModal'
+import { DeletePlanSheet } from '@/components/modals/DeletePlanSheet'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 
@@ -131,7 +131,7 @@ export function PlansListPage() {
       ))}
 
       {deleteTarget && (
-        <DeletePlanModal
+        <DeletePlanSheet
           planId={deleteTarget.id}
           planName={deleteTarget.name}
           open={!!deleteTarget}

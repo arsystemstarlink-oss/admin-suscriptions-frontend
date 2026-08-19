@@ -3,24 +3,24 @@ import { useNavigate } from 'react-router-dom'
 import { useDeleteClient } from '@/hooks/useClients'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 
-interface DeleteClientModalProps {
+interface DeleteClientSheetProps {
   clientId: string
   clientName: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function DeleteClientModal({ clientId, clientName, open, onOpenChange }: DeleteClientModalProps) {
+export function DeleteClientSheet({ clientId, clientName, open, onOpenChange }: DeleteClientSheetProps) {
   const navigate = useNavigate()
   const deleteMutation = useDeleteClient()
   const [error, setError] = useState<string | null>(null)
@@ -43,29 +43,31 @@ export function DeleteClientModal({ clientId, clientName, open, onOpenChange }: 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <div className="flex items-center gap-3 pr-8">
+            <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center shrink-0">
               <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
             </div>
             <div>
-              <DialogTitle>Eliminar Cliente</DialogTitle>
-              <DialogDescription>
+              <SheetTitle>Eliminar Cliente</SheetTitle>
+              <SheetDescription>
                 ¿Está seguro que desea eliminar a {clientName}?
-              </DialogDescription>
+              </SheetDescription>
             </div>
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
-        {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
-            {error}
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto p-6 pt-4">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
+              {error}
+            </div>
+          )}
+        </div>
 
-        <DialogFooter className="gap-2">
+        <SheetFooter className="flex-row justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -76,8 +78,8 @@ export function DeleteClientModal({ clientId, clientName, open, onOpenChange }: 
           >
             {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

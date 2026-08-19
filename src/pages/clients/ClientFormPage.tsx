@@ -21,9 +21,12 @@ import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { normalizeDni } from '@/lib/utils'
 import { handleApiError } from '@/lib/error-handler'
+import { useIsSuperAdmin } from '@/stores/auth.store'
+import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 import type { CreateClientRequest } from '@/types/api'
 
 const clientSchema = z.object({
+  organizationId: z.string().optional(),
   firstName: z.string().min(1, 'El nombre es requerido'),
   lastName: z.string().min(1, 'El apellido es requerido'),
   phone: z
@@ -54,6 +57,7 @@ export function ClientFormPage() {
   const updateMutation = useUpdateClient()
   const [error, setFormError] = useState<string | null>(null)
   const backTo = isEdit ? `/subscriptions/clients/${id}` : '/subscriptions/clients'
+  const isSuperAdmin = useIsSuperAdmin()
 
   const {
     register,
@@ -91,10 +95,16 @@ export function ClientFormPage() {
   const onSubmit = async (formData: ClientForm) => {
     setFormError(null)
 
+    if (!isEdit && isSuperAdmin && !formData.organizationId) {
+      setFormError('Debe indicar la organización de destino.')
+      return
+    }
+
     try {
-      const { dniPrefix, dniDigits, ...rest } = formData
+      const { dniPrefix, dniDigits, organizationId, ...rest } = formData
       const payload = {
         ...rest,
+        ...(!isEdit && organizationId ? { organizationId } : {}),
         dni: dniDigits ? `${dniPrefix}${dniDigits}` : isEdit ? null : undefined,
         email: rest.email || undefined,
         address: rest.address || undefined,
@@ -156,6 +166,10 @@ export function ClientFormPage() {
             <User className="h-5 w-5 text-primary-400" />
             Datos Personales
           </h2>
+
+          {!isEdit && (
+            <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
+          )}
 
           <div className="space-y-2.5">
             <Label htmlFor="firstName" className="text-primary-800 dark:text-primary-200">Nombre *</Label>

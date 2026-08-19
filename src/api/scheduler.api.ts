@@ -20,7 +20,7 @@ export const schedulerApi = {
   },
 
   runNow: async (organizationId?: string): Promise<{ message: string }> => {
-    const response = await api.post<{ message: string }>('/scheduler/run', null, {
+    const response = await api.post<{ message: string }>('/scheduler/run', {}, {
       params: { organizationId },
     })
     return response.data

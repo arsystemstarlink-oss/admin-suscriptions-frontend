@@ -136,7 +136,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
             <p className="text-sm text-red-600 dark:text-red-400">{errors.slug.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Identificador único. Si se deja vacío no se asigna.
+            Identificador único. Si se deja vacío se generará automáticamente a partir del nombre.
           </p>
         </div>
       </div>

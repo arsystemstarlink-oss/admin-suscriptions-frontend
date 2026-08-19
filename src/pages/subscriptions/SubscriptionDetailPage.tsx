@@ -1,25 +1,17 @@
 import { useParams, Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSubscriptionDetail, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
 import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { AlertTriangle, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, hasOlderUnpaidPeriod } from '@/lib/utils'
@@ -27,7 +19,7 @@ import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails } from '@/types/api'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import { EditPaymentModal } from '@/components/payment/EditPaymentModal'
+import { EditPaymentSheet } from '@/components/payment/EditPaymentSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
 
@@ -43,14 +35,6 @@ export function SubscriptionDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [newStatus, setNewStatus] = useState<SubscriptionStatus | null>(null)
   const [editingPeriod, setEditingPeriod] = useState<BillingPeriodWithDetails | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   if (isLoading) {
     return (
@@ -133,7 +117,7 @@ export function SubscriptionDetailPage() {
     })
   }
 
-  // Wrapper Condicional: Si es móvil usa Drawer (Bottom Sheet), si no, Modal normal.
+  // Confirmación adaptativa: Bottom Sheet en móvil, Drawer lateral en desktop.
   const ConfirmationDialog = ({ 
     open, 
     onOpenChange, 
@@ -143,49 +127,22 @@ export function SubscriptionDetailPage() {
     confirmText, 
     isDestructive = false, 
     isPending = false 
-  }: any) => {
-    if (isMobile) {
-      return (
-        <Drawer open={open} onOpenChange={onOpenChange}>
-          <DrawerContent>
-            <DrawerHeader className="text-left px-4">
-              <DrawerTitle>{title}</DrawerTitle>
-              <DrawerDescription>{description}</DrawerDescription>
-            </DrawerHeader>
-            <DrawerFooter className="border-t border-primary-100 dark:border-primary-800 pt-4">
-              <Button 
-                onClick={onConfirm} 
-                className={`w-full h-14 text-base font-semibold shadow-md active:scale-95 transition-transform touch-manipulation ${isDestructive ? 'bg-red-600 hover:bg-red-700 text-white dark:bg-red-700' : 'bg-primary-800 hover:bg-primary-900 text-white dark:bg-primary-700'}`}
-                disabled={isPending}
-              >
-                {isPending ? 'Procesando...' : confirmText}
-              </Button>
-              <Button variant="ghost" className="w-full h-12 mt-2" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      )
-    }
-
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 mt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button variant={isDestructive ? 'destructive' : 'default'} onClick={onConfirm} disabled={isPending}>
-              {isPending ? 'Procesando...' : confirmText}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    )
-  }
+  }: any) => (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>{title}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
+        </SheetHeader>
+        <SheetFooter className="flex-row justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant={isDestructive ? 'destructive' : 'default'} onClick={onConfirm} disabled={isPending}>
+            {isPending ? 'Procesando...' : confirmText}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
 
   return (
     <div className="flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]">
@@ -408,8 +365,8 @@ export function SubscriptionDetailPage() {
         )}
       </div>
 
-      {/* Componentes Hijos (Modales/Drawers) */}
-      <EditPaymentModal
+      {/* Componentes Hijos (Sheets) */}
+      <EditPaymentSheet
         period={editingPeriod}
         open={!!editingPeriod}
         onOpenChange={(open) => !open && setEditingPeriod(null)}

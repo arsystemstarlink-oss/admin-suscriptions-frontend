@@ -8,13 +8,13 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '@/components/ui/sheet'
 import {
   Select,
   SelectContent,
@@ -36,13 +36,13 @@ const editPaymentSchema = z.object({
 
 type EditPaymentForm = z.infer<typeof editPaymentSchema>
 
-interface EditPaymentModalProps {
+interface EditPaymentSheetProps {
   period: BillingPeriodWithDetails | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function EditPaymentModal({ period, open, onOpenChange }: EditPaymentModalProps) {
+export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentSheetProps) {
   const [showSuccess, setShowSuccess] = useState(false)
   const updatePayment = useUpdateBillingPeriod()
 
@@ -97,46 +97,46 @@ export function EditPaymentModal({ period, open, onOpenChange }: EditPaymentModa
   if (!period) return null
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md">
+    <Sheet open={open} onOpenChange={(open) => !open && handleClose()}>
+      <SheetContent className="sm:max-w-md">
         {!showSuccess ? (
           <>
-            <DialogHeader>
-              <DialogTitle>Editar Pago</DialogTitle>
-              <DialogDescription>
+            <SheetHeader>
+              <SheetTitle>Editar Pago</SheetTitle>
+              <SheetDescription>
                 Modifique los datos del pago registrado
-              </DialogDescription>
-            </DialogHeader>
+              </SheetDescription>
+            </SheetHeader>
 
-            <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg border space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground truncate">{getClientFullName(period.client)}</p>
-                    {period.client?.dni && (
-                      <p className="text-xs text-muted-foreground">C.I. {period.client.dni}</p>
-                    )}
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-4">
+                <div className="p-3 bg-muted rounded-lg border space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{getClientFullName(period.client)}</p>
+                      {period.client?.dni && (
+                        <p className="text-xs text-muted-foreground">C.I. {period.client.dni}</p>
+                      )}
+                    </div>
+                    <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
+                      Pagado
+                    </Badge>
                   </div>
-                  <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
-                    Pagado
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>Kit #{period.subscription.kitNumber}</span>
-                  <span>{period.plan.name}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{period.periodLabel}</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(period.amount)}</span>
-                </div>
-                {period.paidAt && (
-                  <div className="text-sm text-muted-foreground">
-                    Pagado: {formatDate(period.paidAt)}
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <span>Kit #{period.subscription.kitNumber}</span>
+                    <span>{period.plan.name}</span>
                   </div>
-                )}
-              </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{period.periodLabel}</span>
+                    <span className="font-semibold text-foreground">{formatCurrency(period.amount)}</span>
+                  </div>
+                  {period.paidAt && (
+                    <div className="text-sm text-muted-foreground">
+                      Pagado: {formatDate(period.paidAt)}
+                    </div>
+                  )}
+                </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Monto *</Label>
                   <Input
@@ -188,34 +188,36 @@ export function EditPaymentModal({ period, open, onOpenChange }: EditPaymentModa
                     {...register('notes')}
                   />
                 </div>
+              </div>
 
-                <DialogFooter className="gap-2">
-                  <Button type="button" variant="outline" onClick={handleClose}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </div>
+              <SheetFooter className="flex-row justify-end gap-2">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
+              </SheetFooter>
+            </form>
           </>
         ) : (
-          <div className="py-8 text-center space-y-4">
-            <div className="mx-auto h-16 w-16 rounded-full bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 flex items-center justify-center">
-              <CheckCircle className="h-8 w-8 shrink-0" />
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="py-8 text-center space-y-4">
+              <div className="mx-auto h-16 w-16 rounded-full bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 shrink-0" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Pago Actualizado</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Los datos del pago han sido modificados correctamente
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">Cerrando automáticamente...</p>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Pago Actualizado</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Los datos del pago han sido modificados correctamente
-              </p>
-            </div>
-            <p className="text-xs text-muted-foreground">Cerrando automáticamente...</p>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 

@@ -29,8 +29,7 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       devOptions: {
-        enabled: true,
-        type: 'module',
+        enabled: false,
       },
       includeAssets: ['favicon.svg', 'favicon.ico', 'pwa-192.png', 'pwa-512.png', 'apple-touch-icon.png'],
       manifest: {

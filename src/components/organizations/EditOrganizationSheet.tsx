@@ -16,13 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { AlertTriangle, Building2, MessageCircle, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ApiError, Organization, OrganizationTwilioConfigRequest } from '@/types/api'
@@ -49,13 +49,13 @@ const editOrganizationSchema = z.object({
 
 type EditOrganizationForm = z.infer<typeof editOrganizationSchema>
 
-interface EditOrganizationModalProps {
+interface EditOrganizationSheetProps {
   organization: Organization
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function EditOrganizationModal({ organization, open, onOpenChange }: EditOrganizationModalProps) {
+export function EditOrganizationSheet({ organization, open, onOpenChange }: EditOrganizationSheetProps) {
   const updateMutation = useUpdateOrganization()
   const deleteMutation = useDeleteOrganization()
   const [error, setError] = useState<string | null>(null)
@@ -180,24 +180,24 @@ export function EditOrganizationModal({ organization, open, onOpenChange }: Edit
   if (!organization) return null
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
-              </div>
-              <div>
-                <DialogTitle>Editar Organización</DialogTitle>
-                <DialogDescription>
-                  Modifica los datos de {organization.name}
-                </DialogDescription>
-              </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <div className="flex items-center gap-3 pr-8">
+            <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
+              <Building2 className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
             </div>
-          </DialogHeader>
+            <div>
+              <SheetTitle>Editar Organización</SheetTitle>
+              <SheetDescription>
+                Modifica los datos de {organization.name}
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-4">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
                 {error}
@@ -374,104 +374,85 @@ export function EditOrganizationModal({ organization, open, onOpenChange }: Edit
               )}
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={deleteMutation.isPending}
-              >
-                Eliminar
-              </Button>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
-                  {isSubmitting || updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
+            {showRemoveTwilioConfirm && (
+              <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-red-600 dark:text-red-400 shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Se eliminarán las credenciales de WhatsApp de {organization.name}. WhatsApp
+                    quedará deshabilitado hasta que se configuren nuevas credenciales.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleRemoveTwilio}
+                    disabled={updateMutation.isPending}
+                  >
+                    {updateMutation.isPending ? 'Quitando...' : 'Confirmar'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRemoveTwilioConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
               </div>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            )}
 
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+            {showDeleteConfirm && (
+              <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-red-600 dark:text-red-400 shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Se eliminará {organization.name} y todos sus datos: administradores, clientes,
+                    planes, suscripciones y períodos de facturación. Esta acción no se puede deshacer.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? 'Eliminando...' : 'Confirmar eliminación'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
               </div>
-              <div>
-                <DialogTitle>Eliminar Organización</DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro que desea eliminar {organization.name}? Solo es posible si no tiene
-                  usuarios asignados.
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
+            )}
+          </div>
 
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
-              {error}
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-              Cancelar
-            </Button>
+          <SheetFooter className="flex-row justify-between gap-2">
             <Button
+              type="button"
               variant="destructive"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+              Eliminar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showRemoveTwilioConfirm} onOpenChange={setShowRemoveTwilioConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
-              </div>
-              <div>
-                <DialogTitle>Quitar configuración Twilio</DialogTitle>
-                <DialogDescription>
-                  Se eliminarán las credenciales de WhatsApp de {organization.name}. WhatsApp
-                  quedará deshabilitado: no podrá enviar ni recibir notificaciones hasta que se
-                  configuren nuevas credenciales.
-                </DialogDescription>
-              </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+                {isSubmitting || updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
             </div>
-          </DialogHeader>
-
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
-              {error}
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowRemoveTwilioConfirm(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleRemoveTwilio}
-              disabled={updateMutation.isPending}
-            >
-              {updateMutation.isPending ? 'Quitando...' : 'Quitar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useSchedulerConfig, useUpdateSchedulerConfig, useRunScheduler } from '@/hooks/useScheduler'
+import { useOrganizations } from '@/hooks/useOrganizations'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -11,8 +14,11 @@ import {
   Zap,
   RefreshCw,
   Pause,
+  Building2,
 } from 'lucide-react'
 import { formatDate } from '@/lib/constants'
+
+const ALL_ORGS_VALUE = '__all__'
 
 function parseCronToTime(cron: string): { hour12: number; minute: number; period: 'AM' | 'PM' } {
   const parts = cron.split(' ')
@@ -42,12 +48,33 @@ function formatTimeDisplay(hour12: number, minute: number, period: 'AM' | 'PM'):
 }
 
 export function AdminToolsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedHour12, setSelectedHour12] = useState(8)
   const [selectedMinute, setSelectedMinute] = useState(30)
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM')
-  const { data: schedulerConfig, isLoading: isLoadingScheduler } = useSchedulerConfig()
-  const updateSchedulerMutation = useUpdateSchedulerConfig()
-  const runSchedulerMutation = useRunScheduler()
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationIdFilter = searchParams.get('organizationId') || undefined
+  const { data: schedulerConfig, isLoading: isLoadingScheduler } = useSchedulerConfig(organizationIdFilter)
+  const updateSchedulerMutation = useUpdateSchedulerConfig(organizationIdFilter)
+  const runSchedulerMutation = useRunScheduler(organizationIdFilter)
+
+  const { data: organizationsData } = useOrganizations(
+    { limit: 100 },
+    { enabled: isSuperAdmin },
+  )
+  const organizations = (organizationsData?.organizations || []).filter((org) => org.active)
+
+  const requiresOrganization = isSuperAdmin && !organizationIdFilter
+
+  const handleOrganizationFilter = (value: string) => {
+    const params = new URLSearchParams(searchParams)
+    if (value === ALL_ORGS_VALUE) {
+      params.delete('organizationId')
+    } else {
+      params.set('organizationId', value)
+    }
+    setSearchParams(params)
+  }
 
   useEffect(() => {
     if (schedulerConfig?.cronSchedule) {
@@ -73,6 +100,40 @@ export function AdminToolsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+
+      {isSuperAdmin && (
+        <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 p-4 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium text-primary-800 dark:text-primary-200">
+            <Building2 className="h-4 w-4 text-primary-400 shrink-0" />
+            Organización
+          </div>
+          <Select value={organizationIdFilter || ALL_ORGS_VALUE} onValueChange={handleOrganizationFilter}>
+            <SelectTrigger
+              className="w-full sm:w-64 h-10 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+              aria-label="Seleccionar organización"
+            >
+              <SelectValue placeholder="Todas las organizaciones" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_ORGS_VALUE}>Todas las organizaciones</SelectItem>
+              {organizations.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  {org.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {requiresOrganization && (
+        <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
+          <span className="shrink-0 mt-0.5">⚠️</span>
+          <span>
+            Seleccione una organización para habilitar el ejecutador de tareas.
+          </span>
+        </div>
+      )}
 
       {isLoadingScheduler ? (
         <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
@@ -164,7 +225,7 @@ export function AdminToolsPage() {
                   <Button
                     variant={schedulerConfig.enabled ? 'destructive' : 'default'}
                     onClick={() => handleToggleScheduler(!schedulerConfig.enabled)}
-                    disabled={updateSchedulerMutation.isPending}
+                    disabled={updateSchedulerMutation.isPending || requiresOrganization}
                     className="w-full sm:w-auto sm:min-w-35"
                   >
                     {schedulerConfig.enabled ? 'Desactivar' : 'Activar'}
@@ -182,7 +243,7 @@ export function AdminToolsPage() {
                     <h3 className="font-semibold text-base">Horario de Ejecución</h3>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))}>
+                    <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))} disabled={requiresOrganization}>
                       <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
@@ -194,7 +255,7 @@ export function AdminToolsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))}>
+                    <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))} disabled={requiresOrganization}>
                       <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
                         <SelectValue placeholder="Min" />
                       </SelectTrigger>
@@ -206,7 +267,7 @@ export function AdminToolsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')}>
+                    <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')} disabled={requiresOrganization}>
                       <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
                         <SelectValue placeholder="AM/PM" />
                       </SelectTrigger>
@@ -218,7 +279,7 @@ export function AdminToolsPage() {
                   </div>
                   <Button
                     onClick={handleUpdateScheduler}
-                    disabled={updateSchedulerMutation.isPending}
+                    disabled={updateSchedulerMutation.isPending || requiresOrganization}
                     className="w-full"
                   >
                     {updateSchedulerMutation.isPending ? 'Guardando...' : 'Guardar'}
@@ -236,7 +297,7 @@ export function AdminToolsPage() {
                   <Button
                     variant="outline"
                     onClick={handleRunScheduler}
-                    disabled={runSchedulerMutation.isPending}
+                    disabled={runSchedulerMutation.isPending || requiresOrganization}
                     className="w-full sm:w-auto"
                   >
                     {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}

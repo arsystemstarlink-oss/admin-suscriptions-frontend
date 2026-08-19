@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
-import { CreateOrganizationForm } from '@/components/organizations/CreateOrganizationForm'
-import { EditOrganizationModal } from '@/components/organizations/EditOrganizationModal'
+import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
+import { EditOrganizationSheet } from '@/components/organizations/EditOrganizationSheet'
 import type { Organization } from '@/types/api'
 
 export function OrganizationsPage() {
@@ -16,7 +16,7 @@ export function OrganizationsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null)
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
 
   const { data, isLoading } = useOrganizations(
     {
@@ -48,47 +48,32 @@ export function OrganizationsPage() {
   const isEmpty = !isLoading && organizations.length === 0
 
   return (
-    <ListPageLayout
-      searchProps={{
-        value: search,
-        onChange: handleSearch,
-        placeholder: 'Buscar por nombre o slug...',
-      }}
-      filters={
-        <FilterPill active={showCreateForm} onClick={() => setShowCreateForm(!showCreateForm)}>
-          <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-          Nueva Organización
-        </FilterPill>
-      }
-      isLoading={isLoading}
-      isEmpty={isEmpty}
-      emptyIcon={<Building2 className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
-      emptyTitle="Sin organizaciones"
-      emptyDescription="No encontramos resultados. Modifica los filtros o crea una nueva."
-      emptyAction={
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="h-4 w-4 mr-2 shrink-0" />
-          Crear Organización
-        </Button>
-      }
-    >
-      {showCreateForm && (
-        <div className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Crear nueva organización</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowCreateForm(false)}
-            >
-              Cancelar
-            </Button>
-          </div>
-          <CreateOrganizationForm onSuccess={() => setShowCreateForm(false)} />
-        </div>
-      )}
-
-      <div className="space-y-3">
+    <>
+      <ListPageLayout
+        searchProps={{
+          value: search,
+          onChange: handleSearch,
+          placeholder: 'Buscar por nombre o slug...',
+        }}
+        filters={
+          <FilterPill active={createOpen} onClick={() => setCreateOpen(!createOpen)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+            Nueva Organización
+          </FilterPill>
+        }
+        isLoading={isLoading}
+        isEmpty={isEmpty}
+        emptyIcon={<Building2 className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+        emptyTitle="Sin organizaciones"
+        emptyDescription="No encontramos resultados. Modifica los filtros o crea una nueva."
+        emptyAction={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2 shrink-0" />
+            Crear Organización
+          </Button>
+        }
+      >
+        <div className="space-y-3">
         {organizations.map((organization) => (
           <ListCard
             key={organization.id}
@@ -151,7 +136,7 @@ export function OrganizationsPage() {
                 onClick={() => {
                   if (
                     confirm(
-                      `¿Eliminar la organización ${organization.name}? Solo es posible si no tiene usuarios asignados.`,
+                      `¿Eliminar la organización ${organization.name}? Se eliminarán todos sus datos: usuarios, clientes, planes, suscripciones, períodos y mensajes de WhatsApp. Esta acción es irreversible.`,
                     )
                   ) {
                     deleteMutation.mutate(organization.id)
@@ -165,12 +150,15 @@ export function OrganizationsPage() {
           </ListCard>
         ))}
       </div>
+      </ListPageLayout>
 
-      <EditOrganizationModal
+      <CreateOrganizationSheet open={createOpen} onOpenChange={setCreateOpen} />
+
+      <EditOrganizationSheet
         organization={editingOrganization!}
         open={!!editingOrganization}
         onOpenChange={(open) => !open && setEditingOrganization(null)}
       />
-    </ListPageLayout>
+    </>
   )
 }

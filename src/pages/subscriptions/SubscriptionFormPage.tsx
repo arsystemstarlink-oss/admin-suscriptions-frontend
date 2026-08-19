@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,18 +10,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Box, CalendarDays, DollarSign, Clock, Users, Hash } from 'lucide-react'
+import { Plus, Trash2, Box, CalendarDays, DollarSign, Clock, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
+import { useIsSuperAdmin } from '@/stores/auth.store'
+import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 
 const subscriptionSchema = z.object({
+  organizationId: z.string().optional(),
   clientId: z.string().min(1, 'Seleccione un cliente'),
   planId: z.string().min(1, 'Seleccione un plan'),
-  kitNumber: z.string().min(1, 'El número de kit es requerido'),
+  kitNumber: z.string().min(5, 'Ingrese el número de kit (ej: KIT-001)'),
   accountNumber: z.string().optional(),
   billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
   maxOverduePeriods: z.coerce.number().min(1).max(12).optional(),
@@ -40,9 +43,8 @@ type SubscriptionForm = z.infer<typeof subscriptionSchema>
 
 export function SubscriptionFormPage() {
   const navigate = useNavigate()
+  const isSuperAdmin = useIsSuperAdmin()
   const createMutation = useCreateSubscription()
-  const { data: clientsData } = useClients({ limit: 100 })
-  const { data: plansData } = usePlans({ active: true, limit: 100 })
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -60,6 +62,17 @@ export function SubscriptionFormPage() {
     },
   })
 
+  const organizationId = watch('organizationId')
+  const orgEnabled = !isSuperAdmin || !!organizationId
+  const { data: clientsData } = useClients(
+    { limit: 100, organizationId: organizationId || undefined },
+    { enabled: orgEnabled },
+  )
+  const { data: plansData } = usePlans(
+    { active: true, limit: 100, organizationId: organizationId || undefined },
+    { enabled: orgEnabled },
+  )
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'historicalPayments',
@@ -68,6 +81,24 @@ export function SubscriptionFormPage() {
   const planId = watch('planId')
   const activationDate = watch('activationDate')
   const selectedPlan = plansData?.plans.find(p => p.id === planId)
+
+  const kitNumberValue = watch('kitNumber')
+  const accountNumberValue = watch('accountNumber')
+
+  const normalizePrefixedValue = (raw: string, prefix: string) =>
+    raw
+      .toUpperCase()
+      .replace(new RegExp(`^${prefix}-?`), '')
+      .replace(/[^A-Z0-9-]/g, '')
+      .replace(/^-+/, '')
+
+  const handleKitNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setValue('kitNumber', `KIT-${normalizePrefixedValue(e.target.value, 'KIT')}`, { shouldValidate: true })
+  }
+
+  const handleAccountNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setValue('accountNumber', `ACC-${normalizePrefixedValue(e.target.value, 'ACC')}`, { shouldValidate: true })
+  }
 
   const isRetroactive = useMemo(() => {
     if (!activationDate) return false
@@ -83,8 +114,14 @@ export function SubscriptionFormPage() {
   const onSubmit = async (formData: SubscriptionForm) => {
     setError(null)
 
+    if (isSuperAdmin && !formData.organizationId) {
+      setError('Debe indicar la organización de destino.')
+      return
+    }
+
     try {
       const request = {
+        ...(formData.organizationId ? { organizationId: formData.organizationId } : {}),
         clientId: formData.clientId,
         planId: formData.planId,
         kitNumber: formData.kitNumber,
@@ -153,12 +190,17 @@ export function SubscriptionFormPage() {
             <Users className="h-5 w-5 text-primary-400" />
             Datos Principales
           </h2>
-          
+
+          <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
+
           <div className="space-y-2.5">
             <Label className="text-primary-800 dark:text-primary-200">Cliente *</Label>
             <Select onValueChange={(value) => setValue('clientId', value)}>
-              <SelectTrigger className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700">
-                <SelectValue placeholder="Seleccione un cliente" />
+              <SelectTrigger
+                className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+                disabled={isSuperAdmin && !organizationId}
+              >
+                <SelectValue placeholder={isSuperAdmin && !organizationId ? 'Seleccione primero la organización' : 'Seleccione un cliente'} />
               </SelectTrigger>
               <SelectContent>
                 {clients.map((client) => (
@@ -176,8 +218,11 @@ export function SubscriptionFormPage() {
           <div className="space-y-2.5">
             <Label className="text-primary-800 dark:text-primary-200">Plan *</Label>
             <Select onValueChange={(value) => setValue('planId', value)}>
-              <SelectTrigger className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700">
-                <SelectValue placeholder="Seleccione un plan" />
+              <SelectTrigger
+                className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+                disabled={isSuperAdmin && !organizationId}
+              >
+                <SelectValue placeholder={isSuperAdmin && !organizationId ? 'Seleccione primero la organización' : 'Seleccione un plan'} />
               </SelectTrigger>
               <SelectContent>
                 {plans.map((plan) => (
@@ -203,13 +248,17 @@ export function SubscriptionFormPage() {
           <div className="space-y-2.5">
             <Label htmlFor="kitNumber" className="text-primary-800 dark:text-primary-200">Número de Kit *</Label>
             <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-400 shrink-0" />
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 px-2 py-1 text-sm font-semibold">
+                KIT-
+              </span>
               <Input 
                 id="kitNumber" 
-                {...register('kitNumber')} 
-                placeholder="Ej: KIT-001" 
-                className="pl-10 h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700" 
+                value={(kitNumberValue || '').replace(/^KIT-/, '')} 
+                onChange={handleKitNumberChange} 
+                placeholder="Ej: 001" 
+                className="pl-16 h-12 bg-slate-50 text-primary-900 dark:bg-primary-900 dark:text-primary-50 border-primary-200 dark:border-primary-700 uppercase font-semibold tracking-wide" 
                 inputMode="text"
+                autoCapitalize="characters"
               />
             </div>
             {errors.kitNumber && (
@@ -220,12 +269,17 @@ export function SubscriptionFormPage() {
           <div className="space-y-2.5">
             <Label htmlFor="accountNumber" className="text-primary-800 dark:text-primary-200">Cuenta Starlink <span className="text-primary-400 font-normal">(Opcional)</span></Label>
             <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-400 shrink-0" />
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 px-2 py-1 text-sm font-semibold">
+                ACC-
+              </span>
               <Input 
                 id="accountNumber" 
-                {...register('accountNumber')} 
-                placeholder="Ej: ACC-8381534..." 
-                className="pl-10 h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700" 
+                value={(accountNumberValue || '').replace(/^ACC-/, '')} 
+                onChange={handleAccountNumberChange} 
+                placeholder="Ej: 8381534-78084-24" 
+                className="pl-16 h-12 bg-slate-50 text-primary-900 dark:bg-primary-900 dark:text-primary-50 border-primary-200 dark:border-primary-700 uppercase font-semibold tracking-wide" 
+                inputMode="text"
+                autoCapitalize="characters"
               />
             </div>
           </div>

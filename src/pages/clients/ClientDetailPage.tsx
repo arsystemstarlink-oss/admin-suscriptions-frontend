@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod } from '@/lib/utils'
-import { DeleteClientModal } from '@/components/modals/DeleteClientModal'
+import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
@@ -278,7 +278,7 @@ export function ClientDetailPage() {
         </TabsContent>
       </Tabs>
 
-      <DeleteClientModal
+      <DeleteClientSheet
         clientId={id!}
         clientName={getClientFullName(client)}
         open={showDeleteModal}

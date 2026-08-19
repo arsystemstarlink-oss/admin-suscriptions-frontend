@@ -12,10 +12,11 @@ interface UseClientsParams {
   offset?: number
 }
 
-export function useClients(params?: UseClientsParams) {
+export function useClients(params?: UseClientsParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.clients.lists, params],
     queryFn: () => clientsApi.list(params),
+    ...options,
   })
 }
 

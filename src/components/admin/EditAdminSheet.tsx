@@ -10,13 +10,13 @@ import { Label } from '@/components/ui/label'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { AlertTriangle, UserCog } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Admin, UpdateAdminRequest } from '@/types/api'
@@ -42,13 +42,13 @@ const editAdminSchema = z.object({
 
 type EditAdminForm = z.infer<typeof editAdminSchema>
 
-interface EditAdminModalProps {
+interface EditAdminSheetProps {
   admin: Admin
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProps) {
+export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProps) {
   const updateMutation = useUpdateAdmin()
   const deleteMutation = useDeleteAdmin()
   const setTokens = useAuthStore((s) => s.setTokens)
@@ -148,24 +148,24 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
   if (!admin) return null
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center">
-                <UserCog className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
-              </div>
-              <div>
-                <DialogTitle>Editar Administrador</DialogTitle>
-                <DialogDescription>
-                  Modifica los datos de {admin.name}
-                </DialogDescription>
-              </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <div className="flex items-center gap-3 pr-8">
+            <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
+              <UserCog className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
             </div>
-          </DialogHeader>
+            <div>
+              <SheetTitle>Editar Administrador</SheetTitle>
+              <SheetDescription>
+                Modifica los datos de {admin.name}
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-4">
             {error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
                 {error}
@@ -242,64 +242,55 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
               </div>
             </div>
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={deleteMutation.isPending}
-              >
-                Eliminar
-              </Button>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
-                  {isSubmitting || updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
-                </Button>
+            {showDeleteConfirm && (
+              <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-red-600 dark:text-red-400 shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    ¿Eliminar a {admin.name}? Esta acción no se puede deshacer.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? 'Eliminando...' : 'Confirmar eliminación'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
               </div>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            )}
+          </div>
 
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
-              </div>
-              <div>
-                <DialogTitle>Eliminar Administrador</DialogTitle>
-                <DialogDescription>
-                  ¿Está seguro que desea eliminar a {admin.name}?
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
-              {error}
-            </div>
-          )}
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-              Cancelar
-            </Button>
+          <SheetFooter className="flex-row justify-between gap-2">
             <Button
+              type="button"
               variant="destructive"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+              Eliminar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+                {isSubmitting || updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+              </Button>
+            </div>
+          </SheetFooter>
+        </form>
+      </SheetContent>
+    </Sheet>
   )
 }

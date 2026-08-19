@@ -11,10 +11,11 @@ interface UsePlansParams {
   offset?: number
 }
 
-export function usePlans(params?: UsePlansParams) {
+export function usePlans(params?: UsePlansParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.plans.lists, params],
     queryFn: () => plansApi.list(params),
+    ...options,
   })
 }
 

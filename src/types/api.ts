@@ -146,6 +146,8 @@ export interface Client {
   address?: string
   notes?: string
   createdAt: string
+  createdByUserId?: string
+  createdByRole?: UserRole
 }
 
 export interface ClientWithStats extends Client {
@@ -167,6 +169,8 @@ export interface Plan {
   description?: string
   active: boolean
   createdAt: string
+  createdByUserId?: string
+  createdByRole?: UserRole
 }
 
 export interface Subscription {
@@ -181,6 +185,8 @@ export interface Subscription {
   maxOverduePeriods: number
   activationDate?: string
   createdAt: string
+  createdByUserId?: string
+  createdByRole?: UserRole
 }
 
 export interface SchedulerConfig {

@@ -10,8 +10,11 @@ import { Label } from '@/components/ui/label'
 import { Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { useIsSuperAdmin } from '@/stores/auth.store'
+import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 
 const planSchema = z.object({
+  organizationId: z.string().optional(),
   name: z.string().min(1, 'El nombre es requerido'),
   price: z.coerce.number().min(0.01, 'El precio debe ser mayor a 0'),
   description: z.string().optional(),
@@ -29,9 +32,11 @@ export function PlanFormPage() {
   const createMutation = useCreatePlan()
   const updateMutation = useUpdatePlan()
   const [error, setError] = useState<string | null>(null)
+  const isSuperAdmin = useIsSuperAdmin()
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -52,9 +57,15 @@ export function PlanFormPage() {
   const onSubmit = async (formData: PlanForm) => {
     setError(null)
 
+    if (!isEdit && isSuperAdmin && !formData.organizationId) {
+      setError('Debe indicar la organización de destino.')
+      return
+    }
+
     try {
       const payload = {
         ...formData,
+        ...(!isEdit && formData.organizationId ? { organizationId: formData.organizationId } : {}),
         description: formData.description || undefined,
       }
 
@@ -111,6 +122,10 @@ export function PlanFormPage() {
             <Package className="h-5 w-5 text-primary-400" />
             Información del Plan
           </h2>
+
+          {!isEdit && (
+            <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
+          )}
 
           <div className="space-y-2.5">
             <Label htmlFor="name" className="text-primary-800 dark:text-primary-200">Nombre *</Label>

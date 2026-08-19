@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { whatsappApi } from '@/api/whatsapp.api'
 import { qk } from '@/lib/query-keys'
 import type { SendMessageRequest } from '@/types/api'
+import { toast } from 'sonner'
+import { handleApiError } from '@/lib/error-handler'
 
 export function useWhatsAppMessages(phone: string | null) {
   return useQuery({
@@ -29,5 +31,20 @@ export function useSendMessage(organizationId?: string) {
       qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.to) })
       qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
     },
+  })
+}
+
+export function useDeleteChat() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ phone, organizationId }: { phone: string; organizationId?: string }) =>
+      whatsappApi.deleteMessagesByPhone(phone, organizationId),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.phone) })
+      qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
+      toast.success('Conversación eliminada correctamente')
+    },
+    onError: (err) => handleApiError(err),
   })
 }

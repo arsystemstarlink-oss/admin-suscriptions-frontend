@@ -587,6 +587,12 @@ export interface MessagesByPhoneResponse {
   total: number
 }
 
+export interface DeleteMessagesResponse {
+  success: boolean
+  deleted: number
+  message: string
+}
+
 export interface WhatsAppConversation {
   phone: string
   clientId?: string

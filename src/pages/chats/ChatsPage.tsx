@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations } from '@/hooks/useWhatsApp'
+import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat } from '@/hooks/useWhatsApp'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, Send, Users, ArrowLeft } from 'lucide-react'
+import { MessageSquare, Send, Users, ArrowLeft, Trash2 } from 'lucide-react'
 import { cn, getClientFullName, getInitial } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -17,6 +17,7 @@ import { whatsappApi } from '@/api/whatsapp.api'
 import { qk } from '@/lib/query-keys'
 import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 
 const isSameDay = (date: Date, reference: Date = new Date()): boolean =>
   date.getFullYear() === reference.getFullYear() &&
@@ -48,6 +49,8 @@ export function ChatsPage() {
   const { data: messagesData, isLoading: messagesLoading } = useWhatsAppMessages(selectedPhone)
   const { data: conversationsData } = useWhatsAppConversations()
   const sendMessageMutation = useSendMessage()
+  const deleteChatMutation = useDeleteChat()
+  const isSuperAdmin = useIsSuperAdmin()
 
   const clients = clientsData?.clients || []
   const messages = messagesData?.messages || []
@@ -65,6 +68,23 @@ export function ChatsPage() {
     () => clients.map((client) => client.phone).filter(Boolean),
     [clients]
   )
+
+  const phoneToOrganizationId = useMemo(() => {
+    const map = new Map<string, string>()
+    clients.forEach((client) => {
+      if (client.phone && client.organizationId) map.set(client.phone, client.organizationId)
+    })
+    ;(conversationsData?.conversations || []).forEach((conv) => {
+      if (conv.phone && conv.lastMessage?.organizationId) {
+        map.set(conv.phone, conv.lastMessage.organizationId)
+      }
+    })
+    return map
+  }, [clients, conversationsData])
+
+  const selectedChatOrganizationId = selectedPhone
+    ? phoneToOrganizationId.get(selectedPhone)
+    : undefined
 
   const unknownConversations = useMemo(
     () => (conversationsData?.conversations || []).filter((conv) => !clientPhones.includes(conv.phone)),
@@ -241,6 +261,28 @@ export function ChatsPage() {
     }
   }
 
+  const handleDeleteChat = () => {
+    if (!selectedPhone) return
+
+    if (
+      !confirm(
+        '¿Eliminar esta conversación? Todos los mensajes con este número se borrarán permanentemente.'
+      )
+    ) {
+      return
+    }
+
+    deleteChatMutation.mutate(
+      { phone: selectedPhone, organizationId: isSuperAdmin ? selectedChatOrganizationId : undefined },
+      {
+        onSuccess: () => {
+          setSelectedPhone(null)
+          setMessage('')
+        },
+      }
+    )
+  }
+
   const selectedClient = clients.find((c) => c.phone === selectedPhone)
   const selectedClientName = selectedClient
     ? getClientFullName(selectedClient)
@@ -401,6 +443,19 @@ export function ChatsPage() {
                     </h2>
                     <p className="truncate text-xs text-primary-500 dark:text-primary-400">{selectedPhone}</p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDeleteChat}
+                    disabled={
+                      deleteChatMutation.isPending ||
+                      (isSuperAdmin && !selectedChatOrganizationId)
+                    }
+                    className="h-10 w-10 shrink-0 text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                    aria-label="Eliminar conversación"
+                  >
+                    <Trash2 className="h-5 w-5 shrink-0" />
+                  </Button>
                 </header>
 
                 <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 md:px-4 md:py-4 space-y-3">

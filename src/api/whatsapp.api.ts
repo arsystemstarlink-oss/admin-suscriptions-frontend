@@ -4,6 +4,7 @@ import type {
   SendMessageResponse,
   MessagesByPhoneResponse,
   ConversationsResponse,
+  DeleteMessagesResponse,
 } from '@/types/api'
 
 export const whatsappApi = {
@@ -26,6 +27,17 @@ export const whatsappApi = {
     const response = await api.post<SendMessageResponse>('/whatsapp/send', data, {
       params: { organizationId },
     })
+    return response.data
+  },
+
+  deleteMessagesByPhone: async (
+    phone: string,
+    organizationId?: string,
+  ): Promise<DeleteMessagesResponse> => {
+    const response = await api.delete<DeleteMessagesResponse>(
+      `/whatsapp/messages/${encodeURIComponent(phone)}`,
+      { params: { organizationId } },
+    )
     return response.data
   },
 }

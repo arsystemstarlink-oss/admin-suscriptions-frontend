@@ -62,3 +62,7 @@ if (typeof window !== 'undefined') {
     }
   })
 }
+
+export function useIsSuperAdmin(): boolean {
+  return useAuthStore((state) => state.user?.role === 'super-admin')
+}

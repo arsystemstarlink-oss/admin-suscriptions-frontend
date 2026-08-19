@@ -1,16 +1,29 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { authApi } from '@/api/auth.api'
+import { organizationsApi } from '@/api/organizations.api'
+import { useOrganizations } from '@/hooks/useOrganizations'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { getErrorHandler } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { toast } from 'sonner'
-import type { ApiError, CreateAdminRequest } from '@/types/api'
+import type { ApiError, CreateAdminRequest, UserRole } from '@/types/api'
+
+export const NEW_ORG_VALUE = '__new__'
 
 const adminFields = {
   name: z.string().min(1, 'El nombre es requerido'),
@@ -37,13 +50,54 @@ const registerSchema = z
   .object(adminFields)
   .refine((data) => data.password === data.confirmPassword, confirmRefine)
 
+const superAdminRegisterSchema = z
+  .object({
+    ...adminFields,
+    role: z.enum(['admin', 'super-admin']),
+    organizationId: z.string().optional(),
+    newOrganizationName: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, confirmRefine)
+  .superRefine((data, ctx) => {
+    if (data.role === 'admin') {
+      if (!data.organizationId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['organizationId'],
+          message: 'Seleccione una organización.',
+        })
+      } else if (data.organizationId === NEW_ORG_VALUE && !(data.newOrganizationName || '').trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['newOrganizationName'],
+          message: 'El nombre de la nueva organización es requerido.',
+        })
+      }
+    }
+  })
+
 const setupSchema = z
   .object({
     setupKey: z.string().min(1, 'La clave de configuración es requerida'),
     ...adminFields,
   })
   .refine((data) => data.password === data.confirmPassword, confirmRefine)
-type AdminForm = z.infer<typeof setupSchema>
+
+type AdminForm = z.infer<typeof setupSchema> & {
+  role?: UserRole
+  organizationId?: string
+  newOrganizationName?: string
+}
+
+type AdminFormField =
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'password'
+  | 'setupKey'
+  | 'confirmPassword'
+  | 'organizationId'
+  | 'newOrganizationName'
 
 interface CreateAdminFormProps {
   mode: 'setup' | 'register'
@@ -53,35 +107,51 @@ interface CreateAdminFormProps {
 
 export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdminFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSuperAdmin = useIsSuperAdmin()
+  const isSuperRegister = mode === 'register' && isSuperAdmin
   const prefix = mode === 'setup' ? 'setup' : 'admin'
-  const resolver =
-    mode === 'setup'
-      ? (zodResolver(setupSchema) as unknown as Resolver<AdminForm>)
-      : (zodResolver(registerSchema) as unknown as Resolver<AdminForm>)
+
+  const resolver = useMemo(() => {
+    if (mode === 'setup') return zodResolver(setupSchema) as unknown as Resolver<AdminForm>
+    if (isSuperAdmin) {
+      return zodResolver(superAdminRegisterSchema) as unknown as Resolver<AdminForm>
+    }
+    return zodResolver(registerSchema) as unknown as Resolver<AdminForm>
+  }, [mode, isSuperAdmin])
 
   const {
     register,
     control,
     handleSubmit,
     reset,
+    watch,
     setError,
     formState: { errors },
   } = useForm<AdminForm>({
     resolver,
+    defaultValues: isSuperRegister
+      ? { role: 'admin', organizationId: '', newOrganizationName: '' }
+      : undefined,
   })
+
+  const watchedRole = watch('role')
+  const watchedOrganizationId = watch('organizationId')
+
+  const { data: organizationsData } = useOrganizations(
+    { limit: 100 },
+    { enabled: isSuperRegister },
+  )
+  const activeOrganizations = (organizationsData?.organizations || []).filter((o) => o.active)
 
   const applyFieldError = (err: unknown): boolean => {
     const apiError = err as Partial<ApiError>
     if (!apiError.code) return false
     const handler = getErrorHandler(apiError.code)
     if (handler.type === 'field-error' && handler.field) {
-      setError(
-        handler.field as 'name' | 'email' | 'phone' | 'password' | 'setupKey' | 'confirmPassword',
-        {
-          type: 'manual',
-          message: handler.message,
-        },
-      )
+      setError(handler.field as AdminFormField, {
+        type: 'manual',
+        message: handler.message,
+      })
       return true
     }
     return false
@@ -102,6 +172,21 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
         password: data.password,
         phone: data.phone || undefined,
       }
+
+      if (isSuperRegister && mode === 'register') {
+        payload.role = data.role
+        if (data.role === 'admin') {
+          let organizationId = data.organizationId
+          if (organizationId === NEW_ORG_VALUE) {
+            const created = await organizationsApi.create({
+              name: (data.newOrganizationName || '').trim(),
+            })
+            organizationId = created.id
+          }
+          payload.organizationId = organizationId
+        }
+      }
+
       if (mode === 'setup') {
         await authApi.setup(payload, data.setupKey)
         toast.success('Administrador creado correctamente. Inicia sesión.')
@@ -138,6 +223,82 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
           />
           {errors.setupKey && (
             <p className="text-sm text-red-600 dark:text-red-400">{errors.setupKey.message}</p>
+          )}
+        </div>
+      )}
+
+      {isSuperRegister && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}-role`}>Rol *</Label>
+            <Controller
+              name="role"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id={`${prefix}-role`} aria-invalid={!!errors.role}>
+                    <SelectValue placeholder="Selecciona un rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="super-admin">Super administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.role && (
+              <p className="text-sm text-red-600 dark:text-red-400">{errors.role.message}</p>
+            )}
+          </div>
+
+          {watchedRole !== 'super-admin' && (
+            <div className="space-y-2">
+              <Label htmlFor={`${prefix}-organization`}>Organización *</Label>
+              <Controller
+                name="organizationId"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value || ''} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id={`${prefix}-organization`}
+                      aria-invalid={!!errors.organizationId}
+                    >
+                      <SelectValue placeholder="Selecciona una organización" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeOrganizations.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                      <SelectSeparator />
+                      <SelectItem value={NEW_ORG_VALUE}>Crear nueva organización…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.organizationId && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {errors.organizationId.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          {watchedRole !== 'super-admin' && watchedOrganizationId === NEW_ORG_VALUE && (
+            <div className="space-y-2">
+              <Label htmlFor={`${prefix}-new-org-name`}>Nombre de la nueva organización *</Label>
+              <Input
+                id={`${prefix}-new-org-name`}
+                placeholder="Ej. Starlink Valencia"
+                {...register('newOrganizationName')}
+              />
+              {errors.newOrganizationName && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {errors.newOrganizationName.message}
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}

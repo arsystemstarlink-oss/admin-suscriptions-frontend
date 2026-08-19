@@ -9,9 +9,15 @@ Auth: Authorization: Bearer {accessToken}
 
 **Tokens:** accessToken (15 min) | refreshToken (7 dias)
 
+**Multi-tenant (regla central):**
+- Cada usuario `admin` pertenece a una organización (`organizationId`). El backend **ignora** cualquier `organizationId` enviado por el frontend para un `admin` y usa el de su contexto autenticado (JWT + verificación en Firestore).
+- Un `super-admin` (`organizationId: null`) puede operar sobre todas las organizaciones. Puede filtrar con `?organizationId=org_X` o indicar `organizationId` en el body al crear recursos.
+- Ninguna operación de un `admin` puede cruzar el límite de su organización (previene IDOR/tenant crossing).
+- Referencias cruzadas (ej: `clientId` y `planId` de organizaciones distintas en `POST /subscriptions`) se rechazan con `403 CROSS_TENANT_REFERENCE`.
+
 **Seguridad:**
-- Todas las rutas bajo `/api/*` (excepto `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout` y webhooks Twilio) requieren JWT de admin.
-- Access y refresh tokens incluyen claims `type` (`access` | `refresh`), `sub` (userId) y `jti` (refresh); no son intercambiables.
+- Todas las rutas bajo `/api/*` (excepto `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout` y webhooks Twilio) requieren JWT de admin/super-admin.
+- Access y refresh tokens incluyen claims `type` (`access` | `refresh`), `sub` (userId), `role` y `organizationId`; no son intercambiables.
 - El refresh token es de un solo uso: cada `POST /auth/refresh` rota a un token nuevo y revoca el anterior (sesión persistida en `refreshTokenSessions`).
 - Si se reutiliza un refresh token ya rotado/revocado, se revocan todas las sesiones del usuario (`REFRESH_TOKEN_REVOKED`).
 - `POST /auth/logout` revoca el refresh token presentado (logout por sesión).
@@ -32,8 +38,10 @@ Auth: Authorization: Bearer {accessToken}
 ## Tipos
 
 ```typescript
+type UserRole = 'super-admin' | 'admin';
+
 enum PaymentMethod { CASH, TRANSFER, USDT, CARD, OTHER }
-// INITIAL_PAYMENT es interno, no usar en el frontend
+// INITIAL_PAYMENT ya no se crea en el registro; se conserva por compatibilidad con períodos existentes
 
 enum SubscriptionStatus { ACTIVE, SUSPENDED }
 
@@ -43,9 +51,16 @@ enum BillingPeriodStatus { PENDING, PAID, OVERDUE }
 ### Entidades
 
 ```typescript
+interface Organization {
+  id: string; name: string; slug?: string; active: boolean;
+  createdAt: string; createdBy?: string;
+}
+
 interface User {
   id: string; name: string; email: string;
-  role: 'admin'; phone?: string; // normalizado a E.164 (+58...)
+  role: UserRole;
+  organizationId: string | null; // null => super-admin; requerido para admin
+  phone?: string; // normalizado a E.164 (+58...)
   lastLoginAt?: string;
   createdAt: string;
 }
@@ -59,26 +74,29 @@ interface RefreshTokenSession {
 }
 
 interface Client {
-  id: string; firstName: string; lastName: string; phone: string;
-  dni?: string; // Cédula de identidad (formato canónico "V-2769383" o "J-123456789", única si existe)
+  id: string; organizationId: string;
+  firstName: string; lastName: string; phone: string;
+  dni?: string; // Cédula de identidad (única POR organización, formato canónico "V-2769383" o "J-123456789")
   email?: string; address?: string; notes?: string;
   createdAt: string;
 }
 
 interface Plan {
-  id: string; name: string; price: number;
+  id: string; organizationId: string;
+  name: string; price: number;
   description: string; active: boolean; createdAt: string;
 }
 
 interface Subscription {
-  id: string; clientId: string; planId: string; kitNumber: string;
+  id: string; organizationId: string;
+  clientId: string; planId: string; kitNumber: string;
   accountNumber?: string;
   billingDay: number; status: SubscriptionStatus;
   maxOverduePeriods: number; activationDate?: string; createdAt: string;
 }
 
 interface SchedulerConfig {
-  id: string;
+  id: string; // organizationId para configs por org; 'global' para la configuración global
   enabled: boolean;
   cronSchedule: string;
   lastRun?: string;
@@ -86,7 +104,8 @@ interface SchedulerConfig {
 }
 
 interface BillingPeriod {
-  id: string; subscriptionId: string; periodLabel: string;
+  id: string; organizationId: string;
+  subscriptionId: string; periodLabel: string;
   startDate: string; endDate: string; amount: number;
   status: BillingPeriodStatus;
   paidAt?: string; paymentMethod?: PaymentMethod; notes?: string;
@@ -98,6 +117,7 @@ type MessageStatus = 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
 
 interface WhatsAppMessage {
   id: string;
+  organizationId?: string;
   clientId?: string;
   phone: string;
   direction: MessageDirection;
@@ -172,14 +192,14 @@ interface DebtorItem {
 
 | Metodo | Path | Auth | Descripcion |
 |--------|------|------|-------------|
-| POST | /auth/setup | Header `X-Setup-Key` | Crear el PRIMER admin (solo sin admins existentes) |
-| POST | /auth/register | Bearer admin | Crear un admin adicional |
+| POST | /auth/setup | Header `X-Setup-Key` | Crear el PRIMER usuario (super-admin) (solo sin usuarios existentes) |
+| POST | /auth/register | Bearer admin/super-admin | Crear un admin adicional (o super-admin si lo hace un super-admin) |
 | POST | /auth/login | - | Login |
-| POST | /auth/refresh | - | Renovar tokens |
-| GET | /auth/me | Bearer admin | Perfil del admin logueado |
-| PUT | /auth/me | Bearer admin | Editar name/email/phone |
-| POST | /auth/change-password | Bearer admin | Cambiar contraseña |
-| POST | /auth/logout | - | Revocar refresh token (204, idempotente) |
+| POST | /auth/refresh | - | Renovar tokens (rota refresh token) |
+| POST | /auth/logout | - | Revocar refresh token (logout por sesión) |
+| GET | /auth/me | Bearer admin/super-admin | Perfil del usuario logueado |
+| PUT | /auth/me | Bearer admin/super-admin | Editar name/email/phone |
+| POST | /auth/change-password | Bearer admin/super-admin | Cambiar contraseña |
 
 **POST /auth/setup**
 ```typescript
@@ -189,19 +209,24 @@ interface DebtorItem {
 // password: mínimo 8 caracteres, letras y números
 // Response 201
 { message: string; user: User }
-// Solo funciona mientras NO exista ningún admin
-// Errors: 403 SETUP_DISABLED | 403 INVALID_SETUP_KEY | 400 INVALID_EMAIL | 400 WEAK_PASSWORD | 409 EMAIL_TAKEN
+// Crea el PRIMER super-admin (organizationId: null)
+// Solo funciona mientras NO exista ningún usuario
+// Errors: 403 SETUP_DISABLED (no configurado o ya hay usuario) | 403 INVALID_SETUP_KEY
+//         400 INVALID_EMAIL | 400 WEAK_PASSWORD | 400 INVALID_PHONE | 409 EMAIL_TAKEN
 // Rate limit: 5 intentos / 15 min por IP
 ```
 
 **POST /auth/register**
 ```typescript
-// Header: Authorization: Bearer {accessToken} (admin existente)
+// Header: Authorization: Bearer {accessToken} (admin o super-admin)
 // Request
-{ name: string; email: string; password: string; phone?: string }
+{ name: string; email: string; password: string; phone?: string; role?: 'admin' | 'super-admin'; organizationId?: string }
+// - Un admin solo puede crear admins dentro de SU organización (role y organizationId se ignoran).
+// - Un super-admin puede crear admins (requiere organizationId) o super-admins (organizationId: null).
 // Response 201
 { message: string; user: User }
-// Errors: 401 UNAUTHORIZED | 400 INVALID_EMAIL | 400 WEAK_PASSWORD | 409 EMAIL_TAKEN
+// Errors: 401 UNAUTHORIZED | 400 INVALID_EMAIL | 400 WEAK_PASSWORD | 400 INVALID_PHONE
+//         403 TENANT_REQUIRED | 404 ORGANIZATION_NOT_FOUND | 409 EMAIL_TAKEN
 ```
 
 **POST /auth/login**
@@ -261,6 +286,140 @@ interface DebtorItem {
 // Response 200
 { message: string; accessToken: string; refreshToken: string }
 // Errors: 400 INVALID_PASSWORD (actual incorrecta) | 400 WEAK_PASSWORD
+```
+
+---
+
+### Administradores
+
+| Metodo | Path | Auth | Descripcion |
+|--------|------|------|-------------|
+| GET | /admins | Bearer admin | Listar admins |
+| GET | /admins/:id | Bearer admin | Detalle de admin |
+| PUT | /admins/:id | Bearer admin | Editar otro admin |
+| DELETE | /admins/:id | Bearer admin | Eliminar admin |
+
+**GET /admins**
+```typescript
+// Query params
+{ search?: string; limit?: number; offset?: number }
+// search filtra por name, email o phone
+// Response 200
+{ admins: User[]; pagination }
+// Ordenados por createdAt ascendente. Sin campo password.
+```
+
+**GET /admins/:id**
+```typescript
+// Response 200
+{ admin: User }
+// Error 404: NOT_FOUND | Error 401: UNAUTHORIZED
+```
+
+**PUT /admins/:id**
+```typescript
+// Header: Authorization: Bearer {accessToken} (admin)
+// Request (parcial, al menos un campo)
+{ name?: string; email?: string; phone?: string; newPassword?: string }
+// No requiere currentPassword del admin editado (lo hace otro admin)
+// newPassword: mínimo 8 caracteres, letras y números
+// phone se normaliza a E.164 (+58...)
+// Si email o newPassword cambian, se revocan todas las sesiones del admin editado
+// Si el admin editado es el mismo logueado, la respuesta incluye accessToken/refreshToken nuevos
+// Response 200
+{ admin: User; accessToken?: string; refreshToken?: string }
+// Errors: 400 INVALID_EMAIL | 400 WEAK_PASSWORD | 400 INVALID_PHONE | 409 EMAIL_TAKEN
+```
+
+**DELETE /admins/:id**
+```typescript
+// Header: Authorization: Bearer {accessToken} (admin o super-admin)
+// Response 204
+// Revoca las sesiones del admin y lo elimina de Firestore y Firebase Auth
+// Un admin solo puede eliminar admins de SU organización. No puede eliminar super-admins.
+// Errors: 403 CANNOT_DELETE_SELF | 409 LAST_ADMIN (único admin del sistema)
+//         404 NOT_FOUND | 401 UNAUTHORIZED
+```
+
+---
+
+### Organizaciones
+
+> Solo `super-admin`. Un `admin` no tiene endpoints de organizaciones (usa su propio contexto).
+
+| Metodo | Path | Auth | Descripcion |
+|--------|------|------|-------------|
+| GET | /organizations | Bearer super-admin | Listar organizaciones |
+| GET | /organizations/:id | Bearer super-admin | Detalle de organización (incluye usuarios) |
+| POST | /organizations | Bearer super-admin | Crear organización |
+| PUT | /organizations/:id | Bearer super-admin | Actualizar organización |
+| DELETE | /organizations/:id | Bearer super-admin | Eliminar organización (solo sin usuarios) |
+
+**POST /organizations**
+```typescript
+// Request
+{
+  name: string;
+  slug?: string;
+  active?: boolean;
+  twilio?: { accountSid?: string; authToken?: string; phoneNumber?: string; enabled?: boolean }
+}
+// slug se normaliza a minúsculas con guiones (ej: "Org A" -> "org-a"). Único si se usa.
+// twilio.phoneNumber se normaliza sin prefijo "whatsapp:" (formato E.164, ej: +584223552626).
+// Response 201 → Organization (DTO: ver nota de masking abajo)
+// Errors: 400 INVALID_DATA (nombre obligatorio, slug duplicado)
+```
+
+**GET /organizations**
+```typescript
+// Query params
+{ search?: string; limit?: number; offset?: number }
+// Response 200
+{ organizations: Organization[]; pagination }
+```
+
+**GET /organizations/:id**
+```typescript
+// Response 200
+{ organization: Organization; users: Array<{ id, name, email, role, createdAt }> }
+// Error 404: ORGANIZATION_NOT_FOUND
+```
+
+**PUT /organizations/:id**
+```typescript
+// Request (partial)
+{
+  name?: string;
+  slug?: string;
+  active?: boolean;
+  twilio?: { accountSid?: string; authToken?: string; phoneNumber?: string; enabled?: boolean } | null
+}
+// twilio se combina con el existente:
+// - authToken vacío/ausente => conserva el actual; string => lo reemplaza; null => lo borra.
+// - accountSid/phoneNumber con string vacío => borran el campo.
+// - twilio: null => elimina toda la configuración Twilio de la organización.
+// Response 200 → Organization (DTO)
+```
+
+**Organization DTO (responses GET/POST/PUT):**
+```typescript
+{
+  id: string; name: string; slug?: string; active: boolean;
+  createdAt: string; createdBy?: string;
+  twilioConfigured: boolean; // true si accountSid+authToken+phoneNumber presentes y enabled !== false
+  twilio?: {
+    accountSid?: string;
+    phoneNumber?: string;
+    enabled: boolean;
+    authTokenSet: boolean; // el authToken NUNCA se retorna
+  }
+}
+```
+
+**DELETE /organizations/:id**
+```typescript
+// Response 204
+// Errors: 404 ORGANIZATION_NOT_FOUND | 400 INVALID_DATA (tiene usuarios asignados)
 ```
 
 ---
@@ -424,7 +583,6 @@ interface DebtorItem {
 | GET | /billing-periods/:id | Detalle de periodo |
 | PUT | /billing-periods/:id | Editar datos de pago |
 | POST | /billing-periods/:id/pay | Registrar pago |
-| POST | /billing-periods/generate-next/:subscriptionId | Generar siguiente periodo |
 
 **GET /billing-periods**
 ```typescript
@@ -455,8 +613,6 @@ interface DebtorItem {
   subscription: { id: string; status: SubscriptionStatus; previousStatus: SubscriptionStatus; reactivated: boolean };
 }
 ```
-
-**POST /billing-periods/generate-next/:subscriptionId** → Response 201 → `BillingPeriod`
 
 ---
 
@@ -534,6 +690,22 @@ interface DebtorItem {
 // Error 401: UNAUTHORIZED
 ```
 
+**GET /api/whatsapp/conversations** (requiere `Authorization: Bearer {accessToken}`)
+```typescript
+// Response 200
+{
+  conversations: {
+    phone: string;
+    clientId?: string;   // undefined si el número no pertenece a un cliente registrado
+    profileName?: string; // nombre que Twilio reportó del remitente
+    lastMessage: WhatsAppMessage;
+    messageCount: number;
+  }[];
+  total: number;
+}
+// Error 401: UNAUTHORIZED
+```
+
 **GET /api/whatsapp/messages/:phone** (requiere `Authorization: Bearer {accessToken}`)
 ```typescript
 // Response 200
@@ -557,15 +729,15 @@ interface DebtorItem {
 
 ## Casos de Uso
 
-### 1. Crear suscripcion nueva (cliente nuevo, paga hoy)
+### 1. Crear suscripcion nueva (cliente nuevo)
 
 ```
 POST /subscriptions
 { clientId, planId, kitNumber, billingDay: 5, maxOverduePeriods: 2 }
 ```
-- Crea suscripcion `ACTIVE` + 1 periodo `PAID` con `paymentMethod: INITIAL_PAYMENT`
-- Frontend detecta `INITIAL_PAYMENT` → mostrar badge "Datos pendientes"
-- Editar con `PUT /billing-periods/:id` para poner datos reales del pago
+- Crea suscripcion `ACTIVE` + 1 periodo actual `PENDING` (segun fecha de corte)
+- No se generan periodos anteriores a la fecha de registro
+- El pago del periodo inicial se registra despues con `POST /billing-periods/:id/pay`
 
 ### 2. Crear suscripcion retroactiva (cliente antiguo, sin comprobantes)
 
@@ -574,8 +746,11 @@ POST /subscriptions
 { clientId, planId, kitNumber, billingDay: 6, maxOverduePeriods: 2, activationDate: "2026-01-05" }
 ```
 - Genera periodos desde activationDate hasta hoy
-- Periodos pasados → `OVERDUE`, periodo actual → `PENDING`
-- Si overdueCount >= maxOverduePeriods → suscripcion `SUSPENDED`
+- El primer mes de activacion siempre nace `PENDING` (el cliente pago para activar, aunque el pago no este registrado aun)
+- Periodos siguientes pasados → `OVERDUE`, periodo actual → `PENDING` (maximo `maxOverduePeriods` vencidos)
+- Si overdueCount >= maxOverduePeriods → suscripcion `SUSPENDED` y NO se genera el periodo actual (los meses durante la suspension no generan deuda)
+- El primer mes de activacion nunca pasa a `OVERDUE`, ni siquiera por el Daily Job
+- Al pagar todos los vencidos, la suscripcion se reactiva y se genera el periodo actual desde hoy + billingDay
 - Frontend muestra periodos vencidos con boton "Registrar Pago"
 
 ### 3. Crear suscripcion retroactiva (cliente antiguo, con comprobantes)
@@ -592,6 +767,7 @@ POST /subscriptions
 }
 ```
 - Genera periodos, marca como `PAID` los que coinciden con pagos historicos
+- El primer mes de activacion sin pago historico queda `PENDING` (regla de activacion)
 - Resto: `OVERDUE` o `PENDING` segun fecha
 - amount debe ser igual al precio del plan
 
@@ -602,7 +778,9 @@ POST /billing-periods/:id/pay
 { paymentMethod: "CASH", amount: 50, paidAt: "2026-07-31" }
 ```
 - amount debe coincidir con el amount del periodo
+- La reactivacion requiere pagar TODOS los periodos vencidos (overdueCount === 0)
 - Si la suscripcion estaba `SUSPENDED` y se reactiva → `reactivated: true`
+- Al reactivar se genera el periodo actual `PENDING` desde hoy + billingDay (respuesta: `currentPeriod`)
 
 ### 5. Editar datos de pago de periodo ya pagado
 
@@ -612,16 +790,17 @@ PUT /billing-periods/:id
 ```
 - Solo funciona en periodos `PAID`
 - Actualizacion parcial (solo campos enviados)
-- Caso principal: editar primer periodo con `INITIAL_PAYMENT`
+- Caso principal: corregir datos de pago de periodos existentes (incluye periodos antiguos con `INITIAL_PAYMENT`)
 
-### 6. Identificar periodos con datos incompletos
+### 6. Registrar el pago de un período pendiente o vencido
 
 ```
-GET /billing-periods?subscriptionId=xxx
-// Filtrar donde paymentMethod === 'INITIAL_PAYMENT'
+POST /billing-periods/:id/pay
+{ paymentMethod: "CASH", amount: 50, paidAt: "2026-07-31" }
 ```
-- Mostrar indicador visual "Datos pendientes"
-- Editar con `PUT /billing-periods/:id`
+- El período pasa de `PENDING`/`OVERDUE` a `PAID`
+- Si era el último vencido de una suscripcion `SUSPENDED`, se reactiva y se genera el período actual `PENDING`
+- Ver Caso de Uso 4
 
 ### 7. Enviar mensaje de WhatsApp desde perfil de cliente
 
@@ -692,7 +871,6 @@ Authorization: Bearer {accessToken}
 | paymentMethod (pagos historicos) | No INITIAL_PAYMENT |
 | POST /pay (amount) | Debe coincidir con amount del periodo |
 | PUT /billing-periods/:id | Solo periodos PAID |
-| generate-next | Periodo actual debe estar PAID y finalizado |
 | DELETE /subscriptions/:id | Elimina suscripcion y sus periodos de facturacion |
 | cronSchedule | Expresion cron valida (ej: "0 0 * * *" = medianoche diario) |
 | scheduler enabled | Si es false, el Daily Job no se ejecuta automaticamente |
@@ -700,7 +878,8 @@ Authorization: Bearer {accessToken}
 | dni | Opcional; SOLO "V-" o "J-" + 7-9 digitos numericos con guion (ej: V-2769383); unico |
 | PUT /clients/:id dni | null o "" elimina la cedula |
 | Suscripcion SUSPENDED | overdueCount >= maxOverduePeriods |
-| Suscripcion reactivada | overdueCount < maxOverduePeriods al pagar |
+| Suscripcion reactivada | overdueCount === 0 al pagar (todos los vencidos) |
+| Periodo actual al reactivar | Se genera desde hoy + billingDay como PENDING |
 
 ---
 
@@ -710,4 +889,38 @@ Authorization: Bearer {accessToken}
 { error: { code: string; message: string } }
 ```
 
-Codigos principales: `NOT_FOUND` | `INVALID_DATA` | `INVALID_DNI` | `DNI_TAKEN` | `INVALID_PERIOD_STATE` | `PERIOD_ALREADY_PAID` | `INVALID_PAYMENT_AMOUNT` | `CLIENT_HAS_ACTIVE_SUBSCRIPTIONS` | `PLAN_HAS_SUBSCRIPTIONS` | `INVALID_CREDENTIALS` | `UNAUTHORIZED` | `USER_NOT_FOUND` | `EMAIL_TAKEN` | `INVALID_EMAIL` | `INVALID_PHONE` | `WEAK_PASSWORD` | `INVALID_PASSWORD` | `REFRESH_TOKEN_REVOKED`
+Codigos principales: `NOT_FOUND` | `INVALID_DATA` | `INVALID_DNI` | `DNI_TAKEN` | `INVALID_PERIOD_STATE` | `PERIOD_ALREADY_PAID` | `INVALID_PAYMENT_AMOUNT` | `CLIENT_HAS_ACTIVE_SUBSCRIPTIONS` | `PLAN_HAS_SUBSCRIPTIONS` | `CANNOT_DELETE_SELF` | `LAST_ADMIN`
+
+Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
+
+Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias ni existe configuración global en el servidor.
+
+## WhatsApp por Organización (Twilio multi-tenant)
+
+- Cada organización puede tener sus propias credenciales Twilio en `organizations/{id}.twilio`: `accountSid`, `authToken`, `phoneNumber` (número de WhatsApp Business, E.164), `enabled`.
+- Resolución de credenciales: si la organización tiene config completa y `enabled !== false`, se usa; si no, fallback a `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` del servidor.
+- `POST /whatsapp/send` usa las credenciales de la organización efectiva. Requiere contexto de organización (`TENANT_REQUIRED` si un super-admin no indica `?organizationId=`).
+- Webhook inbound (`POST /communications/webhook`): resuelve la organización por el número destino (`To` del mensaje = `twilio.phoneNumber` de la org), valida la firma con el `authToken` de esa org, y asigna el mensaje a la organización. Fallback histórico: match por teléfono del cliente.
+- El `authToken` nunca se retorna en la API (solo `authTokenSet: boolean`).
+- Los templates (`TWILIO_TEMPLATE_*`) siguen siendo variables de entorno globales; para cuentas Twilio propias por org, los templates deben existir en esa cuenta.
+
+## Multi-Tenant: Reglas de Alcance por Endpoint
+
+| Endpoint | admin | super-admin |
+|----------|-------|-------------|
+| GET/POST/PUT/DELETE /clients, /plans, /subscriptions, /billing-periods | Solo su organización. `?organizationId` y `body.organizationId` son **ignorados** | Todas, o filtradas con `?organizationId=org_X`. Al crear, debe indicar `organizationId` (body o query) |
+| GET /dashboard/summary, /alerts | Solo su organización | Todas o filtradas |
+| GET/PUT /scheduler/config | Su organización | `?organizationId=org_X` o configuración global sin filtro |
+| POST /scheduler/run | Su organización | `?organizationId=org_X` o todas sin filtro |
+| GET/PUT/DELETE /admins | Solo admins de su organización | Todos o filtrados |
+| POST /auth/register | Crea admin en su organización | Crea admin (con org) o super-admin |
+| POST /subscriptions | Valida que `clientId` y `planId` pertenezcan a su organización (`CROSS_TENANT_REFERENCE` si no) | Igual validación contra la org indicada |
+| POST /billing-periods/:id/pay | Solo períodos de su organización | Todos o filtrados |
+
+## Migración (single-tenant → multi-tenant)
+
+```bash
+npm run migrate:tenant                # asigna todo a org_default
+npm run migrate:tenant -- --promote-super-admin  # además promueve al primer admin a super-admin
+```
+Crea `organizations/org_default` si no existe, asigna `organizationId` a `clients`, `plans`, `subscriptions`, `billingPeriods`, `whatsappMessages`, `pushSubscriptions` y `users` (admins). Valida que no queden huérfanos. Los super-admin quedan con `organizationId: null`.

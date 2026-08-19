@@ -12,6 +12,7 @@ interface AdminsListParams {
   search?: string
   limit?: number
   offset?: number
+  organizationId?: string
 }
 
 export const adminsApi = {

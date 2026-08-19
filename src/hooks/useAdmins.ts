@@ -9,6 +9,7 @@ interface UseAdminsParams {
   search?: string
   limit?: number
   offset?: number
+  organizationId?: string
 }
 
 export function useAdmins(params?: UseAdminsParams) {

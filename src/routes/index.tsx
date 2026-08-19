@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthGuard } from '@/guards/AuthGuard'
+import { RoleGuard } from '@/guards/RoleGuard'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -21,6 +22,7 @@ const SubscriptionsLayout = lazy(() => import('@/components/layout/Subscriptions
 const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const NotificationsPage = lazy(() => import('@/pages/admin/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
+const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
 const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
 const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))
 
@@ -206,6 +208,16 @@ export const router = createBrowserRouter(
               <Suspense fallback={<PageLoader />}>
                 <AdminsPage />
               </Suspense>
+            ),
+          },
+          {
+            path: 'organizations',
+            element: (
+              <RoleGuard allowedRoles={['super-admin']}>
+                <Suspense fallback={<PageLoader />}>
+                  <OrganizationsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
         ],

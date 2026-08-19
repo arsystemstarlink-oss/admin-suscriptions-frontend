@@ -18,11 +18,71 @@ export enum BillingPeriodStatus {
   OVERDUE = 'OVERDUE',
 }
 
+export type UserRole = 'super-admin' | 'admin'
+
+export interface OrganizationTwilioConfigRequest {
+  accountSid?: string
+  authToken?: string | null
+  phoneNumber?: string
+  enabled?: boolean
+}
+
+export interface OrganizationTwilioInfo {
+  accountSid?: string
+  phoneNumber?: string
+  enabled?: boolean
+  authTokenSet?: boolean
+}
+
+export interface Organization {
+  id: string
+  name: string
+  slug?: string
+  active: boolean
+  twilio?: OrganizationTwilioInfo
+  twilioConfigured?: boolean
+  createdAt: string
+  createdBy?: string
+}
+
+export interface OrganizationUserSummary {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  createdAt: string
+}
+
+export interface OrganizationsListResponse {
+  organizations: Organization[]
+  pagination: Pagination
+}
+
+export interface OrganizationDetailResponse {
+  organization: Organization
+  users: OrganizationUserSummary[]
+}
+
+export interface CreateOrganizationRequest {
+  name: string
+  slug?: string
+  active?: boolean
+  twilio?: OrganizationTwilioConfigRequest
+}
+
+export interface UpdateOrganizationRequest {
+  name?: string
+  slug?: string
+  active?: boolean
+  twilio?: OrganizationTwilioConfigRequest | null
+}
+
 export interface User {
   id: string
   name: string
   email: string
-  role: 'admin'
+  role: UserRole
+  organizationId: string | null
   phone?: string
   createdAt: string
   lastLoginAt?: string
@@ -33,7 +93,8 @@ export interface Admin {
   name: string
   email: string
   phone?: string
-  role: 'admin'
+  role: UserRole
+  organizationId: string | null
   createdAt: string
   lastLoginAt?: string
 }
@@ -52,6 +113,8 @@ export interface CreateAdminRequest {
   email: string
   password: string
   phone?: string
+  role?: UserRole
+  organizationId?: string
 }
 
 export interface CreateAdminResponse {
@@ -64,6 +127,8 @@ export interface UpdateAdminRequest {
   email?: string
   phone?: string
   newPassword?: string
+  role?: UserRole
+  organizationId?: string | null
 }
 
 export interface UpdateAdminResponse {
@@ -279,13 +344,6 @@ export interface ChangePasswordResponse {
   refreshToken: string
 }
 
-export interface CreateAdminRequest {
-  name: string
-  email: string
-  password: string
-  phone?: string
-}
-
 export interface CreateAdminResponse {
   message: string
   user: User
@@ -467,6 +525,15 @@ export type ErrorCode =
   | 'OVERLAPPING_PERIODS'
   | 'VAPID_NOT_CONFIGURED'
   | 'PUSH_SUBSCRIPTION_NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'INVALID_DATA'
+  | 'TENANT_REQUIRED'
+  | 'ORGANIZATION_NOT_FOUND'
+  | 'FORBIDDEN_CROSS_TENANT'
+  | 'CROSS_TENANT_REFERENCE'
+  | 'LAST_ADMIN'
+  | 'CANNOT_DELETE_SELF'
+  | 'WHATSAPP_NOT_CONFIGURED'
 
 export interface ApiError {
   code: ErrorCode

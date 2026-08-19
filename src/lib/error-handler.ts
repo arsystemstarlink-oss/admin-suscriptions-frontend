@@ -210,6 +210,51 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'warning',
     message: 'La suscripción push no existe en el servidor.',
   },
+  FORBIDDEN: {
+    type: 'toast',
+    variant: 'error',
+    message: 'No tienes permisos para realizar esta acción.',
+  },
+  INVALID_DATA: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Los datos enviados no son válidos.',
+  },
+  TENANT_REQUIRED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Se requiere una organización para realizar esta acción.',
+  },
+  ORGANIZATION_NOT_FOUND: {
+    type: 'field-error',
+    field: 'organizationId',
+    message: 'La organización indicada no existe o está inactiva.',
+  },
+  FORBIDDEN_CROSS_TENANT: {
+    type: 'toast',
+    variant: 'error',
+    message: 'No tienes acceso a este recurso. Pertenece a otra organización.',
+  },
+  CROSS_TENANT_REFERENCE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La referencia indicada pertenece a otra organización.',
+  },
+  LAST_ADMIN: {
+    type: 'toast',
+    variant: 'error',
+    message: 'No se puede eliminar el único administrador.',
+  },
+  CANNOT_DELETE_SELF: {
+    type: 'toast',
+    variant: 'error',
+    message: 'No puedes eliminar tu propio usuario.',
+  },
+  WHATSAPP_NOT_CONFIGURED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'WhatsApp (Twilio) no está configurado para esta organización.',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {

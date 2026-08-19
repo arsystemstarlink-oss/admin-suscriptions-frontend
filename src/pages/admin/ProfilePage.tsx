@@ -187,8 +187,17 @@ export function ProfilePage() {
             <div className="flex items-center gap-2 sm:ml-auto shrink-0">
               <Badge variant="secondary" className="text-xs">
                 <ShieldCheck className="h-3 w-3 mr-1 shrink-0" />
-                <span className="hidden sm:inline">Administrador</span>
-                <span className="sm:hidden">Admin</span>
+                {user.role === 'super-admin' ? (
+                  <>
+                    <span className="hidden sm:inline">Super Admin</span>
+                    <span className="sm:hidden">Super</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Administrador</span>
+                    <span className="sm:hidden">Admin</span>
+                  </>
+                )}
               </Badge>
               <button
                 onClick={logout}
@@ -218,7 +227,9 @@ export function ProfilePage() {
               <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
                 <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
                   <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Rol</p>
-                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">Admin</p>
+                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
+                    {user.role === 'super-admin' ? 'Super Admin' : 'Admin'}
+                  </p>
                 </div>
                 <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
                   <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Miembro desde</p>

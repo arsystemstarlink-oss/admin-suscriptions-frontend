@@ -33,4 +33,8 @@ export const qk = {
     lists: ['admins', 'list'] as const,
     detail: (id: string) => ['admins', id, 'detail'] as const,
   },
+  organizations: {
+    lists: ['organizations', 'list'] as const,
+    detail: (id: string) => ['organizations', id, 'detail'] as const,
+  },
 } as const

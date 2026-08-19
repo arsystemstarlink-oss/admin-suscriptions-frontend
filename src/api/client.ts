@@ -90,11 +90,15 @@ api.interceptors.response.use(
     const status = error.response?.status
     const errorCode = error.response?.data?.error?.code as string | undefined
 
-    if (
-      status === 401 &&
-      (errorCode === 'UNAUTHORIZED' || errorCode === 'REFRESH_TOKEN_REVOKED') &&
-      !originalRequest._retry
-    ) {
+    if (status === 401 && errorCode === 'REFRESH_TOKEN_REVOKED') {
+      clearStoredTokens()
+      if (window.location.pathname !== `${import.meta.env.BASE_URL}login`) {
+        window.location.href = `${import.meta.env.BASE_URL}login`
+      }
+      return Promise.reject(error)
+    }
+
+    if (status === 401 && errorCode === 'UNAUTHORIZED' && !originalRequest._retry) {
       originalRequest._retry = true
 
       const versionAtError = getRefreshVersion()
@@ -134,7 +138,21 @@ api.interceptors.response.use(
       }
     }
 
-    if ((status === 400 || status === 403 || status === 409) && errorCode) {
+    if (status === 429) {
+      const retryCount = (originalRequest._retryCount as number | undefined) ?? 0
+      if (retryCount < 2) {
+        originalRequest._retryCount = retryCount + 1
+        const retryAfter = Number(error.response?.headers?.['retry-after'])
+        const delay =
+          Number.isFinite(retryAfter) && retryAfter > 0
+            ? retryAfter * 1000
+            : 2000 * (retryCount + 1)
+        await sleep(delay)
+        return api(originalRequest)
+      }
+    }
+
+    if (errorCode) {
       const apiError: ApiError = {
         code: errorCode as ApiError['code'],
         message: error.response?.data?.error?.message || 'Error de negocio',

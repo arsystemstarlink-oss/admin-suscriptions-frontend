@@ -255,10 +255,73 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'WhatsApp (Twilio) no está configurado para esta organización.',
   },
+  ORGANIZATION_INACTIVE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La organización está inactiva y no puede operar WhatsApp.',
+  },
+  JOB_ALREADY_RUNNING: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'El Daily Job ya está en ejecución para esta organización.',
+  },
+  RATE_LIMITED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
+  },
+  INVALID_CRON: {
+    type: 'field-error',
+    field: 'cronSchedule',
+    message: 'La expresión cron no es válida.',
+  },
+  INVALID_DATE_FORMAT: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El formato de fecha no es válido.',
+  },
+  INVALID_PRICE: {
+    type: 'field-error',
+    field: 'price',
+    message: 'El precio no es válido.',
+  },
+  INVALID_PAYMENT_METHOD: {
+    type: 'field-error',
+    field: 'paymentMethod',
+    message: 'El método de pago no es válido.',
+  },
+  PLAN_INACTIVE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El plan está inactivo.',
+  },
+  SUBSCRIPTION_SUSPENDED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La suscripción está suspendida.',
+  },
+  PERIOD_NOT_COMPLETE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El período no está completo.',
+  },
+  INVALID_SUBSCRIPTION: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Datos de suscripción no válidos.',
+  },
+  INVALID_BILLING_PERIOD: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Datos del período de facturación no válidos.',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {
-  return BUSINESS_ERROR_HANDLERS[code] || BUSINESS_ERROR_HANDLERS.INTERNAL_ERROR
+  if (BUSINESS_ERROR_HANDLERS[code]) return BUSINESS_ERROR_HANDLERS[code]
+  if (code.startsWith('INVALID_SUBSCRIPTION')) return BUSINESS_ERROR_HANDLERS.INVALID_SUBSCRIPTION
+  if (code.startsWith('INVALID_BILLING_PERIOD')) return BUSINESS_ERROR_HANDLERS.INVALID_BILLING_PERIOD
+  return BUSINESS_ERROR_HANDLERS.INTERNAL_ERROR
 }
 
 export function handleApiError(
@@ -279,10 +342,11 @@ export function handleApiError(
   }
 
   const handler = getErrorHandler(apiError.code as ErrorCode)
+  const message = apiError.message || handler.message
 
   if (handler.type === 'field-error' && options.setFieldError) {
-    options.setFieldError(handler.message)
+    options.setFieldError(message)
   } else if (handler.type === 'toast' && options.showToast !== false) {
-    toast[handler.variant || 'error'](handler.message)
+    toast[handler.variant || 'error'](message)
   }
 }

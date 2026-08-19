@@ -8,6 +8,8 @@ export function useWhatsAppMessages(phone: string | null) {
     queryKey: qk.whatsapp.messages(phone || ''),
     queryFn: () => whatsappApi.getMessagesByPhone(phone!),
     enabled: !!phone,
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: false,
   })
 }
 

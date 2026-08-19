@@ -26,8 +26,15 @@ export function useMe(enabled = true) {
 
   useEffect(() => {
     if (!query.error) return
-    const status = (query.error as { response?: { status?: number } })?.response?.status
-    if ((status === 401 || status === 404) && !hasUser) {
+    const err = query.error as { code?: string; response?: { status?: number } }
+    const status = err.response?.status
+    const code = err.code
+    const isAuthFailure =
+      status === 401 ||
+      status === 404 ||
+      code === 'UNAUTHORIZED' ||
+      code === 'USER_NOT_FOUND'
+    if (isAuthFailure && !hasUser) {
       logout()
     }
   }, [query.error, logout, hasUser])

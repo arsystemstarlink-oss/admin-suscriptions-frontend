@@ -22,10 +22,10 @@ export function useUpdateSchedulerConfig(organizationId?: string) {
     },
     onError: (error: unknown) => {
       const apiError = error as { code?: string; message?: string }
-      if (apiError.code === 'INVALID_CRON_EXPRESSION') {
+      if (apiError.code === 'INVALID_CRON') {
         toast.error('La expresión cron no es válida')
       } else {
-        toast.error('Error al actualizar la configuración')
+        toast.error(apiError.message || 'Error al actualizar la configuración')
       }
     },
   })
@@ -45,8 +45,13 @@ export function useRunScheduler(organizationId?: string) {
       qc.invalidateQueries({ queryKey: qk.dashboard.alerts })
       toast.success('Daily Job ejecutado correctamente')
     },
-    onError: () => {
-      toast.error('Error al ejecutar el Daily Job')
+    onError: (error: unknown) => {
+      const apiError = error as { code?: string; message?: string }
+      if (apiError.code === 'JOB_ALREADY_RUNNING') {
+        toast.warning('El Daily Job ya está en ejecución para esta organización. Espera a que termine.')
+      } else {
+        toast.error(apiError.message || 'Error al ejecutar el Daily Job')
+      }
     },
   })
 }

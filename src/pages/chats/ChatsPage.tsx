@@ -221,13 +221,13 @@ export function ChatsPage() {
       setMessage('')
       toast.success('Mensaje enviado')
     } catch (err) {
-      const code = (
-        err as { response?: { data?: { error?: { code?: string } } } }
-      )?.response?.data?.error?.code
+      const code = (err as { code?: string })?.code
       if (code === 'WHATSAPP_NOT_CONFIGURED') {
         toast.error(
-          'WhatsApp no está configurado para esta organización. Contacta al administrador para configurar Twilio.'
+          'WhatsApp no está configurado para esta organización. Configura Twilio en la organización.'
         )
+      } else if (code === 'ORGANIZATION_INACTIVE') {
+        toast.error('La organización está inactiva y no puede enviar mensajes de WhatsApp.')
       } else {
         toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
       }

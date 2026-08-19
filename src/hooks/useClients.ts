@@ -7,6 +7,7 @@ interface UseClientsParams {
   search?: string
   subscriptionStatus?: 'ACTIVE' | 'SUSPENDED' | 'MIXED' | 'NONE'
   hasOverdue?: boolean
+  organizationId?: string
   limit?: number
   offset?: number
 }

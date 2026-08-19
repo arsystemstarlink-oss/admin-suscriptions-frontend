@@ -893,12 +893,12 @@ Codigos principales: `NOT_FOUND` | `INVALID_DATA` | `INVALID_DNI` | `DNI_TAKEN` 
 
 Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
 
-Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias ni existe configuración global en el servidor.
+Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio configuradas.
 
 ## WhatsApp por Organización (Twilio multi-tenant)
 
-- Cada organización puede tener sus propias credenciales Twilio en `organizations/{id}.twilio`: `accountSid`, `authToken`, `phoneNumber` (número de WhatsApp Business, E.164), `enabled`.
-- Resolución de credenciales: si la organización tiene config completa y `enabled !== false`, se usa; si no, fallback a `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` del servidor.
+- **Requisito:** cada organización DEBE configurar sus propias credenciales Twilio en `organizations/{id}.twilio` (`accountSid`, `authToken`, `phoneNumber` E.164, `enabled`) para poder usar WhatsApp. Sin esta configuración, WhatsApp queda deshabilitado para la organización: no puede enviar mensajes (`WHATSAPP_NOT_CONFIGURED`) ni recibe notificaciones automáticas del scheduler.
+- `twilioConfigured` (DTO) indica si la organización tiene la configuración completa y habilitada.
 - `POST /whatsapp/send` usa las credenciales de la organización efectiva. Requiere contexto de organización (`TENANT_REQUIRED` si un super-admin no indica `?organizationId=`).
 - Webhook inbound (`POST /communications/webhook`): resuelve la organización por el número destino (`To` del mensaje = `twilio.phoneNumber` de la org), valida la firma con el `authToken` de esa org, y asigna el mensaje a la organización. Fallback histórico: match por teléfono del cliente.
 - El `authToken` nunca se retorna en la API (solo `authTokenSet: boolean`).

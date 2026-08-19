@@ -12,13 +12,20 @@ export const whatsappApi = {
     return response.data
   },
 
-  getConversations: async (): Promise<ConversationsResponse> => {
-    const response = await api.get<ConversationsResponse>('/whatsapp/conversations')
+  getConversations: async (organizationId?: string): Promise<ConversationsResponse> => {
+    const response = await api.get<ConversationsResponse>('/whatsapp/conversations', {
+      params: { organizationId },
+    })
     return response.data
   },
 
-  sendMessage: async (data: SendMessageRequest): Promise<SendMessageResponse> => {
-    const response = await api.post<SendMessageResponse>('/whatsapp/send', data)
+  sendMessage: async (
+    data: SendMessageRequest,
+    organizationId?: string,
+  ): Promise<SendMessageResponse> => {
+    const response = await api.post<SendMessageResponse>('/whatsapp/send', data, {
+      params: { organizationId },
+    })
     return response.data
   },
 }

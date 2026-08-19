@@ -4,7 +4,7 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizations, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Edit, Trash2, MessageCircle } from 'lucide-react'
+import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationForm } from '@/components/organizations/CreateOrganizationForm'
@@ -112,13 +112,21 @@ export function OrganizationsPage() {
                     Inactiva
                   </Badge>
                 )}
-                {organization.twilioConfigured && (
+                {organization.twilioConfigured ? (
                   <Badge
                     variant="outline"
                     className="text-xs text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/50 dark:border-blue-800"
                   >
                     <MessageCircle className="h-3 w-3 mr-1 shrink-0" />
                     WhatsApp
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
+                  >
+                    <MessageCircleOff className="h-3 w-3 mr-1 shrink-0" />
+                    Sin WhatsApp
                   </Badge>
                 )}
               </div>

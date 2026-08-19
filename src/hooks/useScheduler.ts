@@ -4,18 +4,18 @@ import { qk } from '@/lib/query-keys'
 import type { UpdateSchedulerConfigRequest } from '@/types/api'
 import { toast } from 'sonner'
 
-export function useSchedulerConfig() {
+export function useSchedulerConfig(organizationId?: string) {
   return useQuery({
-    queryKey: qk.scheduler.config,
-    queryFn: () => schedulerApi.getConfig(),
+    queryKey: [...qk.scheduler.config, organizationId],
+    queryFn: () => schedulerApi.getConfig(organizationId),
   })
 }
 
-export function useUpdateSchedulerConfig() {
+export function useUpdateSchedulerConfig(organizationId?: string) {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: UpdateSchedulerConfigRequest) => schedulerApi.updateConfig(data),
+    mutationFn: (data: UpdateSchedulerConfigRequest) => schedulerApi.updateConfig(data, organizationId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.scheduler.config })
       toast.success('Configuración del scheduler actualizada')
@@ -31,11 +31,11 @@ export function useUpdateSchedulerConfig() {
   })
 }
 
-export function useRunScheduler() {
+export function useRunScheduler(organizationId?: string) {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: () => schedulerApi.runNow(),
+    mutationFn: () => schedulerApi.runNow(organizationId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.scheduler.config })
       qc.invalidateQueries({ queryKey: qk.billing.lists })

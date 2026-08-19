@@ -220,8 +220,17 @@ export function ChatsPage() {
       })
       setMessage('')
       toast.success('Mensaje enviado')
-    } catch {
-      toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
+    } catch (err) {
+      const code = (
+        err as { response?: { data?: { error?: { code?: string } } } }
+      )?.response?.data?.error?.code
+      if (code === 'WHATSAPP_NOT_CONFIGURED') {
+        toast.error(
+          'WhatsApp no está configurado para esta organización. Contacta al administrador para configurar Twilio.'
+        )
+      } else {
+        toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
+      }
     }
   }
 

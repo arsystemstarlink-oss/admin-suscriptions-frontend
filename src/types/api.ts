@@ -127,8 +127,6 @@ export interface UpdateAdminRequest {
   email?: string
   phone?: string
   newPassword?: string
-  role?: UserRole
-  organizationId?: string | null
 }
 
 export interface UpdateAdminResponse {
@@ -139,6 +137,7 @@ export interface UpdateAdminResponse {
 
 export interface Client {
   id: string
+  organizationId: string
   firstName: string
   lastName: string
   phone: string
@@ -162,6 +161,7 @@ export interface ClientWithSubscriptions extends ClientWithStats {
 
 export interface Plan {
   id: string
+  organizationId: string
   name: string
   price: number
   description?: string
@@ -171,6 +171,7 @@ export interface Plan {
 
 export interface Subscription {
   id: string
+  organizationId: string
   clientId: string
   planId: string
   kitNumber: string
@@ -221,6 +222,7 @@ export interface SubscriptionWithPeriods extends SubscriptionWithDetails {
 
 export interface BillingPeriod {
   id: string
+  organizationId: string
   subscriptionId: string
   periodLabel: string
   startDate: string
@@ -279,22 +281,15 @@ export interface DashboardAlerts {
   generatedAt: string
   expiringSoon: {
     count: number
-    description: string
     items: AlertItem[]
   }
-  overdueDebt: {
-    count: number
-    description: string
-    totalAmount: number
-    items: AlertItem[]
-  }
-  suspended: {
-    count: number
-    description: string
+  overdue: {
+    totalOverduePeriods: number
+    totalOverdueAmount: number
+    suspendedSubscriptions: number
   }
   topDebtors: {
     count: number
-    description: string
     items: DebtorItem[]
   }
 }
@@ -359,6 +354,7 @@ export interface RefreshResponse {
 }
 
 export interface CreateClientRequest {
+  organizationId?: string
   firstName: string
   lastName: string
   phone: string
@@ -379,6 +375,7 @@ export interface UpdateClientRequest {
 }
 
 export interface CreatePlanRequest {
+  organizationId?: string
   name: string
   price: number
   description?: string
@@ -403,6 +400,7 @@ export interface HistoricalPayment {
 }
 
 export interface CreateSubscriptionRequest {
+  organizationId?: string
   clientId: string
   planId: string
   kitNumber: string
@@ -459,7 +457,7 @@ export interface ClientDetailResponse {
 }
 
 export interface SubscriptionDetailResponse {
-  subscription: SubscriptionWithDetails
+  subscription: SubscriptionWithDetails & { plan: Plan }
   billingPeriods: BillingPeriod[]
   summary: {
     totalPeriods: number
@@ -482,6 +480,7 @@ export interface CreateSubscriptionResponse {
     overduePeriods: number
     totalPaid: number
     totalPending: number
+    hasDebt: boolean
   }
 }
 
@@ -545,6 +544,7 @@ export type MessageStatus = 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
 
 export interface WhatsAppMessage {
   id: string
+  organizationId?: string
   clientId?: string
   phone: string
   direction: MessageDirection

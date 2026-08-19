@@ -4,6 +4,7 @@ import type { Plan, Pagination, CreatePlanRequest, UpdatePlanRequest } from '@/t
 interface PlansListParams {
   search?: string
   active?: boolean
+  organizationId?: string
   limit?: number
   offset?: number
 }

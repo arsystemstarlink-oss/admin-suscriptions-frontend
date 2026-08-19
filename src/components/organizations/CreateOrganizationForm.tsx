@@ -150,8 +150,8 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Opcional. Sin credenciales propias, la organización usa la configuración global del
-          servidor.
+          Requerido para usar WhatsApp. Cada organización debe configurar sus propias credenciales
+          Twilio para poder enviar y recibir notificaciones.
         </p>
 
         <div className="grid grid-cols-1 gap-4">
@@ -219,7 +219,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
               )}
             />
             <p className="text-xs text-muted-foreground">
-              Sin credenciales propias, la organización usa la configuración global del servidor.
+              Si no se completa, WhatsApp quedará deshabilitado hasta que se configure.
             </p>
           </div>
         </div>

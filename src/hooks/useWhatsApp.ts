@@ -11,18 +11,18 @@ export function useWhatsAppMessages(phone: string | null) {
   })
 }
 
-export function useWhatsAppConversations() {
+export function useWhatsAppConversations(organizationId?: string) {
   return useQuery({
-    queryKey: qk.whatsapp.conversations,
-    queryFn: () => whatsappApi.getConversations(),
+    queryKey: [...qk.whatsapp.conversations, organizationId],
+    queryFn: () => whatsappApi.getConversations(organizationId),
   })
 }
 
-export function useSendMessage() {
+export function useSendMessage(organizationId?: string) {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: SendMessageRequest) => whatsappApi.sendMessage(data),
+    mutationFn: (data: SendMessageRequest) => whatsappApi.sendMessage(data, organizationId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.to) })
       qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })

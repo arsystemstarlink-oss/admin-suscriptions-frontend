@@ -10,7 +10,10 @@ import type {
 
 interface SubscriptionsListParams {
   clientId?: string
+  status?: 'ACTIVE' | 'SUSPENDED'
   search?: string
+  hasOverduePeriods?: boolean
+  organizationId?: string
   limit?: number
   offset?: number
 }

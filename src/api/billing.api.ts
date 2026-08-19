@@ -14,6 +14,7 @@ interface BillingPeriodsListParams {
   search?: string
   expiresBefore?: string
   periodLabel?: string
+  organizationId?: string
   limit?: number
   offset?: number
 }

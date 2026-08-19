@@ -13,6 +13,7 @@ interface ClientsListParams {
   include?: 'subscriptions'
   subscriptionStatus?: 'ACTIVE' | 'SUSPENDED' | 'MIXED' | 'NONE'
   hasOverdue?: boolean
+  organizationId?: string
   limit?: number
   offset?: number
 }

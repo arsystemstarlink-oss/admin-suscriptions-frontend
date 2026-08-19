@@ -5,6 +5,9 @@ import type { CreateSubscriptionRequest, UpdateSubscriptionRequest } from '@/typ
 
 interface UseSubscriptionsParams {
   clientId?: string
+  status?: 'ACTIVE' | 'SUSPENDED'
+  hasOverduePeriods?: boolean
+  organizationId?: string
   limit?: number
   offset?: number
 }

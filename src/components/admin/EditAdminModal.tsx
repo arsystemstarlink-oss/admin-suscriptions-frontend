@@ -3,20 +3,12 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUpdateAdmin, useDeleteAdmin } from '@/hooks/useAdmins'
-import { useOrganizations } from '@/hooks/useOrganizations'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -46,16 +38,6 @@ const editAdminSchema = z.object({
     .regex(/\d/, 'Debe incluir números')
     .optional()
     .or(z.literal('')),
-  role: z.enum(['admin', 'super-admin']).optional(),
-  organizationId: z.string().optional(),
-}).superRefine((data, ctx) => {
-  if (data.role === 'admin' && !data.organizationId) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['organizationId'],
-      message: 'Seleccione una organización.',
-    })
-  }
 })
 
 type EditAdminForm = z.infer<typeof editAdminSchema>
@@ -69,23 +51,15 @@ interface EditAdminModalProps {
 export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProps) {
   const updateMutation = useUpdateAdmin()
   const deleteMutation = useDeleteAdmin()
+  const setTokens = useAuthStore((s) => s.setTokens)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const isSuperAdmin = useIsSuperAdmin()
-  const canManageTenant = isSuperAdmin && admin?.role !== 'super-admin'
-
-  const { data: organizationsData } = useOrganizations(
-    { limit: 100 },
-    { enabled: canManageTenant },
-  )
-  const activeOrganizations = (organizationsData?.organizations || []).filter((o) => o.active)
 
   const {
     register,
     control,
     handleSubmit,
     reset,
-    watch,
     setError: setFormError,
     formState: { errors, isSubmitting },
   } = useForm<EditAdminForm>({
@@ -95,12 +69,8 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
       email: '',
       phone: '',
       newPassword: '',
-      role: 'admin',
-      organizationId: '',
     },
   })
-
-  const watchedRole = watch('role')
 
   useEffect(() => {
     if (open && admin) {
@@ -109,8 +79,6 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
         email: admin.email,
         phone: admin.phone || '',
         newPassword: '',
-        role: admin.role,
-        organizationId: admin.organizationId || '',
       })
       setError(null)
       setShowDeleteConfirm(false)
@@ -123,7 +91,7 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
     const handler = getErrorHandler(apiError.code)
     if (handler.type === 'field-error' && handler.field) {
       setFormError(
-        handler.field as 'name' | 'email' | 'phone' | 'newPassword' | 'organizationId',
+        handler.field as 'name' | 'email' | 'phone' | 'newPassword',
         {
           type: 'manual',
           message: handler.message,
@@ -153,11 +121,10 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
       if (data.newPassword) {
         payload.newPassword = data.newPassword
       }
-      if (canManageTenant && data.role) {
-        payload.role = data.role
-        payload.organizationId = data.role === 'admin' ? data.organizationId : null
+      const response = await updateMutation.mutateAsync({ id: admin.id, data: payload })
+      if (response.accessToken && response.refreshToken) {
+        setTokens(response.accessToken, response.refreshToken)
       }
-      await updateMutation.mutateAsync({ id: admin.id, data: payload })
       onOpenChange(false)
     } catch (err) {
       if (!applyFieldError(err)) showGenericError(err)
@@ -257,66 +224,6 @@ export function EditAdminModal({ admin, open, onOpenChange }: EditAdminModalProp
                   <p className="text-sm text-red-600 dark:text-red-400">{errors.phone.message}</p>
                 )}
               </div>
-
-              {canManageTenant && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-admin-role">Rol *</Label>
-                    <Controller
-                      name="role"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger id="edit-admin-role" aria-invalid={!!errors.role}>
-                            <SelectValue placeholder="Selecciona un rol" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="super-admin">Super administrador</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                    {errors.role && (
-                      <p className="text-sm text-red-600 dark:text-red-400">
-                        {errors.role.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {watchedRole !== 'super-admin' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-admin-organization">Organización *</Label>
-                      <Controller
-                        name="organizationId"
-                        control={control}
-                        render={({ field }) => (
-                          <Select value={field.value || ''} onValueChange={field.onChange}>
-                            <SelectTrigger
-                              id="edit-admin-organization"
-                              aria-invalid={!!errors.organizationId}
-                            >
-                              <SelectValue placeholder="Selecciona una organización" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {activeOrganizations.map((org) => (
-                                <SelectItem key={org.id} value={org.id}>
-                                  {org.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      {errors.organizationId && (
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                          {errors.organizationId.message}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="edit-admin-password">Nueva contraseña (opcional)</Label>

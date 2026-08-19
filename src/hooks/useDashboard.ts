@@ -2,18 +2,22 @@ import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/api/dashboard.api'
 import { qk } from '@/lib/query-keys'
 
-export function useDashboardSummary() {
+interface UseDashboardParams {
+  organizationId?: string
+}
+
+export function useDashboardSummary(params?: UseDashboardParams) {
   return useQuery({
-    queryKey: qk.dashboard.summary,
-    queryFn: dashboardApi.getSummary,
+    queryKey: [...qk.dashboard.summary, params],
+    queryFn: () => dashboardApi.getSummary(params),
     staleTime: 10_000,
   })
 }
 
-export function useDashboardAlerts() {
+export function useDashboardAlerts(params?: UseDashboardParams) {
   return useQuery({
-    queryKey: qk.dashboard.alerts,
-    queryFn: dashboardApi.getAlerts,
+    queryKey: [...qk.dashboard.alerts, params],
+    queryFn: () => dashboardApi.getAlerts(params),
     staleTime: 10_000,
   })
 }

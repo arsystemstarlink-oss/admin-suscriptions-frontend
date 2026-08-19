@@ -260,6 +260,16 @@ export function EditOrganizationModal({ organization, open, onOpenChange }: Edit
                 <h4 className="text-sm font-semibold text-foreground">WhatsApp (Twilio)</h4>
               </div>
 
+              {!organization.twilioConfigured && (
+                <div className="flex items-start gap-2 rounded-md p-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <p>
+                    WhatsApp no está configurado. Sin credenciales válidas, esta organización no
+                    podrá enviar ni recibir notificaciones de WhatsApp.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-org-twilio-sid">Account SID</Label>
@@ -343,8 +353,8 @@ export function EditOrganizationModal({ organization, open, onOpenChange }: Edit
                     )}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Sin credenciales propias, la organización usa la configuración global del
-                    servidor.
+                    Requerido para usar WhatsApp. Sin credenciales, la organización no podrá enviar
+                    ni recibir notificaciones.
                   </p>
                 </div>
               </div>
@@ -434,8 +444,9 @@ export function EditOrganizationModal({ organization, open, onOpenChange }: Edit
               <div>
                 <DialogTitle>Quitar configuración Twilio</DialogTitle>
                 <DialogDescription>
-                  Se eliminarán las credenciales de WhatsApp de {organization.name}. La
-                  organización volverá a usar la configuración global del servidor.
+                  Se eliminarán las credenciales de WhatsApp de {organization.name}. WhatsApp
+                  quedará deshabilitado: no podrá enviar ni recibir notificaciones hasta que se
+                  configuren nuevas credenciales.
                 </DialogDescription>
               </div>
             </div>

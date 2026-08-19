@@ -6,6 +6,7 @@ import type { CreatePlanRequest, UpdatePlanRequest } from '@/types/api'
 interface UsePlansParams {
   search?: string
   active?: boolean
+  organizationId?: string
   limit?: number
   offset?: number
 }

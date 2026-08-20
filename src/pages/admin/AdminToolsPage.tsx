@@ -162,7 +162,7 @@ export function AdminToolsPage() {
             <p className="text-primary-500 dark:text-primary-400">Cargando configuración...</p>
           </CardContent>
         </Card>
-      ) : schedulerConfig ? (
+      ) : requiresOrganization ? null : schedulerConfig ? (
         <>
           <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
             <CardHeader className="p-4 sm:p-5">

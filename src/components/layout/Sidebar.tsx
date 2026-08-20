@@ -100,11 +100,15 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
   const { user, logout } = useAuthStore()
   const location = useLocation()
 
+  const previousPathname = useRef(location.pathname)
+
   useEffect(() => {
+    if (previousPathname.current === location.pathname) return
+    previousPathname.current = location.pathname
     if (isMobile && mobileOpen) {
       onMobileClose()
     }
-  }, [location.pathname])
+  }, [location.pathname, isMobile, mobileOpen, onMobileClose])
 
   const sidebarContent = (
     <div className="flex flex-col h-full">

@@ -36,14 +36,24 @@ export function useRunScheduler(organizationId?: string) {
 
   return useMutation({
     mutationFn: () => schedulerApi.runNow(organizationId),
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: qk.scheduler.config })
       qc.invalidateQueries({ queryKey: qk.billing.lists })
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       qc.invalidateQueries({ queryKey: qk.clients.lists })
       qc.invalidateQueries({ queryKey: qk.dashboard.summary })
       qc.invalidateQueries({ queryKey: qk.dashboard.alerts })
-      toast.success('Daily Job ejecutado correctamente')
+
+      const errorCount = data.result?.errors?.length ?? 0
+      if (errorCount > 0) {
+        toast.warning(
+          `Daily Job ejecutado: ${data.result.overdue} vencidos, ${data.result.generated} generados, ` +
+            `${data.result.suspended} suspendidos, ${data.result.notifications} notificaciones. ` +
+            `${errorCount} notificación(es) con error.`
+        )
+      } else {
+        toast.success('Daily Job ejecutado correctamente')
+      }
     },
     onError: (error: unknown) => {
       const apiError = error as { code?: string; message?: string }

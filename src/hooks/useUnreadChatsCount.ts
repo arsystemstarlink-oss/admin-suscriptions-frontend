@@ -9,7 +9,7 @@ export function useUnreadChatsCount() {
   const { readChatTimestamps } = useUIStore()
   const { data: clientsData } = useClients({ limit: 100 })
 
-  const clients = clientsData?.clients || []
+  const clients = useMemo(() => clientsData?.clients || [], [clientsData])
   const clientPhones = useMemo(
     () => clients.map((client) => client.phone).filter(Boolean),
     [clients]

@@ -156,6 +156,8 @@ api.interceptors.response.use(
       const apiError: ApiError = {
         code: errorCode as ApiError['code'],
         message: error.response?.data?.error?.message || 'Error de negocio',
+        twilioCode: error.response?.data?.error?.twilioCode,
+        moreInfo: error.response?.data?.error?.moreInfo,
       }
       return Promise.reject(apiError)
     }

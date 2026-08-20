@@ -315,6 +315,11 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'Datos del período de facturación no válidos.',
   },
+  TWILIO_ERROR: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Error de Twilio al enviar el mensaje de WhatsApp.',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {
@@ -332,7 +337,12 @@ export function handleApiError(
     fallbackMessage?: string
   } = {}
 ): void {
-  const apiError = error as { code?: string; message?: string }
+  const apiError = error as {
+    code?: string
+    message?: string
+    twilioCode?: number
+    moreInfo?: string
+  }
   
   if (!apiError.code) {
     if (options.showToast !== false) {
@@ -342,7 +352,14 @@ export function handleApiError(
   }
 
   const handler = getErrorHandler(apiError.code as ErrorCode)
-  const message = apiError.message || handler.message
+  let message = apiError.message || handler.message
+
+  if (apiError.code === 'TWILIO_ERROR') {
+    const parts = [message]
+    if (apiError.twilioCode) parts.push(`Código Twilio: ${apiError.twilioCode}`)
+    if (apiError.moreInfo) parts.push(apiError.moreInfo)
+    message = parts.join(' · ')
+  }
 
   if (handler.type === 'field-error' && options.setFieldError) {
     options.setFieldError(message)

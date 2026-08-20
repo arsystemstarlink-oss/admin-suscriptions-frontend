@@ -8,6 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import {
   Clock,
   CheckCircle,
   XCircle,
@@ -15,10 +22,18 @@ import {
   RefreshCw,
   Pause,
   Building2,
+  AlertTriangle,
 } from 'lucide-react'
 import { formatDate } from '@/lib/constants'
+import type { NotificationFailure, NotificationType } from '@/types/api'
 
 const ALL_ORGS_VALUE = '__all__'
+
+const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+  reminder: 'Recordatorio',
+  'suspension-warning': 'Advertencia de suspensión',
+  'suspended-notice': 'Aviso de suspensión',
+}
 
 function parseCronToTime(cron: string): { hour12: number; minute: number; period: 'AM' | 'PM' } {
   const parts = cron.split(' ')
@@ -66,6 +81,8 @@ export function AdminToolsPage() {
 
   const requiresOrganization = isSuperAdmin && !organizationIdFilter
 
+  const [runErrors, setRunErrors] = useState<NotificationFailure[] | null>(null)
+
   const handleOrganizationFilter = (value: string) => {
     const params = new URLSearchParams(searchParams)
     if (value === ALL_ORGS_VALUE) {
@@ -95,7 +112,10 @@ export function AdminToolsPage() {
   }
 
   const handleRunScheduler = async () => {
-    await runSchedulerMutation.mutateAsync()
+    const data = await runSchedulerMutation.mutateAsync()
+    if (data.result?.errors?.length) {
+      setRunErrors(data.result.errors)
+    }
   }
 
   return (
@@ -318,6 +338,42 @@ export function AdminToolsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!runErrors} onOpenChange={(open) => { if (!open) setRunErrors(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+              Notificaciones con error
+            </DialogTitle>
+            <DialogDescription>
+              {runErrors?.length ?? 0} notificación(es) fallaron al ejecutar la Tarea Diaria.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[55dvh] overflow-y-auto pr-1">
+            {runErrors?.map((err, index) => (
+              <div
+                key={index}
+                className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-3 space-y-1"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-red-900 dark:text-red-100">{err.clientName}</p>
+                  <span className="text-[11px] uppercase tracking-wide text-red-600 dark:text-red-400 shrink-0">
+                    {NOTIFICATION_TYPE_LABELS[err.type] ?? err.type}
+                  </span>
+                </div>
+                <p className="text-xs text-red-700 dark:text-red-400">{err.phone}</p>
+                {err.errorCode && (
+                  <p className="text-xs font-medium text-red-700 dark:text-red-400">
+                    Código Twilio: {err.errorCode}
+                  </p>
+                )}
+                <p className="text-xs text-red-700 dark:text-red-400 break-words">{err.errorMessage}</p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,38 +1,32 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthGuard } from '@/guards/AuthGuard'
 import { RoleGuard } from '@/guards/RoleGuard'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-
-const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
-const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
-const ClientsListPage = lazy(() => import('@/pages/clients/ClientsListPage').then(m => ({ default: m.ClientsListPage })))
-const ClientDetailPage = lazy(() => import('@/pages/clients/ClientDetailPage').then(m => ({ default: m.ClientDetailPage })))
-const ClientFormPage = lazy(() => import('@/pages/clients/ClientFormPage').then(m => ({ default: m.ClientFormPage })))
-const PlansListPage = lazy(() => import('@/pages/plans/PlansListPage').then(m => ({ default: m.PlansListPage })))
-const PlanFormPage = lazy(() => import('@/pages/plans/PlanFormPage').then(m => ({ default: m.PlanFormPage })))
-const SubscriptionsListPage = lazy(() => import('@/pages/subscriptions/SubscriptionsListPage').then(m => ({ default: m.SubscriptionsListPage })))
-const SubscriptionDetailPage = lazy(() => import('@/pages/subscriptions/SubscriptionDetailPage').then(m => ({ default: m.SubscriptionDetailPage })))
-const SubscriptionFormPage = lazy(() => import('@/pages/subscriptions/SubscriptionFormPage').then(m => ({ default: m.SubscriptionFormPage })))
-const SubscriptionEditPage = lazy(() => import('@/pages/subscriptions/SubscriptionEditPage').then(m => ({ default: m.SubscriptionEditPage })))
-const AdminToolsPage = lazy(() => import('@/pages/admin/AdminToolsPage').then(m => ({ default: m.AdminToolsPage })))
-const SubscriptionsLayout = lazy(() => import('@/components/layout/SubscriptionsLayout').then(m => ({ default: m.SubscriptionsLayout })))
-const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
-const NotificationsPage = lazy(() => import('@/pages/admin/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
-const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
-const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
-const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
-const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))
-
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center h-64">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-    </div>
-  )
-}
+import {
+  LoginPage,
+  DashboardPage,
+  ClientsListPage,
+  ClientDetailPage,
+  ClientFormPage,
+  PlansListPage,
+  PlanFormPage,
+  SubscriptionsListPage,
+  SubscriptionDetailPage,
+  SubscriptionFormPage,
+  SubscriptionEditPage,
+  AdminToolsPage,
+  SubscriptionsLayout,
+  ProfilePage,
+  NotificationsPage,
+  AdminsPage,
+  OrganizationsPage,
+  SetupPage,
+  ChatsPage,
+  PageLoader,
+} from '@/routes/lazy-pages'
 
 export const router = createBrowserRouter(
   [

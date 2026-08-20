@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { SchedulerConfig, UpdateSchedulerConfigRequest } from '@/types/api'
+import type { SchedulerConfig, UpdateSchedulerConfigRequest, RunSchedulerResponse } from '@/types/api'
 
 export const schedulerApi = {
   getConfig: async (organizationId?: string): Promise<SchedulerConfig> => {
@@ -19,8 +19,8 @@ export const schedulerApi = {
     return response.data
   },
 
-  runNow: async (organizationId?: string): Promise<{ message: string }> => {
-    const response = await api.post<{ message: string }>('/scheduler/run', {}, {
+  runNow: async (organizationId?: string): Promise<RunSchedulerResponse> => {
+    const response = await api.post<RunSchedulerResponse>('/scheduler/run', {}, {
       params: { organizationId },
     })
     return response.data

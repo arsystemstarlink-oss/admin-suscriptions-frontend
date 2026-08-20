@@ -52,8 +52,8 @@ export function ChatsPage() {
   const deleteChatMutation = useDeleteChat()
   const isSuperAdmin = useIsSuperAdmin()
 
-  const clients = clientsData?.clients || []
-  const messages = messagesData?.messages || []
+  const clients = useMemo(() => clientsData?.clients || [], [clientsData])
+  const messages = useMemo(() => messagesData?.messages || [], [messagesData])
   const canSendFreeMessage = useMemo(() => {
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000
 
@@ -241,13 +241,16 @@ export function ChatsPage() {
       setMessage('')
       toast.success('Mensaje enviado')
     } catch (err) {
-      const code = (err as { code?: string })?.code
-      if (code === 'WHATSAPP_NOT_CONFIGURED') {
+      const apiError = err as { code?: string; message?: string; twilioCode?: number; moreInfo?: string }
+      if (apiError.code === 'WHATSAPP_NOT_CONFIGURED') {
         toast.error(
           'WhatsApp no está configurado para esta organización. Configura Twilio en la organización.'
         )
-      } else if (code === 'ORGANIZATION_INACTIVE') {
+      } else if (apiError.code === 'ORGANIZATION_INACTIVE') {
         toast.error('La organización está inactiva y no puede enviar mensajes de WhatsApp.')
+      } else if (apiError.code === 'TWILIO_ERROR') {
+        const twilioDetail = apiError.twilioCode ? ` (Código Twilio: ${apiError.twilioCode})` : ''
+        toast.error(`${apiError.message || 'Error de Twilio al enviar el mensaje.'}${twilioDetail}`)
       } else {
         toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
       }

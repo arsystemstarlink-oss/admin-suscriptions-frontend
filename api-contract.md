@@ -654,8 +654,60 @@ interface DebtorItem {
 **POST /scheduler/run**
 ```typescript
 // Ejecuta el Daily Job inmediatamente (independiente del estado enabled)
+// Los fallos de notificación (Twilio, template no configurado, credenciales faltantes)
+// NO abortan el job: se acumulan en result.errors y success sigue siendo true.
 // Response 200
-{ message: string }
+{
+  success: true,
+  message: string,
+  result: DailyJobResult
+}
+
+interface DailyJobResult {
+  overdue: number;       // períodos marcados vencidos
+  generated: number;     // períodos de cobro generados
+  suspended: number;     // suscripciones suspendidas
+  notifications: number; // notificaciones WhatsApp enviadas OK
+  errors: NotificationFailure[]; // vacío si todas las notificaciones salieron bien
+}
+
+interface NotificationFailure {
+  type: 'reminder' | 'suspension-warning' | 'suspended-notice';
+  clientName: string;
+  phone: string;
+  errorCode?: number;    // código Twilio (ej: 63017, 21211); ausente si es config faltante
+  errorMessage: string;  // mensaje legible (incluye moreInfo de Twilio cuando aplica)
+}
+
+// Ejemplo (fallo de Twilio al enviar reminder; el job igual termina OK):
+{
+  success: true,
+  message: "Daily Job ejecutado correctamente...",
+  result: {
+    overdue: 1,
+    generated: 1,
+    suspended: 0,
+    notifications: 1,
+    errors: [
+      {
+        type: "reminder",
+        clientName: "Juan Pérez",
+        phone: "+584121234567",
+        errorCode: 63017,
+        errorMessage: "Template content must be approved... (https://www.twilio.com/docs/errors/63017)"
+      }
+    ]
+  }
+}
+
+// Casos en result.errors (el job NO falla):
+// - Error Twilio al enviar (errorCode + errorMessage con moreInfo)
+// - Template no configurado (sin errorCode)
+// - Twilio sin credenciales / WHATSAPP_NOT_CONFIGURED (sin errorCode)
+
+// Errores HTTP (el job no llega a ejecutarse o falla de forma global)
+// 409 { error: { code: 'JOB_ALREADY_RUNNING' } } → el job ya estaba en ejecución
+// 502 { error: { code: 'TWILIO_ERROR', message, twilioCode, moreInfo } } → error de Twilio no capturado en el job
 ```
 
 ---
@@ -667,6 +719,7 @@ interface DebtorItem {
 | POST | /api/whatsapp/send | Bearer admin | Enviar mensaje (texto o template) |
 | GET | /api/whatsapp/conversations | Bearer admin | Conversaciones agrupadas por teléfono (incluye números sin cliente) |
 | GET | /api/whatsapp/messages/:phone | Bearer admin | Historial de mensajes por teléfono |
+| DELETE | /api/whatsapp/messages/:phone | Bearer admin | Eliminar todo el chat del teléfono (requiere `?organizationId=` si el rol no la tiene) |
 | POST | /communications/webhook | Firma Twilio | Webhook para recibir mensajes de Twilio |
 
 **POST /api/whatsapp/send** (requiere `Authorization: Bearer {accessToken}`)
@@ -688,6 +741,10 @@ interface DebtorItem {
   message: string;
 }
 // Error 401: UNAUTHORIZED
+// Error 503: WHATSAPP_NOT_CONFIGURED
+// Error 502: TWILIO_ERROR — { error: { code: 'TWILIO_ERROR', message, twilioCode, moreInfo } }
+//   twilioCode: number (ej: 63017, 21211)
+//   moreInfo: string (URL de docs Twilio, ej: https://www.twilio.com/docs/errors/63017)
 ```
 
 **GET /api/whatsapp/conversations** (requiere `Authorization: Bearer {accessToken}`)
@@ -873,8 +930,9 @@ Authorization: Bearer {accessToken}
 | PUT /billing-periods/:id | Solo periodos PAID |
 | DELETE /subscriptions/:id | Elimina suscripcion y sus periodos de facturacion |
 | cronSchedule | Expresion cron valida (ej: "0 0 * * *" = medianoche diario) |
-| scheduler enabled | Si es false, el Daily Job no se ejecuta automaticamente |
-| POST /scheduler/run | Ejecuta el job manualmente sin importar enabled |
+| scheduler enabled | Si es false (global o por org), el Daily Job no se ejecuta automaticamente para esa org |
+| POST /scheduler/run | Ejecuta el job manualmente sin importar enabled (por org) |
+| Daily Job idempotente | Lock transaccional por org en `jobLocks/{orgId}` (TTL 15 min); si otra instancia esta ejecutando la org, se omite (409 `JOB_ALREADY_RUNNING` en el run manual) |
 | dni | Opcional; SOLO "V-" o "J-" + 7-9 digitos numericos con guion (ej: V-2769383); unico |
 | PUT /clients/:id dni | null o "" elimina la cedula |
 | Suscripcion SUSPENDED | overdueCount >= maxOverduePeriods |
@@ -889,20 +947,32 @@ Authorization: Bearer {accessToken}
 { error: { code: string; message: string } }
 ```
 
+Error Twilio (HTTP 502) — aplica a `POST /whatsapp/send` y a cualquier error de Twilio que llegue al handler (no a los fallos acumulados en `POST /scheduler/run`):
+```typescript
+{
+  error: {
+    code: 'TWILIO_ERROR';
+    message: string;
+    twilioCode?: number;  // ej: 63017, 21211
+    moreInfo?: string;    // ej: https://www.twilio.com/docs/errors/63017
+  }
+}
+```
+
 Codigos principales: `NOT_FOUND` | `INVALID_DATA` | `INVALID_DNI` | `DNI_TAKEN` | `INVALID_PERIOD_STATE` | `PERIOD_ALREADY_PAID` | `INVALID_PAYMENT_AMOUNT` | `CLIENT_HAS_ACTIVE_SUBSCRIPTIONS` | `PLAN_HAS_SUBSCRIPTIONS` | `CANNOT_DELETE_SELF` | `LAST_ADMIN`
 
 Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
 
-Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio configuradas.
+Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`). `TWILIO_ERROR` (502) — fallo de Twilio (`twilioCode`, `moreInfo`). En el Daily Job estos fallos van en `result.errors` (HTTP 200), no como 502.
 
 ## WhatsApp por Organización (Twilio multi-tenant)
 
-- **Requisito:** cada organización DEBE configurar sus propias credenciales Twilio en `organizations/{id}.twilio` (`accountSid`, `authToken`, `phoneNumber` E.164, `enabled`) para poder usar WhatsApp. Sin esta configuración, WhatsApp queda deshabilitado para la organización: no puede enviar mensajes (`WHATSAPP_NOT_CONFIGURED`) ni recibe notificaciones automáticas del scheduler.
-- `twilioConfigured` (DTO) indica si la organización tiene la configuración completa y habilitada.
+- Cada organización debe tener sus propias credenciales Twilio en `organizations/{id}.twilio`: `accountSid`, `authToken`, `phoneNumber` (número de WhatsApp Business, E.164), `enabled`. No existe configuración Twilio global de servidor.
+- Resolución de credenciales: solo se usan las credenciales de la organización; si la config está incompleta o `enabled === false`, no hay credenciales (`WHATSAPP_NOT_CONFIGURED`).
 - `POST /whatsapp/send` usa las credenciales de la organización efectiva. Requiere contexto de organización (`TENANT_REQUIRED` si un super-admin no indica `?organizationId=`).
-- Webhook inbound (`POST /communications/webhook`): resuelve la organización por el número destino (`To` del mensaje = `twilio.phoneNumber` de la org), valida la firma con el `authToken` de esa org, y asigna el mensaje a la organización. Fallback histórico: match por teléfono del cliente.
+- Webhook inbound (`POST /communications/webhook`): resuelve la organización por el número destino (`To` del mensaje = `twilio.phoneNumber` de la org), valida la firma con el `authToken` de esa org, y asigna el mensaje a la organización. Si la org no se resuelve, no hay credenciales para validar y el webhook se rechaza. Fallback histórico: match por teléfono del cliente (solo con validación desactivada en development).
 - El `authToken` nunca se retorna en la API (solo `authTokenSet: boolean`).
-- Los templates (`TWILIO_TEMPLATE_*`) siguen siendo variables de entorno globales; para cuentas Twilio propias por org, los templates deben existir en esa cuenta.
+- Los templates (`TWILIO_TEMPLATE_*`) son variables de entorno globales; para cuentas Twilio propias por org, los templates deben existir en esa cuenta.
 
 ## Multi-Tenant: Reglas de Alcance por Endpoint
 
@@ -911,7 +981,7 @@ Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene 
 | GET/POST/PUT/DELETE /clients, /plans, /subscriptions, /billing-periods | Solo su organización. `?organizationId` y `body.organizationId` son **ignorados** | Todas, o filtradas con `?organizationId=org_X`. Al crear, debe indicar `organizationId` (body o query) |
 | GET /dashboard/summary, /alerts | Solo su organización | Todas o filtradas |
 | GET/PUT /scheduler/config | Su organización | `?organizationId=org_X` o configuración global sin filtro |
-| POST /scheduler/run | Su organización | `?organizationId=org_X` o todas sin filtro |
+| POST /scheduler/run | Su organización (ignora enabled) | `?organizationId=org_X` o todas sin filtro (respeta enabled por org en el run global) |
 | GET/PUT/DELETE /admins | Solo admins de su organización | Todos o filtrados |
 | POST /auth/register | Crea admin en su organización | Crea admin (con org) o super-admin |
 | POST /subscriptions | Valida que `clientId` y `planId` pertenezcan a su organización (`CROSS_TENANT_REFERENCE` si no) | Igual validación contra la org indicada |

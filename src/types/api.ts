@@ -495,6 +495,30 @@ export interface EvaluateOverdueResponse {
   evaluatedAt: string
 }
 
+export type NotificationType = 'reminder' | 'suspension-warning' | 'suspended-notice'
+
+export interface NotificationFailure {
+  type: NotificationType
+  clientName: string
+  phone: string
+  errorCode?: number
+  errorMessage: string
+}
+
+export interface DailyJobResult {
+  overdue: number
+  generated: number
+  suspended: number
+  notifications: number
+  errors: NotificationFailure[]
+}
+
+export interface RunSchedulerResponse {
+  success: boolean
+  message: string
+  result: DailyJobResult
+}
+
 export type ErrorCode =
   | 'UNAUTHORIZED'
   | 'INVALID_CREDENTIALS'
@@ -551,10 +575,13 @@ export type ErrorCode =
   | 'PERIOD_NOT_COMPLETE'
   | 'INVALID_SUBSCRIPTION'
   | 'INVALID_BILLING_PERIOD'
+  | 'TWILIO_ERROR'
 
 export interface ApiError {
   code: ErrorCode
   message: string
+  twilioCode?: number
+  moreInfo?: string
 }
 
 export type MessageDirection = 'INBOUND' | 'OUTBOUND'

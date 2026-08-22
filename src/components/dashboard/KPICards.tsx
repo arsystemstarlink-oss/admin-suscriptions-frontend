@@ -56,7 +56,7 @@ export function KPICards() {
     },
     {
       title: 'Suscripciones',
-      value: data.subscriptions.active,
+      value: data.subscriptions.total,
       icon: Link2,
       iconClass: 'text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950',
       subtitle: data.subscriptions.suspended > 0 ? `${data.subscriptions.suspended} suspendidas` : undefined,

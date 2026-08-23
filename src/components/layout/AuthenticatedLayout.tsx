@@ -6,6 +6,7 @@ import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
 import { useUIStore } from '@/stores/ui.store'
+import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { cn } from '@/lib/utils'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
@@ -46,6 +47,7 @@ export function AuthenticatedLayout() {
 
   const { openOmniSearch } = useUIStore()
   const isChatsPage = location.pathname.startsWith('/chats')
+  useTokenRefresh()
 
   if (isMobile) {
     return (

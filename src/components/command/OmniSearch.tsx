@@ -130,7 +130,7 @@ export function OmniSearch() {
                   <div className="flex items-center gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-foreground">Kit #{sub.kitNumber}</p>
+                        <p className="text-sm font-medium text-foreground">{sub.kitNumber}</p>
                         <Badge className={`text-xs ${SUBSCRIPTION_STATUS_COLORS[sub.status]}`}>
                           {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                         </Badge>

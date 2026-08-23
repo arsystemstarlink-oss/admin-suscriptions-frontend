@@ -191,10 +191,10 @@ export function SubscriptionDetailPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight text-primary-900 dark:text-primary-50 truncate flex items-center gap-2">
               <Box className="h-6 w-6 text-primary-400" />
-              Kit #{subscription.kitNumber}
+              {subscription.accountNumber ? subscription.accountNumber : subscription.kitNumber}
             </h1>
             <p className="text-sm font-medium text-primary-500 dark:text-primary-400 mt-1">
-              Plan: {subscription.plan.name}
+              {subscription.accountNumber ? `${subscription.kitNumber} • ` : ''}Plan: {subscription.plan.name}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">

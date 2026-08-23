@@ -295,10 +295,14 @@ export function SubscriptionsListPage() {
                   <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-300 shrink-0">
                     <Box className="h-4 w-4" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs text-primary-500 dark:text-primary-400 font-medium">Kit #{sub.kitNumber}</p>
-                    <p className="text-sm font-semibold text-primary-800 dark:text-primary-100 truncate">{sub.plan.name}</p>
-                  </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-primary-800 dark:text-primary-100 truncate">
+                        {sub.accountNumber ? sub.accountNumber : sub.kitNumber}
+                      </p>
+                      <p className="text-xs text-primary-500 dark:text-primary-400 font-medium truncate">
+                        {sub.accountNumber ? `${sub.kitNumber} • ` : ''}{sub.plan.name}
+                      </p>
+                    </div>
                 </div>
 
                 {/* Billing Day Badge */}

@@ -82,7 +82,7 @@ export function TopDebtorsWidget() {
             {data.topDebtors.items.map((debtor) => (
               <div
                 key={debtor.clientId}
-                onClick={() => navigate(`/clients/${debtor.clientId}`)}
+                onClick={() => navigate(`/subscriptions/clients/${debtor.clientId}`)}
                 className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 active:bg-primary-50 dark:active:bg-primary-800 transition-colors touch-manipulation cursor-pointer group"
               >
                 <div className="min-w-0 flex-1 pr-3">
@@ -198,7 +198,7 @@ export function ExpiringSoonWidget() {
                   
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs">
                     <span className="text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-1.5 py-0.5 rounded">
-                      Kit #{item.kitNumber}
+                      {item.kitNumber}
                     </span>
                     {item.clientDni && (
                       <span className="text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-950 px-1.5 py-0.5 rounded">

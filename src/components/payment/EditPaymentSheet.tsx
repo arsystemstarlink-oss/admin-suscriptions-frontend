@@ -123,7 +123,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                     </Badge>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>Kit #{period.subscription.kitNumber}</span>
+                    <span>{period.subscription.kitNumber}</span>
                     <span>{period.plan.name}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">

@@ -153,7 +153,7 @@ export function QuickPayModal() {
 
                   <div className="flex flex-col gap-1 text-sm text-primary-600 dark:text-primary-300">
                     <div className="flex justify-between items-center">
-                      <span>Kit #{period.subscription.kitNumber} - {period.plan.name}</span>
+                      <span>{period.subscription.kitNumber} - {period.plan.name}</span>
                       <span className="font-bold text-base text-primary-900 dark:text-primary-50">{formatCurrency(period.amount)}</span>
                     </div>
                     <div className="flex justify-between items-center">

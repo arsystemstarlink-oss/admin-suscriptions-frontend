@@ -97,7 +97,7 @@ export function SubscriptionEditPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar Suscripción</h1>
           <p className="text-muted-foreground mt-1">
             {subscriptionData?.subscription.kitNumber
-              ? `Kit #${subscriptionData.subscription.kitNumber}`
+              ? `${subscriptionData.subscription.kitNumber}`
               : 'Modificar configuración'}
           </p>
         </div>

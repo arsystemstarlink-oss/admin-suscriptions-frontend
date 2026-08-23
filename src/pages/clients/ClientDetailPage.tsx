@@ -43,7 +43,7 @@ export function ClientDetailPage() {
         <h2 className="text-xl font-bold text-primary-900 dark:text-primary-50">Error al cargar cliente</h2>
         <p className="text-primary-500 dark:text-primary-400 mt-2 mb-6">No pudimos obtener los datos del cliente solicitado.</p>
         <Button asChild>
-          <Link to="/clients">Volver a Clientes</Link>
+          <Link to="/subscriptions/clients">Volver a Clientes</Link>
         </Button>
       </div>
     )
@@ -75,11 +75,11 @@ export function ClientDetailPage() {
     <div className="flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]">
       
       <DetailNav
-        backTo="/clients"
+        backTo="/subscriptions/clients"
         actions={
           <>
             <Button variant="outline" size="icon" asChild className="rounded-full bg-white dark:bg-primary-900 border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm">
-              <Link to={`/clients/${id}/edit`}>
+              <Link to={`/subscriptions/clients/${id}/edit`}>
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>
@@ -144,8 +144,8 @@ export function ClientDetailPage() {
 
       <Tabs defaultValue="subscriptions" className="mt-2">
         <TabsList className="w-full grid grid-cols-2 h-12 bg-primary-100/50 dark:bg-primary-900/30 rounded-xl p-1 border border-primary-200/50 dark:border-primary-800/50">
-          <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-primary-800">Suscripciones</TabsTrigger>
-          <TabsTrigger value="info" className="rounded-lg font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-primary-800">Información</TabsTrigger>
+          <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-white data-[state=active]:!text-primary-900 dark:data-[state=active]:bg-primary-800 dark:data-[state=active]:!text-primary-50">Suscripciones</TabsTrigger>
+          <TabsTrigger value="info" className="rounded-lg font-semibold data-[state=active]:bg-white data-[state=active]:!text-primary-900 dark:data-[state=active]:bg-primary-800 dark:data-[state=active]:!text-primary-50">Información</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscriptions" className="mt-4 space-y-4">
@@ -170,12 +170,12 @@ export function ClientDetailPage() {
                     <div className="h-10 w-10 rounded-xl bg-primary-50 dark:bg-primary-800 flex items-center justify-center text-primary-600 dark:text-primary-300">
                       <Box className="h-5 w-5" />
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-primary-900 dark:text-primary-50 leading-tight">
-                        Kit #{sub.kitNumber}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-primary-900 dark:text-primary-50 leading-tight truncate">
+                        {sub.accountNumber ? sub.accountNumber : sub.kitNumber}
                       </p>
-                      <p className="text-xs text-primary-500 dark:text-primary-400 font-medium mt-0.5">
-                        {sub.plan?.name || 'N/D'} • {formatCurrency(sub.plan?.price || 0)}/mes
+                      <p className="text-xs text-primary-500 dark:text-primary-400 font-medium mt-0.5 truncate">
+                        {sub.accountNumber ? `${sub.kitNumber} • ` : ''}{sub.plan?.name || 'N/D'} • {formatCurrency(sub.plan?.price || 0)}/mes
                       </p>
                     </div>
                   </div>

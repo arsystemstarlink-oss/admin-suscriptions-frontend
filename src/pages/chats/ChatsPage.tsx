@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
 import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat } from '@/hooks/useWhatsApp'
@@ -13,8 +12,6 @@ import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/design-system/PageHeader'
 import { EmptyState } from '@/components/design-system/EmptyState'
-import { whatsappApi } from '@/api/whatsapp.api'
-import { qk } from '@/lib/query-keys'
 import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -42,6 +39,7 @@ export function ChatsPage() {
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const sendingRef = useRef(false)
   const { markChatAsRead } = useUIStore()
   const { readChatTimestamps } = useUIStore()
 
@@ -91,36 +89,18 @@ export function ChatsPage() {
     [conversationsData, clientPhones]
   )
 
-  const conversationQueries = useQueries({
-    queries: clientPhones.map((phone) => ({
-      queryKey: qk.whatsapp.messages(phone),
-      queryFn: () => whatsappApi.getMessagesByPhone(phone),
-      enabled: !!phone,
-      staleTime: 5 * 60 * 1000,
-    })),
-  })
-
-  const conversationSummaries = useMemo(() => {
-    return clientPhones.map((phone, index) => {
-      const query = conversationQueries[index]
-      const messages = query.data?.messages ?? []
-
-      const latestMessage = messages.reduce<WhatsAppMessage | null>((latest, message) => {
-        if (!latest) return message
-
-        const latestTimestamp = new Date(latest.createdAt).getTime()
-        const currentTimestamp = new Date(message.createdAt).getTime()
-
-        return currentTimestamp > latestTimestamp ? message : latest
-      }, null)
-
-      return {
-        phone,
-        latestMessage,
-        latestTimestamp: latestMessage ? new Date(latestMessage.createdAt).getTime() : -Infinity,
+  const conversationMap = useMemo(() => {
+    const map = new Map<string, { latestMessage: WhatsAppMessage; latestTimestamp: number }>()
+    for (const conv of conversationsData?.conversations || []) {
+      if (conv.lastMessage) {
+        map.set(conv.phone, {
+          latestMessage: conv.lastMessage,
+          latestTimestamp: new Date(conv.lastMessage.createdAt).getTime(),
+        })
       }
-    })
-  }, [clientPhones, conversationQueries])
+    }
+    return map
+  }, [conversationsData])
 
   type ConversationItem = {
     key: string
@@ -133,7 +113,7 @@ export function ChatsPage() {
 
   const conversationItems = useMemo<ConversationItem[]>(() => {
     const items: ConversationItem[] = clients.map((client) => {
-      const summary = conversationSummaries.find((item) => item.phone === client.phone)
+      const summary = conversationMap.get(client.phone)
 
       return {
         key: client.id,
@@ -159,7 +139,7 @@ export function ChatsPage() {
     })
 
     return items.sort((a, b) => b.latestTimestamp - a.latestTimestamp)
-  }, [clients, conversationSummaries, unknownConversations])
+  }, [clients, conversationMap, unknownConversations])
 
   const latestConversationPhone = useMemo(() => {
     let chosenPhone: string | null = null
@@ -231,8 +211,8 @@ export function ChatsPage() {
   }, [selectedPhone, sortedMessages.length, messagesLoading])
 
   const handleSendMessage = async () => {
-    if (!selectedPhone || !message.trim()) return
-
+    if (!selectedPhone || !message.trim() || sendingRef.current) return
+    sendingRef.current = true
     try {
       await sendMessageMutation.mutateAsync({
         to: selectedPhone,
@@ -254,6 +234,8 @@ export function ChatsPage() {
       } else {
         toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
       }
+    } finally {
+      sendingRef.current = false
     }
   }
 

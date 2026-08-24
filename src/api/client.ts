@@ -152,6 +152,15 @@ api.interceptors.response.use(
       }
     }
 
+    if (errorCode === 'TWILIO_ERROR' && status === 502) {
+      const retryCount = (originalRequest._retryCount as number | undefined) ?? 0
+      if (retryCount < 3) {
+        originalRequest._retryCount = retryCount + 1
+        await sleep(2000 * Math.pow(2, retryCount))
+        return api(originalRequest)
+      }
+    }
+
     if (errorCode) {
       const apiError: ApiError = {
         code: errorCode as ApiError['code'],

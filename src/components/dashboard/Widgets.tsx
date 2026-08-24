@@ -66,7 +66,7 @@ export function TopDebtorsWidget() {
         {isLoading ? (
           <div className="space-y-2 px-2 pb-2">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex justify-between items-center h-[72px] bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
+              <div key={i} className="flex justify-between items-center h-18 bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
         ) : !data || data.topDebtors.items.length === 0 ? (
@@ -96,11 +96,11 @@ export function TopDebtorsWidget() {
                   </div>
                   
                   <div className="flex items-center gap-2 mt-1 text-xs">
-                    <span className="text-primary-500 dark:text-primary-400 truncate max-w-[120px]">{debtor.clientPhone}</span>
+                    <span className="text-primary-500 dark:text-primary-400 truncate max-w-30">{debtor.clientPhone}</span>
                     {debtor.clientDni && (
                       <>
                         <span className="text-primary-300 dark:text-primary-600">•</span>
-                        <span className="text-primary-500 dark:text-primary-400 truncate max-w-[100px]">C.I. {debtor.clientDni}</span>
+                        <span className="text-primary-500 dark:text-primary-400 truncate max-w-25">C.I. {debtor.clientDni}</span>
                       </>
                     )}
                     <span className="text-red-600 dark:text-red-400 font-medium px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950">
@@ -167,7 +167,7 @@ export function ExpiringSoonWidget() {
         {isLoading ? (
           <div className="space-y-2 px-2 pb-2">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex justify-between items-center h-[72px] bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
+              <div key={i} className="flex justify-between items-center h-18 bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
         ) : !data || data.expiringSoon.items.length === 0 ? (
@@ -187,7 +187,7 @@ export function ExpiringSoonWidget() {
                 className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800 active:bg-primary-50 dark:active:bg-primary-800 transition-colors touch-manipulation cursor-pointer group"
               >
                 <div className="min-w-0 flex-1 pr-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <p className="font-semibold text-sm text-primary-900 dark:text-primary-50 truncate pr-2 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors">
                       {item.clientName}
                     </p>

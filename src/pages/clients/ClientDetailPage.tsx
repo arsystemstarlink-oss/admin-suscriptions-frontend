@@ -5,7 +5,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod } from '@/lib/utils'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
@@ -78,6 +78,12 @@ export function ClientDetailPage() {
         backTo="/subscriptions/clients"
         actions={
           <>
+            <Button asChild className="bg-primary-800 text-white hover:bg-primary-900 dark:bg-primary-700 dark:hover:bg-primary-600 shadow-sm">
+              <Link to={`/subscriptions/new?clientId=${id}`}>
+                <Plus className="h-4 w-4 mr-2 shrink-0" />
+                Nueva Suscripción
+              </Link>
+            </Button>
             <Button variant="outline" size="icon" asChild className="rounded-full bg-white dark:bg-primary-900 border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm">
               <Link to={`/subscriptions/clients/${id}/edit`}>
                 <Edit className="h-4 w-4 shrink-0" />

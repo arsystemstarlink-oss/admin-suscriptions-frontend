@@ -1,5 +1,5 @@
-import { useState, useMemo, type ChangeEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect, type ChangeEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -43,6 +43,8 @@ type SubscriptionForm = z.infer<typeof subscriptionSchema>
 
 export function SubscriptionFormPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const preselectedClientId = searchParams.get('clientId')
   const isSuperAdmin = useIsSuperAdmin()
   const createMutation = useCreateSubscription()
   const [error, setError] = useState<string | null>(null)
@@ -163,6 +165,15 @@ export function SubscriptionFormPage() {
   const clients = clientsData?.clients || []
   const plans = plansData?.plans || []
 
+  useEffect(() => {
+    if (preselectedClientId && clientsData?.clients?.length) {
+      const exists = clientsData.clients.some((c) => c.id === preselectedClientId)
+      if (exists) {
+        setValue('clientId', preselectedClientId)
+      }
+    }
+  }, [preselectedClientId, clientsData, setValue])
+
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-slate-50 dark:bg-primary-950 -mx-4 px-4 pt-2">
       <DetailNav
@@ -195,7 +206,7 @@ export function SubscriptionFormPage() {
 
           <div className="space-y-2.5">
             <Label className="text-primary-800 dark:text-primary-200">Cliente *</Label>
-            <Select onValueChange={(value) => setValue('clientId', value)}>
+            <Select value={watch('clientId') || ''} onValueChange={(value) => setValue('clientId', value)}>
               <SelectTrigger
                 className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
                 disabled={isSuperAdmin && !organizationId}

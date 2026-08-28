@@ -18,7 +18,7 @@ function parseJwtExp(token: string): number | null {
 
 export function useTokenRefresh() {
   const setTokens = useAuthStore((s) => s.setTokens)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   useEffect(() => {
     let cancelled = false

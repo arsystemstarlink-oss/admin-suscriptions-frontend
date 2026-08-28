@@ -243,7 +243,7 @@ export interface BillingPeriod {
 
 export interface BillingPeriodWithDetails extends BillingPeriod {
   subscription: Pick<Subscription, 'id' | 'kitNumber' | 'status'>
-  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'dni' | 'email'>
+  client?: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'dni' | 'email'> | null
   plan: Pick<Plan, 'id' | 'name' | 'price'>
 }
 

@@ -96,7 +96,7 @@ interface Subscription {
 }
 
 interface SchedulerConfig {
-  id: string; // organizationId para configs por org; 'global' para la configuración global
+  id: string; // organizationId de la org; la configuración siempre es por organización (no existe configuración global)
   enabled: boolean;
   cronSchedule: string;
   lastRun?: string;
@@ -631,101 +631,34 @@ interface DebtorItem {
 
 ### Scheduler
 
-| Metodo | Path | Auth | Descripcion |
-|--------|------|------|-------------|
-| GET | /scheduler/config | Bearer admin/super-admin | Obtener configuración del scheduler |
-| PUT | /scheduler/config | Bearer admin/super-admin | Actualizar configuración y reschedulear en caliente |
-| POST | /scheduler/run | Bearer admin/super-admin | Ejecutar Daily Job manualmente |
-| GET | /scheduler/logs | Bearer admin/super-admin | Obtener historial de ejecuciones |
+| Metodo | Path | Descripcion |
+|--------|------|-------------|
+| GET | /scheduler/config | Obtener configuración del scheduler (**requiere `?organizationId=org_X`**) |
+| PUT | /scheduler/config | Actualizar configuración (reprograma el cron en caliente) (**requiere `?organizationId=org_X`**) |
+| POST | /scheduler/run | Ejecutar Daily Job manualmente (**requiere `?organizationId=org_X`**) |
+| GET | /scheduler/logs | Histórico de ejecuciones (por org, **requiere `?organizationId=org_X`**) |
 
-**Auth (scheduler):**
-- Requiere JWT de `admin` o `super-admin`.
-- `admin`: scope implícito de su organización.
-- `super-admin`: puede filtrar con `?organizationId=org_X`. Sin filtro retorna/opera sobre todas.
+El scheduler es siempre por organización: no existe una configuración global ni un run "global". Para todos los endpoints de scheduler, un `admin` usa su organización del contexto autenticado y un `super-admin` debe enviar `?organizationId=org_X`. Si el `super-admin` no lo envía, la API responde `400` con `code: 'TENANT_REQUIRED'`.
 
 **GET /scheduler/config**
 ```typescript
-// Query params
-{ organizationId?: string }
+// Query: ?organizationId=org_X (obligatorio para super-admin)
 // Response 200 → SchedulerConfig
 ```
 
 **PUT /scheduler/config**
 ```typescript
-// Query params
-{ organizationId?: string }
+// Query: ?organizationId=org_X (obligatorio para super-admin)
 // Request (partial)
 { enabled?: boolean; cronSchedule?: string }
 // cronSchedule debe ser una expresión cron válida (ej: "0 0 * * *" para medianoche diario)
 // Response 200 → SchedulerConfig
-// Reprograma el scheduler automáticamente en caliente (hot-reschedule)
-```
-
-**POST /scheduler/run**
-```typescript
-// Query params
-{ organizationId?: string }
-// Ejecuta el Daily Job inmediatamente (independiente del estado enabled)
-// Los fallos de notificación (Twilio, template no configurado, credenciales faltantes)
-// NO abortan el job: se acumulan en result.errors y success sigue siendo true.
-// Response 200
-{
-  success: true,
-  message: string,
-  result: DailyJobResult
-}
-
-interface DailyJobResult {
-  overdue: number;       // períodos marcados vencidos
-  generated: number;     // períodos de cobro generados
-  suspended: number;     // suscripciones suspendidas
-  notifications: number; // notificaciones WhatsApp enviadas OK
-  errors: NotificationFailure[]; // vacío si todas las notificaciones salieron bien
-}
-
-interface NotificationFailure {
-  type: 'reminder' | 'suspension-warning' | 'suspended-notice';
-  clientName: string;
-  phone: string;
-  errorCode?: number;    // código Twilio (ej: 63017, 21211); ausente si es config faltante
-  errorMessage: string;  // mensaje legible (incluye moreInfo de Twilio cuando aplica)
-}
-
-// Ejemplo (fallo de Twilio al enviar reminder; el job igual termina OK):
-{
-  success: true,
-  message: "Daily Job ejecutado correctamente...",
-  result: {
-    overdue: 1,
-    generated: 1,
-    suspended: 0,
-    notifications: 1,
-    errors: [
-      {
-        type: "reminder",
-        clientName: "Juan Pérez",
-        phone: "+584121234567",
-        errorCode: 63017,
-        errorMessage: "Template content must be approved... (https://www.twilio.com/docs/errors/63017)"
-      }
-    ]
-  }
-}
-
-// Casos en result.errors (el job NO falla):
-// - Error Twilio al enviar (errorCode + errorMessage con moreInfo)
-// - Template no configurado (sin errorCode)
-// - Twilio sin credenciales / WHATSAPP_NOT_CONFIGURED (sin errorCode)
-
-// Errores HTTP (el job no llega a ejecutarse o falla de forma global)
-// 409 { error: { code: 'JOB_ALREADY_RUNNING' } } → el job ya estaba en ejecución
-// 502 { error: { code: 'TWILIO_ERROR', message, twilioCode, moreInfo } } → error de Twilio no capturado en el job
+// Reprograma el cron de la organización indicada automáticamente (en caliente)
 ```
 
 **GET /scheduler/logs**
 ```typescript
-// Query params
-{ limit?: number; organizationId?: string }
+// Query: ?organizationId=org_X (obligatorio para super-admin) & ?limit=50
 // Response 200
 {
   logs: SchedulerLog[];
@@ -733,15 +666,53 @@ interface NotificationFailure {
   limit: number;
 }
 
-interface SchedulerLog {
+// SchedulerLog
+{
   id: string;
   organizationId: string;
-  executedAt: string;
-  triggeredBy: 'auto' | 'manual';
-  durationMs?: number;
-  result: DailyJobResult;
-  createdAt: string;
+  triggeredBy: 'scheduled' | 'manual';
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  status: 'success' | 'error' | 'skipped';
+  overdue: number;
+  generated: number;
+  suspended: number;
+  notifications: number;
+  notificationErrors: number;
+  error?: string;
 }
+```
+
+**POST /scheduler/run**
+```typescript
+// Query: ?organizationId=org_X (obligatorio para super-admin; valida que la org exista y esté activa)
+// Ejecuta el Daily Job de la organización indicada inmediatamente (independiente del estado enabled)
+// Response 200
+{
+  success: true,
+  message: string,
+  result: {
+    overdue: number;       // períodos marcados vencidos
+    generated: number;     // períodos de cobro generados
+    suspended: number;     // suscripciones suspendidas
+    notifications: number; // notificaciones WhatsApp enviadas OK
+    errors: NotificationFailure[]; // errores al enviar notificaciones (vacío si todo OK)
+  }
+}
+
+// NotificationFailure
+{
+  type: 'reminder' | 'suspension-warning' | 'suspended-notice';
+  clientName: string;
+  phone: string;
+  errorCode?: number;    // código de error de Twilio (ej: 63017, 21211)
+  errorMessage: string;  // mensaje legible del error
+}
+
+// Errores posibles
+// 409 { code: 'JOB_ALREADY_RUNNING' } → el job ya estaba en ejecución
+// 502 { code: 'TWILIO_ERROR', twilioCode, moreInfo } → error de Twilio
 ```
 
 ---
@@ -775,10 +746,6 @@ interface SchedulerLog {
   message: string;
 }
 // Error 401: UNAUTHORIZED
-// Error 503: WHATSAPP_NOT_CONFIGURED
-// Error 502: TWILIO_ERROR — { error: { code: 'TWILIO_ERROR', message, twilioCode, moreInfo } }
-//   twilioCode: number (ej: 63017, 21211)
-//   moreInfo: string (URL de docs Twilio, ej: https://www.twilio.com/docs/errors/63017)
 ```
 
 **GET /api/whatsapp/conversations** (requiere `Authorization: Bearer {accessToken}`)
@@ -964,8 +931,9 @@ Authorization: Bearer {accessToken}
 | PUT /billing-periods/:id | Solo periodos PAID |
 | DELETE /subscriptions/:id | Elimina suscripcion y sus periodos de facturacion |
 | cronSchedule | Expresion cron valida (ej: "0 0 * * *" = medianoche diario) |
-| scheduler enabled | Si es false (global o por org), el Daily Job no se ejecuta automaticamente para esa org |
-| POST /scheduler/run | Ejecuta el job manualmente sin importar enabled (por org) |
+| scheduler enabled | Si es false por org, el cron automático no se programa para esa org; el Daily Job se ejecuta por la programación `cronSchedule` de cada org |
+| POST /scheduler/run | Ejecuta el job manualmente sin importar enabled (por org). Requiere `?organizationId=org_X`; no existe run global |
+| GET/PUT /scheduler/config, GET /scheduler/logs | Siempre por organización; `?organizationId=org_X` obligatorio para super-admin (400 `TENANT_REQUIRED` si falta). No existe configuración global |
 | Daily Job idempotente | Lock transaccional por org en `jobLocks/{orgId}` (TTL 15 min); si otra instancia esta ejecutando la org, se omite (409 `JOB_ALREADY_RUNNING` en el run manual) |
 | dni | Opcional; SOLO "V-" o "J-" + 7-9 digitos numericos con guion (ej: V-2769383); unico |
 | PUT /clients/:id dni | null o "" elimina la cedula |
@@ -981,23 +949,11 @@ Authorization: Bearer {accessToken}
 { error: { code: string; message: string } }
 ```
 
-Error Twilio (HTTP 502) — aplica a `POST /whatsapp/send` y a cualquier error de Twilio que llegue al handler (no a los fallos acumulados en `POST /scheduler/run`):
-```typescript
-{
-  error: {
-    code: 'TWILIO_ERROR';
-    message: string;
-    twilioCode?: number;  // ej: 63017, 21211
-    moreInfo?: string;    // ej: https://www.twilio.com/docs/errors/63017
-  }
-}
-```
-
 Codigos principales: `NOT_FOUND` | `INVALID_DATA` | `INVALID_DNI` | `DNI_TAKEN` | `INVALID_PERIOD_STATE` | `PERIOD_ALREADY_PAID` | `INVALID_PAYMENT_AMOUNT` | `CLIENT_HAS_ACTIVE_SUBSCRIPTIONS` | `PLAN_HAS_SUBSCRIPTIONS` | `CANNOT_DELETE_SELF` | `LAST_ADMIN`
 
 Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
 
-Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`). `TWILIO_ERROR` (502) — fallo de Twilio (`twilioCode`, `moreInfo`). En el Daily Job estos fallos van en `result.errors` (HTTP 200), no como 502.
+Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`).
 
 ## WhatsApp por Organización (Twilio multi-tenant)
 
@@ -1014,9 +970,8 @@ Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene 
 |----------|-------|-------------|
 | GET/POST/PUT/DELETE /clients, /plans, /subscriptions, /billing-periods | Solo su organización. `?organizationId` y `body.organizationId` son **ignorados** | Todas, o filtradas con `?organizationId=org_X`. Al crear, debe indicar `organizationId` (body o query) |
 | GET /dashboard/summary, /alerts | Solo su organización | Todas o filtradas |
-| GET/PUT /scheduler/config | Su organización | `?organizationId=org_X` o configuración global sin filtro |
-| POST /scheduler/run | Su organización (ignora enabled) | `?organizationId=org_X` o todas sin filtro (respeta enabled por org en el run global) |
-| GET /scheduler/logs | Su organización | `?organizationId=org_X` o todas sin filtro |
+| GET/PUT /scheduler/config | Su organización | `?organizationId=org_X` (obligatorio; `TENANT_REQUIRED` si falta). No existe configuración global. |
+| POST /scheduler/run | Su organización (ignora enabled) | `?organizationId=org_X` (obligatorio; `TENANT_REQUIRED` si falta). Ejecuta solo esa org. |
 | GET/PUT/DELETE /admins | Solo admins de su organización | Todos o filtrados |
 | POST /auth/register | Crea admin en su organización | Crea admin (con org) o super-admin |
 | POST /subscriptions | Valida que `clientId` y `planId` pertenezcan a su organización (`CROSS_TENANT_REFERENCE` si no) | Igual validación contra la org indicada |

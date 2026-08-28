@@ -9,7 +9,7 @@ import type {
 export const schedulerApi = {
   getConfig: async (organizationId?: string): Promise<SchedulerConfig> => {
     const response = await api.get<SchedulerConfig>('/scheduler/config', {
-      params: { organizationId },
+      params: organizationId ? { organizationId } : undefined,
     })
     return response.data
   },
@@ -19,21 +19,21 @@ export const schedulerApi = {
     organizationId?: string,
   ): Promise<SchedulerConfig> => {
     const response = await api.put<SchedulerConfig>('/scheduler/config', data, {
-      params: { organizationId },
+      params: organizationId ? { organizationId } : undefined,
     })
     return response.data
   },
 
   runNow: async (organizationId?: string): Promise<RunSchedulerResponse> => {
     const response = await api.post<RunSchedulerResponse>('/scheduler/run', {}, {
-      params: { organizationId },
+      params: organizationId ? { organizationId } : undefined,
     })
     return response.data
   },
 
   getLogs: async (limit = 50, organizationId?: string): Promise<GetSchedulerLogsResponse> => {
     const response = await api.get<GetSchedulerLogsResponse>('/scheduler/logs', {
-      params: { limit, organizationId },
+      params: { limit, ...(organizationId ? { organizationId } : undefined) },
     })
     return response.data
   },

@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useSchedulerConfig, useUpdateSchedulerConfig, useRunScheduler } from '@/hooks/useScheduler'
-import { useOrganizations } from '@/hooks/useOrganizations'
+import { useSchedulerConfig, useUpdateSchedulerConfig, useRunScheduler, useSchedulerLogs } from '@/hooks/useScheduler'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { Button } from '@/components/ui/button'
@@ -22,18 +20,81 @@ import {
   Zap,
   RefreshCw,
   Pause,
-  Building2,
   AlertTriangle,
+  History,
+  Timer,
+  SkipForward,
 } from 'lucide-react'
 import { formatDate } from '@/lib/constants'
-import type { NotificationFailure, NotificationType } from '@/types/api'
-
-const ALL_ORGS_VALUE = '__all__'
+import type { NotificationFailure, NotificationType, SchedulerLog } from '@/types/api'
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   reminder: 'Recordatorio',
   'suspension-warning': 'Advertencia de suspensión',
   'suspended-notice': 'Aviso de suspensión',
+}
+
+const LOG_STATUS: Record<SchedulerLog['status'], { label: string; className: string }> = {
+  success: {
+    label: 'Éxito',
+    className:
+      'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900',
+  },
+  error: {
+    label: 'Error',
+    className:
+      'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900',
+  },
+  skipped: {
+    label: 'Omitido',
+    className:
+      'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900',
+  },
+}
+
+const LOG_TRIGGERED_BY: Record<SchedulerLog['triggeredBy'], string> = {
+  scheduled: 'Automático',
+  manual: 'Manual',
+}
+
+const STATUS_ICON: Record<SchedulerLog['status'], typeof CheckCircle> = {
+  success: CheckCircle,
+  error: XCircle,
+  skipped: SkipForward,
+}
+
+function formatLogTime(dateString: string): string {
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('es-MX', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`
+  const totalSeconds = Math.floor(ms / 1000)
+  if (totalSeconds < 60) return `${totalSeconds}.${Math.floor((ms % 1000) / 100)}s`
+  const minutes = Math.floor(totalSeconds / 60)
+  return `${minutes}m ${totalSeconds % 60}s`
+}
+
+function LogStat({ label, value, alert = false }: { label: string; value: number; alert?: boolean }) {
+  return (
+    <div className="rounded-lg bg-slate-50 dark:bg-primary-950/50 border border-primary-100 dark:border-primary-800 p-2 text-center">
+      <p
+        className={`text-sm font-semibold leading-none ${
+          alert ? 'text-red-600 dark:text-red-400' : 'text-primary-900 dark:text-primary-50'
+        }`}
+      >
+        {value}
+      </p>
+      <p className="text-[10px] uppercase tracking-wide text-primary-500 dark:text-primary-400 mt-1">{label}</p>
+    </div>
+  )
 }
 
 function parseCronToTime(cron: string): { hour12: number; minute: number; period: 'AM' | 'PM' } {
@@ -64,40 +125,28 @@ function formatTimeDisplay(hour12: number, minute: number, period: 'AM' | 'PM'):
 }
 
 export function AdminToolsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedHour12, setSelectedHour12] = useState(8)
   const [selectedMinute, setSelectedMinute] = useState(30)
   const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM')
   const isSuperAdmin = useIsSuperAdmin()
-  const { selectedOrganizationId, setOrganization } = useOrganizationStore()
+  const { selectedOrganizationId } = useOrganizationStore()
 
-  const { data: schedulerConfig, isLoading: isLoadingScheduler } = useSchedulerConfig(selectedOrganizationId || undefined, {
-    enabled: !isSuperAdmin || !!selectedOrganizationId,
-  })
-  const updateSchedulerMutation = useUpdateSchedulerConfig(selectedOrganizationId || undefined)
-  const runSchedulerMutation = useRunScheduler(selectedOrganizationId || undefined)
-
-  const { data: organizationsData } = useOrganizations(
-    { limit: 100 },
-    { enabled: isSuperAdmin },
+  const { data: schedulerConfig, isLoading: isLoadingScheduler } = useSchedulerConfig(
+    isSuperAdmin ? selectedOrganizationId || undefined : undefined,
+    { enabled: !isSuperAdmin || !!selectedOrganizationId }
   )
-  const organizations = (organizationsData?.organizations || []).filter((org) => org.active)
+  const updateSchedulerMutation = useUpdateSchedulerConfig(isSuperAdmin ? selectedOrganizationId || undefined : undefined)
+  const runSchedulerMutation = useRunScheduler(isSuperAdmin ? selectedOrganizationId || undefined : undefined)
+  const { data: schedulerLogs, isLoading: isLoadingLogs } = useSchedulerLogs(
+    50,
+    isSuperAdmin ? selectedOrganizationId || undefined : undefined,
+    { enabled: !isSuperAdmin || !!selectedOrganizationId }
+  )
+
+  const cronSchedule = timeToCron(selectedHour12, selectedMinute, selectedPeriod)
+  const missingCron = !cronSchedule || cronSchedule === '* * * * *'
 
   const [runErrors, setRunErrors] = useState<NotificationFailure[] | null>(null)
-
-  const handleOrganizationFilter = (value: string) => {
-    const newOrgId = value === ALL_ORGS_VALUE ? null : value
-    setOrganization(newOrgId)
-    const params = new URLSearchParams(searchParams)
-    if (value === ALL_ORGS_VALUE) {
-      params.delete('organizationId')
-    } else {
-      params.set('organizationId', value)
-    }
-    setSearchParams(params)
-  }
-
-  const organizationIdFilter = selectedOrganizationId || undefined
 
   useEffect(() => {
     if (schedulerConfig?.cronSchedule) {
@@ -109,15 +158,17 @@ export function AdminToolsPage() {
   }, [schedulerConfig])
 
   const handleUpdateScheduler = async () => {
-    const cron = timeToCron(selectedHour12, selectedMinute, selectedPeriod)
-    await updateSchedulerMutation.mutateAsync({ cronSchedule: cron })
+    if (missingCron) return
+    await updateSchedulerMutation.mutateAsync({ cronSchedule })
   }
 
   const handleToggleScheduler = async (enabled: boolean) => {
+    if (missingCron) return
     await updateSchedulerMutation.mutateAsync({ enabled })
   }
 
   const handleRunScheduler = async () => {
+    if (missingCron) return
     const data = await runSchedulerMutation.mutateAsync()
     if (data.result?.errors?.length) {
       setRunErrors(data.result.errors)
@@ -126,31 +177,6 @@ export function AdminToolsPage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-
-      {isSuperAdmin && (
-        <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 p-4 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-primary-800 dark:text-primary-200">
-            <Building2 className="h-4 w-4 text-primary-400 shrink-0" />
-            Organización
-          </div>
-          <Select value={organizationIdFilter || ALL_ORGS_VALUE} onValueChange={handleOrganizationFilter}>
-            <SelectTrigger
-              className="w-full sm:w-64 h-10 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
-              aria-label="Seleccionar organización"
-            >
-              <SelectValue placeholder="Todas las organizaciones" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_ORGS_VALUE}>Todas las organizaciones</SelectItem>
-              {organizations.map((org) => (
-                <SelectItem key={org.id} value={org.id}>
-                  {org.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
 
       {isSuperAdmin && !selectedOrganizationId && (
         <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
@@ -161,6 +187,13 @@ export function AdminToolsPage() {
 
       {(!isSuperAdmin || selectedOrganizationId) && (
         <>
+          {missingCron && (
+            <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl dark:text-red-400 dark:bg-red-950/50 dark:border-red-900 flex items-start gap-3">
+              <span className="shrink-0 mt-0.5">⚠️</span>
+              <span>Configura un horario de ejecución antes de activar o guardar el programador.</span>
+            </div>
+          )}
+
           {isLoadingScheduler ? (
             <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
               <CardContent className="py-12 text-center">
@@ -248,12 +281,12 @@ export function AdminToolsPage() {
                         <Pause className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
                         <h3 className="font-semibold text-base">Control del Programador</h3>
                       </div>
-                      <Button
-                        variant={schedulerConfig.enabled ? 'destructive' : 'default'}
-                        onClick={() => handleToggleScheduler(!schedulerConfig.enabled)}
-                        disabled={updateSchedulerMutation.isPending || (isSuperAdmin && !selectedOrganizationId)}
-                        className="w-full sm:w-auto sm:min-w-35"
-                      >
+                  <Button
+                    variant={schedulerConfig.enabled ? 'destructive' : 'default'}
+                    onClick={() => handleToggleScheduler(!schedulerConfig.enabled)}
+                    disabled={updateSchedulerMutation.isPending || missingCron}
+                    className="w-full sm:w-auto sm:min-w-35"
+                  >
                         {schedulerConfig.enabled ? 'Desactivar' : 'Activar'}
                       </Button>
                       <p className="text-sm text-primary-500 dark:text-primary-400">
@@ -269,45 +302,45 @@ export function AdminToolsPage() {
                         <h3 className="font-semibold text-base">Horario de Ejecución</h3>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))} disabled={isSuperAdmin && !selectedOrganizationId}>
-                          <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                            <SelectValue placeholder="Hora" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 12 }, (_, i) => (
-                              <SelectItem key={i + 1} value={(i + 1).toString()}>
-                                {i + 1}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))} disabled={isSuperAdmin && !selectedOrganizationId}>
-                          <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                            <SelectValue placeholder="Min" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 60 }, (_, i) => (
-                              <SelectItem key={i} value={i.toString()}>
-                                {i.toString().padStart(2, '0')}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')} disabled={isSuperAdmin && !selectedOrganizationId}>
-                          <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                            <SelectValue placeholder="AM/PM" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="AM">AM</SelectItem>
-                            <SelectItem value="PM">PM</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        onClick={handleUpdateScheduler}
-                        disabled={updateSchedulerMutation.isPending || (isSuperAdmin && !selectedOrganizationId)}
-                        className="w-full"
-                      >
+                    <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))}>
+                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                        <SelectValue placeholder="Hora" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))}>
+                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                        <SelectValue placeholder="Min" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 60 }, (_, i) => (
+                          <SelectItem key={i} value={i.toString()}>
+                            {i.toString().padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')}>
+                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                        <SelectValue placeholder="AM/PM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleUpdateScheduler}
+                    disabled={updateSchedulerMutation.isPending || missingCron}
+                    className="w-full"
+                  >
                         {updateSchedulerMutation.isPending ? 'Guardando...' : 'Guardar'}
                       </Button>
                       <p className="text-xs text-primary-500 dark:text-primary-400">
@@ -320,12 +353,12 @@ export function AdminToolsPage() {
                         <Zap className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
                         <h3 className="font-semibold text-base">Ejecución Manual</h3>
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={handleRunScheduler}
-                        disabled={runSchedulerMutation.isPending || (isSuperAdmin && !selectedOrganizationId)}
-                        className="w-full sm:w-auto"
-                      >
+                    <Button
+                      variant="outline"
+                      onClick={handleRunScheduler}
+                      disabled={runSchedulerMutation.isPending || missingCron}
+                      className="w-full sm:w-auto"
+                    >
                         {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}
                       </Button>
                       <p className="text-sm text-primary-500 dark:text-primary-400">
@@ -333,6 +366,86 @@ export function AdminToolsPage() {
                       </p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+                <CardHeader className="p-4 sm:p-5">
+                  <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
+                    <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
+                      <History className="h-5 w-5 sm:h-7 sm:w-7 text-primary-600 dark:text-primary-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg sm:text-xl">Historial de Ejecuciones</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm mt-0.5">
+                        {schedulerLogs?.total
+                          ? `Últimas ${schedulerLogs.logs.length} de ${schedulerLogs.total} ejecuciones`
+                          : 'Ejecuciones registradas de la Tarea Diaria'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
+                  {isLoadingLogs ? (
+                    <div className="flex items-center justify-center py-8">
+                      <RefreshCw className="h-6 w-6 animate-spin text-primary-400 shrink-0" />
+                    </div>
+                  ) : !schedulerLogs || schedulerLogs.logs.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <p className="text-sm text-primary-500 dark:text-primary-400">
+                        Sin ejecuciones registradas todavía.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {schedulerLogs.logs.map((log) => {
+                        const StatusIcon = STATUS_ICON[log.status]
+                        return (
+                          <div
+                            key={log.id}
+                            className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800"
+                          >
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-between">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                <Badge
+                                  className={`w-fit shrink-0 text-xs px-2.5 py-1 ${LOG_STATUS[log.status].className}`}
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <StatusIcon className="h-3.5 w-3.5 shrink-0" />
+                                    {LOG_STATUS[log.status].label}
+                                  </span>
+                                </Badge>
+                                <Badge className="w-fit shrink-0 text-xs px-2.5 py-1 bg-primary-100 text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-400 dark:border-primary-700">
+                                  {LOG_TRIGGERED_BY[log.triggeredBy]}
+                                </Badge>
+                                <span className="text-xs text-primary-500 dark:text-primary-400">
+                                  {formatLogTime(log.startedAt)}
+                                </span>
+                              </div>
+                              <span className="text-xs font-medium text-primary-600 dark:text-primary-300 flex items-center gap-1.5">
+                                <Timer className="h-3.5 w-3.5 shrink-0" />
+                                {formatDuration(log.durationMs)}
+                              </span>
+                            </div>
+
+                            {log.error && (
+                              <div className="mt-3 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-2.5 text-xs text-red-700 dark:text-red-400 break-words">
+                                {log.error}
+                              </div>
+                            )}
+
+                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
+                              <LogStat label="Vencidos" value={log.overdue} alert={log.overdue > 0} />
+                              <LogStat label="Generados" value={log.generated} />
+                              <LogStat label="Suspendidos" value={log.suspended} alert={log.suspended > 0} />
+                              <LogStat label="Notificaciones" value={log.notifications} />
+                              <LogStat label="Errores notif." value={log.notificationErrors} alert={log.notificationErrors > 0} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </>

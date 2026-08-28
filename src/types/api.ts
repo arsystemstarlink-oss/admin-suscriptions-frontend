@@ -522,15 +522,17 @@ export interface RunSchedulerResponse {
 export interface SchedulerLog {
   id: string
   organizationId: string
-  organization?: {
-    id: string
-    name: string
-  }
-  executedAt: string
-  triggeredBy: 'auto' | 'manual'
-  durationMs?: number
-  result: DailyJobResult
-  createdAt: string
+  triggeredBy: 'scheduled' | 'manual'
+  startedAt: string
+  finishedAt: string
+  durationMs: number
+  status: 'success' | 'error' | 'skipped'
+  overdue: number
+  generated: number
+  suspended: number
+  notifications: number
+  notificationErrors: number
+  error?: string
 }
 
 export interface GetSchedulerLogsResponse {

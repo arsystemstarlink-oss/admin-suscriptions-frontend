@@ -12,10 +12,11 @@ interface UseSubscriptionsParams {
   offset?: number
 }
 
-export function useSubscriptions(params?: UseSubscriptionsParams) {
+export function useSubscriptions(params?: UseSubscriptionsParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.subscriptions.lists, params],
     queryFn: () => subscriptionsApi.list(params),
+    ...options,
   })
 }
 

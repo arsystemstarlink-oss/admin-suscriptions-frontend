@@ -13,10 +13,11 @@ export function useWhatsAppMessages(phone: string | null) {
   })
 }
 
-export function useWhatsAppConversations(organizationId?: string) {
+export function useWhatsAppConversations(organizationId?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.whatsapp.conversations, organizationId],
     queryFn: () => whatsappApi.getConversations(organizationId),
+    ...options,
   })
 }
 

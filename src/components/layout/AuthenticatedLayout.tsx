@@ -7,6 +7,10 @@ import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
 import { useUIStore } from '@/stores/ui.store'
 import { useTokenRefresh } from '@/hooks/useTokenRefresh'
+import { useOrganizations } from '@/hooks/useOrganizations'
+import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore } from '@/stores/auth.store'
+import { useOrganizationStore } from '@/stores/organization.store'
 import { cn } from '@/lib/utils'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
@@ -23,6 +27,22 @@ export function AuthenticatedLayout() {
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const isSuperAdmin = useIsSuperAdmin()
+  const user = useAuthStore((state) => state.user)
+  const { selectedOrganizationId, setOrganization } = useOrganizationStore()
+
+  const { data: organizationsData } = useOrganizations(
+    { limit: 100 },
+    { enabled: isSuperAdmin },
+  )
+  const organizations = (organizationsData?.organizations || []).filter((org) => org.active)
+
+  useEffect(() => {
+    if (!isSuperAdmin && user?.organizationId && !selectedOrganizationId) {
+      setOrganization(user.organizationId)
+    }
+  }, [isSuperAdmin, user, selectedOrganizationId, setOrganization])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -64,6 +84,10 @@ export function AuthenticatedLayout() {
       <TopBar
         isMobile={isMobile}
         onMobileToggle={() => setMobileOpen(!mobileOpen)}
+        isSuperAdmin={isSuperAdmin}
+        organizations={organizations}
+        selectedOrganizationId={selectedOrganizationId}
+        onOrganizationChange={setOrganization}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

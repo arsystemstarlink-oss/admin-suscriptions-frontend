@@ -1,9 +1,9 @@
 import { api } from './client'
 import type {
-  Admin,
   AdminsListResponse,
   AdminDetailResponse,
   CreateAdminRequest,
+  CreateAdminResponse,
   UpdateAdminRequest,
   UpdateAdminResponse,
 } from '@/types/api'
@@ -26,8 +26,8 @@ export const adminsApi = {
     return response.data
   },
 
-  create: async (data: CreateAdminRequest): Promise<{ message: string; user: Admin }> => {
-    const response = await api.post<{ message: string; user: Admin }>('/auth/register', data)
+  create: async (data: CreateAdminRequest): Promise<CreateAdminResponse> => {
+    const response = await api.post<CreateAdminResponse>('/auth/register', data)
     return response.data
   },
 

@@ -1,13 +1,39 @@
 import { KPICards } from '@/components/dashboard/KPICards'
 import { TopDebtorsWidget, ExpiringSoonWidget } from '@/components/dashboard/Widgets'
 import { QuickActions } from '@/components/dashboard/QuickActions'
-import { useDashboardSummary } from '@/hooks/useDashboard'
+import { useDashboardSummary, useDashboardAlerts } from '@/hooks/useDashboard'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { formatCurrency } from '@/lib/constants'
 import { TrendingDown, DollarSign, AlertCircle } from 'lucide-react'
 import { PageHeader } from '@/components/design-system/PageHeader'
 
 export function DashboardPage() {
-  const { data: summary } = useDashboardSummary()
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const { data: summary } = useDashboardSummary(
+    { organizationId: organizationId ?? undefined },
+    { enabled: !isSuperAdmin || !!organizationId }
+  )
+  useDashboardAlerts(
+    { organizationId: organizationId ?? undefined },
+    { enabled: !isSuperAdmin || !!organizationId }
+  )
+
+  if (isSuperAdmin && !organizationId) {
+    return (
+      <div className="flex flex-col gap-6 pb-20">
+        <PageHeader
+          title="Panel"
+          description="Centro de operaciones del sistema"
+        />
+        <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
+          <span className="shrink-0 mt-0.5">⚠️</span>
+          <span>Selecciona una organización para ver el panel general.</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-20">

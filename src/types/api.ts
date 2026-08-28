@@ -100,12 +100,12 @@ export interface Admin {
 }
 
 export interface AdminsListResponse {
-  admins: Admin[]
+  admins: User[]
   pagination: Pagination
 }
 
 export interface AdminDetailResponse {
-  admin: Admin
+  admin: User
 }
 
 export interface CreateAdminRequest {
@@ -130,7 +130,7 @@ export interface UpdateAdminRequest {
 }
 
 export interface UpdateAdminResponse {
-  admin: Admin
+  admin: User
   accessToken?: string
   refreshToken?: string
 }
@@ -522,6 +522,10 @@ export interface RunSchedulerResponse {
 export interface SchedulerLog {
   id: string
   organizationId: string
+  organization?: {
+    id: string
+    name: string
+  }
   executedAt: string
   triggeredBy: 'auto' | 'manual'
   durationMs?: number

@@ -6,18 +6,20 @@ interface UseDashboardParams {
   organizationId?: string
 }
 
-export function useDashboardSummary(params?: UseDashboardParams) {
+export function useDashboardSummary(params?: UseDashboardParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.dashboard.summary, params],
     queryFn: () => dashboardApi.getSummary(params),
     staleTime: 10_000,
+    ...options,
   })
 }
 
-export function useDashboardAlerts(params?: UseDashboardParams) {
+export function useDashboardAlerts(params?: UseDashboardParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.dashboard.alerts, params],
     queryFn: () => dashboardApi.getAlerts(params),
     staleTime: 10_000,
+    ...options,
   })
 }

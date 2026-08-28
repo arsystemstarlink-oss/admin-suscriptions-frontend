@@ -4,10 +4,11 @@ import { qk } from '@/lib/query-keys'
 import type { UpdateSchedulerConfigRequest } from '@/types/api'
 import { toast } from 'sonner'
 
-export function useSchedulerConfig(organizationId?: string) {
+export function useSchedulerConfig(organizationId?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.scheduler.config, organizationId],
     queryFn: () => schedulerApi.getConfig(organizationId),
+    ...options,
   })
 }
 

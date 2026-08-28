@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { usePlans, useUpdatePlan } from '@/hooks/usePlans'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Package, Edit, Trash2, Plus } from 'lucide-react'
@@ -14,12 +16,16 @@ export function PlansListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const navigate = useNavigate()
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const activeFilter = searchParams.get('active')
   const { data, isLoading } = usePlans({
     search: searchParams.get('search') || undefined,
     active: activeFilter === 'true' ? true : activeFilter === 'false' ? false : undefined,
-  })
+    organizationId: organizationId ?? undefined,
+  }, { enabled: !isSuperAdmin || !!organizationId })
 
   const updateMutation = useUpdatePlan()
 
@@ -44,8 +50,6 @@ export function PlansListPage() {
     setSearchParams(params)
   }
 
-  const navigate = useNavigate()
-
   const handleToggleActive = async (id: string, currentActive: boolean) => {
     try {
       await updateMutation.mutateAsync({ id, data: { active: !currentActive } })
@@ -56,6 +60,7 @@ export function PlansListPage() {
   }
 
   const isEmpty = !data || data.plans.length === 0
+  const showEmpty = isSuperAdmin && !organizationId
 
   return (
     <ListPageLayout
@@ -64,7 +69,7 @@ export function PlansListPage() {
         onChange: handleSearch,
         placeholder: "Buscar por nombre o descripción...",
       }}
-      filters={
+      filters={!showEmpty ? (
         <>
           <FilterPill active={activeFilter === 'true'} onClick={() => handleFilter(activeFilter === 'true' ? null : 'true')}>
             Activos
@@ -73,20 +78,26 @@ export function PlansListPage() {
             Inactivos
           </FilterPill>
         </>
-      }
-      primaryAction={
+      ) : undefined}
+      primaryAction={!showEmpty ? (
         <Button onClick={() => navigate('/subscriptions/plans/new')} className="h-10">
           <Plus className="h-4 w-4 mr-1.5 shrink-0" />
           Nuevo
         </Button>
-      }
-      isLoading={isLoading}
-      isEmpty={isEmpty}
+      ) : undefined}
+      isLoading={isLoading && !showEmpty}
+      isEmpty={showEmpty || isEmpty}
       emptyIcon={<Package className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
-      emptyTitle="No se encontraron planes"
-      emptyDescription="Modifica los filtros o crea un nuevo plan."
+      emptyTitle={showEmpty ? 'Selecciona una organización' : 'No se encontraron planes'}
+      emptyDescription={showEmpty ? 'Elige una organización en la barra superior para ver los planes.' : 'Modifica los filtros o crea un nuevo plan.'}
+      emptyAction={!showEmpty && isEmpty ? (
+        <Button onClick={() => navigate('/subscriptions/plans/new')}>
+          <Plus className="h-4 w-4 mr-2 shrink-0" />
+          Crear Plan
+        </Button>
+      ) : undefined}
     >
-      {data?.plans.map((plan) => (
+      {!showEmpty && data?.plans.map((plan) => (
         <ListCard
           key={plan.id}
           className="md:flex-row md:items-center md:justify-between"
@@ -130,7 +141,7 @@ export function PlansListPage() {
         </ListCard>
       ))}
 
-      {deleteTarget && (
+      {!showEmpty && deleteTarget && (
         <DeletePlanSheet
           planId={deleteTarget.id}
           planName={deleteTarget.name}

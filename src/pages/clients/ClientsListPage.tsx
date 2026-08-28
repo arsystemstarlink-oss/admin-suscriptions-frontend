@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Users, Phone, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
@@ -10,6 +12,9 @@ import { getClientFullName, getInitial } from '@/lib/utils'
 export function ClientsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
+  const navigate = useNavigate()
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const subscriptionStatus = searchParams.get('subscriptionStatus') as 'ACTIVE' | 'SUSPENDED' | 'MIXED' | 'NONE' | null
   const hasOverdue = searchParams.get('hasOverdue') === 'true' ? true : searchParams.get('hasOverdue') === 'false' ? false : undefined
@@ -18,7 +23,8 @@ export function ClientsListPage() {
     search: searchParams.get('search') || undefined,
     subscriptionStatus: subscriptionStatus || undefined,
     hasOverdue,
-  })
+    organizationId: organizationId || undefined,
+  }, { enabled: !isSuperAdmin || !!organizationId })
 
   const handleSearch = (value: string) => {
     setSearch(value)
@@ -31,8 +37,6 @@ export function ClientsListPage() {
     setSearchParams(params)
   }
 
-  const navigate = useNavigate()
-
   const handleFilter = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams)
     if (value) {
@@ -44,6 +48,7 @@ export function ClientsListPage() {
   }
 
   const isEmpty = !data || data.clients.length === 0
+  const showEmpty = isSuperAdmin && !organizationId
 
   return (
     <ListPageLayout
@@ -52,7 +57,7 @@ export function ClientsListPage() {
         onChange: handleSearch,
         placeholder: "Buscar cliente...",
       }}
-      filters={
+      filters={!showEmpty ? (
         <>
           <FilterPill active={subscriptionStatus === 'ACTIVE'} onClick={() => handleFilter('subscriptionStatus', subscriptionStatus === 'ACTIVE' ? null : 'ACTIVE')}>
             Activos
@@ -64,20 +69,26 @@ export function ClientsListPage() {
             Con Deuda
           </FilterPill>
         </>
-      }
-      primaryAction={
+      ) : undefined}
+      primaryAction={!showEmpty ? (
         <Button onClick={() => navigate('/subscriptions/clients/new')} className="h-10">
           <Plus className="h-4 w-4 mr-1.5 shrink-0" />
           Nuevo
         </Button>
-      }
-      isLoading={isLoading}
-      isEmpty={isEmpty}
+      ) : undefined}
+      isLoading={isLoading && !showEmpty}
+      isEmpty={showEmpty || isEmpty}
       emptyIcon={<Users className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
-      emptyTitle="Sin clientes"
-      emptyDescription="No encontramos resultados. Modifica los filtros o añade uno nuevo."
+      emptyTitle={showEmpty ? 'Selecciona una organización' : 'Sin clientes'}
+      emptyDescription={showEmpty ? 'Elige una organización en la barra superior para ver los clientes.' : 'No encontramos resultados. Modifica los filtros o añade uno nuevo.'}
+      emptyAction={!showEmpty && isEmpty ? (
+        <Button onClick={() => navigate('/subscriptions/clients/new')}>
+          <Plus className="h-4 w-4 mr-2 shrink-0" />
+          Crear Cliente
+        </Button>
+      ) : undefined}
     >
-      {data?.clients.map((client) => {
+      {!showEmpty && data?.clients.map((client) => {
         const initial = getInitial(client.firstName)
         
         return (

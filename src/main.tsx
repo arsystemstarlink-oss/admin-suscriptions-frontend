@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.tsx'
 import { useAuthStore } from '@/stores/auth.store'
+import { useOrganizationStore } from '@/stores/organization.store'
 import './index.css'
 
 registerSW({ immediate: true })
@@ -21,6 +22,7 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 }
 
 useAuthStore.getState().loadFromStorage()
+useOrganizationStore.getState().loadFromStorage()
 
 const queryClient = new QueryClient({
   defaultOptions: {

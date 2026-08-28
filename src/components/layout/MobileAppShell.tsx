@@ -1,12 +1,38 @@
 import React from 'react';
-import { Home, MessageSquare, CreditCard, Settings } from 'lucide-react';
+import { Home, MessageSquare, CreditCard, Settings, Building2 } from 'lucide-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
 import { HeaderActions } from './HeaderActions';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Organization } from '@/types/api';
 
-export default function MobileAppShell({ children, onOpenSearch }: { children?: React.ReactNode; onOpenSearch?: () => void }) {
+const ALL_ORGS_VALUE = '__all__'
+
+interface MobileAppShellProps {
+  children?: React.ReactNode
+  onOpenSearch?: () => void
+  isSuperAdmin?: boolean
+  organizations?: Organization[]
+  selectedOrganizationId?: string | null
+  onOrganizationChange?: (organizationId: string | null) => void
+}
+
+export default function MobileAppShell({
+  children,
+  onOpenSearch,
+  isSuperAdmin,
+  organizations,
+  selectedOrganizationId,
+  onOrganizationChange,
+}: MobileAppShellProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const unreadChatsCount = useUnreadChatsCount();
@@ -35,8 +61,29 @@ export default function MobileAppShell({ children, onOpenSearch }: { children?: 
     <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),1rem)+3.25rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
       
       {/* Header Fijo con Glassmorphism */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 backdrop-blur-md transition-colors">
-        <BrandMark size="sm" className="text-primary-50" />
+      <header className="sticky top-0 z-50 flex items-center justify-between gap-2 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 backdrop-blur-md transition-colors">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <BrandMark size="sm" className="text-primary-50" />
+          {isSuperAdmin && organizations && organizations.length > 0 && (
+            <Select
+              value={selectedOrganizationId || ALL_ORGS_VALUE}
+              onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
+            >
+              <SelectTrigger className="h-8 w-auto max-w-40 border-primary-600 bg-primary-700 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800 px-2">
+                <Building2 className="h-3.5 w-3.5 shrink-0" />
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_ORGS_VALUE}>Todas las organizaciones</SelectItem>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
         <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? (() => {})} />
       </header>
 

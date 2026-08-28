@@ -72,7 +72,13 @@ export function AuthenticatedLayout() {
   if (isMobile) {
     return (
       <>
-        <MobileAppShell onOpenSearch={openOmniSearch} />
+        <MobileAppShell
+          onOpenSearch={openOmniSearch}
+          isSuperAdmin={isSuperAdmin}
+          organizations={organizations}
+          selectedOrganizationId={selectedOrganizationId}
+          onOrganizationChange={setOrganization}
+        />
         <OmniSearch />
         <QuickPayModal />
       </>

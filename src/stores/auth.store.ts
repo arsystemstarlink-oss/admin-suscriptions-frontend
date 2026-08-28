@@ -1,13 +1,22 @@
 import { create } from 'zustand'
 import type { User } from '@/types/api'
 import { authApi } from '@/api/auth.api'
+import {
+  clearStoredTokens,
+  getStoredTokens,
+  getStoredUser,
+  setStoredTokens,
+  setStorageMode,
+  setStoredUser,
+  type StorageMode,
+} from '@/lib/tokenStorage'
 
 interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   user: User | null
   isAuthenticated: boolean
-  setTokens: (accessToken: string, refreshToken: string) => void
+  setTokens: (accessToken: string, refreshToken: string, mode?: StorageMode) => void
   setUser: (user: User) => void
   logout: () => void
   loadFromStorage: () => void
@@ -19,14 +28,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
 
-  setTokens: (accessToken, refreshToken) => {
-    localStorage.setItem('accessToken', accessToken)
-    localStorage.setItem('refreshToken', refreshToken)
+  setTokens: (accessToken, refreshToken, mode) => {
+    if (mode) setStorageMode(mode)
+    setStoredTokens(accessToken, refreshToken)
     set({ accessToken, refreshToken, isAuthenticated: true })
   },
 
   setUser: (user) => {
-    localStorage.setItem('user', JSON.stringify(user))
+    setStoredUser(user)
     set({ user })
   },
 
@@ -35,17 +44,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (refreshToken) {
       authApi.logout(refreshToken).catch(() => {})
     }
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
+    clearStoredTokens()
     set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false })
   },
 
   loadFromStorage: () => {
-    const accessToken = localStorage.getItem('accessToken')
-    const refreshToken = localStorage.getItem('refreshToken')
-    const userStr = localStorage.getItem('user')
-    const user = userStr ? JSON.parse(userStr) : null
+    const { accessToken, refreshToken } = getStoredTokens()
+    const user = getStoredUser()
 
     if (accessToken && refreshToken) {
       set({ accessToken, refreshToken, user, isAuthenticated: true })

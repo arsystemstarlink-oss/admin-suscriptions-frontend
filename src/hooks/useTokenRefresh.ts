@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import axios from 'axios'
-import { getStoredTokens } from '@/api/client'
+import { getStoredTokens } from '@/lib/tokenStorage'
 import { useAuthStore } from '@/stores/auth.store'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin-suscriptions-backend-production.up.railway.app/api'

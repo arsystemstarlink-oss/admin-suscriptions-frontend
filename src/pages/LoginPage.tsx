@@ -33,7 +33,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(true)
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('auth.rememberMe') !== 'false')
   const [showSuccess, setShowSuccess] = useState(false)
   const [shakeError, setShakeError] = useState(false)
   
@@ -83,8 +83,8 @@ export function LoginPage() {
     setIsLoading(true)
     
     try {
-      const response = await authApi.login(data)
-      setTokens(response.accessToken, response.refreshToken)
+      const response = await authApi.login({ ...data, rememberMe })
+      setTokens(response.accessToken, response.refreshToken, rememberMe ? 'local' : 'session')
       setUser(response.user)
       
       setShowSuccess(true)
@@ -240,7 +240,11 @@ export function LoginPage() {
                 <Input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                    setRememberMe(next)
+                    localStorage.setItem('auth.rememberMe', String(next))
+                  }}
                   className="h-4 w-4 rounded border-border accent-primary p-0 shadow-none"
                   disabled={isLoading}
                 />

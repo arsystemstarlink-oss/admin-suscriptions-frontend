@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getClientFullName(client: { firstName: string; lastName: string }) {
+export function getClientFullName(client: { firstName: string; lastName: string } | null | undefined): string {
+  if (!client) return 'Sin cliente'
   return `${client.firstName} ${client.lastName}`.trim()
 }
 

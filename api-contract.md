@@ -631,28 +631,40 @@ interface DebtorItem {
 
 ### Scheduler
 
-| Metodo | Path | Descripcion |
-|--------|------|-------------|
-| GET | /scheduler/config | Obtener configuración del scheduler |
-| PUT | /scheduler/config | Actualizar configuración |
-| POST | /scheduler/run | Ejecutar Daily Job manualmente |
+| Metodo | Path | Auth | Descripcion |
+|--------|------|------|-------------|
+| GET | /scheduler/config | Bearer admin/super-admin | Obtener configuración del scheduler |
+| PUT | /scheduler/config | Bearer admin/super-admin | Actualizar configuración y reschedulear en caliente |
+| POST | /scheduler/run | Bearer admin/super-admin | Ejecutar Daily Job manualmente |
+| GET | /scheduler/logs | Bearer admin/super-admin | Obtener historial de ejecuciones |
+
+**Auth (scheduler):**
+- Requiere JWT de `admin` o `super-admin`.
+- `admin`: scope implícito de su organización.
+- `super-admin`: puede filtrar con `?organizationId=org_X`. Sin filtro retorna/opera sobre todas.
 
 **GET /scheduler/config**
 ```typescript
+// Query params
+{ organizationId?: string }
 // Response 200 → SchedulerConfig
 ```
 
 **PUT /scheduler/config**
 ```typescript
+// Query params
+{ organizationId?: string }
 // Request (partial)
 { enabled?: boolean; cronSchedule?: string }
 // cronSchedule debe ser una expresión cron válida (ej: "0 0 * * *" para medianoche diario)
 // Response 200 → SchedulerConfig
-// Reprograma el scheduler automáticamente
+// Reprograma el scheduler automáticamente en caliente (hot-reschedule)
 ```
 
 **POST /scheduler/run**
 ```typescript
+// Query params
+{ organizationId?: string }
 // Ejecuta el Daily Job inmediatamente (independiente del estado enabled)
 // Los fallos de notificación (Twilio, template no configurado, credenciales faltantes)
 // NO abortan el job: se acumulan en result.errors y success sigue siendo true.
@@ -708,6 +720,28 @@ interface NotificationFailure {
 // Errores HTTP (el job no llega a ejecutarse o falla de forma global)
 // 409 { error: { code: 'JOB_ALREADY_RUNNING' } } → el job ya estaba en ejecución
 // 502 { error: { code: 'TWILIO_ERROR', message, twilioCode, moreInfo } } → error de Twilio no capturado en el job
+```
+
+**GET /scheduler/logs**
+```typescript
+// Query params
+{ limit?: number; organizationId?: string }
+// Response 200
+{
+  logs: SchedulerLog[];
+  total: number;
+  limit: number;
+}
+
+interface SchedulerLog {
+  id: string;
+  organizationId: string;
+  executedAt: string;
+  triggeredBy: 'auto' | 'manual';
+  durationMs?: number;
+  result: DailyJobResult;
+  createdAt: string;
+}
 ```
 
 ---
@@ -982,6 +1016,7 @@ Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene 
 | GET /dashboard/summary, /alerts | Solo su organización | Todas o filtradas |
 | GET/PUT /scheduler/config | Su organización | `?organizationId=org_X` o configuración global sin filtro |
 | POST /scheduler/run | Su organización (ignora enabled) | `?organizationId=org_X` o todas sin filtro (respeta enabled por org en el run global) |
+| GET /scheduler/logs | Su organización | `?organizationId=org_X` o todas sin filtro |
 | GET/PUT/DELETE /admins | Solo admins de su organización | Todos o filtrados |
 | POST /auth/register | Crea admin en su organización | Crea admin (con org) o super-admin |
 | POST /subscriptions | Valida que `clientId` y `planId` pertenezcan a su organización (`CROSS_TENANT_REFERENCE` si no) | Igual validación contra la org indicada |

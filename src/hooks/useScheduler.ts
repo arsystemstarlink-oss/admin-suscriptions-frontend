@@ -65,3 +65,11 @@ export function useRunScheduler(organizationId?: string) {
     },
   })
 }
+
+export function useSchedulerLogs(organizationId?: string, limit = 50) {
+  return useQuery({
+    queryKey: [...qk.scheduler.logs, organizationId, limit],
+    queryFn: () => schedulerApi.getLogs(limit, organizationId),
+    enabled: !!organizationId,
+  })
+}

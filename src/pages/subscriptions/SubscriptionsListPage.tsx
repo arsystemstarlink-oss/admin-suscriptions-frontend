@@ -45,7 +45,7 @@ export function SubscriptionsListPage() {
   }, [data])
 
   const visibleSubscriptions = useMemo(() => {
-    const items = [...(data?.subscriptions ?? [])]
+    const items = [...(data?.subscriptions ?? [])].filter((sub) => sub.client != null)
 
     const normalizedSearch = search.trim().toLowerCase()
 

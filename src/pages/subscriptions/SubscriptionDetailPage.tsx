@@ -208,18 +208,24 @@ export function SubscriptionDetailPage() {
         </div>
 
         <div className="p-3 rounded-xl bg-slate-50 dark:bg-primary-950 border border-primary-100 dark:border-primary-800 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary-200/50 dark:bg-primary-800 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
-            {getInitial(subscription.client.firstName)}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-primary-900 dark:text-primary-50 truncate">
-              {getClientFullName(subscription.client)}
-            </p>
-            <p className="text-xs text-primary-500 dark:text-primary-400 truncate flex items-center gap-1 mt-0.5">
-              <Phone className="h-3 w-3" /> {subscription.client.phone}
-              {subscription.client.dni && ` • C.I. ${subscription.client.dni}`}
-            </p>
-          </div>
+          {subscription.client ? (
+            <>
+              <div className="h-10 w-10 rounded-full bg-primary-200/50 dark:bg-primary-800 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+                {getInitial(subscription.client.firstName)}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-primary-900 dark:text-primary-50 truncate">
+                  {getClientFullName(subscription.client)}
+                </p>
+                <p className="text-xs text-primary-500 dark:text-primary-400 truncate flex items-center gap-1 mt-0.5">
+                  <Phone className="h-3 w-3" /> {subscription.client.phone}
+                  {subscription.client.dni && ` • C.I. ${subscription.client.dni}`}
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-primary-500 dark:text-primary-400">Cliente eliminado o no disponible</p>
+          )}
         </div>
 
         {subscription.accountNumber && (

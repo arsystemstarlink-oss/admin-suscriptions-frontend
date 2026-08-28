@@ -24,6 +24,7 @@ export const qk = {
   },
   scheduler: {
     config: ['scheduler', 'config'] as const,
+    logs: ['scheduler', 'logs'] as const,
   },
   whatsapp: {
     messages: (phone: string) => ['whatsapp', 'messages', phone] as const,

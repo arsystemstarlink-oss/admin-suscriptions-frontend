@@ -203,7 +203,7 @@ export interface UpdateSchedulerConfigRequest {
 }
 
 export interface SubscriptionWithDetails extends Subscription {
-  client: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'dni' | 'email'>
+  client?: Pick<Client, 'id' | 'firstName' | 'lastName' | 'phone' | 'dni' | 'email'> | null
   plan: Pick<Plan, 'id' | 'name' | 'price'>
   currentPeriod?: BillingPeriod
   totalPeriods: number
@@ -517,6 +517,22 @@ export interface RunSchedulerResponse {
   success: boolean
   message: string
   result: DailyJobResult
+}
+
+export interface SchedulerLog {
+  id: string
+  organizationId: string
+  executedAt: string
+  triggeredBy: 'auto' | 'manual'
+  durationMs?: number
+  result: DailyJobResult
+  createdAt: string
+}
+
+export interface GetSchedulerLogsResponse {
+  logs: SchedulerLog[]
+  total: number
+  limit: number
 }
 
 export type ErrorCode =

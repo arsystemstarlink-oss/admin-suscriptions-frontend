@@ -9,9 +9,57 @@ import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
-import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, Clock, Loader2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, ChevronDown, Clock, Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+
+const WIDGET_COLLAPSED_COUNT = 3
+const WIDGET_EXPANDED_COUNT = 8
+
+function WidgetExpandFooter({
+  expanded,
+  total,
+  onToggle,
+  onViewAll,
+  viewAllLabel,
+}: {
+  expanded: boolean
+  total: number
+  onToggle: () => void
+  onViewAll?: () => void
+  viewAllLabel?: string
+}) {
+  if (total <= WIDGET_COLLAPSED_COUNT) return null
+  const collapsedLabel =
+    total > WIDGET_EXPANDED_COUNT ? 'Mostrar más' : `Mostrar ${total - WIDGET_COLLAPSED_COUNT} más`
+
+  return (
+    <div className="border-t border-primary-100 dark:border-primary-800 p-2 space-y-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="flex w-full min-h-11 items-center justify-center gap-1.5 rounded-xl bg-transparent text-sm font-medium text-primary-600 transition-all touch-manipulation hover:bg-primary-50 hover:text-primary-800 active:scale-[0.99] dark:bg-transparent dark:text-primary-300 dark:hover:bg-primary-800/50 dark:hover:text-primary-100"
+      >
+        {expanded ? 'Mostrar menos' : collapsedLabel}
+        <ChevronDown
+          className={cn('h-4 w-4 shrink-0 transition-transform duration-300', expanded && 'rotate-180')}
+        />
+      </button>
+      {expanded && onViewAll && total > WIDGET_EXPANDED_COUNT && (
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="flex w-full min-h-11 items-center justify-center gap-1 rounded-xl bg-primary-50 text-sm font-semibold text-primary-800 transition-all touch-manipulation hover:bg-primary-100 active:scale-[0.99] dark:bg-primary-800/50 dark:text-primary-100 dark:hover:bg-primary-800"
+        >
+          {viewAllLabel ?? `Ver todos (${total})`}
+          <ChevronRight className="h-4 w-4 shrink-0" />
+        </button>
+      )}
+    </div>
+  )
+}
 
 export function PendingPaymentsWidget() {
   const isSuperAdmin = useIsSuperAdmin()
@@ -42,6 +90,12 @@ export function PendingPaymentsWidget() {
   }, [overdueData, pendingData])
 
   const visibleItems = items.slice(0, 8)
+
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => {
+    setExpanded(false)
+  }, [orgParam, items.length])
+  const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
 
   const handlePay = (periodId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -80,7 +134,7 @@ export function PendingPaymentsWidget() {
               <div key={i} className="flex justify-between items-center h-18 bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
-        ) : visibleItems.length === 0 ? (
+        ) : displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center mb-3">
               <DollarSign className="h-6 w-6 text-emerald-500" />
@@ -90,7 +144,7 @@ export function PendingPaymentsWidget() {
           </div>
         ) : (
           <div className="space-y-2">
-            {visibleItems.map((period) => (
+            {displayedItems.map((period) => (
               <div
                 key={period.id}
                 onClick={() => navigate(`/subscriptions/${period.subscriptionId}`, { state: { from: '/dashboard' } })}
@@ -134,6 +188,15 @@ export function PendingPaymentsWidget() {
           </div>
         )}
       </div>
+      {!isLoading && visibleItems.length > 0 && (
+        <WidgetExpandFooter
+          expanded={expanded}
+          total={items.length}
+          onToggle={() => setExpanded((v) => !v)}
+          onViewAll={() => navigate('/subscriptions?pending=true')}
+          viewAllLabel={`Ver todos (${items.length})`}
+        />
+      )}
     </div>
   )
 }
@@ -144,6 +207,13 @@ export function TopDebtorsWidget() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
+  const items = data?.topDebtors.items ?? []
+  const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
+  const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
+  useEffect(() => {
+    setExpanded(false)
+  }, [items.length])
 
   const handlePay = async (clientId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -198,7 +268,7 @@ export function TopDebtorsWidget() {
               <div key={i} className="flex justify-between items-center h-18 bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
-        ) : !data || data.topDebtors.items.length === 0 ? (
+        ) : !data || displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center mb-3">
               <DollarSign className="h-6 w-6 text-emerald-500" />
@@ -208,7 +278,7 @@ export function TopDebtorsWidget() {
           </div>
         ) : (
           <div className="space-y-2">
-            {data.topDebtors.items.map((debtor) => (
+            {displayedItems.map((debtor) => (
               <div
                 key={debtor.clientId}
                 onClick={() => navigate(`/subscriptions/clients/${debtor.clientId}`, { state: { from: '/dashboard' } })}
@@ -252,6 +322,15 @@ export function TopDebtorsWidget() {
           </div>
         )}
       </div>
+      {!isLoading && visibleItems.length > 0 && (
+        <WidgetExpandFooter
+          expanded={expanded}
+          total={data?.topDebtors.count ?? items.length}
+          onToggle={() => setExpanded((v) => !v)}
+          onViewAll={() => navigate('/subscriptions?hasOverdue=true')}
+          viewAllLabel={`Ver todos (${items.length})`}
+        />
+      )}
     </div>
   )
 }
@@ -259,6 +338,13 @@ export function TopDebtorsWidget() {
 export function ExpiringSoonWidget() {
   const { data, isLoading } = useDashboardAlerts()
   const navigate = useNavigate()
+  const [expanded, setExpanded] = useState(false)
+  const items = data?.expiringSoon.items ?? []
+  const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
+  const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
+  useEffect(() => {
+    setExpanded(false)
+  }, [items.length])
 
   const handleOpenChat = (phone: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -294,7 +380,7 @@ export function ExpiringSoonWidget() {
               <div key={i} className="flex justify-between items-center h-18 bg-primary-50 dark:bg-primary-900/40 animate-pulse rounded-xl" />
             ))}
           </div>
-        ) : !data || data.expiringSoon.items.length === 0 ? (
+        ) : !data || displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-primary-50 dark:bg-primary-800/50 flex items-center justify-center mb-3">
               <Calendar className="h-6 w-6 text-primary-300 dark:text-primary-600" />
@@ -304,7 +390,7 @@ export function ExpiringSoonWidget() {
           </div>
         ) : (
           <div className="space-y-2">
-            {data.expiringSoon.items.map((item) => (
+            {displayedItems.map((item) => (
               <div
                 key={item.periodId}
                 onClick={() => navigate(`/subscriptions/${item.subscriptionId}`, { state: { from: '/dashboard' } })}
@@ -347,6 +433,15 @@ export function ExpiringSoonWidget() {
           </div>
         )}
       </div>
+      {!isLoading && visibleItems.length > 0 && (
+        <WidgetExpandFooter
+          expanded={expanded}
+          total={data?.expiringSoon.count ?? items.length}
+          onToggle={() => setExpanded((v) => !v)}
+          onViewAll={() => navigate('/subscriptions?expiring=true')}
+          viewAllLabel={`Ver todos (${items.length})`}
+        />
+      )}
     </div>
   )
 }

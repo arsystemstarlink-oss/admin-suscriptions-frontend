@@ -50,32 +50,43 @@ export default function MobileAppShell({
   const activeTab = getActiveTab();
   const isChatsPage = location.pathname.startsWith('/chats');
 
-  const navItems = [
+  const navItems: Array<{
+    id: string
+    icon: typeof Home
+    label: string
+    path: string
+    badge?: number
+  }> = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/' },
     { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
-    { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats' },
+    { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];
 
+  const showOrgSwitcher =
+    isSuperAdmin && organizations && organizations.length > 0
+
   return (
-    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),1rem)+3.25rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
-      
-      {/* Header Fijo con Glassmorphism */}
-      <header className="sticky top-0 z-50 flex items-center justify-between gap-2 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 backdrop-blur-md transition-colors">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <BrandMark size="sm" className="text-primary-50" />
-          {isSuperAdmin && organizations && organizations.length > 0 && (
+    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
+      {/* Header móvil en una sola fila: logo a la izquierda, acciones a la derecha */}
+      <header className="sticky top-0 z-50 flex min-h-14 items-center gap-3 px-3 pt-[max(env(safe-area-inset-top),12px)] pb-2 bg-primary-800 text-primary-50 border-b border-primary-700 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900 transition-colors">
+        <BrandMark size="sm" className="shrink-0 text-primary-50" />
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+          {showOrgSwitcher && (
             <Select
               value={selectedOrganizationId || ALL_ORGS_VALUE}
               onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
             >
-              <SelectTrigger className="h-8 w-auto max-w-40 border-primary-600 bg-primary-700 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800 px-2">
+              <SelectTrigger
+                aria-label="Organización activa"
+                className="h-8 w-auto max-w-28 shrink-0 gap-1 px-2 text-xs border-primary-600 bg-primary-700 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800 [&>span]:truncate"
+              >
                 <Building2 className="h-3.5 w-3.5 shrink-0" />
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_ORGS_VALUE}>Todas las organizaciones</SelectItem>
-                {organizations.map((org) => (
+                <SelectItem value={ALL_ORGS_VALUE}>Todas</SelectItem>
+                {organizations!.map((org) => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.name}
                   </SelectItem>
@@ -83,8 +94,15 @@ export default function MobileAppShell({
               </SelectContent>
             </Select>
           )}
+          <div className="shrink-0">
+            <HeaderActions
+              showChatsButton={false}
+              showSearchButton={false}
+              unreadChatsCount={unreadChatsCount}
+              onOpenSearch={onOpenSearch ?? (() => {})}
+            />
+          </div>
         </div>
-        <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? (() => {})} />
       </header>
 
       {/* Contenedor Principal (Scroll) */}
@@ -105,30 +123,38 @@ export default function MobileAppShell({
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 border-t border-primary-100 dark:bg-primary-900/95 dark:border-primary-800 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] transition-colors">
-        <ul className="flex items-center justify-around px-2 py-1">
+      <nav aria-label="Navegación principal móvil" className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 border-t border-primary-100 dark:bg-primary-900/95 dark:border-primary-800 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] transition-colors">
+        <ul role="tablist" className="flex items-center justify-around px-2 py-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+            const badgeCount = item.badge ?? 0;
             
             return (
               <li key={item.id} className="flex-1 flex justify-center">
                 <button
                   onClick={() => navigate(item.path)}
-                  className="flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 active:scale-95 transition-transform touch-manipulation focus:outline-none"
-                  aria-label={item.label}
+                  className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 active:scale-95 transition-transform touch-manipulation focus:outline-none"
+                  aria-label={badgeCount > 0 ? `${item.label}, ${badgeCount} sin leer` : item.label}
                   aria-selected={isActive}
                   role="tab"
                 >
-                  <Icon
-                    size={24}
-                    strokeWidth={isActive ? 2.5 : 2}
-                    className={`transition-colors ${
-                      isActive
-                        ? 'text-secondary-600 dark:text-secondary-400'
-                        : 'text-primary-400 dark:text-primary-500'
-                    }`}
-                  />
+                  <span className="relative">
+                    <Icon
+                      size={24}
+                      strokeWidth={isActive ? 2.5 : 2}
+                      className={`transition-colors ${
+                        isActive
+                          ? 'text-secondary-600 dark:text-secondary-400'
+                          : 'text-primary-400 dark:text-primary-500'
+                      }`}
+                    />
+                    {badgeCount > 0 && (
+                      <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-semibold leading-none text-white">
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </span>
+                    )}
+                  </span>
                   <span
                     className={`text-[10px] font-medium tracking-wide transition-colors ${
                       isActive

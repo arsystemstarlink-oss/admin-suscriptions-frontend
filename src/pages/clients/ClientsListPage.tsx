@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -13,6 +13,7 @@ export function ClientsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const navigate = useNavigate()
+  const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
@@ -94,7 +95,7 @@ export function ClientsListPage() {
         return (
           <ListCard
             key={client.id}
-            onClick={() => navigate(`/subscriptions/clients/${client.id}`)}
+            onClick={() => navigate(`/subscriptions/clients/${client.id}`, { state: { from: `${location.pathname}${location.search}` } })}
           >
             <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
               <div className="relative shrink-0">

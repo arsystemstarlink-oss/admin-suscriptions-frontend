@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useClientDetail } from '@/hooks/useClients'
 import { useUIStore } from '@/stores/ui.store'
@@ -15,6 +15,7 @@ import type { SubscriptionWithDetails } from '@/types/api'
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const { data, isLoading, error } = useClientDetail(id!)
   const { openQuickPay } = useUIStore()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -228,7 +229,7 @@ export function ClientDetailPage() {
                       </Button>
                     )}
                     <Button variant="outline" className={`h-11 font-semibold border-primary-200 dark:border-primary-700 active:bg-primary-50 dark:active:bg-primary-800 transition-colors ${sub.currentPeriod && sub.currentPeriod.status !== 'PAID' ? 'flex-none px-4' : 'flex-1'}`} asChild>
-                      <Link to={`/subscriptions/${sub.id}`}>Ver Kit</Link>
+                      <Link to={`/subscriptions/${sub.id}`} state={{ from: `${location.pathname}${location.search}` }}>Ver Kit</Link>
                     </Button>
                   </div>
                 </div>

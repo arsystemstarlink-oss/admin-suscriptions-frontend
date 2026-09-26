@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
 import { useDashboardSummary } from '@/hooks/useDashboard'
@@ -21,6 +21,7 @@ import type { SubscriptionWithDetails } from '@/types/api'
 export function SubscriptionsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { openQuickPay } = useUIStore()
   const [search, setSearch] = useState(searchParams.get('search') || '')
@@ -31,6 +32,7 @@ export function SubscriptionsListPage() {
   const statusFilter = searchParams.get('status') as 'ACTIVE' | 'SUSPENDED' | null
   const hasOverdue = searchParams.get('hasOverdue') === 'true' ? true : searchParams.get('hasOverdue') === 'false' ? false : undefined
   const expiringFilter = searchParams.get('expiring') === 'true'
+  const pendingFilter = searchParams.get('pending') === 'true'
 
   const { data, isLoading } = useSubscriptions(
     { organizationId: organizationId ?? undefined, limit: 200 },
@@ -68,16 +70,18 @@ export function SubscriptionsListPage() {
     setPayingId(sub.id)
     try {
       const result = await queryClient.fetchQuery({
-        queryKey: [...qk.billing.lists, { subscriptionId: sub.id, limit: 50 }],
-        queryFn: () => billingApi.list({ subscriptionId: sub.id, limit: 50 }),
+        queryKey: [...qk.billing.lists, { subscriptionId: sub.id, organizationId: organizationId ?? undefined, limit: 50 }],
+        queryFn: () => billingApi.list({ subscriptionId: sub.id, organizationId: organizationId ?? undefined, limit: 50 }),
         staleTime: 30_000,
       })
       const unpaid = result.periods
-        .filter((p) => p.status !== 'PAID')
+        .filter((p) => p.status !== 'PAID' && p.subscription != null)
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0]
 
       if (unpaid) {
         openQuickPay({ period: unpaid })
+      } else if (result.periods.some((p) => p.status !== 'PAID')) {
+        toast.error('No se pudo abrir el cobro: datos incompletos del período')
       } else {
         toast.info('No hay períodos pendientes para esta suscripción')
       }
@@ -91,13 +95,20 @@ export function SubscriptionsListPage() {
   const isExpiringSub = (sub: SubscriptionWithDetails) =>
     sub.currentPeriod?.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate)
 
+  const isPendingSub = (sub: SubscriptionWithDetails) =>
+    sub.status === 'ACTIVE' &&
+    (sub.pendingPeriods > 0 || (sub.currentPeriod != null && sub.currentPeriod.status !== 'PAID'))
+
   const metrics = useMemo(() => {
     const subs = data?.subscriptions ?? []
     const expiring = subs.filter(isExpiringSub)
+    const pending = subs.filter(isPendingSub)
     return {
       debtCount: subs.filter((s) => s.hasDebt).length,
       expiringCount: expiring.length,
       expiringTotal: expiring.reduce((sum, s) => sum + (s.currentPeriod?.amount ?? 0), 0),
+      pendingCount: pending.length,
+      pendingTotal: pending.reduce((sum, s) => sum + (s.currentPeriod?.amount ?? 0), 0),
     }
   }, [data])
 
@@ -111,6 +122,7 @@ export function SubscriptionsListPage() {
         if (statusFilter && sub.status !== statusFilter) return false
         if (hasOverdue !== undefined && sub.hasDebt !== hasOverdue) return false
         if (expiringFilter && !isExpiringSub(sub)) return false
+        if (pendingFilter && !isPendingSub(sub)) return false
         if (!normalizedSearch) return true
 
         const haystack = [
@@ -126,15 +138,28 @@ export function SubscriptionsListPage() {
         return haystack.includes(normalizedSearch)
       })
       .sort((a, b) => {
+        if (pendingFilter) {
+          const aPending = a.currentPeriod?.status === 'PENDING' ? 1 : 0
+          const bPending = b.currentPeriod?.status === 'PENDING' ? 1 : 0
+          if (aPending !== bPending) return bPending - aPending
+          if (aPending === 1 && bPending === 1) {
+            return new Date(a.currentPeriod?.endDate ?? 0).getTime() - new Date(b.currentPeriod?.endDate ?? 0).getTime()
+          }
+          const getOverdueTime = (s: SubscriptionWithDetails) =>
+            s.currentPeriod?.status === 'OVERDUE'
+              ? new Date(s.currentPeriod.endDate).getTime()
+              : new Date(s.currentPeriod?.startDate ?? 0).getTime()
+          return getOverdueTime(b) - getOverdueTime(a)
+        }
         const aPriority = Number(a.hasDebt) * 100 + Number(a.overduePeriods > 0) * 10 + Number(a.pendingPeriods > 0)
         const bPriority = Number(b.hasDebt) * 100 + Number(b.overduePeriods > 0) * 10 + Number(b.pendingPeriods > 0)
 
         if (aPriority !== bPriority) return bPriority - aPriority
         return a.kitNumber.localeCompare(b.kitNumber)
       })
-  }, [data, search, statusFilter, hasOverdue, expiringFilter])
+  }, [data, search, statusFilter, hasOverdue, expiringFilter, pendingFilter])
 
-  const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter)
+  const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter || pendingFilter)
 
   const getCardTone = (sub: SubscriptionWithDetails) => {
     if (sub.hasDebt) {
@@ -219,6 +244,9 @@ export function SubscriptionsListPage() {
             <FilterPill active={expiringFilter} onClick={() => handleFilter('expiring', expiringFilter ? null : 'true')}>
               Por Vencer
             </FilterPill>
+            <FilterPill active={pendingFilter} onClick={() => handleFilter('pending', pendingFilter ? null : 'true')}>
+              Por cobrar
+            </FilterPill>
             {hasActiveFilters && (
               <FilterPill variant="secondary" onClick={clearAllFilters}>
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -278,7 +306,7 @@ export function SubscriptionsListPage() {
               {visibleSubscriptions.map((sub) => (
                 <div
                   key={sub.id}
-                  onClick={() => navigate(`/subscriptions/${sub.id}`)}
+                  onClick={() => navigate(`/subscriptions/${sub.id}`, { state: { from: `${location.pathname}${location.search}` } })}
                   className={`block p-4 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm cursor-pointer ${getCardTone(sub)}`}
                 >
                   {/* Top Row: Client & Status */}
@@ -344,6 +372,11 @@ export function SubscriptionsListPage() {
                             {getExpiringLabel(sub.currentPeriod.endDate)}
                           </span>
                         )}
+                        {sub.pendingPeriods > 0 && (!sub.currentPeriod || sub.currentPeriod.status !== 'PENDING') && (
+                          <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                            {sub.pendingPeriods} pend.
+                          </span>
+                        )}
                         {sub.overduePeriods > 0 && (
                           <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
                             {sub.overduePeriods} venc.
@@ -351,7 +384,7 @@ export function SubscriptionsListPage() {
                         )}
                       </div>
 
-                      {(sub.hasDebt || (sub.currentPeriod && sub.currentPeriod.status !== 'PAID')) && (
+                      {(sub.hasDebt || sub.pendingPeriods > 0 || (sub.currentPeriod && sub.currentPeriod.status !== 'PAID')) && (
                         <button
                           type="button"
                           onClick={(e) => {

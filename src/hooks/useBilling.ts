@@ -11,15 +11,16 @@ interface UseBillingPeriodsParams {
   search?: string
   expiresBefore?: string
   periodLabel?: string
+  organizationId?: string
   limit?: number
   offset?: number
 }
 
-export function useBillingPeriods(params?: UseBillingPeriodsParams, enabled = true) {
+export function useBillingPeriods(params?: UseBillingPeriodsParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.billing.lists, params],
     queryFn: () => billingApi.list(params),
-    enabled,
+    ...options,
   })
 }
 

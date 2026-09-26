@@ -64,7 +64,7 @@ export function QuickPayModal() {
   const registerPayment = useRegisterPayment(period?.id || '')
   const { data: subscriptionPeriods } = useBillingPeriods(
     { subscriptionId: period?.subscriptionId },
-    !!period?.subscriptionId
+    { enabled: !!period?.subscriptionId }
   )
 
   const blocked = period && subscriptionPeriods
@@ -153,7 +153,7 @@ export function QuickPayModal() {
 
                   <div className="flex flex-col gap-1 text-sm text-primary-600 dark:text-primary-300">
                     <div className="flex justify-between items-center">
-                      <span>{period.subscription.kitNumber} - {period.plan.name}</span>
+                      <span>{period.subscription?.kitNumber ?? '—'} - {period.plan?.name ?? '—'}</span>
                       <span className="font-bold text-base text-primary-900 dark:text-primary-50">{formatCurrency(period.amount)}</span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -162,9 +162,11 @@ export function QuickPayModal() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">
-                    <Badge className={SUBSCRIPTION_STATUS_COLORS[period.subscription.status]}>
-                      {SUBSCRIPTION_STATUS_LABELS[period.subscription.status]}
-                    </Badge>
+                    {period.subscription && (
+                      <Badge className={SUBSCRIPTION_STATUS_COLORS[period.subscription.status]}>
+                        {SUBSCRIPTION_STATUS_LABELS[period.subscription.status]}
+                      </Badge>
+                    )}
                   </div>
                 </div>
 

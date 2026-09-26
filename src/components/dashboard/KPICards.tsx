@@ -1,9 +1,7 @@
 import { useDashboardSummary } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, Link2, DollarSign, AlertTriangle, Package, AlertCircle } from 'lucide-react'
-import { formatCurrency } from '@/lib/constants'
+import { Users, Link2, Package } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 
@@ -19,19 +17,17 @@ export function KPICards() {
   if (!isSuperAdmin || !!organizationId) {
     if (isLoading) {
       return (
-        <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory no-scrollbar touch-pan-x -mx-4 px-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:mx-0 md:px-0">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="min-w-[150px] w-[42vw] md:w-auto snap-center">
-              <Card className="h-full bg-white dark:bg-primary-900/50 border-primary-100 dark:border-primary-800">
-                <CardHeader className="flex flex-row items-center gap-2 pb-1 pt-3 px-3 space-y-0">
-                  <div className="h-7 w-7 bg-primary-100 dark:bg-primary-800 rounded-lg animate-pulse" />
-                  <div className="h-3 w-20 bg-primary-100 dark:bg-primary-800 rounded animate-pulse" />
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
-                  <div className="h-6 w-14 bg-primary-100 dark:bg-primary-800 rounded animate-pulse mb-2" />
-                  <div className="h-3 w-24 bg-primary-50 dark:bg-primary-800/50 rounded animate-pulse" />
-                </CardContent>
-              </Card>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 rounded-xl border border-primary-100 bg-white p-2.5 text-primary-900 dark:border-primary-800 dark:bg-primary-900/50 dark:text-primary-50"
+            >
+              <div className="h-8 w-8 shrink-0 rounded-lg bg-primary-100 animate-pulse dark:bg-primary-800" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="h-2.5 w-14 rounded bg-primary-100 animate-pulse dark:bg-primary-800" />
+                <div className="h-5 w-8 rounded bg-primary-100 animate-pulse dark:bg-primary-800" />
+              </div>
             </div>
           ))}
         </div>
@@ -55,11 +51,10 @@ export function KPICards() {
       href: string
     }[] = [
       {
-        title: 'Total Clientes',
+        title: 'Clientes',
         value: data.clients.total,
         icon: Users,
         iconClass: 'text-primary-800 bg-primary-100 dark:text-primary-100 dark:bg-primary-800',
-        subtitle: undefined,
         href: '/clients',
       },
       {
@@ -71,31 +66,7 @@ export function KPICards() {
         href: '/subscriptions',
       },
       {
-        title: 'Ingresos Mes',
-        value: formatCurrency(data.financial.monthlyIncome),
-        icon: DollarSign,
-        iconClass: 'text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950',
-        subtitle: `${data.billingPeriods.paid} pagados`,
-        href: '/subscriptions',
-      },
-      {
-        title: 'Deuda Total',
-        value: formatCurrency(data.financial.totalDebt),
-        icon: AlertTriangle,
-        iconClass: 'text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-950',
-        subtitle: `${formatCurrency(data.financial.totalOverdue)} vencida`,
-        href: '/subscriptions?hasOverdue=true',
-      },
-      {
-        title: 'Períodos Vencidos',
-        value: data.billingPeriods.overdue,
-        icon: AlertCircle,
-        iconClass: 'text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950',
-        subtitle: data.billingPeriods.overdue > 0 ? formatCurrency(data.financial.totalOverdue) : 'Sin deuda',
-        href: '/subscriptions?hasOverdue=true',
-      },
-      {
-        title: 'Planes Activos',
+        title: 'Planes',
         value: data.plans.active,
         icon: Package,
         iconClass: 'text-primary-600 bg-primary-50 dark:text-primary-300 dark:bg-primary-900',
@@ -105,27 +76,31 @@ export function KPICards() {
     ]
 
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory no-scrollbar touch-pan-x -mx-4 px-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:mx-0 md:px-0">
+      <div className="grid grid-cols-3 gap-2">
         {cards.map((card) => (
-          <div key={card.title} className="min-w-[150px] w-[42vw] md:w-auto snap-center shrink-0">
-            <Card
-              className="h-full cursor-pointer active:scale-95 transition-transform touch-manipulation border-primary-100 bg-white shadow-sm dark:bg-primary-900/50 dark:border-primary-800 flex flex-col justify-center"
-              onClick={() => navigate(card.href)}
-            >
-              <CardHeader className="flex flex-row items-center gap-2 pb-1 pt-3 px-3 space-y-0">
-                <div className={`p-1.5 rounded-lg shrink-0 ${card.iconClass}`}>
-                  <card.icon className="h-4 w-4" />
-                </div>
-                <CardTitle className="text-xs font-semibold text-primary-600 dark:text-primary-400 truncate leading-tight">{card.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
-                <p className="text-xl font-bold text-primary-900 dark:text-primary-50 leading-none">{card.value}</p>
-                <p className="text-[11px] font-medium text-primary-500 dark:text-primary-400 mt-1.5 h-3.5 truncate">
-                  {card.subtitle || ''}
+          <button
+            key={card.title}
+            type="button"
+            onClick={() => navigate(card.href)}
+            className="flex items-center gap-2 rounded-xl border border-primary-100 bg-white p-2.5 text-left text-primary-900 shadow-sm transition-transform active:scale-95 touch-manipulation dark:border-primary-800 dark:bg-primary-900/50 dark:text-primary-50"
+          >
+            <div className={`p-1.5 rounded-lg shrink-0 ${card.iconClass}`}>
+              <card.icon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 truncate leading-tight">
+                {card.title}
+              </p>
+              <p className="text-lg font-bold text-primary-900 dark:text-primary-50 leading-tight">
+                {card.value}
+              </p>
+              {card.subtitle && (
+                <p className="text-[10px] font-medium text-primary-500 dark:text-primary-400 truncate leading-tight">
+                  {card.subtitle}
                 </p>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </div>
+          </button>
         ))}
       </div>
     )

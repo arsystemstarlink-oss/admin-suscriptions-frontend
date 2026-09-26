@@ -10,7 +10,7 @@ interface FilterPillProps {
 }
 
 export function FilterPill({ children, active, variant = 'default', onClick, className }: FilterPillProps) {
-  const baseClasses = 'inline-flex items-center whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors active:scale-95 touch-manipulation'
+  const baseClasses = 'inline-flex shrink-0 items-center whitespace-nowrap px-3 sm:px-4 py-1.5 min-h-8 rounded-full text-xs sm:text-sm font-medium transition-colors active:scale-95 touch-manipulation'
 
   const activeClasses = {
     default: 'bg-primary-800 text-white dark:bg-primary-700 dark:text-white',

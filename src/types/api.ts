@@ -538,6 +538,9 @@ export interface PublicLookupResponse {
     amount: number
     status: BillingPeriodStatus
     hasPendingReport: boolean
+    paymentMethod?: PaymentMethod
+    paidAt?: string
+    reference?: string
   }[]
   pendingReports: {
     id: string

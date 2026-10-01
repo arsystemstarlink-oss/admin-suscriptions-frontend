@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BrandMark } from '@/components/brand/BrandMark'
-import { ExchangeRateBadge } from '@/components/exchange/ExchangeRateBadge'
+import { ExchangeTicker } from '@/components/exchange/ExchangeTicker'
 import { BsReference } from '@/components/exchange/BsReference'
 import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
@@ -55,9 +55,11 @@ import {
   ChevronDown,
   CreditCard,
   DollarSign,
+  History,
   IdCard,
   Loader2,
   Search,
+  Trash2,
   Wifi,
 } from 'lucide-react'
 
@@ -93,10 +95,43 @@ type ReportForm = z.infer<ReturnType<typeof reportSchema>>
 
 const GENERIC_NOT_FOUND = 'No encontramos registros con esos datos. Verifica e intenta de nuevo.'
 
+const CONSULTA_STORAGE_KEY = 'consulta.credentials'
+
+interface StoredConsultaCredentials {
+  dniPrefix: 'V-' | 'J-'
+  dniDigits: string
+  phone: string
+  remember: boolean
+}
+
+function loadStoredCredentials(): StoredConsultaCredentials | null {
+  try {
+    const raw = localStorage.getItem(CONSULTA_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<StoredConsultaCredentials>
+    if (!parsed || typeof parsed !== 'object') return null
+    const dniPrefix = parsed.dniPrefix === 'J-' ? 'J-' : 'V-'
+    const dniDigits = typeof parsed.dniDigits === 'string' ? parsed.dniDigits.replace(/\D/g, '').slice(0, 9) : ''
+    const phone = typeof parsed.phone === 'string' ? parsed.phone : ''
+    if (!/^\d{7,9}$/.test(dniDigits) || phone.replace(/\D/g, '').length < 10) return null
+    return { dniPrefix, dniDigits, phone, remember: parsed.remember !== false }
+  } catch {
+    return null
+  }
+}
+
+/** Identificador de la suscripción: cuenta + kit si existe, si no el kit completo (sin duplicar "Kit KIT-"). */
+function subscriptionDisplayCode(sub: { kitNumber: string; accountNumber?: string }): string {
+  const account = sub.accountNumber?.trim()
+  if (account) return `Cuenta ${account} · ${sub.kitNumber}`
+  return sub.kitNumber
+}
+
 export function ConsultaPage() {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const { data: orgData, isLoading: orgLoading, isError: orgError } = usePublicOrganization(orgSlug)
 
+  const [storedCredentials] = useState<StoredConsultaCredentials | null>(() => loadStoredCredentials())
   const [lookupResult, setLookupResult] = useState<PublicLookupResponse | null>(null)
   const [lookupError, setLookupError] = useState<string | null>(null)
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null)
@@ -104,6 +139,8 @@ export function ConsultaPage() {
   const [lastCredentials, setLastCredentials] = useState<{ dni: string; phone: string } | null>(null)
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string | null>(null)
   const [expandedSubscriptions, setExpandedSubscriptions] = useState<Record<string, boolean>>({})
+  const [rememberMe, setRememberMe] = useState(storedCredentials?.remember ?? true)
+  const [rememberToast, setRememberToast] = useState<string | null>(null)
 
   const lookupMutation = usePublicLookup(orgSlug)
   const reportMutation = usePublicCreateReport(orgSlug)
@@ -115,10 +152,13 @@ export function ConsultaPage() {
     control,
     handleSubmit,
     watch,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<LookupForm>({
     resolver: zodResolver(lookupSchema),
-    defaultValues: { dniPrefix: 'V-', dniDigits: '', phone: '' },
+    defaultValues: storedCredentials
+      ? { dniPrefix: storedCredentials.dniPrefix, dniDigits: storedCredentials.dniDigits, phone: storedCredentials.phone }
+      : { dniPrefix: 'V-', dniDigits: '', phone: '' },
     mode: 'onChange',
   })
   const phoneValue = watch('phone', '')
@@ -139,7 +179,46 @@ export function ConsultaPage() {
     setLastCredentials(null)
     setSelectedSubscriptionId(null)
     setExpandedSubscriptions({})
-  }, [orgSlug])
+    reset(
+      storedCredentials
+        ? { dniPrefix: storedCredentials.dniPrefix, dniDigits: storedCredentials.dniDigits, phone: storedCredentials.phone }
+        : { dniPrefix: 'V-', dniDigits: '', phone: '' },
+    )
+  }, [orgSlug, reset, storedCredentials])
+
+  const persistCredentials = (data: LookupForm, remember: boolean) => {
+    try {
+      if (remember) {
+        localStorage.setItem(
+          CONSULTA_STORAGE_KEY,
+          JSON.stringify({ dniPrefix: data.dniPrefix, dniDigits: data.dniDigits, phone: data.phone, remember: true }),
+        )
+      } else {
+        localStorage.removeItem(CONSULTA_STORAGE_KEY)
+      }
+    } catch {
+      // almacenamiento no disponible: la consulta sigue funcionando
+    }
+  }
+
+  const handleClearSaved = () => {
+    try {
+      localStorage.removeItem(CONSULTA_STORAGE_KEY)
+    } catch {
+      // sin almacenamiento: solo limpia memoria
+    }
+    reset({ dniPrefix: 'V-', dniDigits: '', phone: '' })
+    setLookupResult(null)
+    setLookupError(null)
+    setLastCredentials(null)
+    setSelectedPeriodId(null)
+    setReportSuccess(false)
+    setSelectedSubscriptionId(null)
+    setExpandedSubscriptions({})
+    setRememberMe(false)
+    setRememberToast('Datos borrados de este dispositivo.')
+    dniInputRef.current?.focus()
+  }
 
   const onLookup = async (data: LookupForm) => {
     setLookupError(null)
@@ -154,6 +233,7 @@ export function ConsultaPage() {
       })
       setLookupResult(result)
       setLastCredentials({ dni: normalizedDni, phone: data.phone })
+      persistCredentials(data, rememberMe)
       const firstWithDebt = result.subscriptions.find((s) =>
         result.periods.some((p) => p.subscriptionId === s.id && p.status !== 'PAID'),
       )
@@ -183,11 +263,21 @@ export function ConsultaPage() {
         (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
       )
       const unpaid = subPeriods.filter((p) => p.status !== 'PAID')
+      const paidHistory = subPeriods
+        .filter((p) => p.status === 'PAID')
+        .slice()
+        .sort((a, b) => {
+          const aTime = a.paidAt ? new Date(a.paidAt).getTime() : new Date(a.endDate).getTime()
+          const bTime = b.paidAt ? new Date(b.paidAt).getTime() : new Date(b.endDate).getTime()
+          return bTime - aTime
+        })
       const overdueCount = subPeriods.filter((p) => p.status === 'OVERDUE').length
       const pendingCount = subPeriods.filter((p) => p.status === 'PENDING').length
       const subDebt = unpaid.reduce((sum, p) => sum + p.amount, 0)
+      const paidTotal = paidHistory.reduce((sum, p) => sum + p.amount, 0)
       const oldestUnpaid = unpaid[0] ?? null
-      return { sub, subPeriods, unpaid, overdueCount, pendingCount, subDebt, oldestUnpaid }
+      const lastPayment = paidHistory[0] ?? null
+      return { sub, subPeriods, unpaid, paidHistory, overdueCount, pendingCount, subDebt, paidTotal, oldestUnpaid, lastPayment }
     })
   }, [lookupResult])
 
@@ -276,36 +366,55 @@ export function ConsultaPage() {
     )
   }
 
+  const hasDebt = lookupResult ? lookupResult.periods.some((p) => p.status !== 'PAID') : false
+
   const orgName = orgData!.organization.name
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border-subtle bg-header text-header-foreground">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-3">
           <BrandMark size="sm" />
-          <div className="flex min-w-0 items-center gap-2">
-            <ExchangeRateBadge compact className="shrink-0" />
-            <span className="hidden truncate text-sm font-medium sm:inline">{orgName}</span>
-          </div>
         </div>
       </header>
+      <ExchangeTicker />
 
       <main className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 pb-16">
-        <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Consulta de pagos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Ingresa tu cédula y teléfono para ver tu deuda y reportar pagos de {orgName}.
+        <section aria-labelledby="consulta-title" className="overflow-hidden rounded-2xl border border-border bg-surface text-surface-foreground">
+          <div className="border-b border-border-subtle bg-surface-muted px-4 py-3 sm:px-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              {orgName}
+            </p>
+            <h1 id="consulta-title" className="mt-0.5 text-xl font-bold text-foreground sm:text-2xl">
+              Consulta de pagos
+            </h1>
+          </div>
+          <p className="px-4 py-3 text-sm text-muted-foreground sm:px-6">
+            Ingresa tu cédula y teléfono para ver tu deuda y reportar pagos.
           </p>
-        </div>
+        </section>
 
         <form
           onSubmit={handleSubmit(onLookup)}
           className="space-y-4 rounded-2xl border border-border bg-surface p-4 text-surface-foreground sm:p-6"
         >
           <div className="space-y-1.5">
-            <Label htmlFor="consulta-dni" className="text-foreground">
-              Cédula *
-            </Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="consulta-dni" className="text-foreground">
+                Cédula *
+              </Label>
+              {(storedCredentials || lookupResult || isDirty) && (
+                <button
+                  type="button"
+                  onClick={handleClearSaved}
+                  className="flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+                  title="Borra tus datos guardados en este dispositivo y limpia el formulario."
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Limpiar datos
+                </button>
+              )}
+            </div>
             <div className="flex gap-2">
               <Controller
                 name="dniPrefix"
@@ -441,13 +550,47 @@ export function ConsultaPage() {
             ) : (
               <>
                 <Search className="mr-2 h-5 w-5" />
-                {lookupResult ? 'Consultar de nuevo' : 'Consultar deuda'}
+                {storedCredentials && !isDirty && !lookupResult ? 'Consultar (datos guardados)' : lookupResult ? 'Consultar de nuevo' : 'Consultar deuda'}
               </>
             )}
           </Button>
-          {!lookupResult && !dniIsValid && !errors.dniDigits && (
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={rememberMe}
+            onClick={() => setRememberMe((v) => !v)}
+            className="flex w-full items-center gap-3 rounded-xl px-1 py-1 text-left"
+          >
+            <span
+              aria-hidden="true"
+              className={`relative flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${rememberMe ? 'bg-primary' : 'bg-surface-active'}`}
+            >
+              <span
+                className={`h-5 w-5 rounded-full bg-surface shadow transition-transform ${rememberMe ? 'translate-x-5' : 'translate-x-0.5'}`}
+              />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-foreground">Recordarme en este dispositivo</span>
+              <span className="block text-xs text-muted-foreground">
+                Guarda tu cédula y teléfono solo en este navegador para consultas rápidas.
+              </span>
+            </span>
+          </button>
+
+          {rememberToast && !lookupResult && (
+            <p role="status" className="text-center text-xs font-medium text-success">
+              {rememberToast}
+            </p>
+          )}
+          {!lookupResult && !dniIsValid && !errors.dniDigits && !storedCredentials && (
             <p className="text-center text-xs text-muted-foreground">
               Completa tu cédula y teléfono para habilitar la consulta.
+            </p>
+          )}
+          {!lookupResult && storedCredentials && !isDirty && (
+            <p className="text-center text-xs text-muted-foreground">
+              Tienes datos guardados — toca consultar o usa "Limpiar datos" para borrarlos.
             </p>
           )}
         </form>
@@ -466,21 +609,23 @@ export function ConsultaPage() {
                 </div>
                 <Badge className={STATUS_SUCCESS}>Verificado</Badge>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-surface-muted p-3">
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(lookupResult.totals.totalDebt)}</p>
-                  <BsReference usdAmount={lookupResult.totals.totalDebt} rate={activeRate} className="mt-0.5 block text-center" />
-                  <p className="mt-0.5 text-xs text-muted-foreground">Deuda total</p>
+              {hasDebt && (
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-xl bg-surface-muted p-3">
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(lookupResult.totals.totalDebt)}</p>
+                    <BsReference usdAmount={lookupResult.totals.totalDebt} rate={activeRate} className="mt-0.5 block text-center" />
+                    <p className="mt-0.5 text-xs text-muted-foreground">Deuda total</p>
+                  </div>
+                  <div className="rounded-xl bg-surface-muted p-3">
+                    <p className="text-lg font-bold text-foreground">{lookupResult.totals.overdueCount}</p>
+                    <p className="text-xs text-muted-foreground">Vencidos</p>
+                  </div>
+                  <div className="rounded-xl bg-surface-muted p-3">
+                    <p className="text-lg font-bold text-foreground">{lookupResult.totals.pendingCount}</p>
+                    <p className="text-xs text-muted-foreground">Pendientes</p>
+                  </div>
                 </div>
-                <div className="rounded-xl bg-surface-muted p-3">
-                  <p className="text-lg font-bold text-foreground">{lookupResult.totals.overdueCount}</p>
-                  <p className="text-xs text-muted-foreground">Vencidos</p>
-                </div>
-                <div className="rounded-xl bg-surface-muted p-3">
-                  <p className="text-lg font-bold text-foreground">{lookupResult.totals.pendingCount}</p>
-                  <p className="text-xs text-muted-foreground">Pendientes</p>
-                </div>
-              </div>
+              )}
               {lookupResult.totals.pendingVerificationCount > 0 && (
                 <div className={`mt-3 flex items-center gap-2 rounded-xl border p-3 text-sm font-medium ${STATUS_INFO}`}>
                   <CheckCircle className="h-5 w-5 shrink-0" />
@@ -497,18 +642,22 @@ export function ConsultaPage() {
               )}
             </div>
 
-            {lookupResult.periods.filter((p) => p.status !== 'PAID').length === 0 ? (
-              <div className="rounded-2xl border border-border bg-surface p-6 text-center text-surface-foreground">
-                <CheckCircle className="mx-auto h-10 w-10 text-success" />
-                <p className="mt-2 font-semibold text-foreground">Sin deuda pendiente</p>
-                <p className="mt-1 text-sm text-muted-foreground">Todos tus períodos están al día.</p>
+            {!hasDebt ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-success/20 bg-success/10 p-3 text-success sm:p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground">
+                  <CheckCircle className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 text-left">
+                  <p className="text-sm font-bold text-foreground">Sin deuda pendiente</p>
+                  <p className="truncate text-xs text-muted-foreground">Todos tus períodos están al día.</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">
                   Tus suscripciones ({subscriptionsWithDebt.length})
                 </p>
-                {subscriptionsWithDebt.map(({ sub, subPeriods, unpaid, overdueCount, pendingCount, subDebt, oldestUnpaid }) => {
+                {subscriptionsWithDebt.map(({ sub, subPeriods, unpaid, paidHistory, overdueCount, pendingCount, subDebt, paidTotal, oldestUnpaid, lastPayment }) => {
                   const isSelected = effectiveSubscriptionId === sub.id
                   const isExpanded = expandedSubscriptions[sub.id] ?? isSelected
                   const hasDebt = unpaid.length > 0
@@ -537,8 +686,8 @@ export function ConsultaPage() {
                             </Badge>
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                            Kit {sub.kitNumber}
-                            {sub.accountNumber ? ` · Cuenta ${sub.accountNumber}` : ''} · Corte día {sub.billingDay}
+                            {subscriptionDisplayCode(sub)}
+                            {' '}· Corte día {sub.billingDay}
                           </span>
                           <span className="mt-1 block text-xs text-muted-foreground">
                             {hasDebt ? (
@@ -600,20 +749,47 @@ export function ConsultaPage() {
                               </div>
                             </div>
                           ))}
-                          {subPeriods.filter((p) => p.status === 'PAID').length > 0 && (
+                          {paidHistory.length > 0 && (
                             <details className="rounded-xl border border-border-subtle p-3">
-                              <summary className="cursor-pointer text-xs font-semibold text-foreground">
-                                Pagados ({subPeriods.filter((p) => p.status === 'PAID').length})
+                              <summary className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-foreground">
+                                <History className="h-3.5 w-3.5 text-muted-foreground" />
+                                Historial de pagos ({paidHistory.length}) · {formatCurrency(paidTotal)}
                               </summary>
-                              <div className="mt-2 space-y-1.5">
-                                {subPeriods
-                                  .filter((p) => p.status === 'PAID')
-                                  .map((period) => (
-                                    <div key={period.id} className="flex items-center justify-between text-xs">
-                                      <span className="text-muted-foreground">{period.periodLabel}</span>
-                                      <span className="font-medium text-foreground">{formatCurrency(period.amount)}</span>
+                              {lastPayment && (
+                                <div className="mt-2 rounded-lg bg-success/10 p-2.5 text-xs">
+                                  <p className="font-semibold text-foreground">Último pago</p>
+                                  <p className="mt-0.5 text-muted-foreground">
+                                    {formatCurrency(lastPayment.amount)} · {lastPayment.periodLabel}
+                                  </p>
+                                  <p className="mt-0.5 text-muted-foreground">
+                                    {lastPayment.paidAt ? `Pagado el ${formatDate(lastPayment.paidAt)}` : `Período hasta ${formatDate(lastPayment.endDate)}`}
+                                    {lastPayment.paymentMethod ? ` · ${PAYMENT_METHOD_LABELS[lastPayment.paymentMethod] ?? lastPayment.paymentMethod}` : ''}
+                                  </p>
+                                  {lastPayment.reference && (
+                                    <p className="mt-0.5 truncate text-muted-foreground">
+                                      Ref: {lastPayment.reference}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              <div className="mt-2 space-y-2">
+                                {paidHistory.map((period) => (
+                                  <div key={period.id} className="rounded-lg bg-surface-muted p-2.5 text-xs">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="truncate font-semibold text-foreground">{period.periodLabel}</span>
+                                      <span className="shrink-0 font-bold text-foreground">{formatCurrency(period.amount)}</span>
                                     </div>
-                                  ))}
+                                    <div className="mt-1 space-y-0.5 text-muted-foreground">
+                                      <p>
+                                        {period.paidAt ? `Pagado el ${formatDate(period.paidAt)}` : `Cerrado el ${formatDate(period.endDate)}`}
+                                        {period.paymentMethod ? ` · ${PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}` : ''}
+                                      </p>
+                                      {period.reference && (
+                                        <p className="break-words">Ref: {period.reference}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </details>
                           )}
@@ -628,18 +804,42 @@ export function ConsultaPage() {
             {lookupResult.periods.filter((p) => p.status === 'PAID').length > 0 &&
               lookupResult.periods.filter((p) => p.status !== 'PAID').length === 0 && (
               <details className="rounded-2xl border border-border bg-surface p-4 text-surface-foreground">
-                <summary className="cursor-pointer text-sm font-semibold text-foreground">
-                  Períodos pagados ({lookupResult.periods.filter((p) => p.status === 'PAID').length})
+                <summary className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  Historial de pagos ({lookupResult.periods.filter((p) => p.status === 'PAID').length})
                 </summary>
                 <div className="mt-3 space-y-2">
                   {lookupResult.periods
                     .filter((p) => p.status === 'PAID')
-                    .map((period) => (
-                      <div key={period.id} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{period.periodLabel}</span>
-                        <span className="font-medium text-foreground">{formatCurrency(period.amount)}</span>
-                      </div>
-                    ))}
+                    .slice()
+                    .sort((a, b) => {
+                      const aTime = a.paidAt ? new Date(a.paidAt).getTime() : new Date(a.endDate).getTime()
+                      const bTime = b.paidAt ? new Date(b.paidAt).getTime() : new Date(b.endDate).getTime()
+                      return bTime - aTime
+                    })
+                    .map((period) => {
+                      const periodSub = lookupResult.subscriptions.find((s) => s.id === period.subscriptionId)
+                      return (
+                        <div key={period.id} className="rounded-xl bg-surface-muted p-3 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-semibold text-foreground">{period.periodLabel}</span>
+                            <span className="shrink-0 font-bold text-foreground">{formatCurrency(period.amount)}</span>
+                          </div>
+                          {periodSub && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {periodSub.plan?.name ?? 'Plan'} · {subscriptionDisplayCode(periodSub)}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {period.paidAt ? `Pagado el ${formatDate(period.paidAt)}` : `Cerrado el ${formatDate(period.endDate)}`}
+                            {period.paymentMethod ? ` · ${PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}` : ''}
+                          </p>
+                          {period.reference && (
+                            <p className="mt-0.5 break-words text-xs text-muted-foreground">Ref: {period.reference}</p>
+                          )}
+                        </div>
+                      )
+                    })}
                 </div>
               </details>
             )}
@@ -672,8 +872,7 @@ export function ConsultaPage() {
                       </div>
                       {selectedPeriodSub && (
                         <p className="text-xs text-muted-foreground">
-                          {selectedPeriodSub.plan?.name ?? 'Plan'} · Kit {selectedPeriodSub.kitNumber}
-                          {selectedPeriodSub.accountNumber ? ` · Cuenta ${selectedPeriodSub.accountNumber}` : ''}
+                          {selectedPeriodSub.plan?.name ?? 'Plan'} · {subscriptionDisplayCode(selectedPeriodSub)}
                         </p>
                       )}
                       <div className="flex items-center justify-between text-sm text-muted-foreground">

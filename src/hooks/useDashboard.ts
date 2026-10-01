@@ -10,7 +10,7 @@ export function useDashboardSummary(params?: UseDashboardParams, options?: { ena
   return useQuery({
     queryKey: [...qk.dashboard.summary, params],
     queryFn: () => dashboardApi.getSummary(params),
-    staleTime: 10_000,
+    staleTime: 60_000,
     ...options,
   })
 }
@@ -19,7 +19,7 @@ export function useDashboardAlerts(params?: UseDashboardParams, options?: { enab
   return useQuery({
     queryKey: [...qk.dashboard.alerts, params],
     queryFn: () => dashboardApi.getAlerts(params),
-    staleTime: 10_000,
+    staleTime: 60_000,
     ...options,
   })
 }

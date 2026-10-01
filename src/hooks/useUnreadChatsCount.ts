@@ -10,8 +10,9 @@ export function useUnreadChatsCount() {
   const { data: conversations } = useQuery({
     queryKey: qk.whatsapp.conversations,
     queryFn: () => whatsappApi.getConversations(),
-    refetchInterval: 30_000,
-    refetchIntervalInBackground: true,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
 
   return useMemo(() => {

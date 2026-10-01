@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -41,7 +41,6 @@ import {
   formatCurrency,
   formatDate,
 } from '@/lib/constants'
-import { isValidDni, normalizeDni } from '@/lib/utils'
 import {
   AlignLeft,
   AlertTriangle,
@@ -53,19 +52,22 @@ import {
   DollarSign,
   IdCard,
   Loader2,
-  Phone,
   Search,
   Wifi,
 } from 'lucide-react'
 
 const lookupSchema = z.object({
-  dni: z
+  dniPrefix: z.enum(['V-', 'J-']),
+  dniDigits: z
     .string()
     .min(1, 'La cédula es requerida')
-    .refine((v) => isValidDni(normalizeDni(v)), {
-      message: 'Cédula inválida. Use formato V-12345678.',
+    .regex(/^\d{7,9}$/, 'La cédula debe tener 7 a 9 dígitos.'),
+  phone: z
+    .string()
+    .min(1, 'El teléfono es requerido')
+    .refine((v) => v.replace(/\D/g, '').length >= 10, {
+      message: 'Ingresa un teléfono válido de 10 u 11 dígitos.',
     }),
-  phone: z.string().min(1, 'El teléfono es requerido'),
 })
 
 type LookupForm = z.infer<typeof lookupSchema>
@@ -102,16 +104,24 @@ export function ConsultaPage() {
   const reportMutation = usePublicCreateReport(orgSlug)
 
   const {
-    register,
+    control,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors },
   } = useForm<LookupForm>({
     resolver: zodResolver(lookupSchema),
-    defaultValues: { dni: '', phone: '' },
+    defaultValues: { dniPrefix: 'V-', dniDigits: '', phone: '' },
+    mode: 'onChange',
   })
   const phoneValue = watch('phone', '')
+  const dniPrefix = watch('dniPrefix', 'V-')
+  const dniDigits = watch('dniDigits', '')
+  const dniInputRef = useRef<HTMLInputElement | null>(null)
+
+  const phoneNationalDigits = phoneValue.replace(/\D/g, '').replace(/^58/, '').replace(/^0/, '')
+  const phoneIsValid = phoneValue.replace(/\D/g, '').length >= 10
+  const dniIsValid = /^\d{7,9}$/.test(dniDigits)
+  const canSubmit = dniIsValid && phoneIsValid && !lookupMutation.isPending
 
   useEffect(() => {
     setLookupResult(null)
@@ -129,7 +139,7 @@ export function ConsultaPage() {
     setReportSuccess(false)
     setSelectedSubscriptionId(null)
     try {
-      const normalizedDni = normalizeDni(data.dni)
+      const normalizedDni = `${data.dniPrefix}${data.dniDigits}`
       const result = await lookupMutation.mutateAsync({
         dni: normalizedDni,
         phone: data.phone,
@@ -282,33 +292,136 @@ export function ConsultaPage() {
           className="space-y-4 rounded-2xl border border-border bg-surface p-4 text-surface-foreground sm:p-6"
         >
           <div className="space-y-1.5">
-            <Label className="text-foreground">Cédula *</Label>
-            <div className="relative">
-              <IdCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="V-12345678" {...register('dni')} className="h-12 pl-9" autoComplete="off" />
+            <Label htmlFor="consulta-dni" className="text-foreground">
+              Cédula *
+            </Label>
+            <div className="flex gap-2">
+              <Controller
+                name="dniPrefix"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      aria-label="Tipo de cédula"
+                      className="h-12 w-20 shrink-0"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="V-">V-</SelectItem>
+                      <SelectItem value="J-">J-</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <div className="relative min-w-0 flex-1">
+                <IdCard className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Controller
+                  name="dniDigits"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="consulta-dni"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="12345678"
+                      aria-invalid={!!errors.dniDigits}
+                      aria-describedby={errors.dniDigits ? 'consulta-dni-error' : undefined}
+                      className="h-12 pl-9 pr-9 tabular-nums"
+                      value={field.value}
+                      ref={(el) => {
+                        field.ref(el)
+                        dniInputRef.current = el
+                      }}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 9)
+                        field.onChange(digits)
+                        if (lookupError) setLookupError(null)
+                      }}
+                      onBlur={field.onBlur}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !dniIsValid) e.preventDefault()
+                      }}
+                    />
+                  )}
+                />
+                <span
+                  className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium tabular-nums ${dniDigits.length > 9 ? 'text-destructive' : dniIsValid ? 'text-success' : 'text-muted-foreground'}`}
+                  aria-hidden="true"
+                >
+                  {dniDigits.length}/9
+                </span>
+              </div>
             </div>
-            {errors.dni && <p className="text-sm font-medium text-destructive">{errors.dni.message}</p>}
+            {errors.dniDigits ? (
+              <p id="consulta-dni-error" role="alert" className="text-sm font-medium text-destructive">
+                {errors.dniDigits.message}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {dniPrefix} + 7 a 9 dígitos, sin puntos ni guiones.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-foreground">Teléfono *</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <div className="[&>div]:pl-9">
-                <PhoneInput value={phoneValue} onValueChange={(v) => setValue('phone', v)} />
-              </div>
-            </div>
-            {errors.phone && <p className="text-sm font-medium text-destructive">{errors.phone.message}</p>}
+            <Label htmlFor="consulta-phone" className="text-foreground">
+              Teléfono *
+            </Label>
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <PhoneInput
+                  id="consulta-phone"
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'consulta-phone-error' : 'consulta-phone-hint'}
+                  value={field.value}
+                  onValueChange={(v) => {
+                    field.onChange(v)
+                    if (lookupError) setLookupError(null)
+                  }}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
+            {errors.phone ? (
+              <p id="consulta-phone-error" role="alert" className="text-sm font-medium text-destructive">
+                {errors.phone.message}
+              </p>
+            ) : (
+              <p id="consulta-phone-hint" className="text-xs text-muted-foreground">
+                {phoneNationalDigits
+                  ? `Detectado: +58 ${phoneNationalDigits} — debe coincidir con tu número registrado.`
+                  : 'Número venezolano: 0414, 0424, 0412...'}
+              </p>
+            )}
           </div>
 
           {lookupError && (
-            <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-destructive">
+            <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-destructive">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-              <p className="text-sm font-medium">{lookupError}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{lookupError}</p>
+                <button
+                  type="button"
+                  className="mt-1 text-xs font-semibold underline underline-offset-2"
+                  onClick={() => {
+                    setLookupError(null)
+                    dniInputRef.current?.focus()
+                  }}
+                >
+                  Revisar datos
+                </button>
+              </div>
             </div>
           )}
 
-          <Button type="submit" className="h-12 w-full text-base font-semibold" disabled={lookupMutation.isPending}>
+          <Button
+            type="submit"
+            className="h-12 w-full text-base font-semibold"
+            disabled={!canSubmit}
+          >
             {lookupMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -317,10 +430,15 @@ export function ConsultaPage() {
             ) : (
               <>
                 <Search className="mr-2 h-5 w-5" />
-                Consultar deuda
+                {lookupResult ? 'Consultar de nuevo' : 'Consultar deuda'}
               </>
             )}
           </Button>
+          {!lookupResult && !dniIsValid && !errors.dniDigits && (
+            <p className="text-center text-xs text-muted-foreground">
+              Completa tu cédula y teléfono para habilitar la consulta.
+            </p>
+          )}
         </form>
 
         {lookupResult && (

@@ -98,15 +98,18 @@ function LogStat({ label, value, alert = false }: { label: string; value: number
 }
 
 function parseCronToTime(cron: string): { hour12: number; minute: number; period: 'AM' | 'PM' } {
-  const parts = cron.split(' ')
-  if (parts.length !== 5) return { hour12: 8, minute: 30, period: 'AM' }
-  
-  const hour24 = parseInt(parts[1]) || 8
-  const minute = parseInt(parts[0]) || 30
-  
+  const fallback = { hour12: 8, minute: 30, period: 'AM' as const }
+  const parts = cron.trim().split(/\s+/)
+  if (parts.length !== 5) return fallback
+
+  const minute = Number(parts[0])
+  const hour24 = Number(parts[1])
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) return fallback
+  if (!Number.isInteger(hour24) || hour24 < 0 || hour24 > 23) return fallback
+
   const period: 'AM' | 'PM' = hour24 >= 12 ? 'PM' : 'AM'
   const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24
-  
+
   return { hour12, minute, period }
 }
 
@@ -148,14 +151,18 @@ export function AdminToolsPage() {
 
   const [runErrors, setRunErrors] = useState<NotificationFailure[] | null>(null)
 
+  const cronScheduleFromServer = schedulerConfig?.cronSchedule
+
+  const serverTime = cronScheduleFromServer ? parseCronToTime(cronScheduleFromServer) : null
+
   useEffect(() => {
-    if (schedulerConfig?.cronSchedule) {
-      const { hour12, minute, period } = parseCronToTime(schedulerConfig.cronSchedule)
+    if (cronScheduleFromServer) {
+      const { hour12, minute, period } = parseCronToTime(cronScheduleFromServer)
       setSelectedHour12(hour12)
       setSelectedMinute(minute)
       setSelectedPeriod(period)
     }
-  }, [schedulerConfig])
+  }, [cronScheduleFromServer])
 
   const handleUpdateScheduler = async () => {
     if (missingCron) return
@@ -243,7 +250,9 @@ export function AdminToolsPage() {
                     <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
                       <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Horario</p>
                       <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
-                        {formatTimeDisplay(selectedHour12, selectedMinute, selectedPeriod)}
+                        {serverTime
+                          ? formatTimeDisplay(serverTime.hour12, serverTime.minute, serverTime.period)
+                          : formatTimeDisplay(selectedHour12, selectedMinute, selectedPeriod)}
                       </p>
                       <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
                         Diario
@@ -302,7 +311,10 @@ export function AdminToolsPage() {
                         <h3 className="font-semibold text-base">Horario de Ejecución</h3>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                    <Select value={selectedHour12.toString()} onValueChange={(v) => setSelectedHour12(parseInt(v))}>
+                    <Select
+                      value={selectedHour12.toString()}
+                      onValueChange={(v) => setSelectedHour12(Number(v))}
+                    >
                       <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
                         <SelectValue placeholder="Hora" />
                       </SelectTrigger>
@@ -314,7 +326,7 @@ export function AdminToolsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(parseInt(v))}>
+                    <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(Number(v))}>
                       <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
                         <SelectValue placeholder="Min" />
                       </SelectTrigger>
@@ -326,7 +338,12 @@ export function AdminToolsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'AM' | 'PM')}>
+                    <Select
+                      value={selectedPeriod}
+                      onValueChange={(v) => {
+                        if (v === 'AM' || v === 'PM') setSelectedPeriod(v)
+                      }}
+                    >
                       <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
                         <SelectValue placeholder="AM/PM" />
                       </SelectTrigger>

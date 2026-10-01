@@ -17,7 +17,8 @@ export function useUpdateSchedulerConfig(organizationId?: string) {
 
   return useMutation({
     mutationFn: (data: UpdateSchedulerConfigRequest) => schedulerApi.updateConfig(data, organizationId),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      qc.setQueryData([...qk.scheduler.config, organizationId], data)
       qc.invalidateQueries({ queryKey: qk.scheduler.config })
       toast.success('Configuración del scheduler actualizada')
     },

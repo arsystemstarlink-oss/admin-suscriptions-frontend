@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react'
-import axios from 'axios'
+import { requestWithFallback } from '@/api/baseUrl'
 import { getStoredTokens } from '@/lib/tokenStorage'
 import { useAuthStore } from '@/stores/auth.store'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin-suscriptions-backend-production.up.railway.app/api'
 const ACCESS_TOKEN_LIFETIME_MS = 15 * 60 * 1000
 const REFRESH_BEFORE_EXPIRY_MS = 60 * 1000
 
@@ -52,8 +51,10 @@ export function useTokenRefresh() {
         const { refreshToken } = getStoredTokens()
         if (!refreshToken) return
 
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
+        const { data } = await requestWithFallback<{ accessToken: string; refreshToken: string }>({
+          url: '/auth/refresh',
+          method: 'POST',
+          data: { refreshToken },
         })
 
         if (cancelled) return

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { ApiError } from '@/types/api'
+import { getApiBaseUrl, requestWithFallback, switchToFallback } from '@/api/baseUrl'
 import {
   acquireRefreshLock,
   clearStoredTokens,
@@ -9,10 +10,8 @@ import {
   setStoredTokens,
 } from '@/lib/tokenStorage'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin-suscriptions-backend-production.up.railway.app/api'
-
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,6 +35,12 @@ api.interceptors.response.use(
     const originalRequest = error.config
     const status = error.response?.status
     const errorCode = error.response?.data?.error?.code as string | undefined
+
+    if (!error.response && switchToFallback()) {
+      api.defaults.baseURL = getApiBaseUrl()
+      originalRequest.baseURL = getApiBaseUrl()
+      return api(originalRequest)
+    }
 
     if (status === 401 && errorCode === 'REFRESH_TOKEN_REVOKED') {
       clearStoredTokens()
@@ -69,8 +74,10 @@ api.interceptors.response.use(
           return api(originalRequest)
         }
 
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
+        const { data } = await requestWithFallback<{ accessToken: string; refreshToken: string }>({
+          url: '/auth/refresh',
+          method: 'POST',
+          data: { refreshToken },
         })
 
         setStoredTokens(data.accessToken, data.refreshToken)

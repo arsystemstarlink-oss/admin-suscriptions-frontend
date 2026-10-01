@@ -121,7 +121,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
             {...register('name')}
           />
           {errors.name && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+            <p className="text-sm text-destructive">{errors.name.message}</p>
           )}
         </div>
 
@@ -133,7 +133,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
             {...register('slug')}
           />
           {errors.slug && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.slug.message}</p>
+            <p className="text-sm text-destructive">{errors.slug.message}</p>
           )}
           <p className="text-xs text-muted-foreground">
             Identificador único. Si se deja vacío se generará automáticamente a partir del nombre.
@@ -145,7 +145,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
 
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <MessageCircle className="h-4 w-4 text-primary-600 dark:text-primary-300 shrink-0" />
+          <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
           <h4 className="text-sm font-semibold text-foreground">WhatsApp (Twilio)</h4>
         </div>
 
@@ -164,7 +164,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
               {...register('twilioAccountSid')}
             />
             {errors.twilioAccountSid && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-destructive">
                 {errors.twilioAccountSid.message}
               </p>
             )}
@@ -180,7 +180,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
               {...register('twilioAuthToken')}
             />
             {errors.twilioAuthToken && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-destructive">
                 {errors.twilioAuthToken.message}
               </p>
             )}
@@ -195,7 +195,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
               {...register('twilioPhoneNumber')}
             />
             {errors.twilioPhoneNumber && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-destructive">
                 {errors.twilioPhoneNumber.message}
               </p>
             )}

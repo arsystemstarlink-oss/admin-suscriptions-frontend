@@ -87,7 +87,7 @@ export function PlansListPage() {
       ) : undefined}
       isLoading={isLoading && !showEmpty}
       isEmpty={showEmpty || isEmpty}
-      emptyIcon={<Package className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+      emptyIcon={<Package className="h-16 w-16 text-subtle-foreground" />}
       emptyTitle={showEmpty ? 'Selecciona una organización' : 'No se encontraron planes'}
       emptyDescription={showEmpty ? 'Elige una organización en la barra superior para ver los planes.' : 'Modifica los filtros o crea un nuevo plan.'}
       emptyAction={!showEmpty && isEmpty ? (
@@ -109,7 +109,7 @@ export function PlansListPage() {
                 {plan.active ? 'Activo' : 'Inactivo'}
               </Badge>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-primary-500 dark:text-primary-400">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
               <span className="font-semibold text-foreground">
                 {formatCurrency(plan.price)}/mes
               </span>
@@ -135,7 +135,7 @@ export function PlansListPage() {
               size="icon"
               onClick={() => setDeleteTarget({ id: plan.id, name: plan.name })}
             >
-              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+              <Trash2 className="h-4 w-4 text-destructive shrink-0" />
             </Button>
           </div>
         </ListCard>

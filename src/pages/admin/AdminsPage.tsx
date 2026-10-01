@@ -106,7 +106,7 @@ export function AdminsPage() {
         }
         isLoading={isLoading}
         isEmpty={isEmpty}
-        emptyIcon={<Users className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+        emptyIcon={<Users className="h-16 w-16 text-subtle-foreground" />}
         emptyTitle="Sin administradores"
         emptyDescription="No encontramos resultados. Modifica los filtros o crea uno nuevo."
         emptyAction={
@@ -130,7 +130,7 @@ export function AdminsPage() {
                     Admin
                   </Badge>
                 </div>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-primary-500 dark:text-primary-400">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
                   <span className="font-medium">{admin.email}</span>
                   {admin.phone && (
                     <span className="truncate">{admin.phone}</span>
@@ -168,7 +168,7 @@ export function AdminsPage() {
                   }}
                   disabled={deleteMutation.isPending}
                 >
-                  <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+                  <Trash2 className="h-4 w-4 text-destructive shrink-0" />
                 </Button>
               </div>
             </ListCard>

@@ -145,7 +145,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                     {...register('amount')}
                   />
                   {errors.amount && (
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors.amount.message}</p>
+                    <p className="text-sm text-destructive">{errors.amount.message}</p>
                   )}
                 </div>
 
@@ -156,7 +156,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                     {...register('paidAt')}
                   />
                   {errors.paidAt && (
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors.paidAt.message}</p>
+                    <p className="text-sm text-destructive">{errors.paidAt.message}</p>
                   )}
                 </div>
 
@@ -177,7 +177,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                     </SelectContent>
                   </Select>
                   {errors.paymentMethod && (
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors.paymentMethod.message}</p>
+                    <p className="text-sm text-destructive">{errors.paymentMethod.message}</p>
                   )}
                 </div>
 
@@ -203,7 +203,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
         ) : (
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="py-8 text-center space-y-4">
-              <div className="mx-auto h-16 w-16 rounded-full bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 flex items-center justify-center">
+              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                 <CheckCircle className="h-8 w-8 shrink-0" />
               </div>
               <div>

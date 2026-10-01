@@ -39,13 +39,13 @@ export function SubscriptionDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-4 px-2">
-        <div className="h-20 bg-primary-100 dark:bg-primary-900 rounded-2xl animate-pulse mb-6" />
+        <div className="h-20 bg-muted rounded-2xl animate-pulse mb-6" />
         <div className="flex gap-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-24 flex-1 bg-primary-100 dark:bg-primary-900 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-24 flex-1 bg-muted rounded-xl animate-pulse" />)}
         </div>
-        <div className="h-10 w-full bg-primary-100 dark:bg-primary-900 rounded-lg animate-pulse my-4" />
+        <div className="h-10 w-full bg-muted rounded-lg animate-pulse my-4" />
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-32 bg-primary-100 dark:bg-primary-900 rounded-2xl animate-pulse" />
+          <div key={i} className="h-32 bg-muted rounded-2xl animate-pulse" />
         ))}
       </div>
     )
@@ -54,11 +54,11 @@ export function SubscriptionDetailPage() {
   if (error || !data) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4 dark:bg-red-950 dark:text-red-400">
+        <div className="h-16 w-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-4">
           <AlertTriangle className="h-8 w-8" />
         </div>
-        <h2 className="text-xl font-bold text-primary-900 dark:text-primary-50">Error al cargar suscripción</h2>
-        <p className="text-primary-500 dark:text-primary-400 mt-2 mb-6">No pudimos obtener los datos del kit solicitado.</p>
+        <h2 className="text-xl font-bold text-foreground">Error al cargar suscripción</h2>
+        <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del kit solicitado.</p>
         <Button asChild>
           <Link to="/subscriptions">Volver a Suscripciones</Link>
         </Button>
@@ -151,7 +151,7 @@ export function SubscriptionDetailPage() {
         backTo="/subscriptions"
         actions={
           <>
-            <Button variant="outline" size="icon" asChild className="rounded-full bg-white dark:bg-primary-900 border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-300 shadow-sm">
+            <Button variant="outline" size="icon" asChild className="rounded-full bg-surface text-surface-foreground border-border shadow-sm">
               <Link to={`/subscriptions/${id}/edit`}>
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
@@ -167,7 +167,7 @@ export function SubscriptionDetailPage() {
                 )
                 setShowStatusDialog(true)
               }}
-              className="rounded-full bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900 text-amber-600 dark:text-amber-400 shadow-sm"
+              className="rounded-full bg-warning/10 text-warning border-warning/20 hover:bg-warning/20 hover:text-warning shadow-sm"
               title={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
               aria-label={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
             >
@@ -177,7 +177,7 @@ export function SubscriptionDetailPage() {
                 <Play className="h-4 w-4 shrink-0" />
               )}
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setShowDeleteDialog(true)} className="rounded-full bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 shadow-sm">
+            <Button variant="outline" size="icon" onClick={() => setShowDeleteDialog(true)} className="rounded-full bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 hover:text-destructive shadow-sm">
               <Trash2 className="h-4 w-4 shrink-0" />
             </Button>
           </>
@@ -185,15 +185,15 @@ export function SubscriptionDetailPage() {
       />
 
       {/* Perfil del Kit / Suscripción */}
-      <div className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-3xl p-5 shadow-sm space-y-4">
-        
+      <div className="bg-surface text-surface-foreground border border-border rounded-3xl p-5 shadow-sm space-y-4">
+
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight text-primary-900 dark:text-primary-50 truncate flex items-center gap-2">
-              <Box className="h-6 w-6 text-primary-400" />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground truncate flex items-center gap-2">
+              <Box className="h-6 w-6 text-muted-foreground" />
               {subscription.accountNumber ? subscription.accountNumber : subscription.kitNumber}
             </h1>
-            <p className="text-sm font-medium text-primary-500 dark:text-primary-400 mt-1">
+            <p className="text-sm font-medium text-muted-foreground mt-1">
               {subscription.accountNumber ? `${subscription.kitNumber} • ` : ''}Plan: {subscription.plan.name}
             </p>
           </div>
@@ -207,32 +207,32 @@ export function SubscriptionDetailPage() {
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-primary-950 border border-primary-100 dark:border-primary-800 flex items-center gap-3">
+        <div className="p-3 rounded-xl bg-surface-muted border border-border-subtle flex items-center gap-3">
           {subscription.client ? (
             <>
-              <div className="h-10 w-10 rounded-full bg-primary-200/50 dark:bg-primary-800 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold shrink-0">
+              <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
                 {getInitial(subscription.client.firstName)}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-bold text-primary-900 dark:text-primary-50 truncate">
+                <p className="text-sm font-bold text-foreground truncate">
                   {getClientFullName(subscription.client)}
                 </p>
-                <p className="text-xs text-primary-500 dark:text-primary-400 truncate flex items-center gap-1 mt-0.5">
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
                   <Phone className="h-3 w-3" /> {subscription.client.phone}
                   {subscription.client.dni && ` • C.I. ${subscription.client.dni}`}
                 </p>
               </div>
             </>
           ) : (
-            <p className="text-sm text-primary-500 dark:text-primary-400">Cliente eliminado o no disponible</p>
+            <p className="text-sm text-muted-foreground">Cliente eliminado o no disponible</p>
           )}
         </div>
 
         {subscription.accountNumber && (
-          <div className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 px-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
             <Hash className="h-4 w-4 shrink-0" />
             <span>Cuenta Starlink: </span>
-            <span className="font-semibold text-primary-900 dark:text-primary-100">{subscription.accountNumber}</span>
+            <span className="font-semibold text-foreground">{subscription.accountNumber}</span>
           </div>
         )}
 
@@ -240,22 +240,22 @@ export function SubscriptionDetailPage() {
 
       {/* Alerta de Vencimiento Próximo */}
       {subscription.currentPeriod && subscription.currentPeriod.status === 'PENDING' && isExpiringSoon(subscription.currentPeriod.endDate) && (
-        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-start gap-3 flex-1">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-full text-amber-600 dark:text-amber-400 shrink-0">
+            <div className="p-2 bg-warning/15 rounded-full text-warning shrink-0">
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-bold text-amber-800 dark:text-amber-300">
+              <p className="font-bold text-warning">
                 {getExpiringLabel(subscription.currentPeriod.endDate)}
               </p>
-              <p className="text-xs text-amber-700 dark:text-amber-500 mt-1 font-medium">
+              <p className="text-xs text-warning/90 mt-1 font-medium">
                 Vence el {formatDate(subscription.currentPeriod.endDate)} • {formatCurrency(subscription.currentPeriod.amount)}
               </p>
             </div>
           </div>
-          <Button 
-            className="w-full sm:w-auto shrink-0 shadow-sm bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-700 dark:hover:bg-amber-600 h-11" 
+          <Button
+            className="w-full sm:w-auto shrink-0 shadow-sm bg-warning text-warning-foreground hover:bg-warning/90 h-11"
             onClick={() => handlePayPeriod(subscription.currentPeriod!)}
             disabled={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods)}
             title={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
@@ -268,40 +268,40 @@ export function SubscriptionDetailPage() {
 
       {/* Mini KPIs Horizontales */}
       <div className="flex gap-3 overflow-x-auto no-scrollbar touch-pan-x -mx-4 px-4 snap-x snap-mandatory pt-2">
-        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Pagados ({summary.paidPeriods})</p>
-          <p className="text-xl font-bold text-primary-900 dark:text-primary-50 mt-1">{formatCurrency(summary.totalPaid)}</p>
+        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col justify-center">
+          <p className="text-[11px] font-bold text-success uppercase tracking-wide">Pagados ({summary.paidPeriods})</p>
+          <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(summary.totalPaid)}</p>
         </div>
-        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Pendientes ({summary.pendingPeriods})</p>
-          <p className="text-xl font-bold text-primary-900 dark:text-primary-50 mt-1">{formatCurrency(summary.totalPending)}</p>
+        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col justify-center">
+          <p className="text-[11px] font-bold text-warning uppercase tracking-wide">Pendientes ({summary.pendingPeriods})</p>
+          <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(summary.totalPending)}</p>
         </div>
-        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">Vencidos ({summary.overduePeriods})</p>
-          <p className="text-xl font-bold text-red-600 dark:text-red-400 mt-1">{summary.overduePeriods}</p>
+        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col justify-center">
+          <p className="text-[11px] font-bold text-destructive uppercase tracking-wide">Vencidos ({summary.overduePeriods})</p>
+          <p className="text-xl font-bold text-destructive mt-1">{summary.overduePeriods}</p>
         </div>
       </div>
 
       {/* Historial de Facturación (List Tiles) */}
-      <div className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-3xl p-2 sm:p-4 shadow-sm mt-2">
-        <div className="flex items-center gap-2 p-3 border-b border-primary-100 dark:border-primary-800 mb-2">
-          <ListChecks className="h-5 w-5 text-primary-400" />
-          <h2 className="text-base font-bold text-primary-900 dark:text-primary-50">Historial de Pagos</h2>
+      <div className="bg-surface text-surface-foreground border border-border rounded-3xl p-2 sm:p-4 shadow-sm mt-2">
+        <div className="flex items-center gap-2 p-3 border-b border-border mb-2">
+          <ListChecks className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-base font-bold text-foreground">Historial de Pagos</h2>
         </div>
 
         {billingPeriods.length === 0 ? (
           <EmptyState
-            icon={<Clock className="h-12 w-12 text-primary-200 dark:text-primary-800" />}
+            icon={<Clock className="h-12 w-12 text-subtle-foreground" />}
             title="No hay períodos registrados."
           />
         ) : (
           <div className="space-y-2">
             {billingPeriods.map((period) => (
-              <div 
-                key={period.id} 
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-primary-950 border border-primary-100 dark:border-primary-800/50 gap-4"
+              <div
+                key={period.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-2xl bg-surface-muted border border-border-subtle gap-4"
               >
-                
+
                 <div className="flex items-start gap-3">
                   <div className="shrink-0 pt-1">
                     <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
@@ -309,25 +309,25 @@ export function SubscriptionDetailPage() {
                     </Badge>
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-primary-900 dark:text-primary-50 leading-tight">
+                    <p className="font-bold text-sm text-foreground leading-tight">
                       {period.periodLabel}
                     </p>
-                    <p className="text-[11px] font-medium text-primary-500 dark:text-primary-400 mt-0.5 uppercase tracking-wide">
+                    <p className="text-[11px] font-medium text-muted-foreground mt-0.5 uppercase tracking-wide">
                       {formatDate(period.startDate)} — {formatDate(period.endDate)}
                     </p>
-                    
+
                     {period.status === 'PAID' && period.paidAt && (
-                      <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                      <p className="text-xs font-semibold text-success mt-2 flex items-center gap-1">
                         <DollarSign className="h-3 w-3" /> Pagado: {formatDate(period.paidAt)}
                       </p>
                     )}
                     {period.paymentMethod && (
                       <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        <span className="text-[10px] font-bold text-primary-400 dark:text-primary-500 uppercase tracking-wide bg-primary-100 dark:bg-primary-900 px-2 py-0.5 rounded-sm">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide bg-muted px-2 py-0.5 rounded-sm">
                           {PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}
                         </span>
                         {period.paymentMethod === 'INITIAL_PAYMENT' && (
-                          <span className="text-[10px] font-bold text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/50 px-2 py-0.5 rounded-sm uppercase tracking-wide">
+                          <span className="text-[10px] font-bold text-info bg-info/10 px-2 py-0.5 rounded-sm uppercase tracking-wide">
                             Pendiente
                           </span>
                         )}
@@ -337,15 +337,15 @@ export function SubscriptionDetailPage() {
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end sm:flex-col gap-3 shrink-0">
-                  <p className="font-bold text-lg text-primary-900 dark:text-primary-50 text-right">
+                  <p className="font-bold text-lg text-foreground text-right">
                     {formatCurrency(period.amount)}
                   </p>
-                  
+
                   <div className="flex gap-2">
                     {period.status !== 'PAID' ? (
                       <Button
                         size="sm"
-                        className="h-10 px-4 bg-primary-800 text-white dark:bg-primary-700 shadow-sm active:scale-95 touch-manipulation font-semibold"
+                        className="h-10 px-4 bg-primary text-primary-foreground shadow-sm active:scale-95 touch-manipulation font-semibold"
                         onClick={() => handlePayPeriod(period)}
                         disabled={hasOlderUnpaidPeriod(period, billingPeriods)}
                         title={hasOlderUnpaidPeriod(period, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
@@ -357,10 +357,10 @@ export function SubscriptionDetailPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-10 w-10 p-0 border-primary-200 dark:border-primary-700 bg-white dark:bg-primary-900 active:bg-primary-50 dark:active:bg-primary-800 shadow-sm"
+                        className="h-10 w-10 p-0 bg-surface-muted active:bg-surface-active shadow-sm"
                         onClick={() => handleEditPeriod(period)}
                       >
-                        <Edit className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-300" />
+                        <Edit className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </Button>
                     )}
                   </div>

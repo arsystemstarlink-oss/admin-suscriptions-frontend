@@ -152,8 +152,8 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
-            <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
-              <UserCog className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <UserCog className="h-5 w-5 text-primary shrink-0" />
             </div>
             <div>
               <SheetTitle>Editar Administrador</SheetTitle>
@@ -167,7 +167,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-4">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 {error}
               </div>
             )}
@@ -181,7 +181,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                   {...register('name')}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
                 )}
               </div>
 
@@ -201,7 +201,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                   )}
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
                 )}
               </div>
 
@@ -221,7 +221,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                   )}
                 />
                 {errors.phone && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.phone.message}</p>
+                  <p className="text-sm text-destructive">{errors.phone.message}</p>
                 )}
               </div>
 
@@ -234,7 +234,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                   {...register('newPassword')}
                 />
                 {errors.newPassword && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.newPassword.message}</p>
+                  <p className="text-sm text-destructive">{errors.newPassword.message}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   Si cambias la contraseña, el administrador deberá iniciar sesión nuevamente.
@@ -243,10 +243,10 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
             </div>
 
             {showDeleteConfirm && (
-              <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50 space-y-3">
+              <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 text-red-600 dark:text-red-400 shrink-0" />
-                  <p className="text-sm text-red-700 dark:text-red-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                  <p className="text-sm text-destructive">
                     ¿Eliminar a {admin.name}? Esta acción no se puede deshacer.
                   </p>
                 </div>

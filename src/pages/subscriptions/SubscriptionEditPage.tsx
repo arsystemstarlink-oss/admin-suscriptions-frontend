@@ -110,7 +110,7 @@ export function SubscriptionEditPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 {error}
               </div>
             )}
@@ -131,7 +131,7 @@ export function SubscriptionEditPage() {
                   </SelectContent>
                 </Select>
                 {errors.planId && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.planId.message}</p>
+                  <p className="text-sm text-destructive">{errors.planId.message}</p>
                 )}
               </div>
 
@@ -139,7 +139,7 @@ export function SubscriptionEditPage() {
                 <Label htmlFor="kitNumber">Número de Kit *</Label>
                 <Input id="kitNumber" {...register('kitNumber')} placeholder="Ej: KIT-001" />
                 {errors.kitNumber && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.kitNumber.message}</p>
+                  <p className="text-sm text-destructive">{errors.kitNumber.message}</p>
                 )}
               </div>
 
@@ -153,7 +153,7 @@ export function SubscriptionEditPage() {
                 <Label htmlFor="billingDay">Día de Corte * (1-28)</Label>
                 <Input id="billingDay" type="number" min={1} max={28} {...register('billingDay')} />
                 {errors.billingDay && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.billingDay.message}</p>
+                  <p className="text-sm text-destructive">{errors.billingDay.message}</p>
                 )}
               </div>
 
@@ -170,7 +170,7 @@ export function SubscriptionEditPage() {
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+            <div className="p-3 bg-info/10 border border-info/20 rounded-md text-sm text-info">
               <strong>Nota:</strong> El cambio de plan aplicará al próximo período de facturación.
             </div>
 

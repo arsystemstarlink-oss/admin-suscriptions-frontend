@@ -127,7 +127,7 @@ export function LoginPage() {
         shakeError && "animate-shake"
       )}>
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-lg bg-primary-800 px-5 py-3 dark:bg-primary-900">
+          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-lg bg-header px-5 py-3">
             <BrandMark size="lg" />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -135,7 +135,7 @@ export function LoginPage() {
           </p>
         </div>
         
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface text-surface-foreground p-6 shadow-sm">
           <div className="text-center mb-6">
             <h2 className="text-lg font-semibold text-foreground">Iniciar sesión</h2>
             <p className="text-sm text-muted-foreground">Accede a tu cuenta</p>

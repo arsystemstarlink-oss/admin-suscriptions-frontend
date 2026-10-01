@@ -8,8 +8,8 @@ interface ListCardProps {
 }
 
 export function ListCard({ children, className, onClick }: ListCardProps) {
-  const baseClasses = 'bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm p-4 transition-all'
-  const interactiveClasses = onClick ? 'active:scale-[0.98] active:bg-primary-50 dark:active:bg-primary-800 touch-manipulation cursor-pointer' : ''
+  const baseClasses = 'bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm p-4 transition-all'
+  const interactiveClasses = onClick ? 'active:scale-[0.98] active:bg-surface-active touch-manipulation cursor-pointer' : ''
 
   return (
     <div

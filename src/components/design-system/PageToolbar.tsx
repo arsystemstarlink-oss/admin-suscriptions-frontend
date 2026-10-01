@@ -19,7 +19,7 @@ interface PageToolbarProps {
 export function PageToolbar({ title, description, searchProps, filters, primaryAction, actions, className }: PageToolbarProps) {
   const hasHeading = Boolean(title || description || actions)
   return (
-    <div className={cn('sticky top-0 z-20 flex flex-col bg-slate-50/90 dark:bg-primary-950/90 backdrop-blur-md mb-1 sm:mb-2 -mx-4 px-4 pt-2 sm:pt-0 pb-2 sm:pb-3', className)}>
+    <div className={cn('sticky top-0 z-20 flex flex-col bg-background/95 backdrop-blur-md mb-1 sm:mb-2 -mx-4 px-4 pt-2 sm:pt-0 pb-2 sm:pb-3', className)}>
       {hasHeading && (
         <div className="flex items-center justify-between gap-2 py-2 sm:py-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">

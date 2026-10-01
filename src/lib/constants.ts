@@ -21,13 +21,13 @@ export const BILLING_PERIOD_STATUS_LABELS: Record<BillingPeriodStatus, string> =
 }
 
 export const STATUS_SUCCESS =
-  'text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/50'
+  'bg-success/10 text-success border border-success/20'
 export const STATUS_WARNING =
-  'text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50'
+  'bg-warning/10 text-warning border border-warning/20'
 export const STATUS_ERROR =
-  'text-red-700 bg-red-50 dark:text-red-400 dark:bg-red-950/50'
+  'bg-destructive/10 text-destructive border border-destructive/20'
 export const STATUS_INFO =
-  'text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50'
+  'bg-info/10 text-info border border-info/20'
 
 export const SUBSCRIPTION_STATUS_COLORS: Record<SubscriptionStatus, string> = {
   [SubscriptionStatus.ACTIVE]: STATUS_SUCCESS,

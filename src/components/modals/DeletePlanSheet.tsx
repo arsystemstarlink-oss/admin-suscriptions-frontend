@@ -45,8 +45,8 @@ export function DeletePlanSheet({ planId, planName, open, onOpenChange }: Delete
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
-            <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+            <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             </div>
             <div>
               <SheetTitle>Eliminar Plan</SheetTitle>
@@ -59,7 +59,7 @@ export function DeletePlanSheet({ planId, planName, open, onOpenChange }: Delete
 
         <div className="flex-1 overflow-y-auto p-6 pt-4">
           {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
+            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
               {error}
             </div>
           )}

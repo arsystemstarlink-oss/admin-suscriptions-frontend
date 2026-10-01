@@ -29,7 +29,7 @@ export function BrandMark({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-baseline gap-1.5 font-bold tracking-wider text-white',
+        'inline-flex shrink-0 items-baseline gap-1.5 font-bold tracking-wider text-header-foreground',
         sizeMap[size],
         className,
       )}
@@ -37,7 +37,7 @@ export function BrandMark({
     >
       <span className="font-black">
         A
-        <span className="text-secondary-500">|</span>
+        <span className="text-secondary">|</span>
         R
       </span>
       <span className={cn(hideSystemOnMobile && 'hidden sm:inline')}>SYSTEM</span>

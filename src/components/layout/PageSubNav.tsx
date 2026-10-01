@@ -44,7 +44,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
       )}
 
       <nav
-        className="flex w-full gap-1 overflow-x-auto rounded-xl bg-white p-1 text-muted-foreground border border-primary-100 no-scrollbar touch-pan-x dark:bg-primary-900/50 dark:border-primary-800 sm:gap-3 sm:p-2 sm:rounded-2xl"
+        className="flex w-full gap-1 overflow-x-auto rounded-xl bg-surface text-surface-foreground p-1 text-muted-foreground border border-border no-scrollbar touch-pan-x sm:gap-3 sm:p-2 sm:rounded-2xl"
         aria-label="Secciones"
       >
         {tabs.map((tab) => (
@@ -57,9 +57,9 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
             className={({ isActive }) =>
               cn(
                 'inline-flex min-w-[72px] flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all min-h-10 touch-manipulation sm:min-w-0 sm:flex-col sm:gap-2 sm:rounded-xl sm:px-3 sm:py-3 sm:min-h-0',
-                'hover:shadow-sm hover:border-primary/40',
+                'hover:shadow-sm',
                 isActive
-                  ? 'bg-primary-50 dark:bg-primary-800/50 shadow-sm ring-1 ring-primary/20 border border-transparent'
+                  ? 'bg-surface-active shadow-sm ring-1 ring-border-strong border border-transparent'
                   : 'bg-transparent border border-transparent'
               )
             }
@@ -70,8 +70,8 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
                   className={cn(
                     'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors sm:h-12 sm:w-12 sm:rounded-lg',
                     isActive
-                      ? 'bg-primary-100 dark:bg-primary-700 text-primary-600 dark:text-primary-200'
-                      : 'bg-primary-50 dark:bg-primary-900 text-muted-foreground'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-surface-muted text-muted-foreground'
                   )}
                 >
                   <tab.icon className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />

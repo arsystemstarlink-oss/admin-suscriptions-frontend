@@ -114,8 +114,8 @@ export function ProfilePage() {
   if (!user) {
     return (
       <div className="space-y-4 md:space-y-6">
-        <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
-          <CardContent className="py-12 text-center text-primary-500 dark:text-primary-400">
+        <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
+          <CardContent className="py-12 text-center text-muted-foreground">
             No se pudo cargar el perfil del usuario.
           </CardContent>
         </Card>
@@ -172,16 +172,16 @@ export function ProfilePage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+      <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
-                <span className="text-lg sm:text-xl font-bold text-primary-700 dark:text-primary-300">{initials}</span>
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
+                <span className="text-lg sm:text-xl font-bold text-primary">{initials}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-lg sm:text-xl truncate">{user.name}</h3>
-                <p className="text-sm text-primary-500 dark:text-primary-400 truncate">{user.email}</p>
+                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:ml-auto shrink-0">
@@ -201,7 +201,7 @@ export function ProfilePage() {
               </Badge>
               <button
                 onClick={logout}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-md text-primary-500 dark:text-primary-400 transition-colors hover:bg-destructive/10 hover:text-destructive dark:hover:text-red-400"
+                className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >
@@ -210,34 +210,34 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-primary-100 dark:border-primary-800">
+          <div className="mt-4 pt-4 border-t border-border">
             <button
               onClick={() => setShowDetails(!showDetails)}
               className="flex items-center justify-between w-full text-left"
             >
-              <span className="text-sm font-medium text-primary-600 dark:text-primary-400">Detalles de la cuenta</span>
+              <span className="text-sm font-medium text-muted-foreground">Detalles de la cuenta</span>
               {showDetails ? (
-                <ChevronUp className="h-4 w-4 text-primary-400" />
+                <ChevronUp className="h-4 w-4 text-subtle-foreground" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-primary-400" />
+                <ChevronDown className="h-4 w-4 text-subtle-foreground" />
               )}
             </button>
 
             {showDetails && (
               <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
-                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
-                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Rol</p>
-                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
+                <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Rol</p>
+                  <p className="text-base font-semibold text-foreground">
                     {user.role === 'super-admin' ? 'Super Admin' : 'Admin'}
                   </p>
                 </div>
-                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
-                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Miembro desde</p>
-                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
+                <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Miembro desde</p>
+                  <p className="text-base font-semibold text-foreground">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
                 </div>
-                <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-center">
-                  <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Último acceso</p>
-                  <p className="text-base font-semibold text-primary-900 dark:text-primary-50">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
+                <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Último acceso</p>
+                  <p className="text-base font-semibold text-foreground">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
                 </div>
               </div>
             )}
@@ -245,11 +245,11 @@ export function ProfilePage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+      <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <UserCog className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+              <UserCog className="h-5 w-5 text-muted-foreground shrink-0" />
               <h2 className="font-semibold text-lg truncate">Editar Perfil</h2>
             </div>
             <Button
@@ -277,7 +277,7 @@ export function ProfilePage() {
                       {...registerProfile('name')}
                     />
                     {profileErrors.name && (
-                      <p className="text-sm text-red-600 dark:text-red-400">{profileErrors.name.message}</p>
+                      <p className="text-sm text-destructive">{profileErrors.name.message}</p>
                     )}
                   </div>
 
@@ -297,7 +297,7 @@ export function ProfilePage() {
                       )}
                     />
                     {profileErrors.email && (
-                      <p className="text-sm text-red-600 dark:text-red-400">{profileErrors.email.message}</p>
+                      <p className="text-sm text-destructive">{profileErrors.email.message}</p>
                     )}
                   </div>
 
@@ -317,7 +317,7 @@ export function ProfilePage() {
                       )}
                     />
                     {profileErrors.phone && (
-                      <p className="text-sm text-red-600 dark:text-red-400">{profileErrors.phone.message}</p>
+                      <p className="text-sm text-destructive">{profileErrors.phone.message}</p>
                     )}
                   </div>
                 </div>
@@ -334,11 +334,11 @@ export function ProfilePage() {
                     {...registerProfile('currentPassword')}
                   />
                   {profileErrors.currentPassword && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm text-destructive">
                       {profileErrors.currentPassword.message}
                     </p>
                   )}
-                  <p className="text-xs text-primary-500 dark:text-primary-400">
+                  <p className="text-xs text-muted-foreground">
                     Por seguridad, debes confirmar tu contraseña actual para cambiar el correo electrónico asociado.
                   </p>
                 </div>
@@ -354,28 +354,28 @@ export function ProfilePage() {
         ) : (
           <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mb-1">Nombre</p>
-                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">{user.name}</p>
+              <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Nombre</p>
+                <p className="text-sm sm:text-base font-semibold text-foreground">{user.name}</p>
               </div>
-              <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mb-1">Correo</p>
-                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">{user.email}</p>
+              <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Correo</p>
+                <p className="text-sm sm:text-base font-semibold text-foreground">{user.email}</p>
               </div>
-              <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 md:col-span-2">
-                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mb-1">Teléfono</p>
-                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">{user.phone || '—'}</p>
+              <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle md:col-span-2">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Teléfono</p>
+                <p className="text-sm sm:text-base font-semibold text-foreground">{user.phone || '—'}</p>
               </div>
             </div>
           </CardContent>
         )}
       </Card>
 
-      <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+      <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <ShieldCheck className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+              <ShieldCheck className="h-5 w-5 text-muted-foreground shrink-0" />
               <h2 className="font-semibold text-lg truncate">Seguridad</h2>
             </div>
             <Button
@@ -403,7 +403,7 @@ export function ProfilePage() {
                       {...registerPassword('currentPassword')}
                     />
                     {passwordErrors.currentPassword && (
-                      <p className="text-sm text-red-600 dark:text-red-400">
+                      <p className="text-sm text-destructive">
                         {passwordErrors.currentPassword.message}
                       </p>
                     )}
@@ -419,7 +419,7 @@ export function ProfilePage() {
                       {...registerPassword('newPassword')}
                     />
                     {passwordErrors.newPassword && (
-                      <p className="text-sm text-red-600 dark:text-red-400">
+                      <p className="text-sm text-destructive">
                         {passwordErrors.newPassword.message}
                       </p>
                     )}
@@ -435,7 +435,7 @@ export function ProfilePage() {
                       {...registerPassword('confirmPassword')}
                     />
                     {passwordErrors.confirmPassword && (
-                      <p className="text-sm text-red-600 dark:text-red-400">
+                      <p className="text-sm text-destructive">
                         {passwordErrors.confirmPassword.message}
                       </p>
                     )}
@@ -452,16 +452,16 @@ export function ProfilePage() {
           </CardContent>
         ) : (
           <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
-            <div className="flex items-center gap-3 p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-              <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
-                <ShieldCheck className="h-5 w-5 text-primary-600 dark:text-primary-300" />
+            <div className="flex items-center gap-3 p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <ShieldCheck className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400">Contraseña</p>
-                <p className="text-sm sm:text-base font-semibold text-primary-900 dark:text-primary-50">••••••••</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Contraseña</p>
+                <p className="text-sm sm:text-base font-semibold text-foreground">••••••••</p>
               </div>
             </div>
-            <p className="text-xs sm:text-sm text-primary-500 dark:text-primary-400 mt-3">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-3">
               Por seguridad, la contraseña no se muestra. Puedes cambiarla cuando lo necesites.
             </p>
           </CardContent>

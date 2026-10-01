@@ -1,41 +1,48 @@
-### RULE: Strict Tailwind CSS Contrast & Custom Palette Enforcement
+### RULE: Semantic Token System & Surface Hierarchy (Tailwind CSS)
 
-You are generating React components using Tailwind CSS. You MUST adhere to the following strict color pairing rules based on the configured `primary` (Base 800: Dark Blue) and `secondary` (Base 600: Yellow/Gold) palettes to avoid low-contrast issues in Light and Dark modes.
+You are generating React components using Tailwind CSS. Components MUST NOT choose raw colors directly. All visual decisions MUST be expressed through the semantic tokens defined in `src/index.css` (the `@theme inline` mapping over the CSS variables declared in `:root` and `.dark`). The theme resolves Light and Dark mode; components must NOT contain `dark:` variants.
 
-The palette is configured in `src/index.css` via the `@theme` directive (`--color-primary-*` and `--color-secondary-*`), exposing utilities such as `bg-primary-800`, `text-primary-900`, `dark:bg-primary-950`, `bg-secondary-600`, etc. Dark mode is class-based (`.dark`).
+1. FORBIDDEN UTILITIES (never output these in components)
+   - Raw palette scales: `bg-primary-800`, `text-primary-500`, `border-primary-100`, `bg-secondary-600`, etc.
+   - Raw neutrals: `bg-white`, `bg-black`, `text-white`, `text-black`, `bg-gray-*`, `bg-slate-*`, `text-gray-*`, `text-slate-*`, `border-gray-*`, `border-slate-*`.
+   - Raw status colors: `emerald-*`, `amber-*`, `red-*`, `blue-*`, `sky-*`, `green-*`.
+   - `dark:` prefixed utilities (the token system already resolves dark mode).
+   - Transparency used as a fake surface: `bg-white/5`, `bg-black/20`, `bg-white/10`.
 
-1. ATOMIC PAIRING RULE (Background + Text MUST be explicitly defined together)
-   - NEVER output a `bg-*` utility without its corresponding `text-*` utility for BOTH light and dark themes on the same element or parent scope.
-   - Example (Wrong): `className="bg-white dark:bg-primary-950 text-primary-800"`
-   - Example (Correct): `className="bg-white text-primary-900 dark:bg-primary-950 dark:text-primary-50"`
+2. SURFACE HIERARCHY (each level has a purpose)
+   - `bg-background text-foreground` — app canvas: page background, behind sidebar/cards.
+   - `bg-surface text-surface-foreground border-border` — normal component surface: cards, panels, tables, forms.
+   - `bg-surface-elevated text-surface-elevated-foreground` — floating surfaces: dialogs, sheets, dropdowns, menus, popovers.
+   - `bg-surface-muted text-surface-muted-foreground` — inset/filled areas: input fields, wells, inner containers, inbound chat bubbles.
+   - `hover:bg-surface-hover` — interaction only; never a permanent background.
+   - `active:bg-surface-active` / `data-[state=active]:bg-surface-active data-[state=active]:text-surface-foreground` — selection or active state.
+   - `bg-header text-header-foreground` — brand header surface only (TopBar / mobile header); `hover:bg-header-hover` for ghost controls on it.
+   - `bg-overlay` — modal/sheet scrims. Never `bg-black/*` or `bg-slate-950`.
 
-2. PRIMARY PALETTE RULES (Navy Blues)
-   - **Light Mode Text:** Use `text-primary-800` or `text-primary-900` for high contrast on light backgrounds.
-   - **Dark Mode Backgrounds:** Use `dark:bg-primary-900` or `dark:bg-primary-950`.
-   - **Dark Mode Text:** Use `dark:text-primary-50` or `dark:text-primary-100` on dark backgrounds. NEVER use `primary-800` text in dark mode.
-   - **Primary Buttons:** `bg-primary-800 text-white dark:bg-primary-700 dark:text-white`.
+3. ATOMIC PAIRING RULE
+   - Every `bg-*` MUST be paired with its semantic `-foreground` on the same element or a parent scope.
+   - Correct: `bg-surface text-surface-foreground` / `bg-primary text-primary-foreground` / `bg-destructive text-destructive-foreground`.
+   - Wrong: `bg-white text-primary-900 dark:bg-primary-950 dark:text-primary-50`.
 
-3. SECONDARY PALETTE RULES (Yellows - CRITICAL CONTRAST WARNING)
-   - The secondary base (`secondary-600`, Yellow) has POOR CONTRAST against white.
-   - **NEVER** use `text-secondary-600` for thin text on `bg-white` or `bg-primary-50`.
-   - **Secondary Buttons/Badges:** When using `bg-secondary-600`, the text MUST be dark for contrast: `text-primary-950` (NOT white). Example: `className="bg-secondary-600 text-primary-950 hover:bg-secondary-500"`.
-   - In Dark Mode, `text-secondary-500` or `text-secondary-400` is excellent for highlighted text against `bg-primary-950`.
+4. TEXT HIERARCHY (icons follow the same hierarchy)
+   - `text-foreground` — titles, main content, important values.
+   - `text-muted-foreground` — descriptions, metadata, secondary labels, secondary icons.
+   - `text-subtle-foreground` — very low priority hints only, use sparingly.
+   - Disabled elements: `disabled:opacity-50 disabled:text-disabled-foreground`. Never `text-gray-500`.
 
-4. OPACITY & TRANSPARENCY CONTRAST RULE
-   - When using background opacity (e.g., `bg-primary-800/10`), the text MUST contrast with the UNDERLYING canvas color.
-   - Light translucent backgrounds (`bg-primary-800/10` or `bg-secondary-600/20`) in light mode MUST pair with solid dark text (`text-primary-900`).
-   - Dark translucent backgrounds (`dark:bg-primary-200/10`) in dark mode MUST pair with solid light text (`dark:text-primary-50`).
+5. PRIMARY / SECONDARY
+   - Primary actions: `bg-primary text-primary-foreground` (or `<Button>` default). Ghost: transparent + `text-foreground`, `hover:bg-surface-hover`.
+   - Secondary (yellow) always pairs with dark text: `bg-secondary text-secondary-foreground`. Never white text on secondary.
 
-5. DEFAULT SURFACE MAPPINGS (Use these for structural layouts)
-   - **Main Canvas:**
-     - Light: `bg-slate-50 text-primary-900`
-     - Dark: `dark:bg-primary-950 dark:text-primary-50`
-   - **Cards / Containers:**
-     - Light: `bg-white text-primary-800 border-primary-100`
-     - Dark: `dark:bg-primary-900/50 dark:text-primary-100 dark:border-primary-800`
+6. SEMANTIC STATUS COLORS
+   - Soft chip/badge: `bg-success/10 text-success border border-success/20` (same pattern for `warning`, `destructive`, `info`).
+   - Solid status button/badge: `bg-success text-success-foreground`, `bg-warning text-warning-foreground`, etc.
+   - Colored text alone: `text-success`, `text-warning`, `text-destructive`, `text-info`.
+   - Centralized status strings live in `src/lib/constants.ts` (`STATUS_SUCCESS`, `STATUS_WARNING`, `STATUS_ERROR`, `STATUS_INFO`).
 
-6. SEMANTIC STATUS COLORS (Atomic Pairs MUST be respected)
-   - Success (Active/Paid): Light: `text-emerald-700 bg-emerald-50` | Dark: `dark:text-emerald-400 dark:bg-emerald-950/50`
-   - Warning (Pending/Expiring): Light: `text-amber-700 bg-amber-50` | Dark: `dark:text-amber-400 dark:bg-amber-950/50`
-   - Error (Overdue/Failed/Delete): Light: `text-red-700 bg-red-50` | Dark: `dark:text-red-400 dark:bg-red-950/50` (or use shadcn `destructive`)
-   - Info (Draft/Standby): Light: `text-blue-700 bg-blue-50` | Dark: `dark:text-blue-400 dark:bg-blue-950/50`
+7. BORDERS & INPUTS
+   - `border-border` normal separation; `border-border-subtle` light separation; `border-border-strong` focus/selection/important states.
+   - Inputs/selects use the primitives (`<Input>`, `<SelectTrigger>`): `bg-surface-muted border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring`. Do not override with raw colors.
+
+8. OPACITY
+   - Opacity is only allowed as a tint derived from the element's own semantic token (`bg-success/10`, `bg-surface/95 backdrop-blur-xl` for chrome bars) — never as a substitute for a surface token.

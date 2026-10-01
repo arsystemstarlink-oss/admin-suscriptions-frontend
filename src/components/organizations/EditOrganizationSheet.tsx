@@ -184,8 +184,8 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
-            <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Building2 className="h-5 w-5 text-primary shrink-0" />
             </div>
             <div>
               <SheetTitle>Editar Organización</SheetTitle>
@@ -199,7 +199,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-4">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:text-red-400 dark:bg-red-950 dark:border-red-800">
+              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 {error}
               </div>
             )}
@@ -213,7 +213,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                   {...register('name')}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
                 )}
               </div>
 
@@ -225,7 +225,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                   {...register('slug')}
                 />
                 {errors.slug && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.slug.message}</p>
+                  <p className="text-sm text-destructive">{errors.slug.message}</p>
                 )}
               </div>
 
@@ -256,12 +256,12 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
 
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-primary-600 dark:text-primary-300 shrink-0" />
+                <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
                 <h4 className="text-sm font-semibold text-foreground">WhatsApp (Twilio)</h4>
               </div>
 
               {!organization.twilioConfigured && (
-                <div className="flex items-start gap-2 rounded-md p-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800">
+                <div className="flex items-start gap-2 rounded-md p-3 text-sm text-warning bg-warning/10 border border-warning/20">
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                   <p>
                     WhatsApp no está configurado. Sin credenciales válidas, esta organización no
@@ -280,7 +280,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                     {...register('twilioAccountSid')}
                   />
                   {errors.twilioAccountSid && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm text-destructive">
                       {errors.twilioAccountSid.message}
                     </p>
                   )}
@@ -293,7 +293,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                       <button
                         type="button"
                         onClick={() => setDeleteAuthToken(!deleteAuthToken)}
-                        className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
+                        className="text-xs font-medium text-destructive hover:underline"
                       >
                         {deleteAuthToken ? 'Cancelar borrado' : 'Borrar token'}
                       </button>
@@ -314,7 +314,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                     {...register('twilioAuthToken')}
                   />
                   {errors.twilioAuthToken && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm text-destructive">
                       {errors.twilioAuthToken.message}
                     </p>
                   )}
@@ -329,7 +329,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                     {...register('twilioPhoneNumber')}
                   />
                   {errors.twilioPhoneNumber && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm text-destructive">
                       {errors.twilioPhoneNumber.message}
                     </p>
                   )}
@@ -365,7 +365,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                 <Button
                   type="button"
                   variant="outline"
-                  className="text-red-600 border-red-200 dark:text-red-400 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950"
+                  className="text-destructive border-destructive/20 hover:bg-destructive/10"
                   onClick={() => setShowRemoveTwilioConfirm(true)}
                 >
                   <Trash2 className="h-4 w-4 mr-2 shrink-0" />
@@ -375,10 +375,10 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
             </div>
 
             {showRemoveTwilioConfirm && (
-              <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50 space-y-3">
+              <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 text-red-600 dark:text-red-400 shrink-0" />
-                  <p className="text-sm text-red-700 dark:text-red-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                  <p className="text-sm text-destructive">
                     Se eliminarán las credenciales de WhatsApp de {organization.name}. WhatsApp
                     quedará deshabilitado hasta que se configuren nuevas credenciales.
                   </p>
@@ -404,10 +404,10 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
             )}
 
             {showDeleteConfirm && (
-              <div className="p-4 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50 space-y-3">
+              <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 text-red-600 dark:text-red-400 shrink-0" />
-                  <p className="text-sm text-red-700 dark:text-red-300">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
+                  <p className="text-sm text-destructive">
                     Se eliminará {organization.name} y todos sus datos: administradores, clientes,
                     planes, suscripciones y períodos de facturación. Esta acción no se puede deshacer.
                   </p>

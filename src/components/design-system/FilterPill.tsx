@@ -13,15 +13,15 @@ export function FilterPill({ children, active, variant = 'default', onClick, cla
   const baseClasses = 'inline-flex shrink-0 items-center whitespace-nowrap px-3 sm:px-4 py-1.5 min-h-8 rounded-full text-xs sm:text-sm font-medium transition-colors active:scale-95 touch-manipulation'
 
   const activeClasses = {
-    default: 'bg-primary-800 text-white dark:bg-primary-700 dark:text-white',
-    destructive: 'bg-red-600 text-white dark:bg-red-700',
-    secondary: 'bg-secondary-600 text-secondary-foreground dark:bg-secondary-500',
+    default: 'bg-primary text-primary-foreground',
+    destructive: 'bg-destructive text-destructive-foreground',
+    secondary: 'bg-secondary text-secondary-foreground',
   }
 
   const inactiveClasses = {
-    default: 'bg-white text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700',
-    destructive: 'bg-white text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700',
-    secondary: 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-400',
+    default: 'bg-surface text-muted-foreground border border-border',
+    destructive: 'bg-surface text-muted-foreground border border-border',
+    secondary: 'bg-secondary/15 text-secondary-foreground border border-secondary/30',
   }
 
   return (

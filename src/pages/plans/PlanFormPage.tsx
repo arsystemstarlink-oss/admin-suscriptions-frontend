@@ -22,7 +22,7 @@ const planSchema = z.object({
 
 type PlanForm = z.infer<typeof planSchema>
 
-const fieldClassName = 'h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700'
+const fieldClassName = 'h-12'
 
 export function PlanFormPage() {
   const { id } = useParams<{ id: string }>()
@@ -85,24 +85,24 @@ export function PlanFormPage() {
 
   if (isEdit && isLoading) {
     return (
-      <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-slate-50 dark:bg-primary-950 -mx-4 px-4 pt-2">
-        <div className="h-10 w-48 bg-primary-100 dark:bg-primary-900 animate-pulse rounded-xl mb-4" />
-        <div className="h-64 bg-white dark:bg-primary-900/50 animate-pulse rounded-2xl" />
+      <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
+        <div className="h-10 w-48 bg-muted animate-pulse rounded-xl mb-4" />
+        <div className="h-64 bg-surface animate-pulse rounded-2xl" />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-slate-50 dark:bg-primary-950 -mx-4 px-4 pt-2">
+    <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
         backTo="/subscriptions/plans"
         className="mb-4"
         title={
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-primary-900 dark:text-primary-50">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
               {isEdit ? 'Editar Plan' : 'Nuevo Plan'}
             </h1>
-            <p className="text-sm text-primary-500 dark:text-primary-400">
+            <p className="text-sm text-muted-foreground">
               {isEdit ? 'Modificar información del plan' : 'Registrar un nuevo plan'}
             </p>
           </div>
@@ -111,15 +111,15 @@ export function PlanFormPage() {
 
       <form id="plan-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
-          <div className="p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl dark:text-red-400 dark:bg-red-950/50 dark:border-red-900 flex items-start gap-3">
+          <div className="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
             <span className="shrink-0 mt-0.5">⚠️</span>
             <span>{error}</span>
           </div>
         )}
 
-        <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 p-4 space-y-5 shadow-sm">
-          <h2 className="text-base font-semibold text-primary-900 dark:text-primary-100 flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary-400" />
+        <div className="bg-surface text-surface-foreground rounded-2xl border border-border p-4 space-y-5 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <Package className="h-5 w-5 text-muted-foreground" />
             Información del Plan
           </h2>
 
@@ -128,17 +128,17 @@ export function PlanFormPage() {
           )}
 
           <div className="space-y-2.5">
-            <Label htmlFor="name" className="text-primary-800 dark:text-primary-200">Nombre *</Label>
+            <Label htmlFor="name" className="text-foreground">Nombre *</Label>
             <Input id="name" placeholder="Ej: Plan Residencial" className={fieldClassName} {...register('name')} />
             {errors.name && (
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.name.message}</p>
+              <p className="text-sm text-destructive font-medium">{errors.name.message}</p>
             )}
           </div>
 
           <div className="space-y-2.5">
-            <Label htmlFor="price" className="text-primary-800 dark:text-primary-200">Precio mensual *</Label>
+            <Label htmlFor="price" className="text-foreground">Precio mensual *</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary-400 shrink-0" />
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground shrink-0" />
               <Input
                 id="price"
                 type="number"
@@ -150,30 +150,30 @@ export function PlanFormPage() {
               />
             </div>
             {errors.price && (
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.price.message}</p>
+              <p className="text-sm text-destructive font-medium">{errors.price.message}</p>
             )}
           </div>
 
           <div className="space-y-2.5">
-            <Label htmlFor="description" className="text-primary-800 dark:text-primary-200">
-              Descripción <span className="text-primary-400 font-normal">(Opcional)</span>
+            <Label htmlFor="description" className="text-foreground">
+              Descripción <span className="text-muted-foreground font-normal">(Opcional)</span>
             </Label>
             <textarea
               id="description"
               rows={3}
               placeholder="Detalles del plan..."
-              className="flex w-full min-h-[6rem] rounded-md border border-primary-200 dark:border-primary-700 bg-slate-50 dark:bg-primary-900 px-3 py-2 text-sm text-primary-900 dark:text-primary-50 ring-offset-background placeholder:text-primary-400 dark:placeholder:text-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full min-h-[6rem] rounded-md border border-input bg-surface-muted px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               {...register('description')}
             />
           </div>
         </div>
       </form>
 
-      <div className="fixed bottom-[var(--mobile-nav-h)] md:bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-primary-950/90 border-t border-primary-100 dark:border-primary-800 backdrop-blur-xl z-50">
+      <div className="fixed bottom-[var(--mobile-nav-h)] md:bottom-0 left-0 right-0 p-4 bg-surface/95 border-t border-border backdrop-blur-xl z-50">
         <Button
           type="submit"
           form="plan-form"
-          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary-800 hover:bg-primary-900 text-white dark:bg-primary-700"
+          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary hover:bg-primary/90 text-primary-foreground"
           disabled={isSubmitting}
         >
           {isSubmitting

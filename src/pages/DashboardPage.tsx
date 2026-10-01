@@ -21,7 +21,7 @@ export function DashboardPage() {
           title="Panel"
           description="Centro de operaciones del sistema"
         />
-        <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
+        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
           <span className="shrink-0 mt-0.5">⚠️</span>
           <span>Selecciona una organización para ver el panel general.</span>
         </div>

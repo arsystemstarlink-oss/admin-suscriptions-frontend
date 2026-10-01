@@ -8,36 +8,36 @@ export function QuickActions() {
     <div className="grid grid-cols-3 gap-3 w-full">
       <button
         onClick={() => navigate('/subscriptions/new')}
-        className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-white border border-primary-100 shadow-sm active:scale-[0.98] active:bg-primary-50 transition-all touch-manipulation dark:bg-primary-900/50 dark:border-primary-800 dark:active:bg-primary-800"
+        className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-surface text-surface-foreground border border-border shadow-sm active:scale-[0.98] active:bg-surface-active transition-all touch-manipulation"
       >
-        <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-300 flex items-center justify-center mb-2">
+        <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
           <Plus className="h-5 w-5" />
         </div>
-        <span className="text-[11px] font-bold text-primary-800 dark:text-primary-100 uppercase tracking-wide leading-tight">
+        <span className="text-[11px] font-bold text-foreground uppercase tracking-wide leading-tight">
           Nueva Sub
         </span>
       </button>
 
       <button
         onClick={() => navigate('/subscriptions/clients/new')}
-        className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-white border border-primary-100 shadow-sm active:scale-[0.98] active:bg-primary-50 transition-all touch-manipulation dark:bg-primary-900/50 dark:border-primary-800 dark:active:bg-primary-800"
+        className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-surface text-surface-foreground border border-border shadow-sm active:scale-[0.98] active:bg-surface-active transition-all touch-manipulation"
       >
-        <div className="h-10 w-10 rounded-full bg-secondary-100 dark:bg-secondary-900/40 text-secondary-800 dark:text-secondary-400 flex items-center justify-center mb-2">
+        <div className="h-10 w-10 rounded-full bg-secondary/15 text-secondary-foreground flex items-center justify-center mb-2">
           <UserPlus className="h-5 w-5" />
         </div>
-        <span className="text-[11px] font-bold text-primary-800 dark:text-primary-100 uppercase tracking-wide leading-tight">
+        <span className="text-[11px] font-bold text-foreground uppercase tracking-wide leading-tight">
           Cliente
         </span>
       </button>
 
       <button
         onClick={() => navigate('/subscriptions?hasOverdue=true')}
-        className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-white border border-primary-100 shadow-sm active:scale-[0.98] active:bg-primary-50 transition-all touch-manipulation dark:bg-primary-900/50 dark:border-primary-800 dark:active:bg-primary-800"
+        className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-surface text-surface-foreground border border-border shadow-sm active:scale-[0.98] active:bg-surface-active transition-all touch-manipulation"
       >
-        <div className="h-10 w-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mb-2">
+        <div className="h-10 w-10 rounded-full bg-success/10 text-success flex items-center justify-center mb-2">
           <CreditCard className="h-5 w-5" />
         </div>
-        <span className="text-[11px] font-bold text-primary-800 dark:text-primary-100 uppercase tracking-wide leading-tight">
+        <span className="text-[11px] font-bold text-foreground uppercase tracking-wide leading-tight">
           Cobros
         </span>
       </button>

@@ -163,49 +163,49 @@ export function SubscriptionsListPage() {
 
   const getCardTone = (sub: SubscriptionWithDetails) => {
     if (sub.hasDebt) {
-      return 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-950/20'
+      return 'border-destructive/30 bg-destructive/5 text-surface-foreground'
     }
 
     if (sub.status === 'SUSPENDED') {
-      return 'border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/20'
+      return 'border-info/30 bg-info/5 text-surface-foreground'
     }
 
     if (isExpiringSub(sub)) {
-      return 'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20'
+      return 'border-warning/30 bg-warning/5 text-surface-foreground'
     }
 
-    return 'border-primary-100 bg-white dark:border-primary-800 dark:bg-primary-900/50'
+    return 'border-border bg-surface text-surface-foreground'
   }
 
   const getStatusClass = (status: 'ACTIVE' | 'SUSPENDED') => {
     if (status === 'ACTIVE') {
-      return 'text-emerald-700 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950'
+      return 'text-success bg-success/10'
     }
-    return 'text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-950'
+    return 'text-info bg-info/10'
   }
 
   if (isLoading && !showEmpty) {
     return (
       <div className="space-y-4 px-2">
-        <div className="h-10 bg-primary-100 dark:bg-primary-900 rounded-xl animate-pulse" />
+        <div className="h-10 bg-muted rounded-xl animate-pulse" />
         <div className="grid grid-cols-3 gap-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-primary-100 dark:bg-primary-900 rounded-2xl animate-pulse" />
+            <div key={i} className="h-20 bg-muted rounded-2xl animate-pulse" />
           ))}
         </div>
         <div className="flex gap-2 mb-4">
-          <div className="h-8 w-20 bg-primary-100 dark:bg-primary-900 rounded-full animate-pulse" />
-          <div className="h-8 w-24 bg-primary-100 dark:bg-primary-900 rounded-full animate-pulse" />
+          <div className="h-8 w-20 bg-muted rounded-full animate-pulse" />
+          <div className="h-8 w-24 bg-muted rounded-full animate-pulse" />
         </div>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800">
+          <div key={i} className="flex gap-4 p-4 rounded-2xl bg-surface border border-border">
             <div className="flex-1 space-y-3">
               <div className="flex justify-between">
-                <div className="h-5 w-1/2 bg-primary-100 dark:bg-primary-800 rounded animate-pulse" />
-                <div className="h-5 w-12 bg-primary-100 dark:bg-primary-800 rounded animate-pulse" />
+                <div className="h-5 w-1/2 bg-muted rounded animate-pulse" />
+                <div className="h-5 w-12 bg-muted rounded animate-pulse" />
               </div>
-              <div className="h-4 w-3/4 bg-primary-50 dark:bg-primary-800/50 rounded animate-pulse" />
-              <div className="h-4 w-1/3 bg-primary-50 dark:bg-primary-800/50 rounded animate-pulse" />
+              <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
             </div>
           </div>
         ))}
@@ -258,7 +258,7 @@ export function SubscriptionsListPage() {
       />
 
       {showEmpty ? (
-        <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
+        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
           <span className="shrink-0 mt-0.5">⚠️</span>
           <span>Selecciona una organización para ver las suscripciones.</span>
         </div>
@@ -266,7 +266,7 @@ export function SubscriptionsListPage() {
         <>
           {/* Métricas de Cobranza */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-400 p-3 min-w-0">
+            <div className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-3 min-w-0">
               <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 Vencidos
@@ -275,7 +275,7 @@ export function SubscriptionsListPage() {
               <p className="text-xs font-medium mt-1.5 truncate">{formatCurrency(summary?.financial.totalOverdue ?? 0)}</p>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-400 p-3 min-w-0">
+            <div className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-3 min-w-0">
               <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
                 <Clock className="h-3.5 w-3.5 shrink-0" />
                 Por Vencer
@@ -284,7 +284,7 @@ export function SubscriptionsListPage() {
               <p className="text-xs font-medium mt-1.5 truncate">{formatCurrency(metrics.expiringTotal)}</p>
             </div>
 
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-400 p-3 min-w-0">
+            <div className="rounded-2xl border border-info/20 bg-info/10 text-info p-3 min-w-0">
               <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
                 <Box className="h-3.5 w-3.5 shrink-0" />
                 Pendientes
@@ -297,7 +297,7 @@ export function SubscriptionsListPage() {
           {/* Lista de Suscripciones (List Tiles) */}
           {!data || visibleSubscriptions.length === 0 ? (
             <EmptyState
-              icon={<Link2 className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+              icon={<Link2 className="h-16 w-16 text-subtle-foreground" />}
               title="Sin suscripciones"
               description="No encontramos resultados. Modifica los filtros o añade una nueva."
             />
@@ -312,10 +312,10 @@ export function SubscriptionsListPage() {
                   {/* Top Row: Client & Status */}
                   <div className="flex justify-between items-start gap-2 mb-2 sm:mb-3">
                     <div className="min-w-0 flex-1 pr-2 sm:pr-4">
-                      <h3 className="text-[15px] sm:text-base font-bold text-primary-900 dark:text-primary-50 truncate leading-tight">
+                      <h3 className="text-[15px] sm:text-base font-bold text-foreground truncate leading-tight">
                         {getClientFullName(sub.client)}
                       </h3>
-                      <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1 text-primary-500 dark:text-primary-400 text-xs sm:text-sm min-w-0">
+                      <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1 text-muted-foreground text-xs sm:text-sm min-w-0">
                         <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
                         <span className="truncate">{sub.client?.phone ?? 'Sin teléfono'}</span>
                         {sub.client?.dni && (
@@ -328,7 +328,7 @@ export function SubscriptionsListPage() {
                         {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                       </span>
                       {sub.hasDebt && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide text-destructive bg-destructive/10">
                           Deuda
                         </span>
                       )}
@@ -336,49 +336,49 @@ export function SubscriptionsListPage() {
                   </div>
 
                   {/* Middle Row: Kit & Plan Details */}
-                  <div className="flex items-center gap-2 sm:gap-3 bg-white/50 dark:bg-primary-950/30 rounded-lg sm:rounded-xl p-2 sm:p-2.5 mb-2 sm:mb-3 border border-primary-100/50 dark:border-primary-800/50">
+                  <div className="flex items-center gap-2 sm:gap-3 bg-surface-muted rounded-lg sm:rounded-xl p-2 sm:p-2.5 mb-2 sm:mb-3 border border-border-subtle">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary-100 dark:bg-primary-800 text-primary-600 dark:text-primary-300 shrink-0">
+                      <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/10 text-primary shrink-0">
                         <Box className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </div>
                         <div className="min-w-0">
-                          <p className="text-[13px] sm:text-sm font-semibold text-primary-800 dark:text-primary-100 truncate leading-tight">
+                          <p className="text-[13px] sm:text-sm font-semibold text-foreground truncate leading-tight">
                             {sub.accountNumber ? sub.accountNumber : sub.kitNumber}
                           </p>
-                          <p className="text-[11px] sm:text-xs text-primary-500 dark:text-primary-400 font-medium truncate leading-tight mt-0.5">
+                          <p className="text-[11px] sm:text-xs text-muted-foreground font-medium truncate leading-tight mt-0.5">
                             {sub.accountNumber ? `${sub.kitNumber} • ` : ''}{sub.plan.name}
                           </p>
                         </div>
                     </div>
 
                     {/* Billing Day Badge */}
-                    <div className="shrink-0 text-center px-2 sm:px-3 border-l border-primary-200 dark:border-primary-800">
-                      <p className="text-[10px] font-medium uppercase text-primary-400 dark:text-primary-500">Corte</p>
-                      <p className="text-base sm:text-lg font-bold text-primary-800 dark:text-primary-100 leading-none mt-0.5">{sub.billingDay}</p>
+                    <div className="shrink-0 text-center px-2 sm:px-3 border-l border-border">
+                      <p className="text-[10px] font-medium uppercase text-subtle-foreground">Corte</p>
+                      <p className="text-base sm:text-lg font-bold text-foreground leading-none mt-0.5">{sub.billingDay}</p>
                     </div>
                   </div>
 
                   {/* Bottom Row: Price, Alerts & Charge */}
                   <div className="flex items-center justify-between gap-2 text-[13px] sm:text-sm">
-                    <span className="font-semibold text-primary-900 dark:text-primary-50 truncate">
-                      {formatCurrency(sub.plan.price)}<span className="text-primary-400 dark:text-primary-500 font-normal">/mes</span>
+                    <span className="font-semibold text-foreground truncate">
+                      {formatCurrency(sub.plan.price)}<span className="text-subtle-foreground font-normal">/mes</span>
                     </span>
 
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       <div className="flex gap-1 sm:gap-1.5">
                         {sub.currentPeriod && sub.currentPeriod.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate) && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-warning/10 text-warning">
                             <Calendar className="h-3 w-3" />
                             {getExpiringLabel(sub.currentPeriod.endDate)}
                           </span>
                         )}
                         {sub.pendingPeriods > 0 && (!sub.currentPeriod || sub.currentPeriod.status !== 'PENDING') && (
-                          <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                          <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-info/10 text-info">
                             {sub.pendingPeriods} pend.
                           </span>
                         )}
                         {sub.overduePeriods > 0 && (
-                          <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
+                          <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-destructive/10 text-destructive">
                             {sub.overduePeriods} venc.
                           </span>
                         )}
@@ -392,7 +392,7 @@ export function SubscriptionsListPage() {
                             handleQuickPay(sub)
                           }}
                           disabled={payingId === sub.id}
-                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary-800 text-white dark:bg-primary-700 text-[13px] sm:text-sm font-semibold shadow-sm active:scale-95 transition-transform touch-manipulation disabled:opacity-50"
+                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm active:scale-95 transition-transform touch-manipulation disabled:opacity-50"
                           aria-label="Cobrar"
                           title="Cobrar"
                         >

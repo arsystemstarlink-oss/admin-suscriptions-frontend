@@ -41,18 +41,15 @@ const VISIBLE_LOGS_COUNT = 3
 const LOG_STATUS: Record<SchedulerLog['status'], { label: string; className: string }> = {
   success: {
     label: 'Éxito',
-    className:
-      'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900',
+    className: 'bg-success/10 text-success border border-success/20',
   },
   error: {
     label: 'Error',
-    className:
-      'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900',
+    className: 'bg-destructive/10 text-destructive border border-destructive/20',
   },
   skipped: {
     label: 'Omitido',
-    className:
-      'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900',
+    className: 'bg-info/10 text-info border border-info/20',
   },
 }
 
@@ -91,19 +88,19 @@ function LogStat({ label, value, alert = false }: { label: string; value: number
     <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
       <span
         className={`text-xs font-semibold tabular-nums ${
-          alert ? 'text-red-600 dark:text-red-400' : 'text-primary-800 dark:text-primary-100'
+          alert ? 'text-destructive' : 'text-foreground'
         }`}
       >
         {value}
       </span>
-      <span className="text-[11px] text-primary-500 dark:text-primary-400">{label}</span>
+      <span className="text-[11px] text-muted-foreground">{label}</span>
     </span>
   )
 }
 
 function LogStatDot() {
   return (
-    <span aria-hidden="true" className="select-none text-primary-300 dark:text-primary-600">
+    <span aria-hidden="true" className="select-none text-subtle-foreground">
       •
     </span>
   )
@@ -199,7 +196,7 @@ export function AdminToolsPage() {
     <div className="space-y-4 md:space-y-6">
 
       {isSuperAdmin && !selectedOrganizationId && (
-        <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
+        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
           <span className="shrink-0 mt-0.5">⚠️</span>
           <span>Selecciona una organización para configurar el programador de tareas.</span>
         </div>
@@ -208,27 +205,27 @@ export function AdminToolsPage() {
       {(!isSuperAdmin || selectedOrganizationId) && (
         <>
           {missingCron && (
-            <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-2xl dark:text-red-400 dark:bg-red-950/50 dark:border-red-900 flex items-start gap-3">
+            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl flex items-start gap-3">
               <span className="shrink-0 mt-0.5">⚠️</span>
               <span>Configura un horario de ejecución antes de activar o guardar el programador.</span>
             </div>
           )}
 
           {isLoadingScheduler ? (
-            <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+            <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
               <CardContent className="py-12 text-center">
-                <RefreshCw className="h-8 w-8 animate-spin text-primary-400 mx-auto mb-3 shrink-0" />
-                <p className="text-primary-500 dark:text-primary-400">Cargando configuración...</p>
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-3 shrink-0" />
+                <p className="text-muted-foreground">Cargando configuración...</p>
               </CardContent>
             </Card>
           ) : schedulerConfig ? (
             <>
-              <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+              <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
                 <CardHeader className="p-4 sm:p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
-                      <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
-                        <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-primary-600 dark:text-primary-300" />
+                      <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
+                        <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-primary" />
                       </div>
                       <div className="min-w-0">
                         <CardTitle className="text-lg sm:text-xl">Tarea Diaria</CardTitle>
@@ -240,8 +237,8 @@ export function AdminToolsPage() {
                     <Badge
                       className={`w-fit shrink-0 text-xs sm:text-sm px-2.5 py-1 sm:px-3 sm:py-1.5 ${
                         schedulerConfig.enabled
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900'
-                          : 'bg-primary-100 text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-400 dark:border-primary-700'
+                          ? 'bg-success/10 text-success border border-success/20'
+                          : 'bg-muted text-muted-foreground border border-border'
                       }`}
                     >
                       {schedulerConfig.enabled ? (
@@ -260,36 +257,36 @@ export function AdminToolsPage() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0 space-y-5 sm:space-y-6">
                   <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                    <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                      <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Horario</p>
-                      <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
+                    <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
+                      <p className="text-xs text-muted-foreground mb-1">Horario</p>
+                      <p className="text-base font-semibold text-foreground">
                         {serverTime
                           ? formatTimeDisplay(serverTime.hour12, serverTime.minute, serverTime.period)
                           : formatTimeDisplay(selectedHour12, selectedMinute, selectedPeriod)}
                       </p>
-                      <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Diario
                       </p>
                     </div>
 
-                    <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                      <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Última ejecución</p>
-                      <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
+                    <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
+                      <p className="text-xs text-muted-foreground mb-1">Última ejecución</p>
+                      <p className="text-base font-semibold text-foreground">
                         {schedulerConfig.lastRun ? formatDate(schedulerConfig.lastRun) : 'Nunca'}
                       </p>
                       {schedulerConfig.lastRun && (
-                        <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {getTimeAgo(schedulerConfig.lastRun)}
                         </p>
                       )}
                     </div>
 
-                    <div className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800">
-                      <p className="text-xs text-primary-500 dark:text-primary-400 mb-1">Estado</p>
-                      <p className="text-base font-semibold text-primary-900 dark:text-primary-50">
+                    <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
+                      <p className="text-xs text-muted-foreground mb-1">Estado</p>
+                      <p className="text-base font-semibold text-foreground">
                         {schedulerConfig.enabled ? 'Automático' : 'Manual'}
                       </p>
-                      <p className="text-xs text-primary-500 dark:text-primary-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {schedulerConfig.enabled
                           ? 'Por horario'
                           : 'Solo manual'}
@@ -297,10 +294,10 @@ export function AdminToolsPage() {
                     </div>
                   </div>
 
-                  <div className="border-t border-primary-100 dark:border-primary-800 pt-5 sm:pt-6 space-y-5 sm:space-y-6">
+                  <div className="border-t border-border pt-5 sm:pt-6 space-y-5 sm:space-y-6">
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Pause className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+                        <Pause className="h-5 w-5 text-muted-foreground shrink-0" />
                         <h3 className="font-semibold text-base">Control del Programador</h3>
                       </div>
                   <Button
@@ -311,7 +308,7 @@ export function AdminToolsPage() {
                   >
                         {schedulerConfig.enabled ? 'Desactivar' : 'Activar'}
                       </Button>
-                      <p className="text-sm text-primary-500 dark:text-primary-400">
+                      <p className="text-sm text-xs text-muted-foreground">
                         {schedulerConfig.enabled
                           ? 'El sistema evaluará vencimientos automáticamente según el horario configurado'
                           : 'El sistema no ejecutará evaluaciones automáticas. Puedes ejecutarlas manualmente'}
@@ -320,7 +317,7 @@ export function AdminToolsPage() {
 
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+                        <Clock className="h-5 w-5 text-muted-foreground shrink-0" />
                         <h3 className="font-semibold text-base">Horario de Ejecución</h3>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
@@ -328,8 +325,8 @@ export function AdminToolsPage() {
                       value={selectedHour12.toString()}
                       onValueChange={(v) => setSelectedHour12(Number(v))}
                     >
-                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                        <SelectValue placeholder="Hora" />
+<SelectTrigger className="bg-surface-muted">
+                          <SelectValue placeholder="Hora" />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => (
@@ -340,7 +337,7 @@ export function AdminToolsPage() {
                       </SelectContent>
                     </Select>
                     <Select value={selectedMinute.toString()} onValueChange={(v) => setSelectedMinute(Number(v))}>
-                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
+                      <SelectTrigger className="bg-surface-muted">
                         <SelectValue placeholder="Min" />
                       </SelectTrigger>
                       <SelectContent>
@@ -357,8 +354,8 @@ export function AdminToolsPage() {
                         if (v === 'AM' || v === 'PM') setSelectedPeriod(v)
                       }}
                     >
-                      <SelectTrigger className="w-full bg-white dark:bg-primary-900 border border-primary-100 dark:border-primary-800">
-                        <SelectValue placeholder="AM/PM" />
+<SelectTrigger className="bg-surface-muted">
+                          <SelectValue placeholder="AM/PM" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="AM">AM</SelectItem>
@@ -373,14 +370,14 @@ export function AdminToolsPage() {
                   >
                         {updateSchedulerMutation.isPending ? 'Guardando...' : 'Guardar'}
                       </Button>
-                      <p className="text-xs text-primary-500 dark:text-primary-400">
+                      <p className="text-xs text-muted-foreground">
                         Se ejecutará diariamente a la hora seleccionada
                       </p>
                     </div>
 
-                    <div className="border-t border-primary-100 dark:border-primary-800 pt-5 space-y-3">
+                    <div className="border-t border-border pt-5 space-y-3">
                       <div className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary-600 dark:text-primary-300 shrink-0" />
+                        <Zap className="h-5 w-5 text-muted-foreground shrink-0" />
                         <h3 className="font-semibold text-base">Ejecución Manual</h3>
                       </div>
                     <Button
@@ -391,7 +388,7 @@ export function AdminToolsPage() {
                     >
                         {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}
                       </Button>
-                      <p className="text-sm text-primary-500 dark:text-primary-400">
+                      <p className="text-sm text-xs text-muted-foreground">
                         Ejecuta la Tarea Diaria inmediatamente, sin importar el estado del scheduler
                       </p>
                     </div>
@@ -399,11 +396,11 @@ export function AdminToolsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+              <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
                 <CardHeader className="p-4 sm:p-5">
                   <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
-                    <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary-100 dark:bg-primary-800 shrink-0">
-                      <History className="h-5 w-5 sm:h-7 sm:w-7 text-primary-600 dark:text-primary-300" />
+                    <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
+                      <History className="h-5 w-5 sm:h-7 sm:w-7 text-primary" />
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="text-lg sm:text-xl">Historial de Ejecuciones</CardTitle>
@@ -418,11 +415,11 @@ export function AdminToolsPage() {
                 <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
                   {isLoadingLogs ? (
                     <div className="flex items-center justify-center py-8">
-                      <RefreshCw className="h-6 w-6 animate-spin text-primary-400 shrink-0" />
+                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground shrink-0" />
                     </div>
                   ) : !schedulerLogs || schedulerLogs.logs.length === 0 ? (
                     <div className="py-8 text-center">
-                      <p className="text-sm text-primary-500 dark:text-primary-400">
+                      <p className="text-sm text-xs text-muted-foreground">
                         Sin ejecuciones registradas todavía.
                       </p>
                     </div>
@@ -434,7 +431,7 @@ export function AdminToolsPage() {
                         return (
                           <div
                             key={log.id}
-                            className="p-2.5 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-primary-800 dark:text-primary-100"
+                            className="p-2.5 bg-surface-muted rounded-xl border border-border-subtle text-foreground"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                               <div className="flex items-center gap-1.5 flex-wrap min-w-0">
@@ -446,21 +443,21 @@ export function AdminToolsPage() {
                                     {LOG_STATUS[log.status].label}
                                   </span>
                                 </Badge>
-                                <Badge className="w-fit shrink-0 text-[11px] px-2 py-0.5 bg-primary-100 text-primary-800 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700">
+                                <Badge className="w-fit shrink-0 text-[11px] px-2 py-0.5 bg-muted text-muted-foreground border border-border">
                                   {LOG_TRIGGERED_BY[log.triggeredBy]}
                                 </Badge>
-                                <span className="text-[11px] text-primary-500 dark:text-primary-400 truncate">
+                                <span className="text-[11px] text-xs text-muted-foreground truncate">
                                   {formatLogTime(log.startedAt)}
                                 </span>
                               </div>
-                              <span className="shrink-0 text-[11px] font-medium text-primary-700 dark:text-primary-300 flex items-center gap-1">
+                              <span className="shrink-0 text-[11px] font-medium text-muted-foreground flex items-center gap-1">
                                 <Timer className="h-3 w-3 shrink-0" />
                                 {formatDuration(log.durationMs)}
                               </span>
                             </div>
 
                             {log.error && (
-                              <div className="mt-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-2 text-[11px] text-red-700 dark:text-red-400 break-words">
+                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-[11px] text-destructive break-words">
                                 {log.error}
                               </div>
                             )}
@@ -505,10 +502,10 @@ export function AdminToolsPage() {
               </Card>
             </>
           ) : (
-            <Card className="bg-white dark:bg-primary-900/50 border border-primary-100 dark:border-primary-800 rounded-2xl shadow-sm">
+            <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
               <CardContent className="py-12 text-center">
-                <XCircle className="h-8 w-8 text-red-400 dark:text-red-500 mx-auto mb-3 shrink-0" />
-                <p className="text-red-600 dark:text-red-400">Error al cargar la configuración</p>
+                <XCircle className="h-8 w-8 text-destructive mx-auto mb-3 shrink-0" />
+                <p className="text-destructive">Error al cargar la configuración</p>
               </CardContent>
             </Card>
           )}
@@ -519,7 +516,7 @@ export function AdminToolsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+              <AlertTriangle className="h-5 w-5 text-warning shrink-0" />
               Notificaciones con error
             </DialogTitle>
             <DialogDescription>
@@ -530,21 +527,21 @@ export function AdminToolsPage() {
             {runErrors?.map((err, index) => (
               <div
                 key={index}
-                className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-3 space-y-1"
+                className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 space-y-1"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-red-900 dark:text-red-100">{err.clientName}</p>
-                  <span className="text-[11px] uppercase tracking-wide text-red-600 dark:text-red-400 shrink-0">
+                  <p className="text-sm font-medium text-destructive">{err.clientName}</p>
+                  <span className="text-[11px] uppercase tracking-wide text-destructive shrink-0">
                     {NOTIFICATION_TYPE_LABELS[err.type] ?? err.type}
                   </span>
                 </div>
-                <p className="text-xs text-red-700 dark:text-red-400">{err.phone}</p>
+                <p className="text-xs text-destructive">{err.phone}</p>
                 {err.errorCode && (
-                  <p className="text-xs font-medium text-red-700 dark:text-red-400">
+                  <p className="text-xs font-medium text-destructive">
                     Código Twilio: {err.errorCode}
                   </p>
                 )}
-                <p className="text-xs text-red-700 dark:text-red-400 break-words">{err.errorMessage}</p>
+                <p className="text-xs text-destructive break-words">{err.errorMessage}</p>
               </div>
             ))}
           </div>

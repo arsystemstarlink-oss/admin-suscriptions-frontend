@@ -14,7 +14,7 @@ export function SetupPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-6 py-8">
       <div className="w-full max-w-[560px] animate-fade-slide-up">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl bg-primary-800 px-5 py-3 dark:bg-primary-900">
+          <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl bg-header px-5 py-3">
             <BrandMark size="lg" />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">

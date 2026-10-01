@@ -30,8 +30,8 @@ export function SuperAdminOrganizationField<T extends FieldValues>({
 
   return (
     <div className="space-y-2.5">
-      <Label className="text-primary-800 dark:text-primary-200 flex items-center gap-2">
-        <Building2 className="h-4 w-4 text-primary-400 shrink-0" />
+      <Label className="text-foreground flex items-center gap-2">
+        <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
         Organización de destino *
       </Label>
       <Controller
@@ -40,7 +40,7 @@ export function SuperAdminOrganizationField<T extends FieldValues>({
         render={({ field }) => (
           <Select value={field.value || ''} onValueChange={field.onChange}>
             <SelectTrigger
-              className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+              className="h-12"
               aria-invalid={!!error}
             >
               <SelectValue placeholder="Seleccione la organización" />
@@ -61,7 +61,7 @@ export function SuperAdminOrganizationField<T extends FieldValues>({
         )}
       />
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+        <p className="text-sm text-destructive font-medium">{error}</p>
       )}
     </div>
   )

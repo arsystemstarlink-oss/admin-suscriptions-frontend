@@ -12,7 +12,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       size="icon"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className={cn(
-        'h-10 w-10 shrink-0 text-primary-50 hover:bg-primary-700 hover:text-primary-50 dark:hover:bg-primary-900 sm:h-8 sm:w-8',
+        'h-10 w-10 shrink-0 text-header-foreground hover:bg-header-hover hover:text-header-foreground sm:h-8 sm:w-8',
         className,
       )}
       aria-label="Cambiar tema"

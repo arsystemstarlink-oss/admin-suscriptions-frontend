@@ -91,7 +91,7 @@ export function ListPageLayout({
       {fabHref && (
         <a
           href={fabHref}
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+70px)] right-4 flex items-center justify-center h-14 w-14 rounded-full bg-primary-800 text-white shadow-lg active:scale-95 transition-transform touch-manipulation z-40 dark:bg-primary-700"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+70px)] right-4 flex items-center justify-center h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform touch-manipulation z-40"
           aria-label={title ? `Nuevo ${title.slice(0, -1)}` : 'Nuevo'}
         >
           <Plus size={24} strokeWidth={2.5} />

@@ -39,28 +39,28 @@ export function TopBar({
   const unreadChatsCount = useUnreadChatsCount()
 
   return (
-    <header className="h-16 border-b border-primary-700 flex items-center justify-between px-4 md:px-6 bg-primary-800 text-primary-50 dark:bg-primary-950 dark:text-primary-50 dark:border-primary-900">
+    <header className="h-16 border-b border-border-subtle flex items-center justify-between px-4 md:px-6 bg-header text-header-foreground">
       <div className="flex items-center gap-3">
         {isMobile && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onMobileToggle}
-            className="md:hidden text-primary-50 hover:bg-primary-700 hover:text-primary-50 dark:hover:bg-primary-900"
+            className="md:hidden text-header-foreground hover:bg-header-hover hover:text-header-foreground"
             aria-label="Abrir menú"
           >
             <Menu className="h-5 w-5 shrink-0" />
           </Button>
         )}
 
-        <BrandMark size="md" className="text-primary-50" />
+        <BrandMark size="md" className="text-header-foreground" />
 
         {isSuperAdmin && organizations && organizations.length > 0 && (
           <Select
             value={selectedOrganizationId || ALL_ORGS_VALUE}
             onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
           >
-            <SelectTrigger className="w-auto h-8 sm:w-48 border-primary-600 bg-primary-700 text-primary-50 hover:bg-primary-600 hover:text-primary-50 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800">
+            <SelectTrigger className="w-auto h-8 sm:w-48 border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground">
               <Building2 className="h-3.5 w-3.5 shrink-0" />
               <SelectValue placeholder="Todas las organizaciones" />
             </SelectTrigger>

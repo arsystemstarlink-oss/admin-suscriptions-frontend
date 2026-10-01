@@ -175,40 +175,40 @@ export function SubscriptionFormPage() {
   }, [preselectedClientId, clientsData, setValue])
 
   return (
-    <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-slate-50 dark:bg-primary-950 -mx-4 px-4 pt-2">
+    <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
         backTo="/subscriptions"
         className="mb-4"
         title={
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-primary-900 dark:text-primary-50">Nueva Suscripción</h1>
-            <p className="text-sm text-primary-500 dark:text-primary-400">Asociar cliente a plan</p>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Nueva Suscripción</h1>
+            <p className="text-sm text-muted-foreground">Asociar cliente a plan</p>
           </div>
         }
       />
 
       <form id="subscription-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
-          <div className="p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl dark:text-red-400 dark:bg-red-950/50 dark:border-red-900 flex items-start gap-3">
+          <div className="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
             <span className="shrink-0 mt-0.5">⚠️</span>
             <span>{error}</span>
           </div>
         )}
 
         {/* Bloque 1: Cliente y Plan */}
-        <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 p-4 space-y-5 shadow-sm">
-          <h2 className="text-base font-semibold text-primary-900 dark:text-primary-100 flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary-400" />
+        <div className="bg-surface text-surface-foreground rounded-2xl border border-border p-4 space-y-5 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <Users className="h-5 w-5 text-muted-foreground" />
             Datos Principales
           </h2>
 
           <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
 
           <div className="space-y-2.5">
-            <Label className="text-primary-800 dark:text-primary-200">Cliente *</Label>
+            <Label className="text-foreground">Cliente *</Label>
             <Select value={watch('clientId') || ''} onValueChange={(value) => setValue('clientId', value)}>
               <SelectTrigger
-                className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+                className="h-12"
                 disabled={isSuperAdmin && !organizationId}
               >
                 <SelectValue placeholder={isSuperAdmin && !organizationId ? 'Seleccione primero la organización' : 'Seleccione un cliente'} />
@@ -222,15 +222,15 @@ export function SubscriptionFormPage() {
               </SelectContent>
             </Select>
             {errors.clientId && (
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.clientId.message}</p>
+              <p className="text-sm text-destructive font-medium">{errors.clientId.message}</p>
             )}
           </div>
 
           <div className="space-y-2.5">
-            <Label className="text-primary-800 dark:text-primary-200">Plan *</Label>
+            <Label className="text-foreground">Plan *</Label>
             <Select onValueChange={(value) => setValue('planId', value)}>
               <SelectTrigger
-                className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700"
+                className="h-12"
                 disabled={isSuperAdmin && !organizationId}
               >
                 <SelectValue placeholder={isSuperAdmin && !organizationId ? 'Seleccione primero la organización' : 'Seleccione un plan'} />
@@ -244,51 +244,51 @@ export function SubscriptionFormPage() {
               </SelectContent>
             </Select>
             {errors.planId && (
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.planId.message}</p>
+              <p className="text-sm text-destructive font-medium">{errors.planId.message}</p>
             )}
           </div>
         </div>
 
         {/* Bloque 2: Equipo y Cuenta */}
-        <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 p-4 space-y-5 shadow-sm">
-          <h2 className="text-base font-semibold text-primary-900 dark:text-primary-100 flex items-center gap-2">
-            <Box className="h-5 w-5 text-primary-400" />
+        <div className="bg-surface text-surface-foreground rounded-2xl border border-border p-4 space-y-5 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <Box className="h-5 w-5 text-muted-foreground" />
             Datos del Equipo
           </h2>
 
           <div className="space-y-2.5">
-            <Label htmlFor="kitNumber" className="text-primary-800 dark:text-primary-200">Número de Kit *</Label>
+            <Label htmlFor="kitNumber" className="text-foreground">Número de Kit *</Label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 px-2 py-1 text-sm font-semibold">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary/10 text-primary px-2 py-1 text-sm font-semibold">
                 KIT-
               </span>
-              <Input 
-                id="kitNumber" 
-                value={(kitNumberValue || '').replace(/^KIT-/, '')} 
-                onChange={handleKitNumberChange} 
-                placeholder="Ej: 001" 
-                className="pl-16 h-12 bg-slate-50 text-primary-900 dark:bg-primary-900 dark:text-primary-50 border-primary-200 dark:border-primary-700 uppercase font-semibold tracking-wide" 
+              <Input
+                id="kitNumber"
+                value={(kitNumberValue || '').replace(/^KIT-/, '')}
+                onChange={handleKitNumberChange}
+                placeholder="Ej: 001"
+                className="pl-16 h-12 uppercase font-semibold tracking-wide"
                 inputMode="text"
                 autoCapitalize="characters"
               />
             </div>
             {errors.kitNumber && (
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.kitNumber.message}</p>
+              <p className="text-sm text-destructive font-medium">{errors.kitNumber.message}</p>
             )}
           </div>
 
           <div className="space-y-2.5">
-            <Label htmlFor="accountNumber" className="text-primary-800 dark:text-primary-200">Cuenta Starlink <span className="text-primary-400 font-normal">(Opcional)</span></Label>
+            <Label htmlFor="accountNumber" className="text-foreground">Cuenta Starlink <span className="text-muted-foreground font-normal">(Opcional)</span></Label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary-800/10 text-primary-900 dark:bg-primary-200/10 dark:text-primary-50 px-2 py-1 text-sm font-semibold">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary/10 text-primary px-2 py-1 text-sm font-semibold">
                 ACC-
               </span>
-              <Input 
-                id="accountNumber" 
-                value={(accountNumberValue || '').replace(/^ACC-/, '')} 
-                onChange={handleAccountNumberChange} 
-                placeholder="Ej: 8381534-78084-24" 
-                className="pl-16 h-12 bg-slate-50 text-primary-900 dark:bg-primary-900 dark:text-primary-50 border-primary-200 dark:border-primary-700 uppercase font-semibold tracking-wide" 
+              <Input
+                id="accountNumber"
+                value={(accountNumberValue || '').replace(/^ACC-/, '')}
+                onChange={handleAccountNumberChange}
+                placeholder="Ej: 8381534-78084-24"
+                className="pl-16 h-12 uppercase font-semibold tracking-wide"
                 inputMode="text"
                 autoCapitalize="characters"
               />
@@ -297,31 +297,31 @@ export function SubscriptionFormPage() {
         </div>
 
         {/* Bloque 3: Facturación */}
-        <div className="bg-white dark:bg-primary-900/50 rounded-2xl border border-primary-100 dark:border-primary-800 p-4 space-y-5 shadow-sm">
-          <h2 className="text-base font-semibold text-primary-900 dark:text-primary-100 flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary-400" />
+        <div className="bg-surface text-surface-foreground rounded-2xl border border-border p-4 space-y-5 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-muted-foreground" />
             Reglas de Facturación
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2.5">
-              <Label htmlFor="billingDay" className="text-primary-800 dark:text-primary-200">Día de Corte *</Label>
-              <Input 
-                id="billingDay" 
-                type="number" 
+              <Label htmlFor="billingDay" className="text-foreground">Día de Corte *</Label>
+              <Input
+                id="billingDay"
+                type="number"
                 inputMode="numeric"
-                min={1} 
-                max={28} 
-                {...register('billingDay')} 
-                className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-center font-bold text-lg" 
+                min={1}
+                max={28}
+                {...register('billingDay')}
+                className="h-12 text-center font-bold text-lg"
               />
               {errors.billingDay && (
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium text-center">{errors.billingDay.message}</p>
+                <p className="text-sm text-destructive font-medium text-center">{errors.billingDay.message}</p>
               )}
             </div>
 
             <div className="space-y-2.5">
-              <Label htmlFor="maxOverduePeriods" className="text-primary-800 dark:text-primary-200">Límite Vencidos</Label>
+              <Label htmlFor="maxOverduePeriods" className="text-foreground">Límite Vencidos</Label>
               <Input
                 id="maxOverduePeriods"
                 type="number"
@@ -329,23 +329,23 @@ export function SubscriptionFormPage() {
                 min={1}
                 max={12}
                 {...register('maxOverduePeriods')}
-                className="h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700 text-center font-bold text-lg" 
+                className="h-12 text-center font-bold text-lg"
               />
             </div>
           </div>
-          <p className="text-xs text-primary-500 dark:text-primary-400 text-center mt-1">Si se excede el límite de vencidos, la suscripción se suspende automáticamente.</p>
+          <p className="text-xs text-muted-foreground text-center mt-1">Si se excede el límite de vencidos, la suscripción se suspende automáticamente.</p>
 
           <div className="pt-2">
-            <Label htmlFor="activationDate" className="text-primary-800 dark:text-primary-200">Fecha de Activación</Label>
+            <Label htmlFor="activationDate" className="text-foreground">Fecha de Activación</Label>
             <Input
               id="activationDate"
               type="date"
               {...register('activationDate')}
               max={new Date().toISOString().split('T')[0]}
               defaultValue={new Date().toISOString().split('T')[0]}
-              className="mt-2.5 h-12 bg-slate-50 dark:bg-primary-900 border-primary-200 dark:border-primary-700" 
+              className="mt-2.5 h-12"
             />
-            <p className="text-xs text-primary-500 dark:text-primary-400 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               Si la fecha es anterior a hoy, podrás agregar pagos históricos.
             </p>
           </div>
@@ -353,16 +353,16 @@ export function SubscriptionFormPage() {
 
         {/* Bloque 4: Retroactivo */}
         {isRetroactive && (
-          <div className="bg-secondary-50/50 dark:bg-secondary-900/10 rounded-2xl border border-secondary-200 dark:border-secondary-800/50 p-4 space-y-4">
+          <div className="bg-secondary/10 rounded-2xl border border-secondary/30 p-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-primary-900 dark:text-primary-100 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-secondary-600 dark:text-secondary-400" />
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Clock className="h-5 w-5 text-secondary-foreground" />
                 Pagos Históricos
               </h2>
               <button
                 type="button"
                 onClick={handleAddHistoricalPayment}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary-100 text-secondary-800 dark:bg-secondary-800/50 dark:text-secondary-300 rounded-lg text-sm font-semibold active:scale-95 transition-transform"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-semibold active:scale-95 transition-transform"
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 Añadir
@@ -370,29 +370,29 @@ export function SubscriptionFormPage() {
             </div>
 
             {fields.length === 0 ? (
-              <p className="text-sm text-primary-600 dark:text-primary-400 bg-white/50 dark:bg-primary-950/30 p-3 rounded-lg border border-primary-100/50 dark:border-primary-800/30 italic text-center">
+              <p className="text-sm text-muted-foreground bg-surface-muted p-3 rounded-lg border border-border-subtle italic text-center">
                 Sin pagos históricos. Los períodos anteriores se generarán como pendientes.
               </p>
             ) : (
               <div className="space-y-4">
                 {fields.map((field, index) => (
-                  <div key={field.id} className="p-4 bg-white dark:bg-primary-900 border border-primary-200 dark:border-primary-800 rounded-xl space-y-4 shadow-sm relative">
-                    
-                    <div className="flex justify-between items-center border-b border-primary-100 dark:border-primary-800 pb-2">
-                      <span className="font-semibold text-primary-800 dark:text-primary-200">
+                  <div key={field.id} className="p-4 bg-surface text-surface-foreground border border-border rounded-xl space-y-4 shadow-sm relative">
+
+                    <div className="flex justify-between items-center border-b border-border pb-2">
+                      <span className="font-semibold text-foreground">
                         Pago #{index + 1}
                       </span>
                       <button
                         type="button"
                         onClick={() => remove(index)}
-                        className="p-1.5 text-red-500 bg-red-50 rounded-md active:bg-red-100 dark:bg-red-900/30 dark:text-red-400 touch-manipulation"
+                        className="p-1.5 text-destructive bg-destructive/10 rounded-md active:bg-destructive/20 touch-manipulation"
                       >
                         <Trash2 className="h-4 w-4 shrink-0" />
                       </button>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-primary-600 dark:text-primary-400">PERÍODO</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground">PERÍODO</Label>
                       <Input
                         {...register(`historicalPayments.${index}.periodLabel`)}
                         placeholder="Ej: Enero 2026"
@@ -402,20 +402,20 @@ export function SubscriptionFormPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-primary-600 dark:text-primary-400">DESDE</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground">DESDE</Label>
                         <Input type="date" {...register(`historicalPayments.${index}.startDate`)} className="h-10 text-sm" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-primary-600 dark:text-primary-400">HASTA</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground">HASTA</Label>
                         <Input type="date" {...register(`historicalPayments.${index}.endDate`)} className="h-10 text-sm" />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-primary-600 dark:text-primary-400">MONTO</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground">MONTO</Label>
                         <div className="relative">
-                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-primary-400 shrink-0" />
+                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                           <Input
                             type="number"
                             step="0.01"
@@ -426,13 +426,13 @@ export function SubscriptionFormPage() {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-primary-600 dark:text-primary-400">PAGADO EL</Label>
+                        <Label className="text-xs font-semibold text-muted-foreground">PAGADO EL</Label>
                         <Input type="date" {...register(`historicalPayments.${index}.paidAt`)} className="h-10 text-sm" />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-primary-600 dark:text-primary-400">MÉTODO</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground">MÉTODO</Label>
                       <Select onValueChange={(value) => setValue(`historicalPayments.${index}.paymentMethod`, value)}>
                         <SelectTrigger className="h-10 text-sm">
                           <SelectValue placeholder="Seleccione..." />
@@ -455,11 +455,11 @@ export function SubscriptionFormPage() {
       </form>
 
       {/* Floating Action Button Bar (Fixed al fondo) */}
-      <div className="fixed bottom-[var(--mobile-nav-h)] md:bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-primary-950/90 border-t border-primary-100 dark:border-primary-800 backdrop-blur-xl z-50">
-        <Button 
-          type="submit" 
+      <div className="fixed bottom-[var(--mobile-nav-h)] md:bottom-0 left-0 right-0 p-4 bg-surface/95 border-t border-border backdrop-blur-xl z-50">
+        <Button
+          type="submit"
           form="subscription-form"
-          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary-800 hover:bg-primary-900 text-white dark:bg-primary-700"
+          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary hover:bg-primary/90 text-primary-foreground"
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Creando Suscripción...' : 'Crear Suscripción'}

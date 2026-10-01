@@ -222,7 +222,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
             {...register('setupKey')}
           />
           {errors.setupKey && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.setupKey.message}</p>
+            <p className="text-sm text-destructive">{errors.setupKey.message}</p>
           )}
         </div>
       )}
@@ -247,7 +247,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
               )}
             />
             {errors.role && (
-              <p className="text-sm text-red-600 dark:text-red-400">{errors.role.message}</p>
+              <p className="text-sm text-destructive">{errors.role.message}</p>
             )}
           </div>
 
@@ -278,7 +278,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
                 )}
               />
               {errors.organizationId && (
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p className="text-sm text-destructive">
                   {errors.organizationId.message}
                 </p>
               )}
@@ -294,7 +294,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
                 {...register('newOrganizationName')}
               />
               {errors.newOrganizationName && (
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p className="text-sm text-destructive">
                   {errors.newOrganizationName.message}
                 </p>
               )}
@@ -314,7 +314,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
             {...register('name')}
           />
           {errors.name && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+            <p className="text-sm text-destructive">{errors.name.message}</p>
           )}
         </div>
 
@@ -334,7 +334,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
             )}
           />
           {errors.email && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+            <p className="text-sm text-destructive">{errors.email.message}</p>
           )}
         </div>
 
@@ -354,7 +354,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
             )}
           />
           {errors.phone && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.phone.message}</p>
+            <p className="text-sm text-destructive">{errors.phone.message}</p>
           )}
         </div>
 
@@ -368,7 +368,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
             {...register('password')}
           />
           {errors.password && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+            <p className="text-sm text-destructive">{errors.password.message}</p>
           )}
         </div>
 
@@ -382,7 +382,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
             {...register('confirmPassword')}
           />
           {errors.confirmPassword && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
+            <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
           )}
         </div>
       </div>

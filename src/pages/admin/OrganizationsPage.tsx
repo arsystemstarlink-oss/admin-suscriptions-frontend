@@ -63,7 +63,7 @@ export function OrganizationsPage() {
         }
         isLoading={isLoading}
         isEmpty={isEmpty}
-        emptyIcon={<Building2 className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+        emptyIcon={<Building2 className="h-16 w-16 text-subtle-foreground" />}
         emptyTitle="Sin organizaciones"
         emptyDescription="No encontramos resultados. Modifica los filtros o crea una nueva."
         emptyAction={
@@ -85,14 +85,14 @@ export function OrganizationsPage() {
                 {organization.active ? (
                   <Badge
                     variant="outline"
-                    className="text-xs text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+                    className="text-success bg-success/10 border-success/20"
                   >
                     Activa
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="text-xs text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+                    className="text-destructive bg-destructive/10 border-destructive/20"
                   >
                     Inactiva
                   </Badge>
@@ -100,7 +100,7 @@ export function OrganizationsPage() {
                 {organization.twilioConfigured ? (
                   <Badge
                     variant="outline"
-                    className="text-xs text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-950/50 dark:border-blue-800"
+                    className="text-info bg-info/10 border-info/20"
                   >
                     <MessageCircle className="h-3 w-3 mr-1 shrink-0" />
                     WhatsApp
@@ -108,14 +108,14 @@ export function OrganizationsPage() {
                 ) : (
                   <Badge
                     variant="outline"
-                    className="text-xs text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
+                    className="text-warning bg-warning/10 border-warning/20"
                   >
                     <MessageCircleOff className="h-3 w-3 mr-1 shrink-0" />
                     Sin WhatsApp
                   </Badge>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-primary-500 dark:text-primary-400">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
                 {organization.slug && <span className="font-medium">{organization.slug}</span>}
                 <span className="text-xs">
                   Creada: {new Date(organization.createdAt).toLocaleDateString('es-ES')}
@@ -144,7 +144,7 @@ export function OrganizationsPage() {
                 }}
                 disabled={deleteMutation.isPending}
               >
-                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+                <Trash2 className="h-4 w-4 text-destructive shrink-0" />
               </Button>
             </div>
           </ListCard>

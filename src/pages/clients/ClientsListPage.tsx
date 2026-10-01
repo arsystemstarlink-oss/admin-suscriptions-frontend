@@ -79,7 +79,7 @@ export function ClientsListPage() {
       ) : undefined}
       isLoading={isLoading && !showEmpty}
       isEmpty={showEmpty || isEmpty}
-      emptyIcon={<Users className="h-16 w-16 text-primary-200 dark:text-primary-800" />}
+      emptyIcon={<Users className="h-16 w-16 text-subtle-foreground" />}
       emptyTitle={showEmpty ? 'Selecciona una organización' : 'Sin clientes'}
       emptyDescription={showEmpty ? 'Elige una organización en la barra superior para ver los clientes.' : 'No encontramos resultados. Modifica los filtros o añade uno nuevo.'}
       emptyAction={!showEmpty && isEmpty ? (
@@ -99,12 +99,12 @@ export function ClientsListPage() {
           >
             <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
               <div className="relative shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-secondary-100 text-secondary-700 font-bold text-lg dark:bg-secondary-900/30 dark:text-secondary-400">
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-secondary/15 text-secondary-foreground font-bold text-lg">
                   {initial}
                 </div>
-                <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-primary-900 ${
-                  client.subscriptionStatus === 'ACTIVE' ? 'bg-emerald-500' : 
-                  client.subscriptionStatus === 'SUSPENDED' ? 'bg-red-500' : 'bg-primary-400'
+                <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface ${
+                  client.subscriptionStatus === 'ACTIVE' ? 'bg-success' :
+                  client.subscriptionStatus === 'SUSPENDED' ? 'bg-destructive' : 'bg-muted-foreground'
                 }`} />
               </div>
 
@@ -114,13 +114,13 @@ export function ClientsListPage() {
                     {getClientFullName(client)}
                   </h3>
                   {client.hasDebt && (
-                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-950">
+                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-destructive bg-destructive/10">
                       Deuda
                     </span>
                   )}
                 </div>
                 
-                <div className="flex items-center gap-3 mt-1.5 text-sm text-primary-500 dark:text-primary-400">
+                <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
                   {client.phone && (
                     <span className="flex items-center gap-1 truncate">
                       <Phone size={14} />

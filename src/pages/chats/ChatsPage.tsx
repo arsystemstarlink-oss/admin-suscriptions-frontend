@@ -308,17 +308,17 @@ export function ChatsPage() {
       />
 
       {showEmpty ? (
-        <div className="p-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-900 flex items-start gap-3">
+        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
           <span className="shrink-0 mt-0.5">⚠️</span>
           <span>Selecciona una organización para ver las conversaciones.</span>
         </div>
       ) : (
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
           <Card className={cn(
-            'md:col-span-1 flex flex-col overflow-hidden min-h-0 rounded-2xl border border-primary-100 dark:border-primary-800 bg-white dark:bg-primary-900/50 shadow-sm',
+            'md:col-span-1 flex flex-col overflow-hidden min-h-0 rounded-2xl border border-border bg-surface text-surface-foreground shadow-sm',
             isMobile && selectedPhone && 'hidden'
           )}>
-            <CardHeader className="border-b border-primary-100 dark:border-primary-800 shrink-0 py-4 px-4">
+            <CardHeader className="border-b border-border shrink-0 py-4 px-4">
               <h2 className="font-semibold text-foreground">Conversaciones</h2>
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -351,8 +351,8 @@ export function ChatsPage() {
                         className={cn(
                           'h-auto w-full justify-start text-left p-3 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm',
                           selectedPhone === item.phone
-                            ? 'bg-sky-50/90 dark:bg-sky-950/40 border-primary/70 shadow-md shadow-primary/10 hover:bg-sky-50/90 dark:hover:bg-sky-950/40'
-                            : 'bg-white dark:bg-primary-900/50 border-primary-100 dark:border-primary-800 hover:bg-muted/70'
+                            ? 'bg-surface-active border-border-strong shadow-md shadow-primary/10 hover:bg-surface-hover'
+                            : 'bg-surface text-surface-foreground border-border hover:bg-surface-hover'
                         )}
                       >
                         <div className="flex items-start gap-3">
@@ -365,7 +365,7 @@ export function ChatsPage() {
                               <div className="flex min-w-0 items-center gap-2">
                                 <p className="font-medium text-foreground truncate">{item.name}</p>
                                 {isUnread && (
-                                  <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+                                  <span className="inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-success" />
                                 )}
                               </div>
 
@@ -382,7 +382,7 @@ export function ChatsPage() {
                               </p>
                               <div className="flex items-center gap-1.5">
                                 {isUnread && (
-                                  <span className="rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 px-1.5 py-0.5 text-xs font-medium">
+                                  <span className="rounded-full bg-success/10 text-success px-1.5 py-0.5 text-xs font-medium">
                                     Nuevo
                                   </span>
                                 )}
@@ -408,7 +408,7 @@ export function ChatsPage() {
               'md:col-span-2 min-h-0',
               isMobile
                 ? cn(
-                    'fixed inset-x-0 z-40 flex flex-col bg-slate-50 text-primary-900 dark:bg-primary-950 dark:text-primary-50 transition-transform duration-300 ease-out',
+                    'fixed inset-x-0 z-40 flex flex-col bg-background text-foreground transition-transform duration-300 ease-out',
                     'top-(--mobile-header-h) bottom-(--mobile-nav-h) h-[calc(100dvh-var(--mobile-header-h)-var(--mobile-nav-h))]',
                     selectedPhone ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
                   )
@@ -416,7 +416,7 @@ export function ChatsPage() {
             )}
             aria-hidden={isMobile && !selectedPhone}
           >
-            <Card className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-none border-0 bg-white text-primary-800 shadow-none dark:bg-primary-950 dark:text-primary-50 md:rounded-3xl md:border md:border-primary-100 md:bg-white md:shadow-sm dark:md:border-primary-800 dark:md:bg-primary-900/50">
+            <Card className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-none border-0 bg-surface text-surface-foreground shadow-none md:rounded-3xl md:border md:border-border md:bg-surface md:shadow-sm">
               {!selectedPhone ? (
                 <div className="hidden flex-1 items-center justify-center md:flex">
                   <EmptyState
@@ -426,20 +426,20 @@ export function ChatsPage() {
                 </div>
               ) : (
                 <>
-                  <header className="flex h-14 shrink-0 items-center gap-3 border-b border-primary-100 bg-white px-3 text-primary-800 dark:border-primary-800 dark:bg-primary-900 dark:text-primary-50 md:h-16 md:px-5">
+                  <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface-muted px-3 text-surface-foreground md:h-16 md:px-5">
                     <button
                       type="button"
                       onClick={closeConversation}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-800 dark:bg-primary-800 dark:text-primary-50 active:scale-95 transition-transform touch-manipulation md:hidden"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface text-foreground active:scale-95 transition-transform touch-manipulation md:hidden"
                       aria-label="Volver a conversaciones"
                     >
                       <ArrowLeft className="h-5 w-5 shrink-0" />
                     </button>
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate text-base font-semibold leading-tight text-primary-900 dark:text-primary-50">
+                      <h2 className="truncate text-base font-semibold leading-tight text-foreground">
                         {selectedClientName}
                       </h2>
-                      <p className="truncate text-xs text-primary-500 dark:text-primary-400">{selectedPhone}</p>
+                      <p className="truncate text-xs text-muted-foreground">{selectedPhone}</p>
                     </div>
                     <Button
                       variant="ghost"
@@ -449,7 +449,7 @@ export function ChatsPage() {
                         deleteChatMutation.isPending ||
                         (isSuperAdmin && !selectedChatOrganizationId)
                       }
-                      className="h-10 w-10 shrink-0 text-red-600 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                      className="h-10 w-10 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       aria-label="Eliminar conversación"
                     >
                       <Trash2 className="h-5 w-5 shrink-0" />
@@ -484,15 +484,15 @@ export function ChatsPage() {
                               className={cn(
                                 'max-w-[78%] rounded-2xl px-4 py-3 shadow-sm',
                                 isOutbound
-                                  ? 'bg-sky-500 dark:bg-sky-700 text-white'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-surface-muted text-surface-muted-foreground'
                               )}
                             >
                               <div className="flex items-center justify-between gap-3 mb-1">
                                 <span
                                   className={cn(
                                     'text-[10px] font-semibold uppercase tracking-wide',
-                                    isOutbound ? 'text-white/85' : 'text-slate-500 dark:text-slate-300'
+                                    isOutbound ? 'text-primary-foreground/85' : 'text-muted-foreground'
                                   )}
                                 >
                                   {isOutbound ? 'Tú' : 'Cliente'}
@@ -500,7 +500,7 @@ export function ChatsPage() {
                                 <span
                                   className={cn(
                                     'text-[11px]',
-                                    isOutbound ? 'text-white/75' : 'text-slate-500 dark:text-slate-300'
+                                    isOutbound ? 'text-primary-foreground/75' : 'text-muted-foreground'
                                   )}
                                 >
                                   {formatMessageTime(msg.createdAt)}
@@ -512,7 +512,7 @@ export function ChatsPage() {
                               <div
                                 className={cn(
                                   'mt-2 flex items-center justify-end gap-2 text-[11px]',
-                                  isOutbound ? 'text-white/80' : 'text-slate-500 dark:text-slate-300'
+                                  isOutbound ? 'text-primary-foreground/80' : 'text-muted-foreground'
                                 )}
                               >
                                 {isOutbound && (
@@ -527,7 +527,7 @@ export function ChatsPage() {
                                   </span>
                                 )}
                                 {msg.status === 'FAILED' && !isOutbound && (
-                                  <span className="text-red-500">Error</span>
+                                  <span className="text-destructive">Error</span>
                                 )}
                               </div>
                             </div>
@@ -537,8 +537,8 @@ export function ChatsPage() {
                     )}
                   </div>
 
-                  <div className="shrink-0 border-t border-primary-100 bg-white px-3 py-3 text-primary-800 dark:border-primary-800 dark:bg-primary-900 dark:text-primary-50 md:px-4 md:py-4">
-                    <p className="mb-2 text-xs text-primary-500 dark:text-primary-400">
+                  <div className="shrink-0 border-t border-border bg-surface-muted px-3 py-3 text-surface-foreground md:px-4 md:py-4">
+                    <p className="mb-2 text-xs text-muted-foreground">
                       {canSendFreeMessage
                         ? 'Puedes responder porque el cliente escribió en las últimas 24h'
                         : 'Bloqueado: el cliente no ha escrito en las últimas 24h. Usa un template.'}

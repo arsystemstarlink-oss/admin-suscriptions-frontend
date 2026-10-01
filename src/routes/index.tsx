@@ -25,6 +25,8 @@ import {
   OrganizationsPage,
   SetupPage,
   ChatsPage,
+  ConsultaPage,
+  PaymentReportsPage,
   PageLoader,
 } from '@/routes/lazy-pages'
 
@@ -43,6 +45,14 @@ export const router = createBrowserRouter(
     element: (
       <Suspense fallback={<PageLoader />}>
         <SetupPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/consulta/:orgSlug',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <ConsultaPage />
       </Suspense>
     ),
   },
@@ -221,6 +231,14 @@ export const router = createBrowserRouter(
         element: (
           <Suspense fallback={<PageLoader />}>
             <ChatsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'payment-reports',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <PaymentReportsPage />
           </Suspense>
         ),
       },

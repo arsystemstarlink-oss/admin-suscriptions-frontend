@@ -4,7 +4,7 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizations, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff } from 'lucide-react'
+import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
@@ -28,6 +28,19 @@ export function OrganizationsPage() {
   )
 
   const deleteMutation = useDeleteOrganization()
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
+
+  const handleCopyConsultaLink = async (organization: Organization) => {
+    if (!organization.slug) return
+    const link = `${window.location.origin}${import.meta.env.BASE_URL}consulta/${organization.slug}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopiedSlug(organization.slug)
+      setTimeout(() => setCopiedSlug((current) => (current === organization.slug ? null : current)), 2000)
+    } catch {
+      window.prompt('Copia el enlace de consulta:', link)
+    }
+  }
 
   if (!isSuperAdmin) {
     return <Navigate to="/config" replace />
@@ -123,6 +136,21 @@ export function OrganizationsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {organization.slug && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleCopyConsultaLink(organization)}
+                  title={`Copiar link de consulta (/consulta/${organization.slug})`}
+                  aria-label={`Copiar link de consulta de ${organization.name}`}
+                >
+                  {copiedSlug === organization.slug ? (
+                    <Check className="h-4 w-4 shrink-0 text-success" />
+                  ) : (
+                    <Link2 className="h-4 w-4 shrink-0" />
+                  )}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="icon"

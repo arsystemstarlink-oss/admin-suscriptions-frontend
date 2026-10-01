@@ -19,6 +19,8 @@ export const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m =
 export const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
 export const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
 export const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))
+export const ConsultaPage = lazy(() => import('@/pages/public/ConsultaPage').then(m => ({ default: m.ConsultaPage })))
+export const PaymentReportsPage = lazy(() => import('@/pages/admin/PaymentReportsPage').then(m => ({ default: m.PaymentReportsPage })))
 
 export function PageLoader() {
   return (

@@ -320,6 +320,30 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'Error de Twilio al enviar el mensaje de WhatsApp.',
   },
+  PAYMENT_REPORT_NOT_FOUND: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Reporte no encontrado.',
+    sideEffect: 'invalidate-billing',
+  },
+  PAYMENT_REPORT_ALREADY_EXISTS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Este período ya tiene un reporte en verificación.',
+    sideEffect: 'invalidate-billing',
+  },
+  PAYMENT_REPORT_ALREADY_REVIEWED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Este reporte ya fue revisado por otro administrador.',
+    sideEffect: 'invalidate-billing',
+  },
+  PAYMENT_REPORT_INVALID_STATE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El reporte no puede procesarse en su estado actual.',
+    sideEffect: 'invalidate-billing',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {

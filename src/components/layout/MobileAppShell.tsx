@@ -1,8 +1,9 @@
 import React from 'react';
-import { Home, MessageSquare, CreditCard, Settings, Building2 } from 'lucide-react';
+import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
+import { usePendingReportsCount } from '@/hooks/usePaymentReports';
 import { HeaderActions } from './HeaderActions';
 import { cn } from '@/lib/utils';
 import {
@@ -36,12 +37,15 @@ export default function MobileAppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const unreadChatsCount = useUnreadChatsCount();
+  const { data: pendingReports } = usePendingReportsCount();
+  const pendingReportsCount = pendingReports?.pending ?? 0;
 
   // Determinar la tab activa basada en la ruta
   const getActiveTab = () => {
     const path = location.pathname;
     if (path === '/' || path === '/dashboard') return 'home';
     if (path.startsWith('/subscriptions')) return 'subs';
+    if (path.startsWith('/payment-reports')) return 'reports';
     if (path.startsWith('/chats')) return 'chats';
     if (path.startsWith('/config') || path.startsWith('/settings') || path.startsWith('/plans')) return 'settings';
     return 'home';
@@ -59,6 +63,7 @@ export default function MobileAppShell({
   }> = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/' },
     { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
+    { id: 'reports', icon: ReceiptText, label: 'Reportes', path: '/payment-reports', badge: pendingReportsCount },
     { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];

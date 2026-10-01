@@ -453,6 +453,126 @@ export interface PayResponse {
   }
 }
 
+export type PaymentReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface PaymentReport {
+  id: string
+  organizationId: string
+  clientId: string
+  subscriptionId: string
+  billingPeriodId: string
+  amount: number
+  paymentMethod: PaymentMethod
+  paidAt: string
+  notes?: string
+  status: PaymentReportStatus
+  createdAt: string
+  reviewedAt?: string
+  reviewedByUserId?: string
+  reviewNotes?: string
+}
+
+export interface PaymentReportWithDetails extends PaymentReport {
+  client?: Pick<Client, 'id' | 'firstName' | 'lastName' | 'dni' | 'phone'> | null
+  subscription?: Pick<Subscription, 'id' | 'kitNumber' | 'status'> | null
+  billingPeriod?: Pick<BillingPeriod, 'id' | 'periodLabel' | 'startDate' | 'endDate' | 'amount' | 'status'> | null
+}
+
+export interface PaymentReportsListResponse {
+  reports: PaymentReportWithDetails[]
+  pagination: Pagination
+}
+
+export interface ReviewPaymentReportRequest {
+  action: 'approve' | 'reject'
+  notes?: string
+}
+
+export interface ReviewPaymentReportResponse {
+  report: PaymentReportWithDetails
+  billingPeriod?: BillingPeriod
+  currentPeriod?: BillingPeriod
+  subscription?: {
+    id: string
+    status: SubscriptionStatus
+    previousStatus: SubscriptionStatus
+    reactivated: boolean
+  } | null
+}
+
+export interface PublicOrganization {
+  id: string
+  name: string
+  slug?: string
+}
+
+export interface PublicLookupRequest {
+  dni: string
+  phone: string
+}
+
+export interface PublicLookupResponse {
+  organization: PublicOrganization
+  client: {
+    id: string
+    firstName: string
+    lastName: string
+    dni?: string
+    phoneMasked: string
+    emailMasked?: string
+  }
+  subscriptions: {
+    id: string
+    kitNumber: string
+    billingDay: number
+    status: SubscriptionStatus
+    plan: { id: string; name: string; price: number } | null
+  }[]
+  periods: {
+    id: string
+    subscriptionId: string
+    periodLabel: string
+    startDate: string
+    endDate: string
+    amount: number
+    status: BillingPeriodStatus
+    hasPendingReport: boolean
+  }[]
+  pendingReports: {
+    id: string
+    billingPeriodId: string
+    amount: number
+    status: PaymentReportStatus
+    createdAt: string
+  }[]
+  totals: {
+    totalDebt: number
+    pendingCount: number
+    overdueCount: number
+    pendingVerificationCount: number
+    pendingVerificationAmount: number
+  }
+}
+
+export interface CreatePublicReportRequest extends PublicLookupRequest {
+  billingPeriodId: string
+  paymentMethod: PaymentMethod
+  paidAt: string
+  notes?: string
+}
+
+export interface CreatePublicReportResponse {
+  report: {
+    id: string
+    billingPeriodId: string
+    amount: number
+    paymentMethod: PaymentMethod
+    paidAt: string
+    status: PaymentReportStatus
+    createdAt: string
+  }
+}
+
 export interface ClientDetailResponse {
   client: Client
   subscriptions: SubscriptionWithDetails[]
@@ -583,12 +703,12 @@ export type ErrorCode =
   | 'INVALID_DATA'
   | 'TENANT_REQUIRED'
   | 'ORGANIZATION_NOT_FOUND'
+  | 'ORGANIZATION_INACTIVE'
   | 'FORBIDDEN_CROSS_TENANT'
   | 'CROSS_TENANT_REFERENCE'
   | 'LAST_ADMIN'
   | 'CANNOT_DELETE_SELF'
   | 'WHATSAPP_NOT_CONFIGURED'
-  | 'ORGANIZATION_INACTIVE'
   | 'JOB_ALREADY_RUNNING'
   | 'RATE_LIMITED'
   | 'INVALID_CRON'
@@ -600,6 +720,10 @@ export type ErrorCode =
   | 'PERIOD_NOT_COMPLETE'
   | 'INVALID_SUBSCRIPTION'
   | 'INVALID_BILLING_PERIOD'
+  | 'PAYMENT_REPORT_NOT_FOUND'
+  | 'PAYMENT_REPORT_ALREADY_EXISTS'
+  | 'PAYMENT_REPORT_ALREADY_REVIEWED'
+  | 'PAYMENT_REPORT_INVALID_STATE'
   | 'TWILIO_ERROR'
 
 export interface ApiError {

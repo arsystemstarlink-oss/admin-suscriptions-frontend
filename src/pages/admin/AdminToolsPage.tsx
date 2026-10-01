@@ -24,6 +24,8 @@ import {
   History,
   Timer,
   SkipForward,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { formatDate } from '@/lib/constants'
 import type { NotificationFailure, NotificationType, SchedulerLog } from '@/types/api'
@@ -33,6 +35,8 @@ const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   'suspension-warning': 'Advertencia de suspensión',
   'suspended-notice': 'Aviso de suspensión',
 }
+
+const VISIBLE_LOGS_COUNT = 3
 
 const LOG_STATUS: Record<SchedulerLog['status'], { label: string; className: string }> = {
   success: {
@@ -84,16 +88,24 @@ function formatDuration(ms: number): string {
 
 function LogStat({ label, value, alert = false }: { label: string; value: number; alert?: boolean }) {
   return (
-    <div className="rounded-lg bg-slate-50 dark:bg-primary-950/50 border border-primary-100 dark:border-primary-800 p-2 text-center">
-      <p
-        className={`text-sm font-semibold leading-none ${
-          alert ? 'text-red-600 dark:text-red-400' : 'text-primary-900 dark:text-primary-50'
+    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+      <span
+        className={`text-xs font-semibold tabular-nums ${
+          alert ? 'text-red-600 dark:text-red-400' : 'text-primary-800 dark:text-primary-100'
         }`}
       >
         {value}
-      </p>
-      <p className="text-[10px] uppercase tracking-wide text-primary-500 dark:text-primary-400 mt-1">{label}</p>
-    </div>
+      </span>
+      <span className="text-[11px] text-primary-500 dark:text-primary-400">{label}</span>
+    </span>
+  )
+}
+
+function LogStatDot() {
+  return (
+    <span aria-hidden="true" className="select-none text-primary-300 dark:text-primary-600">
+      •
+    </span>
   )
 }
 
@@ -150,6 +162,7 @@ export function AdminToolsPage() {
   const missingCron = !cronSchedule || cronSchedule === '* * * * *'
 
   const [runErrors, setRunErrors] = useState<NotificationFailure[] | null>(null)
+  const [showAllLogs, setShowAllLogs] = useState(false)
 
   const cronScheduleFromServer = schedulerConfig?.cronSchedule
 
@@ -396,7 +409,7 @@ export function AdminToolsPage() {
                       <CardTitle className="text-lg sm:text-xl">Historial de Ejecuciones</CardTitle>
                       <CardDescription className="text-xs sm:text-sm mt-0.5">
                         {schedulerLogs?.total
-                          ? `Últimas ${schedulerLogs.logs.length} de ${schedulerLogs.total} ejecuciones`
+                          ? `${schedulerLogs.total} ejecuciones registradas`
                           : 'Ejecuciones registradas de la Tarea Diaria'}
                       </CardDescription>
                     </div>
@@ -414,54 +427,79 @@ export function AdminToolsPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {schedulerLogs.logs.map((log) => {
+                    <>
+                      <div className="space-y-2">
+                        {(showAllLogs ? schedulerLogs.logs : schedulerLogs.logs.slice(0, VISIBLE_LOGS_COUNT)).map((log) => {
                         const StatusIcon = STATUS_ICON[log.status]
                         return (
                           <div
                             key={log.id}
-                            className="p-3 sm:p-4 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800"
+                            className="p-2.5 bg-white dark:bg-primary-900/30 rounded-xl border border-primary-100 dark:border-primary-800 text-primary-800 dark:text-primary-100"
                           >
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-between">
-                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                              <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                                 <Badge
-                                  className={`w-fit shrink-0 text-xs px-2.5 py-1 ${LOG_STATUS[log.status].className}`}
+                                  className={`w-fit shrink-0 text-[11px] px-2 py-0.5 ${LOG_STATUS[log.status].className}`}
                                 >
-                                  <span className="flex items-center gap-1.5">
-                                    <StatusIcon className="h-3.5 w-3.5 shrink-0" />
+                                  <span className="flex items-center gap-1">
+                                    <StatusIcon className="h-3 w-3 shrink-0" />
                                     {LOG_STATUS[log.status].label}
                                   </span>
                                 </Badge>
-                                <Badge className="w-fit shrink-0 text-xs px-2.5 py-1 bg-primary-100 text-primary-600 border border-primary-200 dark:bg-primary-900 dark:text-primary-400 dark:border-primary-700">
+                                <Badge className="w-fit shrink-0 text-[11px] px-2 py-0.5 bg-primary-100 text-primary-800 border border-primary-200 dark:bg-primary-900 dark:text-primary-300 dark:border-primary-700">
                                   {LOG_TRIGGERED_BY[log.triggeredBy]}
                                 </Badge>
-                                <span className="text-xs text-primary-500 dark:text-primary-400">
+                                <span className="text-[11px] text-primary-500 dark:text-primary-400 truncate">
                                   {formatLogTime(log.startedAt)}
                                 </span>
                               </div>
-                              <span className="text-xs font-medium text-primary-600 dark:text-primary-300 flex items-center gap-1.5">
-                                <Timer className="h-3.5 w-3.5 shrink-0" />
+                              <span className="shrink-0 text-[11px] font-medium text-primary-700 dark:text-primary-300 flex items-center gap-1">
+                                <Timer className="h-3 w-3 shrink-0" />
                                 {formatDuration(log.durationMs)}
                               </span>
                             </div>
 
                             {log.error && (
-                              <div className="mt-3 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-2.5 text-xs text-red-700 dark:text-red-400 break-words">
+                              <div className="mt-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/50 p-2 text-[11px] text-red-700 dark:text-red-400 break-words">
                                 {log.error}
                               </div>
                             )}
 
-                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               <LogStat label="Vencidos" value={log.overdue} alert={log.overdue > 0} />
+                              <LogStatDot />
                               <LogStat label="Generados" value={log.generated} />
+                              <LogStatDot />
                               <LogStat label="Suspendidos" value={log.suspended} alert={log.suspended > 0} />
+                              <LogStatDot />
                               <LogStat label="Notificaciones" value={log.notifications} />
+                              <LogStatDot />
                               <LogStat label="Errores notif." value={log.notificationErrors} alert={log.notificationErrors > 0} />
                             </div>
                           </div>
                         )
-                      })}
-                    </div>
+                        })}
+                      </div>
+                      {schedulerLogs.logs.length > VISIBLE_LOGS_COUNT && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAllLogs((v) => !v)}
+                          className="mt-2 w-full text-xs"
+                        >
+                          {showAllLogs ? (
+                            <>
+                              <ChevronUp className="h-4 w-4 shrink-0" />
+                              Mostrar menos
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4 shrink-0" />
+                              Mostrar más ({schedulerLogs.logs.length - VISIBLE_LOGS_COUNT} anteriores)
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>

@@ -524,6 +524,7 @@ export interface PublicLookupResponse {
   subscriptions: {
     id: string
     kitNumber: string
+    accountNumber?: string
     billingDay: number
     status: SubscriptionStatus
     plan: { id: string; name: string; price: number } | null

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -31,6 +31,8 @@ import {
 } from '@/components/ui/select'
 import { BrandMark } from '@/components/brand/BrandMark'
 import {
+  SUBSCRIPTION_STATUS_COLORS,
+  SUBSCRIPTION_STATUS_LABELS,
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -46,12 +48,14 @@ import {
   Building2,
   Calendar,
   CheckCircle,
+  ChevronDown,
   CreditCard,
   DollarSign,
   IdCard,
   Loader2,
   Phone,
   Search,
+  Wifi,
 } from 'lucide-react'
 
 const lookupSchema = z.object({
@@ -91,6 +95,8 @@ export function ConsultaPage() {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null)
   const [reportSuccess, setReportSuccess] = useState(false)
   const [lastCredentials, setLastCredentials] = useState<{ dni: string; phone: string } | null>(null)
+  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string | null>(null)
+  const [expandedSubscriptions, setExpandedSubscriptions] = useState<Record<string, boolean>>({})
 
   const lookupMutation = usePublicLookup(orgSlug)
   const reportMutation = usePublicCreateReport(orgSlug)
@@ -113,12 +119,15 @@ export function ConsultaPage() {
     setSelectedPeriodId(null)
     setReportSuccess(false)
     setLastCredentials(null)
+    setSelectedSubscriptionId(null)
+    setExpandedSubscriptions({})
   }, [orgSlug])
 
   const onLookup = async (data: LookupForm) => {
     setLookupError(null)
     setSelectedPeriodId(null)
     setReportSuccess(false)
+    setSelectedSubscriptionId(null)
     try {
       const normalizedDni = normalizeDni(data.dni)
       const result = await lookupMutation.mutateAsync({
@@ -127,6 +136,14 @@ export function ConsultaPage() {
       })
       setLookupResult(result)
       setLastCredentials({ dni: normalizedDni, phone: data.phone })
+      const firstWithDebt = result.subscriptions.find((s) =>
+        result.periods.some((p) => p.subscriptionId === s.id && p.status !== 'PAID'),
+      )
+      const defaultSub = firstWithDebt ?? result.subscriptions[0] ?? null
+      setSelectedSubscriptionId(defaultSub ? defaultSub.id : null)
+      if (defaultSub) {
+        setExpandedSubscriptions({ [defaultSub.id]: true })
+      }
     } catch (err) {
       setLookupResult(null)
       setLastCredentials(null)
@@ -135,7 +152,43 @@ export function ConsultaPage() {
     }
   }
 
+  const subscriptionsWithDebt = useMemo(() => {
+    if (!lookupResult) return []
+    const periodsBySub = new Map<string, typeof lookupResult.periods>()
+    for (const period of lookupResult.periods) {
+      const list = periodsBySub.get(period.subscriptionId) ?? []
+      list.push(period)
+      periodsBySub.set(period.subscriptionId, list)
+    }
+    return lookupResult.subscriptions.map((sub) => {
+      const subPeriods = (periodsBySub.get(sub.id) ?? []).slice().sort(
+        (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+      )
+      const unpaid = subPeriods.filter((p) => p.status !== 'PAID')
+      const overdueCount = subPeriods.filter((p) => p.status === 'OVERDUE').length
+      const pendingCount = subPeriods.filter((p) => p.status === 'PENDING').length
+      const subDebt = unpaid.reduce((sum, p) => sum + p.amount, 0)
+      const oldestUnpaid = unpaid[0] ?? null
+      return { sub, subPeriods, unpaid, overdueCount, pendingCount, subDebt, oldestUnpaid }
+    })
+  }, [lookupResult])
+
+  const effectiveSubscriptionId = useMemo(() => {
+    if (!lookupResult) return null
+    if (selectedSubscriptionId && lookupResult.subscriptions.some((s) => s.id === selectedSubscriptionId)) {
+      return selectedSubscriptionId
+    }
+    return subscriptionsWithDebt[0]?.sub.id ?? null
+  }, [lookupResult, selectedSubscriptionId, subscriptionsWithDebt])
+
+  const toggleSubscription = (id: string) => {
+    setExpandedSubscriptions((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
   const selectedPeriod = lookupResult?.periods.find((p) => p.id === selectedPeriodId) ?? null
+  const selectedPeriodSub = selectedPeriod
+    ? lookupResult?.subscriptions.find((s) => s.id === selectedPeriod.subscriptionId) ?? null
+    : null
   const minPaidAt = selectedPeriod?.startDate ? selectedPeriod.startDate.split('T')[0] : ''
 
   const {
@@ -317,42 +370,125 @@ export function ConsultaPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {lookupResult.periods
-                  .filter((p) => p.status !== 'PAID')
-                  .map((period) => (
+                <p className="text-sm font-semibold text-foreground">
+                  Tus suscripciones ({subscriptionsWithDebt.length})
+                </p>
+                {subscriptionsWithDebt.map(({ sub, subPeriods, unpaid, overdueCount, pendingCount, subDebt, oldestUnpaid }) => {
+                  const isSelected = effectiveSubscriptionId === sub.id
+                  const isExpanded = expandedSubscriptions[sub.id] ?? isSelected
+                  const hasDebt = unpaid.length > 0
+                  return (
                     <div
-                      key={period.id}
-                      className="rounded-2xl border border-border bg-surface p-4 text-surface-foreground"
+                      key={sub.id}
+                      className={`overflow-hidden rounded-2xl border bg-surface text-surface-foreground ${isSelected ? 'border-border-strong' : 'border-border'}`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-foreground">{period.periodLabel}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Vence: <span className="font-medium text-destructive">{formatDate(period.endDate)}</span>
-                          </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedSubscriptionId(sub.id)
+                          toggleSubscription(sub.id)
+                        }}
+                        aria-expanded={isExpanded}
+                        className="flex w-full items-center gap-3 p-4 text-left"
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-muted-foreground">
+                          <Wifi className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="truncate font-semibold text-foreground">{sub.plan?.name ?? 'Plan'}</span>
+                            <Badge className={SUBSCRIPTION_STATUS_COLORS[sub.status]}>
+                              {SUBSCRIPTION_STATUS_LABELS[sub.status]}
+                            </Badge>
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            Kit {sub.kitNumber}
+                            {sub.accountNumber ? ` · Cuenta ${sub.accountNumber}` : ''} · Corte día {sub.billingDay}
+                          </span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {hasDebt ? (
+                              <>
+                                Debe <span className="font-bold text-foreground">{formatCurrency(subDebt)}</span>
+                                {' '}· {overdueCount > 0 ? `${overdueCount} vencido(s)` : ''}
+                                {overdueCount > 0 && pendingCount > 0 ? ' · ' : ''}
+                                {pendingCount > 0 ? `${pendingCount} pendiente(s)` : ''}
+                                {oldestUnpaid ? ` · desde ${formatDate(oldestUnpaid.startDate)}` : ''}
+                              </>
+                            ) : (
+                              'Al día — sin deuda pendiente'
+                            )}
+                          </span>
+                        </span>
+                        <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isExpanded && (
+                        <div className="space-y-2 border-t border-border-subtle p-4 pt-3">
+                          {subPeriods.length === 0 && (
+                            <p className="text-sm text-muted-foreground">Sin períodos para esta suscripción.</p>
+                          )}
+                          {unpaid.map((period, index) => (
+                            <div
+                              key={period.id}
+                              className="rounded-xl border border-border-subtle bg-surface-muted p-3"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-foreground">
+                                    <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-active text-[11px] font-bold text-foreground">
+                                      {index + 1}
+                                    </span>
+                                    {period.periodLabel}
+                                  </p>
+                                  <p className="mt-0.5 text-xs text-muted-foreground">
+                                    Vence: <span className="font-medium text-destructive">{formatDate(period.endDate)}</span>
+                                  </p>
+                                </div>
+                                <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
+                                  {BILLING_PERIOD_STATUS_LABELS[period.status]}
+                                </Badge>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between">
+                                <span className="text-base font-bold text-foreground">{formatCurrency(period.amount)}</span>
+                                {period.hasPendingReport ? (
+                                  <Badge variant="outline" className={STATUS_INFO}>
+                                    En verificación
+                                  </Badge>
+                                ) : (
+                                  <Button size="sm" onClick={() => setSelectedPeriodId(period.id)}>
+                                    Reportar pago
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {subPeriods.filter((p) => p.status === 'PAID').length > 0 && (
+                            <details className="rounded-xl border border-border-subtle p-3">
+                              <summary className="cursor-pointer text-xs font-semibold text-foreground">
+                                Pagados ({subPeriods.filter((p) => p.status === 'PAID').length})
+                              </summary>
+                              <div className="mt-2 space-y-1.5">
+                                {subPeriods
+                                  .filter((p) => p.status === 'PAID')
+                                  .map((period) => (
+                                    <div key={period.id} className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">{period.periodLabel}</span>
+                                      <span className="font-medium text-foreground">{formatCurrency(period.amount)}</span>
+                                    </div>
+                                  ))}
+                              </div>
+                            </details>
+                          )}
                         </div>
-                        <Badge className={BILLING_PERIOD_STATUS_COLORS[period.status]}>
-                          {BILLING_PERIOD_STATUS_LABELS[period.status]}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-lg font-bold text-foreground">{formatCurrency(period.amount)}</span>
-                        {period.hasPendingReport ? (
-                          <Badge variant="outline" className={STATUS_INFO}>
-                            En verificación
-                          </Badge>
-                        ) : (
-                          <Button size="sm" onClick={() => setSelectedPeriodId(period.id)}>
-                            Reportar pago
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  ))}
+                  )
+                })}
               </div>
             )}
 
-            {lookupResult.periods.filter((p) => p.status === 'PAID').length > 0 && (
+            {lookupResult.periods.filter((p) => p.status === 'PAID').length > 0 &&
+              lookupResult.periods.filter((p) => p.status !== 'PAID').length === 0 && (
               <details className="rounded-2xl border border-border bg-surface p-4 text-surface-foreground">
                 <summary className="cursor-pointer text-sm font-semibold text-foreground">
                   Períodos pagados ({lookupResult.periods.filter((p) => p.status === 'PAID').length})
@@ -390,12 +526,18 @@ export function ConsultaPage() {
                     className="space-y-5"
                   >
                     <div className="space-y-3 rounded-xl border border-border-subtle bg-surface-muted p-4">
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-foreground">{selectedPeriod.periodLabel}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate font-semibold text-foreground">{selectedPeriod.periodLabel}</p>
                         <Badge className={BILLING_PERIOD_STATUS_COLORS[selectedPeriod.status]}>
                           {BILLING_PERIOD_STATUS_LABELS[selectedPeriod.status]}
                         </Badge>
                       </div>
+                      {selectedPeriodSub && (
+                        <p className="text-xs text-muted-foreground">
+                          {selectedPeriodSub.plan?.name ?? 'Plan'} · Kit {selectedPeriodSub.kitNumber}
+                          {selectedPeriodSub.accountNumber ? ` · Cuenta ${selectedPeriodSub.accountNumber}` : ''}
+                        </p>
+                      )}
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span>Monto a reportar</span>
                         <span className="text-base font-bold text-foreground">

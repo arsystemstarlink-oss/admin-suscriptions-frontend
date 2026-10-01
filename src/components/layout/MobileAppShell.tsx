@@ -4,7 +4,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
 import { usePendingReportsCount } from '@/hooks/usePaymentReports';
-import { ExchangeRateBadge } from '@/components/exchange/ExchangeRateBadge';
+import { ExchangeTicker } from '@/components/exchange/ExchangeTicker';
 import { HeaderActions } from './HeaderActions';
 import { cn } from '@/lib/utils';
 import {
@@ -74,47 +74,43 @@ export default function MobileAppShell({
 
   return (
     <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-background text-foreground select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
-      {/* Header móvil: fila 1 logo + acciones, fila 2 tasa */}
-      <header className="sticky top-0 z-50 border-b border-border-subtle bg-header pt-[max(env(safe-area-inset-top),12px)] text-header-foreground transition-colors">
-        <div className="flex min-h-11 items-center gap-2 px-3 pb-1">
-          <BrandMark size="sm" hideSystemOnMobile className="min-w-0 flex-1 text-header-foreground [&_span]:truncate" />
-          <div className="flex shrink-0 items-center gap-1.5">
-            {showOrgSwitcher && (
-              <Select
-                value={selectedOrganizationId || ALL_ORGS_VALUE}
-                onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
+      {/* Header móvil en una sola fila: logo a la izquierda, acciones a la derecha */}
+      <header className="sticky top-0 z-50 flex min-h-14 items-center gap-3 border-b border-border-subtle bg-header px-3 pb-2 pt-[max(env(safe-area-inset-top),12px)] text-header-foreground transition-colors">
+        <BrandMark size="sm" className="min-w-0 flex-1 text-header-foreground [&_span]:truncate" />
+        <div className="flex shrink-0 items-center gap-1.5">
+          {showOrgSwitcher && (
+            <Select
+              value={selectedOrganizationId || ALL_ORGS_VALUE}
+              onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
+            >
+              <SelectTrigger
+                aria-label="Organización activa"
+                className="h-8 w-auto max-w-28 shrink-0 gap-1 px-2 text-xs border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground [&>span]:truncate"
               >
-                <SelectTrigger
-                  aria-label="Organización activa"
-                  className="h-8 w-auto max-w-28 shrink-0 gap-1 px-2 text-xs border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground [&>span]:truncate"
-                >
-                  <Building2 className="h-3.5 w-3.5 shrink-0" />
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_ORGS_VALUE}>Todas</SelectItem>
-                  {organizations!.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <div className="shrink-0">
-              <HeaderActions
-                showChatsButton={false}
-                showSearchButton={false}
-                unreadChatsCount={unreadChatsCount}
-                onOpenSearch={onOpenSearch ?? (() => {})}
-              />
-            </div>
+                <Building2 className="h-3.5 w-3.5 shrink-0" />
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_ORGS_VALUE}>Todas</SelectItem>
+                {organizations!.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="shrink-0">
+            <HeaderActions
+              showChatsButton={false}
+              showSearchButton={false}
+              unreadChatsCount={unreadChatsCount}
+              onOpenSearch={onOpenSearch ?? (() => {})}
+            />
           </div>
         </div>
-        <div className="flex items-center px-3 pb-2">
-          <ExchangeRateBadge compact className="max-w-full" />
-        </div>
       </header>
+      <ExchangeTicker />
 
       {/* Contenedor Principal (Scroll) */}
       <main

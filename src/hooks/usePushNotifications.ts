@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { pushApi } from '@/api/push.api'
+import { getErrorHandler } from '@/lib/error-handler'
+import type { ErrorCode } from '@/types/api'
 import {
   createPushSubscription,
   getNotificationPermission,
   getPushSubscription,
+  getServiceWorkerRegistration,
   isPushSupported,
   removePushSubscription,
 } from '@/lib/push'
@@ -20,6 +23,15 @@ interface UsePushNotificationsReturn {
   disable: () => Promise<boolean>
   sendTest: () => Promise<boolean>
   refresh: () => Promise<void>
+}
+
+function resolveErrorMessage(error: unknown, fallback: string): string {
+  const apiError = error as { code?: string; message?: string }
+  if (apiError?.code) {
+    return apiError.message || getErrorHandler(apiError.code as ErrorCode).message
+  }
+  if (error instanceof Error) return error.message
+  return fallback
 }
 
 export function usePushNotifications(): UsePushNotificationsReturn {
@@ -41,15 +53,37 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setChecking(true)
     setError(null)
     try {
-      const subscription = await getPushSubscription()
+      const registration = await getServiceWorkerRegistration()
+      if (!registration) {
+        setSubscribed(false)
+        setError(
+          'Las notificaciones necesitan el service worker activo. Abre la app instalada (PWA) o una versión compilada.',
+        )
+        return
+      }
+
+      const subscription = await registration.pushManager.getSubscription()
       if (!subscription) {
         setSubscribed(false)
         return
       }
+
       const { subscriptions } = await pushApi.listSubscriptions()
-      setSubscribed(subscriptions.some((entry) => entry.endpoint === subscription.endpoint))
-    } catch {
+      if (subscriptions.some((entry) => entry.endpoint === subscription.endpoint)) {
+        setSubscribed(true)
+        return
+      }
+
+      try {
+        await pushApi.register(subscription)
+        setSubscribed(true)
+      } catch (err) {
+        setSubscribed(false)
+        setError(resolveErrorMessage(err, 'No se pudo registrar la suscripción en el servidor'))
+      }
+    } catch (err) {
       setSubscribed(false)
+      setError(resolveErrorMessage(err, 'No se pudo verificar el estado de las notificaciones'))
     } finally {
       setChecking(false)
     }
@@ -102,7 +136,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       setSubscribed(true)
       return true
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudieron activar las notificaciones')
+      setError(resolveErrorMessage(err, 'No se pudieron activar las notificaciones'))
       return false
     } finally {
       setToggling(false)
@@ -126,7 +160,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       setSubscribed(false)
       return true
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudieron desactivar las notificaciones')
+      setError(resolveErrorMessage(err, 'No se pudieron desactivar las notificaciones'))
       return false
     } finally {
       setToggling(false)
@@ -140,7 +174,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       await pushApi.sendTest()
       return true
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo enviar la notificación de prueba')
+      setError(resolveErrorMessage(err, 'No se pudo enviar la notificación de prueba'))
       return false
     } finally {
       setSendingTest(false)

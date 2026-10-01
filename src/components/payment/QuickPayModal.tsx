@@ -34,6 +34,10 @@ import {
   BILLING_PERIOD_STATUS_LABELS,
 } from '@/lib/constants'
 import { getClientFullName, hasOlderUnpaidPeriod } from '@/lib/utils'
+import { useDolarRates } from '@/hooks/useExchange'
+import { useExchangeStore } from '@/stores/exchange.store'
+import { getRateForSource } from '@/lib/exchange'
+import { BsReference } from '@/components/exchange/BsReference'
 import { PaymentMethod } from '@/types/api'
 import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle } from 'lucide-react'
 
@@ -62,6 +66,9 @@ export function QuickPayModal() {
 
   const period = quickPayContext?.period
   const registerPayment = useRegisterPayment(period?.id || '')
+  const exchangeSource = useExchangeStore((s) => s.source)
+  const { data: exchangeRates } = useDolarRates()
+  const activeRate = getRateForSource(exchangeRates, exchangeSource)
   const { data: subscriptionPeriods } = useBillingPeriods(
     { subscriptionId: period?.subscriptionId },
     { enabled: !!period?.subscriptionId }
@@ -154,7 +161,10 @@ export function QuickPayModal() {
                   <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                     <div className="flex justify-between items-center">
                       <span>{period.subscription?.kitNumber ?? '—'} - {period.plan?.name ?? '—'}</span>
-                      <span className="font-bold text-base text-foreground">{formatCurrency(period.amount)}</span>
+                      <span className="text-right">
+                        <span className="font-bold text-base text-foreground">{formatCurrency(period.amount)}</span>
+                        <BsReference usdAmount={period.amount} rate={activeRate} className="block" />
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>{period.periodLabel}</span>
@@ -245,7 +255,10 @@ export function QuickPayModal() {
                 ) : (
                   <>
                     <DollarSign className="h-5 w-5 mr-2 shrink-0" />
-                    Cobrar {formatCurrency(period.amount)}
+                    <span className="flex flex-col items-start leading-tight">
+                      <span>Cobrar {formatCurrency(period.amount)}</span>
+                      <BsReference usdAmount={period.amount} rate={activeRate} className="text-xs text-primary-foreground/80" />
+                    </span>
                   </>
                 )}
               </Button>
@@ -270,6 +283,7 @@ export function QuickPayModal() {
                 <p className="text-muted-foreground mt-2 font-medium">
                   {formatCurrency(period.amount)} — {period.periodLabel}
                 </p>
+                <BsReference usdAmount={period.amount} rate={activeRate} className="mt-1 block text-center" />
               </div>
               {reactivated && (
                 <div className="flex items-center justify-center gap-2 rounded-xl bg-success/10 text-success border border-success/20 p-4 mt-4 mx-auto max-w-sm">

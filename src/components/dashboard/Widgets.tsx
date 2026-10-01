@@ -8,6 +8,10 @@ import { useNavigate } from 'react-router-dom'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import { formatCurrency, formatDate } from '@/lib/constants'
+import { useDolarRates } from '@/hooks/useExchange'
+import { useExchangeStore } from '@/stores/exchange.store'
+import { getRateForSource } from '@/lib/exchange'
+import { BsReference } from '@/components/exchange/BsReference'
 import { getClientFullName } from '@/lib/utils'
 import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, ChevronDown, Clock, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -76,6 +80,9 @@ export function PendingPaymentsWidget() {
   const isLoading = loadingPending || loadingOverdue
   const { openQuickPay } = useUIStore()
   const navigate = useNavigate()
+  const exchangeSource = useExchangeStore((s) => s.source)
+  const { data: exchangeRates } = useDolarRates()
+  const activeRate = getRateForSource(exchangeRates, exchangeSource)
 
   const items = useMemo(() => {
     const overdue = (overdueData?.periods ?? []).filter(
@@ -162,6 +169,7 @@ export function PendingPaymentsWidget() {
                     <span className="font-bold text-foreground">
                       {formatCurrency(period.amount)}
                     </span>
+                    <BsReference usdAmount={period.amount} rate={activeRate} />
                     {period.status === 'OVERDUE' ? (
                       <span className="text-destructive bg-destructive/10 font-medium px-1.5 py-0.5 rounded">
                         Vencida: {formatDate(period.endDate)}
@@ -208,6 +216,9 @@ export function TopDebtorsWidget() {
   const navigate = useNavigate()
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const exchangeSource = useExchangeStore((s) => s.source)
+  const { data: exchangeRates } = useDolarRates()
+  const activeRate = getRateForSource(exchangeRates, exchangeSource)
   const items = data?.topDebtors.items ?? []
   const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
   const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
@@ -293,6 +304,7 @@ export function TopDebtorsWidget() {
                     <span className="font-bold text-destructive">
                       {formatCurrency(debtor.totalDebt)}
                     </span>
+                    <BsReference usdAmount={debtor.totalDebt} rate={activeRate} />
                     <span className="text-muted-foreground truncate max-w-30">{debtor.clientPhone}</span>
                     {debtor.clientDni && (
                       <span className="text-muted-foreground truncate max-w-25">C.I. {debtor.clientDni}</span>
@@ -339,6 +351,9 @@ export function ExpiringSoonWidget() {
   const { data, isLoading } = useDashboardAlerts()
   const navigate = useNavigate()
   const [expanded, setExpanded] = useState(false)
+  const exchangeSource = useExchangeStore((s) => s.source)
+  const { data: exchangeRates } = useDolarRates()
+  const activeRate = getRateForSource(exchangeRates, exchangeSource)
   const items = data?.expiringSoon.items ?? []
   const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
   const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
@@ -408,6 +423,7 @@ export function ExpiringSoonWidget() {
                     <span className="font-bold text-foreground">
                       {formatCurrency(item.amount)}
                     </span>
+                    <BsReference usdAmount={item.amount} rate={activeRate} />
                     {item.clientDni && (
                       <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         C.I. {item.clientDni}

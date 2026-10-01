@@ -4,6 +4,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
 import { usePendingReportsCount } from '@/hooks/usePaymentReports';
+import { ExchangeRateBadge } from '@/components/exchange/ExchangeRateBadge';
 import { HeaderActions } from './HeaderActions';
 import { cn } from '@/lib/utils';
 import {
@@ -77,6 +78,7 @@ export default function MobileAppShell({
       <header className="sticky top-0 z-50 flex min-h-14 items-center gap-3 px-3 pt-[max(env(safe-area-inset-top),12px)] pb-2 bg-header text-header-foreground border-b border-border-subtle transition-colors">
         <BrandMark size="sm" className="shrink-0 text-header-foreground" />
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+          <ExchangeRateBadge compact className="shrink-0" />
           {showOrgSwitcher && (
             <Select
               value={selectedOrganizationId || ALL_ORGS_VALUE}

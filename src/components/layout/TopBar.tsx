@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Building2 } from 'lucide-react'
+import { ExchangeRateBadge } from '@/components/exchange/ExchangeRateBadge'
 import type { Organization } from '@/types/api'
 
 interface TopBarProps {
@@ -76,7 +77,10 @@ export function TopBar({
         )}
       </div>
 
-      <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? openOmniSearch} />
+      <div className="flex items-center gap-2">
+        <ExchangeRateBadge className="shrink-0" />
+        <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? openOmniSearch} />
+      </div>
     </header>
   )
 }

@@ -31,6 +31,10 @@ import {
   formatDate,
 } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
+import { useDolarRates } from '@/hooks/useExchange'
+import { useExchangeStore } from '@/stores/exchange.store'
+import { getRateForSource } from '@/lib/exchange'
+import { BsReference } from '@/components/exchange/BsReference'
 import { CheckCircle, Clock, Inbox, XCircle } from 'lucide-react'
 
 const rejectSchema = z.object({
@@ -82,6 +86,9 @@ export function PaymentReportsPage() {
   )
   const [selected, setSelected] = useState<PaymentReportWithDetails | null>(null)
   const [rejectMode, setRejectMode] = useState(false)
+  const exchangeSource = useExchangeStore((s) => s.source)
+  const { data: exchangeRates } = useDolarRates()
+  const activeRate = getRateForSource(exchangeRates, exchangeSource)
 
   const handleSearch = (value: string) => {
     setSearch(value)
@@ -204,9 +211,12 @@ export function PaymentReportsPage() {
                 </div>
                 <ReportStatusBadge status={report.status} />
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-col">
                   <span className="text-base font-bold text-foreground">{formatCurrency(report.amount)}</span>
+                  <BsReference usdAmount={report.amount} rate={activeRate} />
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
                   <span className="text-xs text-muted-foreground">
                     {PAYMENT_METHOD_LABELS[report.paymentMethod] || report.paymentMethod}
                   </span>
@@ -215,8 +225,8 @@ export function PaymentReportsPage() {
                       {BILLING_PERIOD_STATUS_LABELS[report.billingPeriod.status]}
                     </Badge>
                   )}
+                  <span className="shrink-0 text-xs text-muted-foreground">{formatDate(report.createdAt)}</span>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatDate(report.createdAt)}</span>
               </div>
             </ListCard>
           ))}
@@ -245,7 +255,10 @@ export function PaymentReportsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Monto</span>
-                    <span className="text-base font-bold text-foreground">{formatCurrency(selected.amount)}</span>
+                    <span className="text-right">
+                      <span className="block text-base font-bold text-foreground">{formatCurrency(selected.amount)}</span>
+                      <BsReference usdAmount={selected.amount} rate={activeRate} className="block text-right" />
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Método</span>

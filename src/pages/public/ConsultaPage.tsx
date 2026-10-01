@@ -30,6 +30,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BrandMark } from '@/components/brand/BrandMark'
+import { ExchangeRateBadge } from '@/components/exchange/ExchangeRateBadge'
+import { BsReference } from '@/components/exchange/BsReference'
+import { useDolarRates } from '@/hooks/useExchange'
+import { useExchangeStore } from '@/stores/exchange.store'
+import { getRateForSource } from '@/lib/exchange'
 import {
   SUBSCRIPTION_STATUS_COLORS,
   SUBSCRIPTION_STATUS_LABELS,
@@ -102,6 +107,9 @@ export function ConsultaPage() {
 
   const lookupMutation = usePublicLookup(orgSlug)
   const reportMutation = usePublicCreateReport(orgSlug)
+  const exchangeSource = useExchangeStore((s) => s.source)
+  const { data: exchangeRates } = useDolarRates()
+  const activeRate = getRateForSource(exchangeRates, exchangeSource)
 
   const {
     control,
@@ -273,9 +281,12 @@ export function ConsultaPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border-subtle bg-header text-header-foreground">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
           <BrandMark size="sm" />
-          <span className="truncate text-sm font-medium">{orgName}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <ExchangeRateBadge compact className="shrink-0" />
+            <span className="hidden truncate text-sm font-medium sm:inline">{orgName}</span>
+          </div>
         </div>
       </header>
 
@@ -458,7 +469,8 @@ export function ConsultaPage() {
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-xl bg-surface-muted p-3">
                   <p className="text-lg font-bold text-foreground">{formatCurrency(lookupResult.totals.totalDebt)}</p>
-                  <p className="text-xs text-muted-foreground">Deuda total</p>
+                  <BsReference usdAmount={lookupResult.totals.totalDebt} rate={activeRate} className="mt-0.5 block text-center" />
+                  <p className="mt-0.5 text-xs text-muted-foreground">Deuda total</p>
                 </div>
                 <div className="rounded-xl bg-surface-muted p-3">
                   <p className="text-lg font-bold text-foreground">{lookupResult.totals.overdueCount}</p>
@@ -474,7 +486,12 @@ export function ConsultaPage() {
                   <CheckCircle className="h-5 w-5 shrink-0" />
                   <span>
                     {lookupResult.totals.pendingVerificationCount} pago(s) en verificación por{' '}
-                    {formatCurrency(lookupResult.totals.pendingVerificationAmount)}
+                    {formatCurrency(lookupResult.totals.pendingVerificationAmount)}{' '}
+                    <BsReference
+                      usdAmount={lookupResult.totals.pendingVerificationAmount}
+                      rate={activeRate}
+                      className="inline"
+                    />
                   </span>
                 </div>
               )}
@@ -566,8 +583,11 @@ export function ConsultaPage() {
                                   {BILLING_PERIOD_STATUS_LABELS[period.status]}
                                 </Badge>
                               </div>
-                              <div className="mt-2 flex items-center justify-between">
-                                <span className="text-base font-bold text-foreground">{formatCurrency(period.amount)}</span>
+                              <div className="mt-2 flex items-center justify-between gap-2">
+                                <span className="text-left">
+                                  <span className="block text-base font-bold text-foreground">{formatCurrency(period.amount)}</span>
+                                  <BsReference usdAmount={period.amount} rate={activeRate} />
+                                </span>
                                 {period.hasPendingReport ? (
                                   <Badge variant="outline" className={STATUS_INFO}>
                                     En verificación
@@ -658,8 +678,11 @@ export function ConsultaPage() {
                       )}
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <span>Monto a reportar</span>
-                        <span className="text-base font-bold text-foreground">
-                          {formatCurrency(selectedPeriod.amount)}
+                        <span className="text-right">
+                          <span className="block text-base font-bold text-foreground">
+                            {formatCurrency(selectedPeriod.amount)}
+                          </span>
+                          <BsReference usdAmount={selectedPeriod.amount} rate={activeRate} className="block text-right" />
                         </span>
                       </div>
                     </div>
@@ -729,7 +752,12 @@ export function ConsultaPage() {
                   ) : (
                     <>
                       <DollarSign className="mr-2 h-5 w-5 shrink-0" />
-                      Enviar reporte {selectedPeriod ? formatCurrency(selectedPeriod.amount) : ''}
+                      <span className="flex flex-col items-start leading-tight">
+                        <span>Enviar reporte {selectedPeriod ? formatCurrency(selectedPeriod.amount) : ''}</span>
+                        {selectedPeriod && (
+                          <BsReference usdAmount={selectedPeriod.amount} rate={activeRate} className="text-xs text-primary-foreground/80" />
+                        )}
+                      </span>
                     </>
                   )}
                 </Button>
@@ -749,6 +777,9 @@ export function ConsultaPage() {
                   <p className="mt-2 font-medium text-muted-foreground">
                     {selectedPeriod ? `${formatCurrency(selectedPeriod.amount)} — ${selectedPeriod.periodLabel}` : ''}
                   </p>
+                  {selectedPeriod && (
+                    <BsReference usdAmount={selectedPeriod.amount} rate={activeRate} className="mt-1 block text-center" />
+                  )}
                   <p className="mt-1 text-sm text-muted-foreground">
                     Tu pago está en verificación. Te avisaremos cuando sea aprobado.
                   </p>

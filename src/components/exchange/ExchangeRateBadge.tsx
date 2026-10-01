@@ -21,35 +21,60 @@ export function ExchangeRateBadge({ className, compact = false }: ExchangeRateBa
     setSource(source === 'paralelo' ? 'oficial' : 'paralelo');
   };
 
-  if (isLoading && !data) {
-    return (
-      <div
-        className={cn(
-          'flex items-center gap-1.5 rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs text-muted-foreground',
-          className,
-        )}
-        aria-label="Cargando tasa del dólar"
-      >
-        <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted border-t-primary" />
-        {!compact && <span>Tasa...</span>}
-      </div>
-    );
-  }
+  const rateLabel = rate !== null ? formatRate(rate) : 'N/D';
+  const toggleTitle = updatedLabel
+    ? `Tasa ${source === 'paralelo' ? 'paralela' : 'oficial BCV'}: Bs ${rateLabel} (act. ${updatedLabel}). Toca para cambiar.`
+    : `Toca para cambiar a ${source === 'paralelo' ? 'oficial BCV' : 'paralelo'}`;
 
-  if ((isError || rate === null) && !data) {
+  if (compact) {
+    if (isLoading && !data) {
+      return (
+        <div
+          className={cn(
+            'flex items-center rounded-full border border-border bg-surface-muted px-2 py-1 text-muted-foreground',
+            className,
+          )}
+          aria-label="Cargando tasa del dólar"
+        >
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted border-t-primary" />
+        </div>
+      );
+    }
+
+    if ((isError || rate === null) && !data) {
+      return (
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className={cn(
+            'flex min-w-0 items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-surface-hover disabled:opacity-50',
+            className,
+          )}
+          title="Tasa no disponible. Toca para reintentar."
+          aria-label="Tasa no disponible. Toca para reintentar."
+        >
+          <RefreshCw className={cn('h-3 w-3 shrink-0', isFetching && 'animate-spin')} />
+          <span className="shrink-0">N/D</span>
+        </button>
+      );
+    }
+
     return (
       <button
         type="button"
-        onClick={() => refetch()}
-        disabled={isFetching}
+        onClick={toggleSource}
         className={cn(
-          'flex items-center gap-1.5 rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-hover',
+          'flex min-w-0 max-w-[128px] items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-[11px] transition-opacity hover:opacity-80',
           className,
         )}
-        title="Tasa no disponible. Toca para reintentar."
+        title={toggleTitle}
+        aria-label={`Tasa ${source === 'paralelo' ? 'paralela' : 'oficial BCV'}: Bs ${rateLabel}. Toca para cambiar.`}
       >
-        <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} />
-        {!compact && <span>Tasa N/D</span>}
+        <span className="truncate tabular-nums font-semibold text-foreground">Bs {rateLabel}</span>
+        <span className="shrink-0 rounded-full bg-surface-active px-1 py-px text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+          {source === 'paralelo' ? 'Par' : 'BCV'}
+        </span>
       </button>
     );
   }

@@ -35,7 +35,11 @@ export function SubscriptionsListPage() {
   const pendingFilter = searchParams.get('pending') === 'true'
 
   const { data, isLoading } = useSubscriptions(
-    { organizationId: organizationId ?? undefined, limit: 200 },
+    {
+      organizationId: organizationId ?? undefined,
+      status: statusFilter ?? 'ACTIVE',
+      limit: 200,
+    },
     { enabled: !isSuperAdmin || !!organizationId }
   )
   const { data: summary } = useDashboardSummary(
@@ -117,46 +121,25 @@ export function SubscriptionsListPage() {
 
     const normalizedSearch = search.trim().toLowerCase()
 
-    return items
-      .filter((sub) => {
-        if (statusFilter && sub.status !== statusFilter) return false
-        if (hasOverdue !== undefined && sub.hasDebt !== hasOverdue) return false
-        if (expiringFilter && !isExpiringSub(sub)) return false
-        if (pendingFilter && !isPendingSub(sub)) return false
-        if (!normalizedSearch) return true
+    return items.filter((sub) => {
+      if (statusFilter && sub.status !== statusFilter) return false
+      if (hasOverdue !== undefined && sub.hasDebt !== hasOverdue) return false
+      if (expiringFilter && !isExpiringSub(sub)) return false
+      if (pendingFilter && !isPendingSub(sub)) return false
+      if (!normalizedSearch) return true
 
-        const haystack = [
-          getClientFullName(sub.client),
-          sub.client?.phone ?? '',
-          sub.client?.dni || '',
-          sub.plan.name,
-          sub.kitNumber,
-        ]
-          .join(' ')
-          .toLowerCase()
+      const haystack = [
+        getClientFullName(sub.client),
+        sub.client?.phone ?? '',
+        sub.client?.dni || '',
+        sub.plan.name,
+        sub.kitNumber,
+      ]
+        .join(' ')
+        .toLowerCase()
 
-        return haystack.includes(normalizedSearch)
-      })
-      .sort((a, b) => {
-        if (pendingFilter) {
-          const aPending = a.currentPeriod?.status === 'PENDING' ? 1 : 0
-          const bPending = b.currentPeriod?.status === 'PENDING' ? 1 : 0
-          if (aPending !== bPending) return bPending - aPending
-          if (aPending === 1 && bPending === 1) {
-            return new Date(a.currentPeriod?.endDate ?? 0).getTime() - new Date(b.currentPeriod?.endDate ?? 0).getTime()
-          }
-          const getOverdueTime = (s: SubscriptionWithDetails) =>
-            s.currentPeriod?.status === 'OVERDUE'
-              ? new Date(s.currentPeriod.endDate).getTime()
-              : new Date(s.currentPeriod?.startDate ?? 0).getTime()
-          return getOverdueTime(b) - getOverdueTime(a)
-        }
-        const aPriority = Number(a.hasDebt) * 100 + Number(a.overduePeriods > 0) * 10 + Number(a.pendingPeriods > 0)
-        const bPriority = Number(b.hasDebt) * 100 + Number(b.overduePeriods > 0) * 10 + Number(b.pendingPeriods > 0)
-
-        if (aPriority !== bPriority) return bPriority - aPriority
-        return a.kitNumber.localeCompare(b.kitNumber)
-      })
+      return haystack.includes(normalizedSearch)
+    })
   }, [data, search, statusFilter, hasOverdue, expiringFilter, pendingFilter])
 
   const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter || pendingFilter)
@@ -232,7 +215,7 @@ export function SubscriptionsListPage() {
         }
         filters={!showEmpty ? (
           <>
-            <FilterPill active={statusFilter === 'ACTIVE'} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
+            <FilterPill active={statusFilter === 'ACTIVE' || statusFilter === null} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
               Activas
             </FilterPill>
             <FilterPill active={statusFilter === 'SUSPENDED'} onClick={() => handleFilter('status', statusFilter === 'SUSPENDED' ? null : 'SUSPENDED')}>

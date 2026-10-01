@@ -210,6 +210,8 @@ export interface SubscriptionWithDetails extends Subscription {
   overduePeriods: number
   pendingPeriods: number
   hasDebt: boolean
+  nearestPendingDate?: string
+  closestOverdueDate?: string
 }
 
 export interface SubscriptionWithPeriods extends SubscriptionWithDetails {

@@ -185,7 +185,7 @@ export function PendingPaymentsWidget() {
                 <div className="shrink-0 flex items-center">
                   <button
                     onClick={(e) => handlePay(period.id, e)}
-                    className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground active:scale-95 transition-transform touch-manipulation shadow-sm"
+                    className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation"
                     aria-label="Cobrar"
                   >
                     <DollarSign className="h-4 w-4 shrink-0" />
@@ -319,7 +319,7 @@ export function TopDebtorsWidget() {
                   <button
                     onClick={(e) => handlePay(debtor.clientId, e)}
                     disabled={loadingId === debtor.clientId}
-                    className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground active:scale-95 transition-transform touch-manipulation shadow-sm disabled:opacity-50"
+                    className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
                     aria-label="Cobrar"
                   >
                     {loadingId === debtor.clientId ? (

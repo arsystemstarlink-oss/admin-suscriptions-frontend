@@ -69,3 +69,22 @@ export function canPayCurrentPeriod(sub: {
   }
   return sub.overduePeriods === 0 && sub.pendingPeriods <= 1
 }
+
+export function canPayAdvance(sub: {
+  status: string
+  currentPeriod?: { status: string } | null
+  overduePeriods: number
+  pendingPeriods: number
+}): boolean {
+  return (
+    sub.status === 'ACTIVE' &&
+    sub.overduePeriods === 0 &&
+    sub.pendingPeriods === 0 &&
+    sub.currentPeriod?.status === 'PAID'
+  )
+}
+
+export function isAdvancePeriod(period: Pick<BillingPeriod, 'paidAt' | 'startDate' | 'status'>): boolean {
+  if (period.status !== 'PAID' || !period.paidAt) return false
+  return new Date(period.paidAt).getTime() < new Date(period.startDate).getTime()
+}

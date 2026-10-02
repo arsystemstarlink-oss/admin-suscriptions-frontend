@@ -99,7 +99,7 @@ export function ClientsListPage() {
           >
             <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
               <div className="relative shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-secondary/15 text-secondary-foreground font-bold text-lg">
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-lg">
                   {initial}
                 </div>
                 <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface ${

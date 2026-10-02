@@ -5,6 +5,8 @@ import type {
   CreateSubscriptionRequest,
   UpdateSubscriptionRequest,
   CreateSubscriptionResponse,
+  PayAdvanceRequest,
+  PayAdvanceResponse,
   Pagination,
 } from '@/types/api'
 
@@ -46,5 +48,10 @@ export const subscriptionsApi = {
 
   remove: async (id: string): Promise<void> => {
     await api.delete(`/subscriptions/${id}`)
+  },
+
+  payAdvance: async (id: string, data: PayAdvanceRequest): Promise<PayAdvanceResponse> => {
+    const response = await api.post<PayAdvanceResponse>(`/subscriptions/${id}/pay-advance`, data)
+    return response.data
   },
 }

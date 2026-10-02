@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName, getInitial, canPayCurrentPeriod } from '@/lib/utils'
+import { getClientFullName, getInitial, canPayCurrentPeriod, canPayAdvance } from '@/lib/utils'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
+import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
@@ -19,6 +20,7 @@ export function ClientDetailPage() {
   const { data, isLoading, error } = useClientDetail(id!)
   const { openQuickPay } = useUIStore()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
 
   if (isLoading) {
     return (
@@ -90,7 +92,7 @@ export function ClientDetailPage() {
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setShowDeleteModal(true)} className="rounded-full bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 hover:text-destructive shadow-sm">
+            <Button variant="outline" size="icon" onClick={() => setShowDeleteModal(true)} className="rounded-full shadow-sm">
               <Trash2 className="h-4 w-4 shrink-0" />
             </Button>
           </>
@@ -100,7 +102,7 @@ export function ClientDetailPage() {
       {/* Perfil del Cliente */}
       <div className="bg-surface text-surface-foreground border border-border rounded-3xl p-5 shadow-sm">
         <div className="flex gap-4 items-center">
-          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-secondary/15 text-secondary-foreground font-bold text-2xl shrink-0">
+          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-2xl shrink-0">
             {initial}
           </div>
           <div className="min-w-0 flex-1">
@@ -124,9 +126,9 @@ export function ClientDetailPage() {
         </div>
 
         <div className="flex gap-3 mt-5">
-          <button 
+          <button
             onClick={handleOpenChat}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl font-semibold text-success bg-success/10 border border-success/20 active:bg-success/20 touch-manipulation transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl font-semibold bg-surface-muted text-surface-muted-foreground border border-border-subtle hover:bg-surface-hover active:bg-surface-active touch-manipulation transition-colors"
           >
             <MessageSquare className="h-4 w-4" /> WhatsApp
           </button>
@@ -219,7 +221,7 @@ export function ClientDetailPage() {
                   <div className="flex items-center gap-2">
                     {sub.currentPeriod && sub.currentPeriod.status !== 'PAID' && (
                       <Button
-                        className="flex-1 h-11 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 touch-manipulation"
+                        className="flex-1 h-11 text-sm font-semibold"
                         onClick={() => handlePaySubscription(sub)}
                         disabled={!canPayCurrentPeriod(sub)}
                         title={!canPayCurrentPeriod(sub) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
@@ -228,7 +230,17 @@ export function ClientDetailPage() {
                         Cobrar
                       </Button>
                     )}
-                    <Button variant="outline" className={`h-11 font-semibold active:bg-surface-active transition-colors ${sub.currentPeriod && sub.currentPeriod.status !== 'PAID' ? 'flex-none px-4' : 'flex-1'}`} asChild>
+                    {canPayAdvance(sub) && (
+                      <Button
+                        variant="outline"
+                        className="flex-1 h-11 text-sm font-semibold"
+                        onClick={() => setAdvanceSub(sub)}
+                        title="Pagar por adelantado"
+                      >
+                        Adelanto
+                      </Button>
+                    )}
+                    <Button variant="outline" className={`h-11 font-semibold active:bg-surface-active transition-colors ${(sub.currentPeriod && sub.currentPeriod.status !== 'PAID') || canPayAdvance(sub) ? 'flex-none px-4' : 'flex-1'}`} asChild>
                       <Link to={`/subscriptions/${sub.id}`} state={{ from: `${location.pathname}${location.search}` }}>Ver Kit</Link>
                     </Button>
                   </div>
@@ -290,6 +302,11 @@ export function ClientDetailPage() {
         clientName={getClientFullName(client)}
         open={showDeleteModal}
         onOpenChange={setShowDeleteModal}
+      />
+      <PayAdvanceSheet
+        subscription={advanceSub}
+        open={!!advanceSub}
+        onOpenChange={(open) => !open && setAdvanceSub(null)}
       />
     </div>
   )

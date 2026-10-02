@@ -453,6 +453,22 @@ export interface PayResponse {
   }
 }
 
+export interface PayAdvanceRequest {
+  paymentMethod: PaymentMethod
+  paidAt: string
+  notes?: string
+}
+
+export interface PayAdvanceResponse {
+  billingPeriod: BillingPeriod
+  subscription: {
+    id: string
+    status: SubscriptionStatus
+    previousStatus: SubscriptionStatus
+    reactivated: false
+  }
+}
+
 export type PaymentReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export interface PaymentReport {
@@ -729,6 +745,9 @@ export type ErrorCode =
   | 'PAYMENT_REPORT_ALREADY_REVIEWED'
   | 'PAYMENT_REPORT_INVALID_STATE'
   | 'TWILIO_ERROR'
+  | 'HAS_UNPAID_PERIODS'
+  | 'PERIOD_ALREADY_EXISTS'
+  | 'NO_PERIODS'
 
 export interface ApiError {
   code: ErrorCode

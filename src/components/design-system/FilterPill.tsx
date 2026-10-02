@@ -19,11 +19,14 @@ export function FilterPill({ children, active, variant = 'default', onClick, cla
   }
 
   const inactiveClasses = {
-    default: 'bg-surface text-muted-foreground border border-border',
-    destructive: 'bg-surface text-muted-foreground border border-border',
-    secondary: 'bg-secondary/15 text-secondary-foreground border border-secondary/30',
+    default: 'bg-surface text-muted-foreground border border-border hover:bg-surface-hover',
+    destructive: 'bg-surface text-muted-foreground border border-border hover:bg-surface-hover',
+    // secondary-foreground es azul oscuro fijo (solo legible sobre amarillo sólido):
+    // en dark sobre bg-surface daría ~1.6:1. Inactivo usa muted-foreground (>=4.5:1
+    // en ambos modos) y conserva el acento amarillo solo en el border; activo usa
+    // el par sólido bg-secondary text-secondary-foreground (~11.7:1).
+    secondary: 'bg-surface text-muted-foreground border border-secondary/40 hover:bg-surface-hover hover:text-foreground',
   }
-
   return (
     <button
       onClick={onClick}

@@ -13,8 +13,9 @@ import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import { formatCurrency, SUBSCRIPTION_STATUS_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, canPayAdvance } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui.store'
+import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { toast } from 'sonner'
 import type { SubscriptionWithDetails } from '@/types/api'
 
@@ -26,6 +27,7 @@ export function SubscriptionsListPage() {
   const { openQuickPay } = useUIStore()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [payingId, setPayingId] = useState<string | null>(null)
+  const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
@@ -375,12 +377,27 @@ export function SubscriptionsListPage() {
                             handleQuickPay(sub)
                           }}
                           disabled={payingId === sub.id}
-                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm active:scale-95 transition-transform touch-manipulation disabled:opacity-50"
+                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
                           aria-label="Cobrar"
                           title="Cobrar"
                         >
                           <Zap className="h-4 w-4 shrink-0" />
                           <span className="hidden min-[380px]:inline">{payingId === sub.id ? '...' : 'Cobrar'}</span>
+                        </button>
+                      )}
+                      {canPayAdvance(sub) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setAdvanceSub(sub)
+                          }}
+                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-surface-muted text-surface-muted-foreground border border-border-subtle text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-surface-hover active:bg-surface-active active:scale-95 touch-manipulation"
+                          aria-label="Pagar por adelantado"
+                          title="Pagar por adelantado"
+                        >
+                          <Calendar className="h-4 w-4 shrink-0" />
+                          <span className="hidden min-[380px]:inline">Adelanto</span>
                         </button>
                       )}
                     </div>
@@ -391,6 +408,12 @@ export function SubscriptionsListPage() {
           )}
         </>
       )}
+
+      <PayAdvanceSheet
+        subscription={advanceSub}
+        open={!!advanceSub}
+        onOpenChange={(open) => !open && setAdvanceSub(null)}
+      />
     </div>
   )
 }

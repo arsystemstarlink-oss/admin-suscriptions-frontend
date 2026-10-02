@@ -344,6 +344,23 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     message: 'El reporte no puede procesarse en su estado actual.',
     sideEffect: 'invalidate-billing',
   },
+  HAS_UNPAID_PERIODS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Tiene períodos pendientes: cóbrelos primero antes del adelanto.',
+    sideEffect: 'invalidate-billing',
+  },
+  PERIOD_ALREADY_EXISTS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'El siguiente ciclo ya existe.',
+    sideEffect: 'invalidate-billing',
+  },
+  NO_PERIODS: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La suscripción no tiene períodos registrados.',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {

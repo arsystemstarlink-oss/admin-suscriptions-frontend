@@ -22,7 +22,7 @@ export function QuickActions() {
         onClick={() => navigate('/subscriptions/clients/new')}
         className="flex flex-col items-center justify-center p-3 h-[90px] rounded-2xl bg-surface text-surface-foreground border border-border shadow-sm active:scale-[0.98] active:bg-surface-active transition-all touch-manipulation"
       >
-        <div className="h-10 w-10 rounded-full bg-secondary/15 text-secondary-foreground flex items-center justify-center mb-2">
+        <div className="h-10 w-10 rounded-full bg-surface-muted text-surface-muted-foreground flex items-center justify-center mb-2">
           <UserPlus className="h-5 w-5" />
         </div>
         <span className="text-[11px] font-bold text-foreground uppercase tracking-wide leading-tight">

@@ -14,12 +14,13 @@ import {
 } from '@/components/ui/sheet'
 import { AlertTriangle, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
-import { getClientFullName, getInitial, hasOlderUnpaidPeriod } from '@/lib/utils'
+import { getClientFullName, getInitial, hasOlderUnpaidPeriod, canPayAdvance, isAdvancePeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
-import type { BillingPeriod, BillingPeriodWithDetails } from '@/types/api'
+import type { BillingPeriod, BillingPeriodWithDetails, SubscriptionWithDetails } from '@/types/api'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { EditPaymentSheet } from '@/components/payment/EditPaymentSheet'
+import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
 
@@ -35,6 +36,7 @@ export function SubscriptionDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [newStatus, setNewStatus] = useState<SubscriptionStatus | null>(null)
   const [editingPeriod, setEditingPeriod] = useState<BillingPeriodWithDetails | null>(null)
+  const [advanceOpen, setAdvanceOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -67,6 +69,7 @@ export function SubscriptionDetailPage() {
   }
 
   const { subscription, billingPeriods, summary } = data
+  const showAdvanceButton = canPayAdvance(subscription)
 
   const handleStatusChange = async () => {
     if (!newStatus || !id) return
@@ -167,7 +170,7 @@ export function SubscriptionDetailPage() {
                 )
                 setShowStatusDialog(true)
               }}
-              className="rounded-full bg-warning/10 text-warning border-warning/20 hover:bg-warning/20 hover:text-warning shadow-sm"
+              className="rounded-full shadow-sm"
               title={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
               aria-label={subscription.status === SubscriptionStatus.ACTIVE ? 'Suspender suscripción' : 'Reactivar suscripción'}
             >
@@ -177,7 +180,7 @@ export function SubscriptionDetailPage() {
                 <Play className="h-4 w-4 shrink-0" />
               )}
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setShowDeleteDialog(true)} className="rounded-full bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 hover:text-destructive shadow-sm">
+            <Button variant="outline" size="icon" onClick={() => setShowDeleteDialog(true)} className="rounded-full shadow-sm">
               <Trash2 className="h-4 w-4 shrink-0" />
             </Button>
           </>
@@ -255,13 +258,38 @@ export function SubscriptionDetailPage() {
             </div>
           </div>
           <Button
-            className="w-full sm:w-auto shrink-0 shadow-sm bg-warning text-warning-foreground hover:bg-warning/90 h-11"
+            variant="outline"
+            className="w-full sm:w-auto shrink-0 h-11"
             onClick={() => handlePayPeriod(subscription.currentPeriod!)}
             disabled={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods)}
             title={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
           >
             <DollarSign className="h-4 w-4 mr-1 shrink-0" />
             Cobrar Ahora
+          </Button>
+        </div>
+      )}
+
+      {showAdvanceButton && (
+        <div className="bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="p-2 bg-success/10 rounded-full text-success shrink-0">
+              <DollarSign className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground">Al día — próximo ciclo sin facturar</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                Puede cobrar el siguiente ciclo por adelantado • {formatCurrency(subscription.plan.price)}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto shrink-0 h-11"
+            onClick={() => setAdvanceOpen(true)}
+          >
+            <DollarSign className="h-4 w-4 mr-1 shrink-0" />
+            Pagar por adelantado
           </Button>
         </div>
       )}
@@ -331,6 +359,11 @@ export function SubscriptionDetailPage() {
                             Pendiente
                           </span>
                         )}
+                        {isAdvancePeriod(period) && (
+                          <span className="text-[10px] font-bold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-sm uppercase tracking-wide">
+                            Adelanto
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -345,7 +378,7 @@ export function SubscriptionDetailPage() {
                     {period.status !== 'PAID' ? (
                       <Button
                         size="sm"
-                        className="h-10 px-4 bg-primary text-primary-foreground shadow-sm active:scale-95 touch-manipulation font-semibold"
+                        className="h-10 px-4 font-semibold"
                         onClick={() => handlePayPeriod(period)}
                         disabled={hasOlderUnpaidPeriod(period, billingPeriods)}
                         title={hasOlderUnpaidPeriod(period, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
@@ -376,6 +409,11 @@ export function SubscriptionDetailPage() {
         period={editingPeriod}
         open={!!editingPeriod}
         onOpenChange={(open) => !open && setEditingPeriod(null)}
+      />
+      <PayAdvanceSheet
+        subscription={subscription as SubscriptionWithDetails}
+        open={advanceOpen}
+        onOpenChange={setAdvanceOpen}
       />
 
       <ConfirmationDialog

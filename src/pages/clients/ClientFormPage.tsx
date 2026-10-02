@@ -328,7 +328,7 @@ export function ClientFormPage() {
         <Button
           type="submit"
           form="client-form"
-          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="w-full h-12 text-base font-semibold"
           disabled={isSubmitting}
         >
           {isSubmitting

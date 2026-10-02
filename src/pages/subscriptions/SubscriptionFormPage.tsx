@@ -353,10 +353,10 @@ export function SubscriptionFormPage() {
 
         {/* Bloque 4: Retroactivo */}
         {isRetroactive && (
-          <div className="bg-secondary/10 rounded-2xl border border-secondary/30 p-4 space-y-4">
+          <div className="bg-surface text-surface-foreground rounded-2xl border border-border p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <Clock className="h-5 w-5 text-secondary-foreground" />
+                <Clock className="h-5 w-5 text-muted-foreground" />
                 Pagos Históricos
               </h2>
               <button
@@ -459,7 +459,7 @@ export function SubscriptionFormPage() {
         <Button
           type="submit"
           form="subscription-form"
-          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="w-full h-12 text-base font-semibold"
           disabled={isSubmitting}
         >
           {isSubmitting ? 'Creando Suscripción...' : 'Crear Suscripción'}

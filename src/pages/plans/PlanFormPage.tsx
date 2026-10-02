@@ -173,7 +173,7 @@ export function PlanFormPage() {
         <Button
           type="submit"
           form="plan-form"
-          className="w-full h-12 text-base font-semibold active:scale-95 transition-transform touch-manipulation bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="w-full h-12 text-base font-semibold"
           disabled={isSubmitting}
         >
           {isSubmitting

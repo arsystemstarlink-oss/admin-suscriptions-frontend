@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { ExchangeTicker } from '@/components/exchange/ExchangeTicker'
+import { InstallConsultaButton } from '@/components/public/InstallConsultaButton'
 import { BsReference } from '@/components/exchange/BsReference'
 import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
@@ -380,6 +381,7 @@ export function ConsultaPage() {
       <ExchangeTicker />
 
       <main className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 pb-16">
+        <InstallConsultaButton orgName={orgName} />
         <section aria-labelledby="consulta-title" className="overflow-hidden rounded-2xl border border-border bg-surface text-surface-foreground">
           <div className="border-b border-border-subtle bg-surface-muted px-4 py-3 sm:px-6">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">

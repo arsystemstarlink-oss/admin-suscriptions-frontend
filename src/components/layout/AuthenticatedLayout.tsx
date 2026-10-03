@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -32,11 +32,34 @@ export function AuthenticatedLayout() {
   const user = useAuthStore((state) => state.user)
   const { selectedOrganizationId, setOrganization } = useOrganizationStore()
 
-  const { data: organizationsData } = useOrganizations(
+  const { data: organizationsData, isLoading: organizationsLoading, isError: organizationsError, refetch: refetchOrganizations } = useOrganizations(
     { limit: 100 },
     { enabled: isSuperAdmin },
   )
-  const organizations = (organizationsData?.organizations || []).filter((org) => org.active)
+  const allOrganizations = useMemo(
+    () => organizationsData?.organizations || [],
+    [organizationsData],
+  )
+  // Tolerante: si algún documento legacy no trae `active`, se trata como activa
+  // para no ocultar el selector. Solo se excluyen las explícitamente inactivas.
+  const organizations = useMemo(
+    () => allOrganizations.filter((org) => org.active !== false),
+    [allOrganizations],
+  )
+
+  // El super-admin no tiene organización propia: si el ID guardado en
+  // localStorage ya no existe en el backend (dato stale de otro entorno),
+  // se limpia para no pedir datos con un ID fantasma. Solo se valida cuando
+  // se tiene la lista completa (paginación total) para no borrar un ID válido
+  // que quedó fuera de la primera página.
+  useEffect(() => {
+    if (!isSuperAdmin || !selectedOrganizationId || !organizationsData) return
+    const total = organizationsData.pagination?.total ?? allOrganizations.length
+    if (allOrganizations.length < total) return
+    if (!allOrganizations.some((org) => org.id === selectedOrganizationId)) {
+      setOrganization(null)
+    }
+  }, [isSuperAdmin, selectedOrganizationId, organizationsData, allOrganizations, setOrganization])
 
   useEffect(() => {
     if (!isSuperAdmin && user?.organizationId && !selectedOrganizationId) {
@@ -76,6 +99,9 @@ export function AuthenticatedLayout() {
           onOpenSearch={openOmniSearch}
           isSuperAdmin={isSuperAdmin}
           organizations={organizations}
+          organizationsLoading={organizationsLoading}
+          organizationsError={organizationsError}
+          onRetryOrganizations={() => refetchOrganizations()}
           selectedOrganizationId={selectedOrganizationId}
           onOrganizationChange={setOrganization}
         />
@@ -92,6 +118,9 @@ export function AuthenticatedLayout() {
         onMobileToggle={() => setMobileOpen(!mobileOpen)}
         isSuperAdmin={isSuperAdmin}
         organizations={organizations}
+        organizationsLoading={organizationsLoading}
+        organizationsError={organizationsError}
+        onRetryOrganizations={() => refetchOrganizations()}
         selectedOrganizationId={selectedOrganizationId}
         onOrganizationChange={setOrganization}
       />

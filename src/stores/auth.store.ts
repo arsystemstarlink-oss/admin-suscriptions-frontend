@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { User } from '@/types/api'
 import { authApi } from '@/api/auth.api'
+import { useOrganizationStore } from '@/stores/organization.store'
 import {
   clearStoredTokens,
   getStoredTokens,
@@ -45,6 +46,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       authApi.logout(refreshToken).catch(() => {})
     }
     clearStoredTokens()
+    // La organización seleccionada es contexto de sesión del super-admin:
+    // al cerrar sesión no debe sobrevivir (ni en storage ni en memoria)
+    // para el próximo usuario.
+    try {
+      localStorage.removeItem('selectedOrganizationId')
+      sessionStorage.removeItem('selectedOrganizationId')
+    } catch {
+      // storage no disponible; se ignora
+    }
+    useOrganizationStore.setState({ selectedOrganizationId: null })
     set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false })
   },
 

@@ -26,7 +26,7 @@ export function SuperAdminOrganizationField<T extends FieldValues>({
 
   if (!isSuperAdmin) return null
 
-  const activeOrganizations = (data?.organizations || []).filter((org) => org.active)
+  const activeOrganizations = (data?.organizations || []).filter((org) => org.active !== false)
 
   return (
     <div className="space-y-2.5">

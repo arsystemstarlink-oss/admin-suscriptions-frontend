@@ -141,7 +141,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
     { limit: 100 },
     { enabled: isSuperRegister },
   )
-  const activeOrganizations = (organizationsData?.organizations || []).filter((o) => o.active)
+  const activeOrganizations = (organizationsData?.organizations || []).filter((o) => o.active !== false)
 
   const applyFieldError = (err: unknown): boolean => {
     const apiError = err as Partial<ApiError>

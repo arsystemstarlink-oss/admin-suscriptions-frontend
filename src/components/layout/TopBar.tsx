@@ -20,6 +20,9 @@ interface TopBarProps {
   onOpenSearch?: () => void
   isSuperAdmin?: boolean
   organizations?: Organization[]
+  organizationsLoading?: boolean
+  organizationsError?: boolean
+  onRetryOrganizations?: () => void
   selectedOrganizationId?: string | null
   onOrganizationChange?: (organizationId: string | null) => void
 }
@@ -32,10 +35,18 @@ export function TopBar({
   onOpenSearch,
   isSuperAdmin,
   organizations,
+  organizationsLoading,
+  organizationsError,
+  onRetryOrganizations,
   selectedOrganizationId,
   onOrganizationChange,
 }: TopBarProps) {
   const { openOmniSearch } = useUIStore()
+  const hasOrganizations = !!organizations && organizations.length > 0
+  const effectiveValue =
+    selectedOrganizationId && organizations?.some((org) => org.id === selectedOrganizationId)
+      ? selectedOrganizationId
+      : ALL_ORGS_VALUE
 
   return (
     <header className="h-16 border-b border-border-subtle flex items-center justify-between px-4 md:px-6 bg-header text-header-foreground">
@@ -54,22 +65,49 @@ export function TopBar({
 
         <BrandMark size="md" variant="light" />
 
-        {isSuperAdmin && organizations && organizations.length > 0 && (
+        {isSuperAdmin && (
           <Select
-            value={selectedOrganizationId || ALL_ORGS_VALUE}
+            value={effectiveValue}
             onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
           >
-            <SelectTrigger className="w-auto h-8 sm:w-48 border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground">
+            <SelectTrigger
+              className="w-auto h-8 sm:w-48 border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground"
+              title={
+                organizationsLoading
+                  ? 'Cargando organizaciones…'
+                  : organizationsError
+                    ? 'No se pudieron cargar las organizaciones'
+                    : !hasOrganizations
+                      ? 'No hay organizaciones disponibles'
+                      : undefined
+              }
+            >
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              <SelectValue placeholder="Todas las organizaciones" />
+              <SelectValue placeholder={organizationsLoading ? 'Cargando…' : 'Organización'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_ORGS_VALUE}>Todas las organizaciones</SelectItem>
-              {organizations.map((org) => (
+              <SelectItem value={ALL_ORGS_VALUE}>Seleccionar organización…</SelectItem>
+              {organizations?.map((org) => (
                 <SelectItem key={org.id} value={org.id}>
                   {org.name}
                 </SelectItem>
               ))}
+              {!organizationsLoading && !hasOrganizations && (
+                <div className="px-2 py-3 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {organizationsError ? 'No se pudieron cargar las organizaciones.' : 'No hay organizaciones disponibles.'}
+                  </p>
+                  {organizationsError && onRetryOrganizations && (
+                    <button
+                      type="button"
+                      onClick={onRetryOrganizations}
+                      className="mt-1 text-sm font-medium text-primary hover:underline"
+                    >
+                      Reintentar
+                    </button>
+                  )}
+                </div>
+              )}
             </SelectContent>
           </Select>
         )}

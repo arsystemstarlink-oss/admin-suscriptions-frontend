@@ -23,6 +23,9 @@ interface MobileAppShellProps {
   onOpenSearch?: () => void
   isSuperAdmin?: boolean
   organizations?: Organization[]
+  organizationsLoading?: boolean
+  organizationsError?: boolean
+  onRetryOrganizations?: () => void
   selectedOrganizationId?: string | null
   onOrganizationChange?: (organizationId: string | null) => void
 }
@@ -32,6 +35,9 @@ export default function MobileAppShell({
   onOpenSearch,
   isSuperAdmin,
   organizations,
+  organizationsLoading,
+  organizationsError,
+  onRetryOrganizations,
   selectedOrganizationId,
   onOrganizationChange,
 }: MobileAppShellProps) {
@@ -71,8 +77,11 @@ export default function MobileAppShell({
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];
 
-  const showOrgSwitcher =
-    isSuperAdmin && organizations && organizations.length > 0
+  const hasOrganizations = !!organizations && organizations.length > 0
+  const effectiveValue =
+    selectedOrganizationId && organizations?.some((org) => org.id === selectedOrganizationId)
+      ? selectedOrganizationId
+      : ALL_ORGS_VALUE
 
   return (
     <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-background text-foreground select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
@@ -80,25 +89,50 @@ export default function MobileAppShell({
       <header className="sticky top-0 z-50 flex min-h-14 items-center gap-3 border-b border-border-subtle bg-header px-3 pb-2 pt-[max(env(safe-area-inset-top),12px)] text-header-foreground transition-colors">
         <BrandMark size="sm" variant="light" className="min-w-0 flex-1 [&_span]:truncate" />
         <div className="flex shrink-0 items-center gap-1.5">
-          {showOrgSwitcher && (
+          {isSuperAdmin && (
             <Select
-              value={selectedOrganizationId || ALL_ORGS_VALUE}
+              value={effectiveValue}
               onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
             >
               <SelectTrigger
                 aria-label="Organización activa"
                 className="h-8 w-auto max-w-28 shrink-0 gap-1 px-2 text-xs border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground [&>span]:truncate"
+                title={
+                  organizationsLoading
+                    ? 'Cargando organizaciones…'
+                    : organizationsError
+                      ? 'No se pudieron cargar las organizaciones'
+                      : !hasOrganizations
+                        ? 'No hay organizaciones disponibles'
+                        : undefined
+                }
               >
                 <Building2 className="h-3.5 w-3.5 shrink-0" />
-                <SelectValue placeholder="Todas" />
+                <SelectValue placeholder={organizationsLoading ? 'Cargando…' : 'Org'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_ORGS_VALUE}>Todas</SelectItem>
-                {organizations!.map((org) => (
+                <SelectItem value={ALL_ORGS_VALUE}>Seleccionar…</SelectItem>
+                {organizations?.map((org) => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.name}
                   </SelectItem>
                 ))}
+                {!organizationsLoading && !hasOrganizations && (
+                  <div className="px-2 py-3 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      {organizationsError ? 'No se pudieron cargar las organizaciones.' : 'No hay organizaciones disponibles.'}
+                    </p>
+                    {organizationsError && onRetryOrganizations && (
+                      <button
+                        type="button"
+                        onClick={onRetryOrganizations}
+                        className="mt-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        Reintentar
+                      </button>
+                    )}
+                  </div>
+                )}
               </SelectContent>
             </Select>
           )}

@@ -104,7 +104,6 @@ export default function MobileAppShell({
             <HeaderActions
               showChatsButton={false}
               showSearchButton={false}
-              unreadChatsCount={unreadChatsCount}
               onOpenSearch={onOpenSearch ?? (() => {})}
             />
           </div>

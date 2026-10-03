@@ -2,7 +2,6 @@ import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-react'
 import { BrandMark } from '@/components/brand/BrandMark'
-import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount'
 import { HeaderActions } from '@/components/layout/HeaderActions'
 import {
   Select,
@@ -37,7 +36,6 @@ export function TopBar({
   onOrganizationChange,
 }: TopBarProps) {
   const { openOmniSearch } = useUIStore()
-  const unreadChatsCount = useUnreadChatsCount()
 
   return (
     <header className="h-16 border-b border-border-subtle flex items-center justify-between px-4 md:px-6 bg-header text-header-foreground">
@@ -79,7 +77,7 @@ export function TopBar({
 
       <div className="flex items-center gap-2">
         <ExchangeRateBadge className="shrink-0" />
-        <HeaderActions unreadChatsCount={unreadChatsCount} onOpenSearch={onOpenSearch ?? openOmniSearch} />
+        <HeaderActions onOpenSearch={onOpenSearch ?? openOmniSearch} />
       </div>
     </header>
   )

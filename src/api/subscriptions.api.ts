@@ -31,8 +31,10 @@ export const subscriptionsApi = {
     return response.data
   },
 
-  getById: async (id: string): Promise<SubscriptionDetailResponse> => {
-    const response = await api.get<SubscriptionDetailResponse>(`/subscriptions/${id}`)
+  getById: async (id: string, organizationId?: string): Promise<SubscriptionDetailResponse> => {
+    const response = await api.get<SubscriptionDetailResponse>(`/subscriptions/${id}`, {
+      params: { organizationId },
+    })
     return response.data
   },
 

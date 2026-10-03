@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User, ReceiptText } from 'lucide-react'
-import { useAuthStore } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
+import { useOrganizationStore } from '@/stores/organization.store'
 import { usePendingReportsCount } from '@/hooks/usePaymentReports'
 import { cn, getInitial } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
@@ -102,7 +103,12 @@ interface SidebarProps {
 export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onToggleSidebar }: SidebarProps) {
   const { user, logout } = useAuthStore()
   const location = useLocation()
-  const { data: pendingReports } = usePendingReportsCount()
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
+  const { data: pendingReports } = usePendingReportsCount(
+    { organizationId: organizationId ?? undefined },
+    { enabled: !isSuperAdmin || !!organizationId },
+  )
 
   const previousPathname = useRef(location.pathname)
 

@@ -27,10 +27,13 @@ export function usePaymentReports(
   })
 }
 
-export function usePendingReportsCount(options?: { enabled?: boolean }) {
+export function usePendingReportsCount(
+  params?: { organizationId?: string },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
-    queryKey: qk.paymentReports.count,
-    queryFn: () => paymentReportsApi.getPendingCount(),
+    queryKey: [...qk.paymentReports.count, params?.organizationId],
+    queryFn: () => paymentReportsApi.getPendingCount(params),
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,

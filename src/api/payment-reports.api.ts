@@ -19,8 +19,8 @@ export const paymentReportsApi = {
     return response.data
   },
 
-  getPendingCount: async (): Promise<{ pending: number }> => {
-    const response = await api.get<{ pending: number }>('/payment-reports/count')
+  getPendingCount: async (params?: { organizationId?: string }): Promise<{ pending: number }> => {
+    const response = await api.get<{ pending: number }>('/payment-reports/count', { params })
     return response.data
   },
 

@@ -50,9 +50,9 @@ export function ChatsPage() {
     { limit: 100, organizationId: organizationId ?? undefined },
     { enabled: !isSuperAdmin || !!organizationId }
   )
-  const { data: messagesData, isLoading: messagesLoading } = useWhatsAppMessages(selectedPhone)
+  const { data: messagesData, isLoading: messagesLoading } = useWhatsAppMessages(selectedPhone, organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
   const { data: conversationsData } = useWhatsAppConversations(organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
-  const sendMessageMutation = useSendMessage()
+  const sendMessageMutation = useSendMessage(organizationId ?? undefined)
   const deleteChatMutation = useDeleteChat()
 
   const clients = useMemo(() => clientsData?.clients || [], [clientsData])

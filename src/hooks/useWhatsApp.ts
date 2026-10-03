@@ -5,11 +5,11 @@ import type { SendMessageRequest } from '@/types/api'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 
-export function useWhatsAppMessages(phone: string | null) {
+export function useWhatsAppMessages(phone: string | null, organizationId?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: qk.whatsapp.messages(phone || ''),
-    queryFn: () => whatsappApi.getMessagesByPhone(phone!),
-    enabled: !!phone,
+    queryKey: [...qk.whatsapp.messages(phone || ''), organizationId],
+    queryFn: () => whatsappApi.getMessagesByPhone(phone!, organizationId),
+    enabled: !!phone && (options?.enabled ?? true),
   })
 }
 

@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useSubscriptionDetail, useUpdateSubscription } from '@/hooks/useSubscriptions'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { usePlans } from '@/hooks/usePlans'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,9 +29,16 @@ type SubscriptionEditForm = z.infer<typeof subscriptionEditSchema>
 export function SubscriptionEditPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data: subscriptionData, isLoading: isLoadingSub } = useSubscriptionDetail(id!)
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
+  const { data: subscriptionData, isLoading: isLoadingSub } = useSubscriptionDetail(id!, organizationId ?? undefined, {
+    enabled: !isSuperAdmin || !!organizationId,
+  })
   const updateMutation = useUpdateSubscription()
-  const { data: plansData } = usePlans({ active: true, limit: 100 })
+  const { data: plansData } = usePlans(
+    { active: true, limit: 100, organizationId: organizationId ?? undefined },
+    { enabled: !isSuperAdmin || !!organizationId },
+  )
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -72,6 +81,15 @@ export function SubscriptionEditPage() {
     } catch (err: unknown) {
       handleApiError(err, { setFieldError: setError })
     }
+  }
+
+  if (isSuperAdmin && !organizationId) {
+    return (
+      <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
+        <span className="shrink-0 mt-0.5">⚠️</span>
+        <span>Selecciona una organización para editar la suscripción.</span>
+      </div>
+    )
   }
 
   if (isLoadingSub) {

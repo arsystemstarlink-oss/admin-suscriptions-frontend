@@ -4,15 +4,17 @@ import { useUIStore } from '@/stores/ui.store'
 import { whatsappApi } from '@/api/whatsapp.api'
 import { qk } from '@/lib/query-keys'
 
-export function useUnreadChatsCount() {
+export function useUnreadChatsCount(organizationId?: string, options?: { enabled?: boolean }) {
   const { readChatTimestamps } = useUIStore()
+  const enabled = options?.enabled ?? true
 
   const { data: conversations } = useQuery({
-    queryKey: qk.whatsapp.conversations,
-    queryFn: () => whatsappApi.getConversations(),
+    queryKey: [...qk.whatsapp.conversations, organizationId],
+    queryFn: () => whatsappApi.getConversations(organizationId),
     staleTime: 60_000,
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
+    enabled,
   })
 
   return useMemo(() => {

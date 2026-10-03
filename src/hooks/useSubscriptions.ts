@@ -21,11 +21,11 @@ export function useSubscriptions(params?: UseSubscriptionsParams, options?: { en
   })
 }
 
-export function useSubscriptionDetail(id: string) {
+export function useSubscriptionDetail(id: string, organizationId?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: qk.subscriptions.detail(id),
-    queryFn: () => subscriptionsApi.getById(id),
-    enabled: !!id,
+    queryKey: [...qk.subscriptions.detail(id), organizationId],
+    queryFn: () => subscriptionsApi.getById(id, organizationId),
+    enabled: !!id && (options?.enabled ?? true),
   })
 }
 

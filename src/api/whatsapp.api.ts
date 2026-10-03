@@ -8,8 +8,10 @@ import type {
 } from '@/types/api'
 
 export const whatsappApi = {
-  getMessagesByPhone: async (phone: string): Promise<MessagesByPhoneResponse> => {
-    const response = await api.get<MessagesByPhoneResponse>(`/whatsapp/messages/${encodeURIComponent(phone)}`)
+  getMessagesByPhone: async (phone: string, organizationId?: string): Promise<MessagesByPhoneResponse> => {
+    const response = await api.get<MessagesByPhoneResponse>(`/whatsapp/messages/${encodeURIComponent(phone)}`, {
+      params: { organizationId },
+    })
     return response.data
   },
 

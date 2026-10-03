@@ -37,8 +37,10 @@ export default function MobileAppShell({
 }: MobileAppShellProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const unreadChatsCount = useUnreadChatsCount();
-  const { data: pendingReports } = usePendingReportsCount();
+  const orgId = selectedOrganizationId ?? undefined
+  const badgesEnabled = !isSuperAdmin || !!selectedOrganizationId
+  const unreadChatsCount = useUnreadChatsCount(orgId, { enabled: badgesEnabled });
+  const { data: pendingReports } = usePendingReportsCount({ organizationId: orgId }, { enabled: badgesEnabled });
   const pendingReportsCount = pendingReports?.pending ?? 0;
 
   // Determinar la tab activa basada en la ruta

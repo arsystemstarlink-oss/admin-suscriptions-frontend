@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useSubscriptionDetail, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,7 +29,11 @@ import { EmptyState } from '@/components/design-system/EmptyState'
 export function SubscriptionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data, isLoading, error } = useSubscriptionDetail(id!)
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
+  const { data, isLoading, error } = useSubscriptionDetail(id!, organizationId ?? undefined, {
+    enabled: !isSuperAdmin || !!organizationId,
+  })
   const updateMutation = useUpdateSubscription()
   const deleteMutation = useDeleteSubscription()
   const { openQuickPay } = useUIStore()
@@ -37,6 +43,15 @@ export function SubscriptionDetailPage() {
   const [newStatus, setNewStatus] = useState<SubscriptionStatus | null>(null)
   const [editingPeriod, setEditingPeriod] = useState<BillingPeriodWithDetails | null>(null)
   const [advanceOpen, setAdvanceOpen] = useState(false)
+
+  if (isSuperAdmin && !organizationId) {
+    return (
+      <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
+        <span className="shrink-0 mt-0.5">⚠️</span>
+        <span>Selecciona una organización para ver la suscripción.</span>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (

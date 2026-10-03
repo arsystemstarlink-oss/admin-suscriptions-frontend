@@ -30,8 +30,11 @@ export const billingApi = {
     return response.data
   },
 
-  getById: async (id: string): Promise<BillingPeriodWithDetails> => {
-    const response = await api.get<BillingPeriodWithDetails>(`/billing-periods/${id}`)
+  getById: async (
+    id: string,
+    params?: { organizationId?: string }
+  ): Promise<BillingPeriodWithDetails> => {
+    const response = await api.get<BillingPeriodWithDetails>(`/billing-periods/${id}`, { params })
     return response.data
   },
 

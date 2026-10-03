@@ -1,7 +1,6 @@
 import { KPICards } from '@/components/dashboard/KPICards'
 import { PendingPaymentsWidget, TopDebtorsWidget, ExpiringSoonWidget } from '@/components/dashboard/Widgets'
 import { QuickActions } from '@/components/dashboard/QuickActions'
-import { useDashboardAlerts } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { PageHeader } from '@/components/design-system/PageHeader'
@@ -9,10 +8,7 @@ import { PageHeader } from '@/components/design-system/PageHeader'
 export function DashboardPage() {
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
-  useDashboardAlerts(
-    { organizationId: organizationId ?? undefined },
-    { enabled: !isSuperAdmin || !!organizationId }
-  )
+  const alertsEnabled = !isSuperAdmin || !!organizationId
 
   if (isSuperAdmin && !organizationId) {
     return (
@@ -40,11 +36,11 @@ export function DashboardPage() {
 
       <KPICards />
 
-      <PendingPaymentsWidget />
+      <PendingPaymentsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ExpiringSoonWidget />
-        <TopDebtorsWidget />
+        <ExpiringSoonWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
+        <TopDebtorsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
       </div>
     </div>
   )

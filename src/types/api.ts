@@ -289,6 +289,15 @@ export interface DashboardAlerts {
   generatedAt: string
   expiringSoon: {
     count: number
+    description: string
+    hasMore: boolean
+    items: AlertItem[]
+  }
+  overdueDebt: {
+    count: number
+    description: string
+    totalAmount: number
+    hasMore: boolean
     items: AlertItem[]
   }
   overdue: {
@@ -296,8 +305,13 @@ export interface DashboardAlerts {
     totalOverdueAmount: number
     suspendedSubscriptions: number
   }
+  suspended: {
+    count: number
+    description: string
+  }
   topDebtors: {
     count: number
+    description: string
     items: DebtorItem[]
   }
 }

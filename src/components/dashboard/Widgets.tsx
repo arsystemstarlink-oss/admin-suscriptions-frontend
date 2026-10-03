@@ -1,7 +1,4 @@
 import { useDashboardAlerts } from '@/hooks/useDashboard'
-import { useBillingPeriods } from '@/hooks/useBilling'
-import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useUIStore } from '@/stores/ui.store'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -12,7 +9,7 @@ import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
 import { BsReference } from '@/components/exchange/BsReference'
-import { getClientFullName } from '@/lib/utils'
+import type { AlertItem, DebtorItem } from '@/types/api'
 import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, ChevronDown, Clock, Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -20,6 +17,11 @@ import { toast } from 'sonner'
 
 const WIDGET_COLLAPSED_COUNT = 3
 const WIDGET_EXPANDED_COUNT = 8
+
+export interface DashboardWidgetProps {
+  organizationId?: string
+  enabled: boolean
+}
 
 function WidgetExpandFooter({
   expanded,
@@ -65,51 +67,47 @@ function WidgetExpandFooter({
   )
 }
 
-export function PendingPaymentsWidget() {
-  const isSuperAdmin = useIsSuperAdmin()
-  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
-  const orgParam = organizationId ?? undefined
-  const { data: pendingData, isLoading: loadingPending } = useBillingPeriods(
-    { status: 'PENDING', organizationId: orgParam, limit: 500 },
-    { enabled: !isSuperAdmin || !!organizationId }
-  )
-  const { data: overdueData, isLoading: loadingOverdue } = useBillingPeriods(
-    { status: 'OVERDUE', organizationId: orgParam, limit: 500 },
-    { enabled: !isSuperAdmin || !!organizationId }
-  )
-  const isLoading = loadingPending || loadingOverdue
+type PendingAlertItem = AlertItem & { isOverdue: boolean }
+
+export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidgetProps) {
+  const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
   const { openQuickPay } = useUIStore()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [loadingId, setLoadingId] = useState<string | null>(null)
   const exchangeSource = useExchangeStore((s) => s.source)
   const { data: exchangeRates } = useDolarRates()
   const activeRate = getRateForSource(exchangeRates, exchangeSource)
 
-  const items = useMemo(() => {
-    const overdue = (overdueData?.periods ?? []).filter(
-      (p) => p.client != null && p.subscription != null && p.subscription.status === 'ACTIVE' && p.plan != null
-    )
-    const pending = (pendingData?.periods ?? []).filter(
-      (p) => p.client != null && p.subscription != null && p.subscription.status === 'ACTIVE' && p.plan != null
-    )
-    overdue.sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())
-    pending.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    return [...pending, ...overdue]
-  }, [overdueData, pendingData])
+  const items = useMemo<PendingAlertItem[]>(() => {
+    const overdue = (data?.overdueDebt.items ?? []).map((item) => ({ ...item, isOverdue: true }))
+    const expiring = (data?.expiringSoon.items ?? []).map((item) => ({ ...item, isOverdue: false }))
+    return [...overdue, ...expiring]
+  }, [data])
 
   const visibleItems = items.slice(0, 8)
 
   const [expanded, setExpanded] = useState(false)
   useEffect(() => {
     setExpanded(false)
-  }, [orgParam, items.length])
+  }, [organizationId, items.length])
   const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
 
-  const handlePay = (periodId: string, e: React.MouseEvent) => {
+  const handlePay = async (periodId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    const period = items.find((p) => p.id === periodId)
-    if (!period) return
-    if (!period.subscription || !period.plan) return
-    openQuickPay({ period })
+    setLoadingId(periodId)
+    try {
+      const period = await queryClient.fetchQuery({
+        queryKey: [...qk.billing.detail(periodId), { organizationId }],
+        queryFn: () => billingApi.getById(periodId, { organizationId }),
+        staleTime: 0,
+      })
+      openQuickPay({ period })
+    } catch {
+      toast.error('Error al cargar el período para el cobro')
+    } finally {
+      setLoadingId(null)
+    }
   }
 
   return (
@@ -141,7 +139,7 @@ export function PendingPaymentsWidget() {
               <div key={i} className="flex justify-between items-center h-18 bg-muted animate-pulse rounded-xl" />
             ))}
           </div>
-        ) : displayedItems.length === 0 ? (
+        ) : !data || displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center mb-3">
               <DollarSign className="h-6 w-6 text-success" />
@@ -153,24 +151,24 @@ export function PendingPaymentsWidget() {
           <div className="space-y-2">
             {displayedItems.map((period) => (
               <div
-                key={period.id}
+                key={period.periodId}
                 onClick={() => navigate(`/subscriptions/${period.subscriptionId}`, { state: { from: '/dashboard' } })}
                 className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle active:bg-surface-active transition-colors touch-manipulation cursor-pointer group"
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                    {getClientFullName(period.client)}
+                    {period.clientName}
                   </p>
 
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs">
                     <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                      {period.subscription.kitNumber}
+                      {period.kitNumber}
                     </span>
                     <span className="font-bold text-foreground">
                       {formatCurrency(period.amount)}
                     </span>
                     <BsReference usdAmount={period.amount} rate={activeRate} />
-                    {period.status === 'OVERDUE' ? (
+                    {period.isOverdue ? (
                       <span className="text-destructive bg-destructive/10 font-medium px-1.5 py-0.5 rounded">
                         Vencida: {formatDate(period.endDate)}
                       </span>
@@ -184,11 +182,16 @@ export function PendingPaymentsWidget() {
 
                 <div className="shrink-0 flex items-center">
                   <button
-                    onClick={(e) => handlePay(period.id, e)}
-                    className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation"
+                    onClick={(e) => handlePay(period.periodId, e)}
+                    disabled={loadingId === period.periodId}
+                    className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
                     aria-label="Cobrar"
                   >
-                    <DollarSign className="h-4 w-4 shrink-0" />
+                    {loadingId === period.periodId ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    ) : (
+                      <DollarSign className="h-4 w-4 shrink-0" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -209,8 +212,21 @@ export function PendingPaymentsWidget() {
   )
 }
 
-export function TopDebtorsWidget() {
-  const { data, isLoading } = useDashboardAlerts()
+function findDebtorOldestOverdue(overdueItems: AlertItem[], debtor: DebtorItem): AlertItem | undefined {
+  // overdueDebt.items viene ordenado por endDate asc: la primera coincidencia es la más antigua.
+  const byPhone = debtor.clientPhone
+    ? overdueItems.find((p) => p.clientPhone === debtor.clientPhone)
+    : undefined
+  if (byPhone) return byPhone
+  const byDni = debtor.clientDni
+    ? overdueItems.find((p) => p.clientDni === debtor.clientDni)
+    : undefined
+  if (byDni) return byDni
+  return overdueItems.find((p) => p.clientName === debtor.clientName)
+}
+
+export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetProps) {
+  const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
   const { openQuickPay } = useUIStore()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -226,25 +242,23 @@ export function TopDebtorsWidget() {
     setExpanded(false)
   }, [items.length])
 
-  const handlePay = async (clientId: string, e: React.MouseEvent) => {
+  const handlePay = async (debtor: DebtorItem, e: React.MouseEvent) => {
     e.stopPropagation()
-    setLoadingId(clientId)
+    setLoadingId(debtor.clientId)
     try {
-      const result = await queryClient.fetchQuery({
-        queryKey: [...qk.billing.lists, { clientId, status: 'OVERDUE', limit: 200 }],
-        queryFn: () => billingApi.list({ clientId, status: 'OVERDUE', limit: 200 }),
+      const candidate = findDebtorOldestOverdue(data?.overdueDebt.items ?? [], debtor)
+      if (!candidate) {
+        toast.info('No hay períodos vencidos para este cliente')
+        return
+      }
+      const period = await queryClient.fetchQuery({
+        queryKey: [...qk.billing.detail(candidate.periodId), { organizationId }],
+        queryFn: () => billingApi.getById(candidate.periodId, { organizationId }),
         staleTime: 0,
       })
-      if (result.periods.length > 0) {
-        const period = result.periods.reduce((oldest, p) =>
-          new Date(p.startDate).getTime() < new Date(oldest.startDate).getTime() ? p : oldest
-        )
-        openQuickPay({ period })
-      } else {
-        toast.info('No hay períodos vencidos para este cliente')
-      }
+      openQuickPay({ period })
     } catch {
-      toast.error('Error al buscar períodos del cliente')
+      toast.error('Error al cargar el período del cliente')
     } finally {
       setLoadingId(null)
     }
@@ -317,7 +331,7 @@ export function TopDebtorsWidget() {
 
                 <div className="shrink-0 flex items-center">
                   <button
-                    onClick={(e) => handlePay(debtor.clientId, e)}
+                    onClick={(e) => handlePay(debtor, e)}
                     disabled={loadingId === debtor.clientId}
                     className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
                     aria-label="Cobrar"
@@ -347,8 +361,8 @@ export function TopDebtorsWidget() {
   )
 }
 
-export function ExpiringSoonWidget() {
-  const { data, isLoading } = useDashboardAlerts()
+export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetProps) {
+  const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
   const navigate = useNavigate()
   const [expanded, setExpanded] = useState(false)
   const exchangeSource = useExchangeStore((s) => s.source)

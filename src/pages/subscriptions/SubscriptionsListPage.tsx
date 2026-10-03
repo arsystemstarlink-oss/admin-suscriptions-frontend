@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
-import { useDashboardSummary } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { billingApi } from '@/api/billing.api'
@@ -42,10 +41,6 @@ export function SubscriptionsListPage() {
       status: statusFilter ?? 'ACTIVE',
       limit: 200,
     },
-    { enabled: !isSuperAdmin || !!organizationId }
-  )
-  const { data: summary } = useDashboardSummary(
-    { organizationId: organizationId ?? undefined },
     { enabled: !isSuperAdmin || !!organizationId }
   )
 
@@ -98,23 +93,29 @@ export function SubscriptionsListPage() {
     }
   }
 
+  const isOverdueSub = (sub: SubscriptionWithDetails) => sub.hasDebt
+
   const isExpiringSub = (sub: SubscriptionWithDetails) =>
     sub.currentPeriod?.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate)
 
   const isPendingSub = (sub: SubscriptionWithDetails) =>
-    sub.status === 'ACTIVE' &&
-    (sub.pendingPeriods > 0 || (sub.currentPeriod != null && sub.currentPeriod.status !== 'PAID'))
+    sub.status === 'ACTIVE' && sub.pendingPeriods > 0
+
+  const getSubPrice = (sub: SubscriptionWithDetails) =>
+    sub.plan?.price ?? sub.currentPeriod?.amount ?? 0
 
   const metrics = useMemo(() => {
     const subs = data?.subscriptions ?? []
-    const expiring = subs.filter(isExpiringSub)
-    const pending = subs.filter(isPendingSub)
+    const overdueSubs = subs.filter(isOverdueSub)
+    const expiringSubs = subs.filter(isExpiringSub)
+    const pendingSubs = subs.filter(isPendingSub)
     return {
-      debtCount: subs.filter((s) => s.hasDebt).length,
-      expiringCount: expiring.length,
-      expiringTotal: expiring.reduce((sum, s) => sum + (s.currentPeriod?.amount ?? 0), 0),
-      pendingCount: pending.length,
-      pendingTotal: pending.reduce((sum, s) => sum + (s.currentPeriod?.amount ?? 0), 0),
+      debtCount: overdueSubs.length,
+      debtTotal: overdueSubs.reduce((sum, s) => sum + s.overduePeriods * getSubPrice(s), 0),
+      expiringCount: expiringSubs.length,
+      expiringTotal: expiringSubs.reduce((sum, s) => sum + (s.currentPeriod?.amount ?? getSubPrice(s)), 0),
+      pendingCount: pendingSubs.length,
+      pendingTotal: pendingSubs.reduce((sum, s) => sum + s.pendingPeriods * getSubPrice(s), 0),
     }
   }, [data])
 
@@ -249,34 +250,55 @@ export function SubscriptionsListPage() {
         </div>
       ) : (
         <>
-          {/* Métricas de Cobranza */}
+          {/* Métricas de Cobranza (filtros rápidos) */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-3 min-w-0">
-              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
+            <button
+              type="button"
+              onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}
+              aria-pressed={hasOverdue === true}
+              title={hasOverdue === true ? 'Quitar filtro de vencidos' : 'Ver solo vencidos'}
+              className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 data-[active=true]:ring-2 data-[active=true]:ring-destructive/50"
+              data-active={hasOverdue === true}
+            >
+              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 Vencidos
-              </div>
-              <p className="text-2xl font-bold mt-1 leading-none">{metrics.debtCount}</p>
-              <p className="text-xs font-medium mt-1.5 truncate">{formatCurrency(summary?.financial.totalOverdue ?? 0)}</p>
-            </div>
+              </span>
+              <span className="text-2xl font-bold mt-1 leading-none block">{metrics.debtCount}</span>
+              <span className="text-xs font-medium mt-1.5 truncate block">{formatCurrency(metrics.debtTotal)}</span>
+            </button>
 
-            <div className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-3 min-w-0">
-              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
+            <button
+              type="button"
+              onClick={() => handleFilter('expiring', expiringFilter ? null : 'true')}
+              aria-pressed={expiringFilter}
+              title={expiringFilter ? 'Quitar filtro de por vencer' : 'Ver solo por vencer'}
+              className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/50 data-[active=true]:ring-2 data-[active=true]:ring-warning/50"
+              data-active={expiringFilter}
+            >
+              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
                 <Clock className="h-3.5 w-3.5 shrink-0" />
                 Por Vencer
-              </div>
-              <p className="text-2xl font-bold mt-1 leading-none">{metrics.expiringCount}</p>
-              <p className="text-xs font-medium mt-1.5 truncate">{formatCurrency(metrics.expiringTotal)}</p>
-            </div>
+              </span>
+              <span className="text-2xl font-bold mt-1 leading-none block">{metrics.expiringCount}</span>
+              <span className="text-xs font-medium mt-1.5 truncate block">{formatCurrency(metrics.expiringTotal)}</span>
+            </button>
 
-            <div className="rounded-2xl border border-info/20 bg-info/10 text-info p-3 min-w-0">
-              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
+            <button
+              type="button"
+              onClick={() => handleFilter('pending', pendingFilter ? null : 'true')}
+              aria-pressed={pendingFilter}
+              title={pendingFilter ? 'Quitar filtro de pendientes' : 'Ver solo pendientes'}
+              className="rounded-2xl border border-info/20 bg-info/10 text-info p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/50 data-[active=true]:ring-2 data-[active=true]:ring-info/50"
+              data-active={pendingFilter}
+            >
+              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
                 <Box className="h-3.5 w-3.5 shrink-0" />
                 Pendientes
-              </div>
-              <p className="text-2xl font-bold mt-1 leading-none">{summary?.billingPeriods.pending ?? 0}</p>
-              <p className="text-xs font-medium mt-1.5 truncate">{formatCurrency(summary?.financial.totalPending ?? 0)}</p>
-            </div>
+              </span>
+              <span className="text-2xl font-bold mt-1 leading-none block">{metrics.pendingCount}</span>
+              <span className="text-xs font-medium mt-1.5 truncate block">{formatCurrency(metrics.pendingTotal)}</span>
+            </button>
           </div>
 
           {/* Lista de Suscripciones (List Tiles) */}

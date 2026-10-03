@@ -54,7 +54,7 @@ export function TopBar({
           </Button>
         )}
 
-        <BrandMark size="md" className="text-header-foreground" />
+        <BrandMark size="md" variant="light" />
 
         {isSuperAdmin && organizations && organizations.length > 0 && (
           <Select

@@ -2,13 +2,14 @@ import { cn } from '@/lib/utils'
 import { APP_NAME } from '@/lib/brand'
 
 type BrandMarkSize = 'sm' | 'md' | 'lg' | 'xl'
+type BrandMarkVariant = 'auto' | 'light' | 'dark'
 
 interface BrandMarkProps {
   size?: BrandMarkSize
   /** Oculta "SYSTEM" en viewports < sm */
   hideSystemOnMobile?: boolean
-  /** Versión explícita: light (texto claro) o dark (texto oscuro) */
-  variant?: 'light' | 'dark'
+  /** Override del color. Por defecto 'auto': sigue el tema (light/dark) del app. 'light': texto claro para fondos fijos oscuros (bg-header) */
+  variant?: BrandMarkVariant
   className?: string
 }
 
@@ -19,22 +20,24 @@ const sizeMap: Record<BrandMarkSize, string> = {
   xl: 'text-4xl',
 }
 
+const variantMap: Record<BrandMarkVariant, string> = {
+  auto: 'text-foreground/95',
+  light: 'text-header-foreground',
+  dark: 'text-foreground/95',
+}
+
 /**
  * Wordmark A|R SYSTEM
- * - A, R y SYSTEM en blanco
+ * - A, R y SYSTEM siguen el tema del app (token foreground)
  * - | en color secondary (amarillo/oro de marca)
  */
 export function BrandMark({
   size = 'md',
   hideSystemOnMobile = false,
-  variant,
+  variant = 'auto',
   className,
 }: BrandMarkProps) {
-  const colorClass = variant === 'light'
-    ? 'text-white/95'
-    : variant === 'dark'
-    ? 'text-foreground/95'
-    : 'text-header-foreground'
+  const colorClass = variantMap[variant]
   return (
     <span
       className={cn(

@@ -162,7 +162,7 @@ export function LoginPage() {
           className="inline-flex items-center justify-center px-5 py-3 transition-transform hover:scale-[1.03] duration-300"
           aria-label={APP_NAME}
         >
-          <BrandMark size="xl" hideSystemOnMobile={false} variant="light" />
+          <BrandMark size="xl" hideSystemOnMobile={false} />
         </a>
         <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground leading-tight text-center">
           Bienvenido de Nuevo

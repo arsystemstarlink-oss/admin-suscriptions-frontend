@@ -375,7 +375,7 @@ export function ConsultaPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border-subtle bg-header text-header-foreground">
         <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-3">
-          <BrandMark size="sm" />
+          <BrandMark size="sm" variant="light" />
         </div>
       </header>
       <ExchangeTicker />

@@ -76,7 +76,7 @@ export default function MobileAppShell({
     <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-background text-foreground select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
       {/* Header móvil en una sola fila: logo a la izquierda, acciones a la derecha */}
       <header className="sticky top-0 z-50 flex min-h-14 items-center gap-3 border-b border-border-subtle bg-header px-3 pb-2 pt-[max(env(safe-area-inset-top),12px)] text-header-foreground transition-colors">
-        <BrandMark size="sm" className="min-w-0 flex-1 text-header-foreground [&_span]:truncate" />
+        <BrandMark size="sm" variant="light" className="min-w-0 flex-1 [&_span]:truncate" />
         <div className="flex shrink-0 items-center gap-1.5">
           {showOrgSwitcher && (
             <Select

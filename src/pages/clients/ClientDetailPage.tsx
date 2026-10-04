@@ -81,7 +81,7 @@ export function ClientDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]">
+    <div className="flex flex-col gap-3 pb-[calc(100px+env(safe-area-inset-bottom))] sm:gap-4">
       
       <DetailNav
         backTo="/subscriptions/clients"
@@ -111,16 +111,16 @@ export function ClientDetailPage() {
       />
 
       {/* Perfil del Cliente */}
-      <div className="bg-surface text-surface-foreground border border-border rounded-3xl p-5 shadow-sm">
-        <div className="flex gap-4 items-center">
-          <div className="flex items-center justify-center h-16 w-16 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-2xl shrink-0">
+      <div className="bg-surface text-surface-foreground border border-border rounded-2xl p-3 shadow-sm sm:rounded-3xl sm:p-5">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xl font-bold text-surface-muted-foreground sm:h-16 sm:w-16 sm:text-2xl">
             {initial}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-foreground truncate leading-tight">
+            <h1 className="truncate text-lg font-bold leading-tight text-foreground sm:text-xl">
               {getClientFullName(client)}
             </h1>
-            <div className="flex flex-col gap-1 mt-1 text-sm text-muted-foreground">
+            <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground sm:gap-1 sm:text-sm">
               <span className="flex items-center gap-1.5 truncate">
                 <Phone className="h-3.5 w-3.5 shrink-0" /> {client.phone}
               </span>
@@ -129,17 +129,19 @@ export function ClientDetailPage() {
                   <CreditCard className="h-3.5 w-3.5 shrink-0" /> C.I. {client.dni}
                 </span>
               )}
-              <span className="flex items-center gap-1.5 truncate">
-                <Mail className="h-3.5 w-3.5 shrink-0" /> {client.email}
-              </span>
+              {client.email && (
+                <span className="flex items-center gap-1.5 truncate">
+                  <Mail className="h-3.5 w-3.5 shrink-0" /> {client.email}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3 mt-5">
+        <div className="mt-3 sm:mt-5">
           <button
             onClick={handleOpenChat}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl font-semibold bg-surface-muted text-surface-muted-foreground border border-border-subtle hover:bg-surface-hover active:bg-surface-active touch-manipulation transition-colors"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-muted font-semibold text-surface-muted-foreground transition-colors hover:bg-surface-hover active:bg-surface-active touch-manipulation sm:h-11"
           >
             <MessageSquare className="h-4 w-4" /> WhatsApp
           </button>
@@ -147,111 +149,110 @@ export function ClientDetailPage() {
       </div>
 
       {/* Mini KPIs Horizontales */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar touch-pan-x -mx-4 px-4 snap-x snap-mandatory">
-        <div className="snap-center shrink-0 w-[45vw] min-w-[140px] bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activas</p>
-          <p className="text-2xl font-bold text-success">{summary.activeSubscriptions}</p>
+      <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 no-scrollbar touch-pan-x -mx-4 sm:gap-3">
+        <div className="flex w-[40vw] min-w-[125px] shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-[140px] sm:rounded-2xl sm:p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Activas</p>
+          <p className="text-xl font-bold leading-tight text-success sm:text-2xl">{summary.activeSubscriptions}</p>
         </div>
-        <div className="snap-center shrink-0 w-[45vw] min-w-[140px] bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Deuda</p>
-          <p className="text-2xl font-bold text-destructive">{summary.totalOverdue}</p>
+        <div className="flex w-[40vw] min-w-[125px] shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-[140px] sm:rounded-2xl sm:p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Deuda</p>
+          <p className="text-xl font-bold leading-tight text-destructive sm:text-2xl">{summary.totalOverdue}</p>
         </div>
-        <div className="snap-center shrink-0 w-[45vw] min-w-[140px] bg-surface text-surface-foreground border border-border rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total Subs</p>
-          <p className="text-2xl font-bold text-foreground">{summary.totalSubscriptions}</p>
+        <div className="flex w-[40vw] min-w-[125px] shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-[140px] sm:rounded-2xl sm:p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Total Subs</p>
+          <p className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{summary.totalSubscriptions}</p>
         </div>
       </div>
 
-      <Tabs defaultValue="subscriptions" className="mt-2">
-        <TabsList className="w-full grid grid-cols-2 h-12 bg-surface-muted rounded-xl p-1 border border-border-subtle">
+      <Tabs defaultValue="subscriptions" className="mt-1 sm:mt-2">
+        <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-border-subtle bg-surface-muted p-1 sm:h-12">
           <TabsTrigger value="subscriptions" className="rounded-lg font-semibold data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm">Suscripciones</TabsTrigger>
           <TabsTrigger value="info" className="rounded-lg font-semibold data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm">Información</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="subscriptions" className="mt-4 space-y-4">
+        <TabsContent value="subscriptions" className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
           {subscriptions.length === 0 ? (
             <EmptyState
               icon={<Box className="h-12 w-12 text-subtle-foreground" />}
               title="Este cliente no tiene suscripciones"
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {subscriptions.map((sub) => (
-                <div key={sub.id} className="bg-surface text-surface-foreground border border-border rounded-2xl p-4 shadow-sm overflow-hidden relative">
+                <div key={sub.id} className="relative overflow-hidden rounded-xl border border-border bg-surface p-3 text-surface-foreground shadow-sm sm:rounded-2xl sm:p-4">
 
-                  {/* Etiqueta Deuda / Vencido (Si aplica) */}
-                  {sub.hasDebt && (
-                    <div className="absolute top-0 right-0 bg-destructive/10 text-destructive text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 uppercase tracking-wide">
-                      <ShieldAlert className="h-3 w-3" /> Con Deuda
+                  <div className="mb-2 flex items-center gap-2.5 sm:mb-3 sm:gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-10 sm:w-10 sm:rounded-xl">
+                      <Box className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                  )}
-
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                      <Box className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-foreground leading-tight truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold leading-tight text-foreground">
                         {sub.accountNumber ? sub.accountNumber : sub.kitNumber}
                       </p>
-                      <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">
+                      <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
                         {sub.accountNumber ? `${sub.kitNumber} • ` : ''}{sub.plan?.name || 'N/D'} • {formatCurrency(sub.plan?.price || 0)}/mes
                       </p>
                     </div>
+                    {sub.hasDebt && (
+                      <Badge variant="destructive" className="shrink-0 gap-1 px-2 py-0.5 text-[10px]">
+                        <ShieldAlert className="h-3 w-3" /> Deuda
+                      </Badge>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge className={SUBSCRIPTION_STATUS_COLORS[sub.status]}>
+                  <div className="mb-2 flex flex-wrap gap-1.5 sm:mb-3 sm:gap-2">
+                    <Badge className={`px-2 py-0.5 text-[10px] sm:text-xs ${SUBSCRIPTION_STATUS_COLORS[sub.status]}`}>
                       {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                     </Badge>
-                    <Badge variant="outline" className="bg-surface-muted border-border text-muted-foreground">
+                    <Badge variant="outline" className="border-border bg-surface-muted px-2 py-0.5 text-[10px] text-muted-foreground sm:text-xs">
                       Corte: día {sub.billingDay}
                     </Badge>
                     {sub.currentPeriod && sub.currentPeriod.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate) && (
-                      <Badge className="bg-warning/10 text-warning border-warning/20">
+                      <Badge className="border-warning/20 bg-warning/10 px-2 py-0.5 text-[10px] text-warning sm:text-xs">
                         {getExpiringLabel(sub.currentPeriod.endDate)}
                       </Badge>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-surface-muted rounded-xl border border-border-subtle">
-                    <div className="text-center border-r border-border">
-                      <p className="text-[10px] font-bold text-subtle-foreground uppercase">Vencidos</p>
-                      <p className={`text-lg font-bold leading-none mt-1 ${sub.overduePeriods > 0 ? 'text-destructive' : 'text-foreground'}`}>
+                  <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-lg border border-border-subtle bg-surface-muted p-1.5 sm:mb-3 sm:gap-2 sm:rounded-xl sm:p-2.5">
+                    <div className="border-r border-border text-center">
+                      <p className="text-[10px] font-bold uppercase text-subtle-foreground">Vencidos</p>
+                      <p className={`mt-0.5 text-base font-bold leading-none sm:mt-1 sm:text-lg ${sub.overduePeriods > 0 ? 'text-destructive' : 'text-foreground'}`}>
                         {sub.overduePeriods}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] font-bold text-subtle-foreground uppercase">Totales</p>
-                      <p className="text-lg font-bold leading-none mt-1 text-foreground">
+                      <p className="text-[10px] font-bold uppercase text-subtle-foreground">Totales</p>
+                      <p className="mt-0.5 text-base font-bold leading-none text-foreground sm:mt-1 sm:text-lg">
                         {sub.totalPeriods}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {sub.currentPeriod && sub.currentPeriod.status !== 'PAID' && (
                       <Button
-                        className="flex-1 h-11 text-sm font-semibold"
+                        className="h-9 min-w-0 flex-1 gap-1 px-2 text-xs font-semibold sm:h-11 sm:gap-2 sm:px-4 sm:text-sm"
                         onClick={() => handlePaySubscription(sub)}
                         disabled={!canPayCurrentPeriod(sub)}
                         title={!canPayCurrentPeriod(sub) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
                       >
-                        <DollarSign className="h-4 w-4 mr-1 shrink-0" />
+                        <DollarSign className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                         Cobrar
                       </Button>
                     )}
                     {canPayAdvance(sub) && (
                       <Button
                         variant="outline"
-                        className="flex-1 h-11 text-sm font-semibold"
+                        className="h-9 min-w-0 flex-1 gap-1 px-2 text-xs font-semibold sm:h-11 sm:gap-2 sm:px-4 sm:text-sm"
                         onClick={() => setAdvanceSub(sub)}
                         title="Pagar por adelantado"
                       >
+                        <DollarSign className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                         Adelanto
                       </Button>
                     )}
-                    <Button variant="outline" className={`h-11 font-semibold active:bg-surface-active transition-colors ${(sub.currentPeriod && sub.currentPeriod.status !== 'PAID') || canPayAdvance(sub) ? 'flex-none px-4' : 'flex-1'}`} asChild>
+                    <Button variant="outline" className="h-9 min-w-0 flex-1 px-2 text-xs font-semibold transition-colors active:bg-surface-active sm:h-11 sm:px-4 sm:text-sm" asChild>
                       <Link to={`/subscriptions/${sub.id}`} state={{ from: `${location.pathname}${location.search}` }}>Ver Kit</Link>
                     </Button>
                   </div>
@@ -262,10 +263,10 @@ export function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="info">
-          <div className="bg-surface text-surface-foreground border border-border rounded-2xl p-5 space-y-4 shadow-sm">
+          <div className="space-y-3 rounded-2xl border border-border bg-surface p-3 text-surface-foreground shadow-sm sm:space-y-4 sm:p-5">
 
-            <div className="flex items-start gap-3">
-              <CreditCard className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 sm:gap-3">
+              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Cédula de Identidad</p>
                 <p className="text-sm text-foreground font-medium mt-0.5 leading-snug">
@@ -274,8 +275,8 @@ export function ClientDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 sm:gap-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Dirección</p>
                 <p className="text-sm text-foreground font-medium mt-0.5 leading-snug">
@@ -284,8 +285,8 @@ export function ClientDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 sm:gap-3">
+              <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Registro</p>
                 <p className="text-sm text-foreground font-medium mt-0.5">
@@ -294,8 +295,8 @@ export function ClientDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-3">
-              <AlignLeft className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 sm:gap-3">
+              <AlignLeft className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Notas</p>
                 <p className="text-sm text-foreground font-medium mt-0.5 leading-snug">

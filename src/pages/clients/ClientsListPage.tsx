@@ -78,9 +78,14 @@ export function ClientsListPage() {
         </>
       ) : undefined}
       primaryAction={!showEmpty ? (
-        <Button onClick={() => navigate('/subscriptions/clients/new')} className="h-10">
-          <Plus className="h-4 w-4 mr-1.5 shrink-0" />
-          Nuevo
+        <Button
+          onClick={() => navigate('/subscriptions/clients/new')}
+          className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2"
+          aria-label="Nuevo cliente"
+          title="Nuevo cliente"
+        >
+          <Plus className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
+          <span className="hidden sm:inline">Nuevo</span>
         </Button>
       ) : undefined}
       isLoading={isLoading && !showEmpty}

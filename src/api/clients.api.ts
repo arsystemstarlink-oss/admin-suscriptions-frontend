@@ -25,12 +25,23 @@ interface ClientsListResponse {
 
 export const clientsApi = {
   list: async (params?: ClientsListParams): Promise<ClientsListResponse> => {
-    const response = await api.get<ClientsListResponse>('/clients', { params })
+    const search = params?.search?.trim()
+    const normalizedSearch = search
+      ? search
+          .split(/\s+/)
+          .map((word) => word.charAt(0).toLocaleUpperCase() + word.slice(1).toLocaleLowerCase())
+          .join(' ')
+      : undefined
+    const response = await api.get<ClientsListResponse>('/clients', {
+      params: normalizedSearch ? { ...params, search: normalizedSearch } : params,
+    })
     return response.data
   },
 
-  getById: async (id: string): Promise<ClientDetailResponse> => {
-    const response = await api.get<ClientDetailResponse>(`/clients/${id}`)
+  getById: async (id: string, organizationId?: string): Promise<ClientDetailResponse> => {
+    const response = await api.get<ClientDetailResponse>(`/clients/${id}`, {
+      params: organizationId ? { organizationId } : undefined,
+    })
     return response.data
   },
 

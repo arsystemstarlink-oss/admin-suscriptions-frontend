@@ -20,11 +20,11 @@ export function useClients(params?: UseClientsParams, options?: { enabled?: bool
   })
 }
 
-export function useClientDetail(id: string) {
+export function useClientDetail(id: string, organizationId?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: qk.clients.detail(id),
-    queryFn: () => clientsApi.getById(id),
-    enabled: !!id,
+    queryKey: qk.clients.detail(id, organizationId),
+    queryFn: () => clientsApi.getById(id, organizationId),
+    enabled: !!id && (options?.enabled ?? true),
   })
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -12,6 +12,7 @@ import { getClientFullName, getInitial } from '@/lib/utils'
 export function ClientsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') || '')
   const navigate = useNavigate()
   const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
@@ -20,8 +21,13 @@ export function ClientsListPage() {
   const subscriptionStatus = searchParams.get('subscriptionStatus') as 'ACTIVE' | 'SUSPENDED' | 'MIXED' | 'NONE' | null
   const hasOverdue = searchParams.get('hasOverdue') === 'true' ? true : searchParams.get('hasOverdue') === 'false' ? false : undefined
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => window.clearTimeout(timeout)
+  }, [search])
+
   const { data, isLoading } = useClients({
-    search: searchParams.get('search') || undefined,
+    search: debouncedSearch || undefined,
     subscriptionStatus: subscriptionStatus || undefined,
     hasOverdue,
     organizationId: organizationId || undefined,
@@ -35,7 +41,7 @@ export function ClientsListPage() {
     } else {
       params.delete('search')
     }
-    setSearchParams(params)
+    setSearchParams(params, { replace: true })
   }
 
   const handleFilter = (key: string, value: string | null) => {

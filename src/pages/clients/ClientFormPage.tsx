@@ -4,6 +4,8 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useClientDetail, useCreateClient, useUpdateClient } from '@/hooks/useClients'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
@@ -21,7 +23,6 @@ import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { normalizeDni } from '@/lib/utils'
 import { handleApiError } from '@/lib/error-handler'
-import { useIsSuperAdmin } from '@/stores/auth.store'
 import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 import type { CreateClientRequest } from '@/types/api'
 
@@ -52,12 +53,15 @@ export function ClientFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isEdit = !!id
-  const { data, isLoading } = useClientDetail(id!)
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const { data, isLoading } = useClientDetail(id!, organizationId || undefined, {
+    enabled: !isSuperAdmin || !!organizationId,
+  })
   const createMutation = useCreateClient()
   const updateMutation = useUpdateClient()
   const [error, setFormError] = useState<string | null>(null)
   const backTo = isEdit ? `/subscriptions/clients/${id}` : '/subscriptions/clients'
-  const isSuperAdmin = useIsSuperAdmin()
 
   const {
     register,

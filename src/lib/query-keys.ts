@@ -8,7 +8,8 @@ export const qk = {
   },
   clients: {
     lists: ['clients', 'list'] as const,
-    detail: (id: string) => ['clients', id, 'detail'] as const,
+    detail: (id: string, organizationId?: string) =>
+      organizationId ? ['clients', id, 'detail', organizationId] as const : ['clients', id, 'detail'] as const,
   },
   plans: {
     lists: ['plans', 'list'] as const,

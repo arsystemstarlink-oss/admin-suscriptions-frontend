@@ -2,6 +2,8 @@ import { useParams, Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useClientDetail } from '@/hooks/useClients'
 import { useUIStore } from '@/stores/ui.store'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -17,7 +19,11 @@ import type { SubscriptionWithDetails } from '@/types/api'
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
-  const { data, isLoading, error } = useClientDetail(id!)
+  const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const { data, isLoading, error } = useClientDetail(id!, organizationId || undefined, {
+    enabled: !isSuperAdmin || !!organizationId,
+  })
   const { openQuickPay } = useUIStore()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)

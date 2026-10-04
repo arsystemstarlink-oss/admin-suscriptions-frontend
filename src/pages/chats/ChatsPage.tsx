@@ -50,23 +50,9 @@ export function ChatsPage() {
     { limit: 100, organizationId: organizationId ?? undefined },
     { enabled: !isSuperAdmin || !!organizationId }
   )
-  const { data: messagesData, isLoading: messagesLoading } = useWhatsAppMessages(selectedPhone, organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
   const { data: conversationsData } = useWhatsAppConversations(organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
-  const sendMessageMutation = useSendMessage(organizationId ?? undefined)
-  const deleteChatMutation = useDeleteChat()
 
   const clients = useMemo(() => clientsData?.clients || [], [clientsData])
-  const messages = useMemo(() => messagesData?.messages || [], [messagesData])
-  const canSendFreeMessage = useMemo(() => {
-    const twentyFourHoursInMs = 24 * 60 * 60 * 1000
-
-    return messages.some((message) => {
-      if (message.direction !== 'INBOUND') return false
-
-      const messageAge = Date.now() - new Date(message.createdAt).getTime()
-      return messageAge <= twentyFourHoursInMs
-    })
-  }, [messages])
   const clientPhones = useMemo(
     () => clients.map((client) => client.phone).filter(Boolean),
     [clients]
@@ -88,6 +74,27 @@ export function ChatsPage() {
   const selectedChatOrganizationId = selectedPhone
     ? phoneToOrganizationId.get(selectedPhone)
     : undefined
+  const chatOrganizationId = selectedChatOrganizationId ?? organizationId ?? undefined
+  const {
+    data: messagesData,
+    isLoading: messagesLoading,
+    error: messagesError,
+  } = useWhatsAppMessages(selectedPhone, chatOrganizationId, {
+    enabled: !!selectedPhone && (!isSuperAdmin || !!chatOrganizationId),
+  })
+  const sendMessageMutation = useSendMessage(chatOrganizationId)
+  const deleteChatMutation = useDeleteChat()
+  const messages = useMemo(() => messagesData?.messages || [], [messagesData])
+  const canSendFreeMessage = useMemo(() => {
+    const twentyFourHoursInMs = 24 * 60 * 60 * 1000
+
+    return messages.some((message) => {
+      if (message.direction !== 'INBOUND') return false
+
+      const messageAge = Date.now() - new Date(message.createdAt).getTime()
+      return messageAge <= twentyFourHoursInMs
+    })
+  }, [messages])
 
   const unknownConversations = useMemo(
     () => (conversationsData?.conversations || []).filter((conv) => !clientPhones.includes(conv.phone)),
@@ -263,7 +270,7 @@ export function ChatsPage() {
     }
 
     deleteChatMutation.mutate(
-      { phone: selectedPhone, organizationId: isSuperAdmin ? selectedChatOrganizationId : undefined },
+      { phone: selectedPhone, organizationId: isSuperAdmin ? chatOrganizationId : undefined },
       {
         onSuccess: () => {
           setSelectedPhone(null)
@@ -447,7 +454,7 @@ export function ChatsPage() {
                       onClick={handleDeleteChat}
                       disabled={
                         deleteChatMutation.isPending ||
-                        (isSuperAdmin && !selectedChatOrganizationId)
+                        (isSuperAdmin && !chatOrganizationId)
                       }
                       className="h-10 w-10 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       aria-label="Eliminar conversación"
@@ -463,6 +470,12 @@ export function ChatsPage() {
                           <div key={i} className="h-12 bg-muted animate-pulse rounded" />
                         ))}
                       </div>
+                    ) : messagesError ? (
+                      <EmptyState
+                        icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}
+                        title="No se pudieron cargar los mensajes"
+                        description="Intenta abrir la conversación nuevamente."
+                      />
                     ) : sortedMessages.length === 0 ? (
                       <EmptyState
                         icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}

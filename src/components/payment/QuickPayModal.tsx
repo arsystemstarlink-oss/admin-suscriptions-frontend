@@ -33,7 +33,7 @@ import {
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
 } from '@/lib/constants'
-import { getClientFullName, hasOlderUnpaidPeriod } from '@/lib/utils'
+import { getClientFullName, getLocalDateInputValue, hasOlderUnpaidPeriod } from '@/lib/utils'
 import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
@@ -54,10 +54,6 @@ const createPaymentSchema = (minDate: string) =>
   })
 
 type PaymentForm = z.infer<ReturnType<typeof createPaymentSchema>>
-
-const getDefaultPaidAt = () => {
-  return new Date().toISOString().split('T')[0]
-}
 
 export function QuickPayModal() {
   const { quickPayOpen, quickPayContext, closeQuickPay } = useUIStore()
@@ -90,7 +86,7 @@ export function QuickPayModal() {
   } = useForm<PaymentForm>({
     resolver: zodResolver(createPaymentSchema(minPaidAt)),
     defaultValues: {
-      paidAt: getDefaultPaidAt(),
+      paidAt: getLocalDateInputValue(),
     },
   })
 

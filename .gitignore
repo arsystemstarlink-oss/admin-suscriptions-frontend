@@ -25,7 +25,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.kilo
+*.kilo
 
 # stray alias folder (app resolves @ to src/)
 @/

@@ -27,7 +27,7 @@ import {
   formatDate,
   PAYMENT_METHOD_LABELS,
 } from '@/lib/constants'
-import { getClientFullName } from '@/lib/utils'
+import { getClientFullName, getLocalDateInputValue } from '@/lib/utils'
 import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
@@ -42,10 +42,6 @@ const advanceSchema = z.object({
 })
 
 type AdvanceForm = z.infer<typeof advanceSchema>
-
-const getDefaultPaidAt = () => {
-  return new Date().toISOString().split('T')[0]
-}
 
 function addOneMonthUtc(dateStr: string): string {
   const d = new Date(dateStr)
@@ -80,7 +76,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
   } = useForm<AdvanceForm>({
     resolver: zodResolver(advanceSchema),
     defaultValues: {
-      paidAt: getDefaultPaidAt(),
+      paidAt: getLocalDateInputValue(),
     },
   })
 
@@ -151,7 +147,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                       <Input
                         type="date"
                         {...register('paidAt')}
-                        max={getDefaultPaidAt()}
+                        max={getLocalDateInputValue()}
                         className="pl-9 h-12"
                       />
                     </div>

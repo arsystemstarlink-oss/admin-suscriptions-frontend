@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import type { PayRequest, UpdateBillingPeriodRequest, BillingPeriodWithDetails } from '@/types/api'
+import { useOrganizationStore } from '@/stores/organization.store'
 import { toast } from 'sonner'
 
 interface UseBillingPeriodsParams {
@@ -34,9 +35,10 @@ export function useBillingPeriodDetail(id: string) {
 
 export function useRegisterPayment(periodId: string) {
   const qc = useQueryClient()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   return useMutation({
-    mutationFn: (data: PayRequest) => billingApi.payPeriod(periodId, data),
+    mutationFn: (data: PayRequest) => billingApi.payPeriod(periodId, data, organizationId ?? undefined),
     onMutate: async (data) => {
       await qc.cancelQueries({ queryKey: qk.billing.lists })
 
@@ -85,17 +87,19 @@ export function useRegisterPayment(periodId: string) {
         }
       }
 
-      const apiError = error as { code?: string }
+      const apiError = error as { code?: string; message?: string }
       if (apiError.code === 'PERIOD_ALREADY_PAID') {
         toast.warning('Este período ya fue pagado')
         qc.invalidateQueries({ queryKey: qk.billing.detail(periodId) })
       } else if (apiError.code === 'INVALID_PAYMENT_AMOUNT') {
         toast.error('El monto no coincide con el período')
+      } else if (apiError.code === 'INVALID_PAYMENT_DATE' || apiError.code === 'INVALID_DATE_FORMAT') {
+        toast.error('La fecha de pago no es válida')
       } else if (apiError.code === 'INVALID_PERIOD_STATE') {
         toast.error('No se puede registrar pago en este estado')
         qc.invalidateQueries({ queryKey: qk.billing.detail(periodId) })
       } else {
-        toast.error('Error al registrar el pago')
+        toast.error(apiError.message || 'Error al registrar el pago')
       }
     },
   })

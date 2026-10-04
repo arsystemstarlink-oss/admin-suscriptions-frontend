@@ -43,8 +43,14 @@ export const billingApi = {
     return response.data
   },
 
-  payPeriod: async (id: string, data: PayRequest): Promise<PayResponse> => {
-    const response = await api.post<PayResponse>(`/billing-periods/${id}/pay`, data)
+  payPeriod: async (
+    id: string,
+    data: PayRequest,
+    organizationId?: string
+  ): Promise<PayResponse> => {
+    const response = await api.post<PayResponse>(`/billing-periods/${id}/pay`, data, {
+      params: organizationId ? { organizationId } : undefined,
+    })
     return response.data
   },
 }

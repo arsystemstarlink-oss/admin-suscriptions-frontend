@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { subscriptionsApi } from '@/api/subscriptions.api'
 import { qk } from '@/lib/query-keys'
 import type { CreateSubscriptionRequest, PayAdvanceRequest, UpdateSubscriptionRequest } from '@/types/api'
+import { useOrganizationStore } from '@/stores/organization.store'
 import { toast } from 'sonner'
 
 interface UseSubscriptionsParams {
@@ -69,9 +70,11 @@ export function useDeleteSubscription() {
 
 export function usePayAdvance(subscriptionId: string) {
   const qc = useQueryClient()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   return useMutation({
-    mutationFn: (data: PayAdvanceRequest) => subscriptionsApi.payAdvance(subscriptionId, data),
+    mutationFn: (data: PayAdvanceRequest) =>
+      subscriptionsApi.payAdvance(subscriptionId, data, organizationId ?? undefined),
     onSuccess: (response) => {
       qc.invalidateQueries({ queryKey: qk.billing.lists })
       qc.invalidateQueries({ queryKey: qk.subscriptions.detail(response.subscription.id) })
@@ -82,7 +85,7 @@ export function usePayAdvance(subscriptionId: string) {
       toast.success('Adelanto registrado — próximo ciclo pagado')
     },
     onError: (error: unknown) => {
-      const apiError = error as { code?: string }
+      const apiError = error as { code?: string; message?: string }
       if (apiError.code === 'HAS_UNPAID_PERIODS') {
         toast.error('Tiene períodos pendientes: cóbrelos primero')
       } else if (apiError.code === 'PERIOD_ALREADY_EXISTS') {
@@ -91,8 +94,12 @@ export function usePayAdvance(subscriptionId: string) {
         qc.invalidateQueries({ queryKey: qk.subscriptions.detail(subscriptionId) })
       } else if (apiError.code === 'SUBSCRIPTION_SUSPENDED') {
         toast.error('Suscripción suspendida: cobre los vencidos primero')
+      } else if (apiError.code === 'INVALID_PERIOD_STATE') {
+        toast.error('La suscripción no está en un estado que permita registrar el adelanto')
+      } else if (apiError.code === 'INVALID_DATE_FORMAT') {
+        toast.error('El formato de fecha de pago no es válido')
       } else {
-        toast.error('Error al registrar el adelanto')
+        toast.error(apiError.message || 'Error al registrar el adelanto')
       }
     },
   })

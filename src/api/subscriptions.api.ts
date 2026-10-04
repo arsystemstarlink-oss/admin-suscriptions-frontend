@@ -52,8 +52,14 @@ export const subscriptionsApi = {
     await api.delete(`/subscriptions/${id}`)
   },
 
-  payAdvance: async (id: string, data: PayAdvanceRequest): Promise<PayAdvanceResponse> => {
-    const response = await api.post<PayAdvanceResponse>(`/subscriptions/${id}/pay-advance`, data)
+  payAdvance: async (
+    id: string,
+    data: PayAdvanceRequest,
+    organizationId?: string
+  ): Promise<PayAdvanceResponse> => {
+    const response = await api.post<PayAdvanceResponse>(`/subscriptions/${id}/pay-advance`, data, {
+      params: organizationId ? { organizationId } : undefined,
+    })
     return response.data
   },
 }

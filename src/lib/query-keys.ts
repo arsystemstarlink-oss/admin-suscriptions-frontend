@@ -38,6 +38,7 @@ export const qk = {
   organizations: {
     lists: ['organizations', 'list'] as const,
     detail: (id: string) => ['organizations', id, 'detail'] as const,
+    whatsappConfig: (id: string) => ['organizations', id, 'whatsapp-config'] as const,
   },
   paymentReports: {
     lists: ['payment-reports', 'list'] as const,

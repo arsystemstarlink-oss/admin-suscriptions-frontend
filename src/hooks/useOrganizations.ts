@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { organizationsApi } from '@/api/organizations.api'
 import { qk } from '@/lib/query-keys'
-import type { CreateOrganizationRequest, UpdateOrganizationRequest } from '@/types/api'
+import type {
+  CreateOrganizationRequest,
+  UpdateOrganizationRequest,
+  UpdateOrganizationWhatsAppConfigRequest,
+} from '@/types/api'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 
@@ -24,6 +28,35 @@ export function useOrganizationDetail(id: string) {
     queryKey: qk.organizations.detail(id),
     queryFn: () => organizationsApi.getById(id),
     enabled: !!id,
+  })
+}
+
+export function useOrganizationWhatsAppConfig(id: string, enabled = true) {
+  return useQuery({
+    queryKey: qk.organizations.whatsappConfig(id),
+    queryFn: () => organizationsApi.getWhatsAppConfig(id),
+    enabled: Boolean(id) && enabled,
+  })
+}
+
+export function useUpdateOrganizationWhatsAppConfig() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: UpdateOrganizationWhatsAppConfigRequest
+    }) => organizationsApi.updateWhatsAppConfig(id, data),
+    onSuccess: (config, variables) => {
+      qc.setQueryData(qk.organizations.whatsappConfig(variables.id), config)
+      qc.invalidateQueries({ queryKey: qk.organizations.lists })
+      qc.invalidateQueries({ queryKey: qk.organizations.detail(variables.id) })
+      toast.success('Configuración de WhatsApp actualizada')
+    },
+    onError: (err) => handleApiError(err),
   })
 }
 

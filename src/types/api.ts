@@ -21,9 +21,9 @@ export enum BillingPeriodStatus {
 export type UserRole = 'super-admin' | 'admin'
 
 export interface OrganizationTwilioConfigRequest {
-  accountSid?: string
+  accountSid?: string | null
   authToken?: string | null
-  phoneNumber?: string
+  phoneNumber?: string | null
   enabled?: boolean
 }
 
@@ -32,6 +32,41 @@ export interface OrganizationTwilioInfo {
   phoneNumber?: string
   enabled?: boolean
   authTokenSet?: boolean
+  authTokenConfigured?: boolean
+}
+
+export interface OrganizationWhatsAppRules {
+  reminderDaysBefore: number[]
+  dueDateWarningEnabled: boolean
+  suspensionNoticeEnabled: boolean
+}
+
+export interface OrganizationWhatsAppTemplates {
+  reminder?: string
+  dueDateWarning?: string
+  suspensionNotice?: string
+}
+
+export interface OrganizationWhatsAppConfig {
+  organizationId: string
+  twilio: OrganizationTwilioInfo
+  rules: OrganizationWhatsAppRules
+  templates: OrganizationWhatsAppTemplates
+  readiness: {
+    ready: boolean
+    missing: string[]
+    usingLegacyTemplates: boolean
+  }
+}
+
+export interface UpdateOrganizationWhatsAppConfigRequest {
+  twilio?: OrganizationTwilioConfigRequest
+  rules?: Partial<OrganizationWhatsAppRules>
+  templates?: {
+    reminder?: string | null
+    dueDateWarning?: string | null
+    suspensionNotice?: string | null
+  }
 }
 
 export interface Organization {

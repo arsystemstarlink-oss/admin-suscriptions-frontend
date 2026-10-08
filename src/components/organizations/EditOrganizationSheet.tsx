@@ -3,6 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUpdateOrganization, useDeleteOrganization } from '@/hooks/useOrganizations'
+import { OrganizationWhatsAppSettings } from '@/components/organizations/OrganizationWhatsAppSettings'
 import { getErrorHandler } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,9 +24,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { AlertTriangle, Building2, MessageCircle, Trash2 } from 'lucide-react'
+import { AlertTriangle, Building2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { ApiError, Organization, OrganizationTwilioConfigRequest } from '@/types/api'
+import type { ApiError, Organization } from '@/types/api'
 
 const editOrganizationSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -35,16 +36,6 @@ const editOrganizationSchema = z.object({
     .optional()
     .or(z.literal('')),
   active: z.enum(['true', 'false']),
-  twilioAccountSid: z.string().optional().or(z.literal('')),
-  twilioAuthToken: z.string().optional().or(z.literal('')),
-  twilioPhoneNumber: z
-    .string()
-    .refine(
-      (value) => value === '' || /^\+?[1-9]\d{1,14}$/.test(value),
-      'Número inválido. Use formato E.164, ej. +584223552626',
-    )
-    .optional(),
-  twilioEnabled: z.enum(['true', 'false']),
 })
 
 type EditOrganizationForm = z.infer<typeof editOrganizationSchema>
@@ -60,8 +51,6 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
   const deleteMutation = useDeleteOrganization()
   const [error, setError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleteAuthToken, setDeleteAuthToken] = useState(false)
-  const [showRemoveTwilioConfirm, setShowRemoveTwilioConfirm] = useState(false)
 
   const {
     register,
@@ -76,10 +65,6 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
       name: '',
       slug: '',
       active: 'true',
-      twilioAccountSid: '',
-      twilioAuthToken: '',
-      twilioPhoneNumber: '',
-      twilioEnabled: 'true',
     },
   })
 
@@ -89,39 +74,21 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
         name: organization.name,
         slug: organization.slug || '',
         active: organization.active ? 'true' : 'false',
-        twilioAccountSid: organization.twilio?.accountSid || '',
-        twilioAuthToken: '',
-        twilioPhoneNumber: organization.twilio?.phoneNumber || '',
-        twilioEnabled: organization.twilio?.enabled === false ? 'false' : 'true',
       })
       setError(null)
       setShowDeleteConfirm(false)
-      setDeleteAuthToken(false)
-      setShowRemoveTwilioConfirm(false)
     }
   }, [open, organization, reset])
 
   const onSubmit = async (data: EditOrganizationForm) => {
     setError(null)
     try {
-      const twilioPayload: OrganizationTwilioConfigRequest = {
-        accountSid: data.twilioAccountSid?.trim() || '',
-        phoneNumber: data.twilioPhoneNumber?.trim() || '',
-        enabled: data.twilioEnabled === 'true',
-      }
-      if (deleteAuthToken) {
-        twilioPayload.authToken = null
-      } else if (data.twilioAuthToken?.trim()) {
-        twilioPayload.authToken = data.twilioAuthToken.trim()
-      }
-
       await updateMutation.mutateAsync({
         id: organization.id,
         data: {
           name: data.name.trim(),
           slug: data.slug?.trim() || undefined,
           active: data.active === 'true',
-          twilio: twilioPayload,
         },
       })
       onOpenChange(false)
@@ -157,26 +124,6 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
     }
   }
 
-  const handleRemoveTwilio = async () => {
-    setError(null)
-    try {
-      await updateMutation.mutateAsync({
-        id: organization.id,
-        data: { twilio: null },
-      })
-      setShowRemoveTwilioConfirm(false)
-      onOpenChange(false)
-    } catch (err) {
-      const apiError = err as Partial<ApiError>
-      const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
-      const message =
-        handler?.message || apiError.message || 'Error al quitar la configuración de Twilio'
-      toast.error(message)
-      setError(message)
-      setShowRemoveTwilioConfirm(false)
-    }
-  }
-
   if (!organization) return null
 
   return (
@@ -196,7 +143,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
           </div>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-1 flex-col min-h-0">
+        <div className="flex flex-1 flex-col min-h-0">
           <div className="flex-1 overflow-y-auto p-6 pt-4 space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
@@ -204,6 +151,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
               </div>
             )}
 
+            <form id="edit-organization-form" onSubmit={handleSubmit(onSubmit)}>
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-org-name">Nombre *</Label>
@@ -251,157 +199,14 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                 </p>
               </div>
             </div>
+            </form>
 
             <Separator />
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-                <h4 className="text-sm font-semibold text-foreground">WhatsApp (Twilio)</h4>
-              </div>
-
-              {!organization.twilioConfigured && (
-                <div className="flex items-start gap-2 rounded-md p-3 text-sm text-warning bg-warning/10 border border-warning/20">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <p>
-                    WhatsApp no está configurado. Sin credenciales válidas, esta organización no
-                    podrá enviar ni recibir notificaciones de WhatsApp.
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-org-twilio-sid">Account SID</Label>
-                  <Input
-                    id="edit-org-twilio-sid"
-                    placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    autoComplete="off"
-                    {...register('twilioAccountSid')}
-                  />
-                  {errors.twilioAccountSid && (
-                    <p className="text-sm text-destructive">
-                      {errors.twilioAccountSid.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label htmlFor="edit-org-twilio-token">Auth Token</Label>
-                    {organization.twilio?.authTokenSet && (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteAuthToken(!deleteAuthToken)}
-                        className="text-xs font-medium text-destructive hover:underline"
-                      >
-                        {deleteAuthToken ? 'Cancelar borrado' : 'Borrar token'}
-                      </button>
-                    )}
-                  </div>
-                  <Input
-                    id="edit-org-twilio-token"
-                    type="password"
-                    autoComplete="new-password"
-                    disabled={deleteAuthToken}
-                    placeholder={
-                      deleteAuthToken
-                        ? 'Se eliminará al guardar'
-                        : organization.twilio?.authTokenSet
-                          ? '•••••••• (dejar vacío para conservar el actual)'
-                          : 'Auth Token de Twilio'
-                    }
-                    {...register('twilioAuthToken')}
-                  />
-                  {errors.twilioAuthToken && (
-                    <p className="text-sm text-destructive">
-                      {errors.twilioAuthToken.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-org-twilio-phone">Número de WhatsApp</Label>
-                  <Input
-                    id="edit-org-twilio-phone"
-                    placeholder="+584223552626"
-                    autoComplete="off"
-                    {...register('twilioPhoneNumber')}
-                  />
-                  {errors.twilioPhoneNumber && (
-                    <p className="text-sm text-destructive">
-                      {errors.twilioPhoneNumber.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-org-twilio-enabled">WhatsApp habilitado</Label>
-                  <Controller
-                    name="twilioEnabled"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger id="edit-org-twilio-enabled">
-                          <SelectValue placeholder="Selecciona una opción" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">Habilitado</SelectItem>
-                          <SelectItem value="false">Deshabilitado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Requerido para usar WhatsApp. Sin credenciales, la organización no podrá enviar
-                    ni recibir notificaciones.
-                  </p>
-                </div>
-              </div>
-
-              {(organization.twilioConfigured ||
-                organization.twilio?.accountSid ||
-                organization.twilio?.phoneNumber) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="text-destructive border-destructive/20 hover:bg-destructive/10"
-                  onClick={() => setShowRemoveTwilioConfirm(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2 shrink-0" />
-                  Quitar configuración Twilio
-                </Button>
-              )}
-            </div>
-
-            {showRemoveTwilioConfirm && (
-              <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
-                  <p className="text-sm text-destructive">
-                    Se eliminarán las credenciales de WhatsApp de {organization.name}. WhatsApp
-                    quedará deshabilitado hasta que se configuren nuevas credenciales.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleRemoveTwilio}
-                    disabled={updateMutation.isPending}
-                  >
-                    {updateMutation.isPending ? 'Quitando...' : 'Confirmar'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowRemoveTwilioConfirm(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
+            <OrganizationWhatsAppSettings
+              organizationId={organization.id}
+              organizationName={organization.name}
+            />
 
             {showDeleteConfirm && (
               <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
@@ -446,12 +251,16 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
+              <Button
+                type="submit"
+                form="edit-organization-form"
+                disabled={isSubmitting || updateMutation.isPending}
+              >
                 {isSubmitting || updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
               </Button>
             </div>
           </SheetFooter>
-        </form>
+        </div>
       </SheetContent>
     </Sheet>
   )

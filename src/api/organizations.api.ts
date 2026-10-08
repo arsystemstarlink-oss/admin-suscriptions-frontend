@@ -1,10 +1,12 @@
 import { api } from './client'
 import type {
   CreateOrganizationRequest,
+  OrganizationWhatsAppConfig,
   Organization,
   OrganizationDetailResponse,
   OrganizationsListResponse,
   UpdateOrganizationRequest,
+  UpdateOrganizationWhatsAppConfigRequest,
 } from '@/types/api'
 
 interface OrganizationsListParams {
@@ -31,6 +33,23 @@ export const organizationsApi = {
 
   update: async (id: string, data: UpdateOrganizationRequest): Promise<Organization> => {
     const response = await api.put<Organization>(`/organizations/${id}`, data)
+    return response.data
+  },
+
+  getWhatsAppConfig: async (organizationId: string): Promise<OrganizationWhatsAppConfig> => {
+    const response = await api.get<OrganizationWhatsAppConfig>('/whatsapp/config', {
+      params: { organizationId },
+    })
+    return response.data
+  },
+
+  updateWhatsAppConfig: async (
+    organizationId: string,
+    data: UpdateOrganizationWhatsAppConfigRequest,
+  ): Promise<OrganizationWhatsAppConfig> => {
+    const response = await api.put<OrganizationWhatsAppConfig>('/whatsapp/config', data, {
+      params: { organizationId },
+    })
     return response.data
   },
 

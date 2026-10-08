@@ -30,8 +30,10 @@ export const plansApi = {
     return response.data
   },
 
-  update: async (id: string, data: UpdatePlanRequest): Promise<Plan> => {
-    const response = await api.put<Plan>(`/plans/${id}`, data)
+  update: async (id: string, data: UpdatePlanRequest, organizationId?: string): Promise<Plan> => {
+    const response = await api.put<Plan>(`/plans/${id}`, data, {
+      params: organizationId ? { organizationId } : undefined,
+    })
     return response.data
   },
 

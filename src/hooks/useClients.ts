@@ -43,8 +43,8 @@ export function useUpdateClient() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateClientRequest }) =>
-      clientsApi.update(id, data),
+    mutationFn: ({ id, data, organizationId }: { id: string; data: UpdateClientRequest; organizationId?: string }) =>
+      clientsApi.update(id, data, organizationId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.clients.lists })
       qc.invalidateQueries({ queryKey: qk.clients.detail(variables.id) })

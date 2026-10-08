@@ -42,8 +42,8 @@ export function useUpdatePlan() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdatePlanRequest }) =>
-      plansApi.update(id, data),
+    mutationFn: ({ id, data, organizationId }: { id: string; data: UpdatePlanRequest; organizationId?: string }) =>
+      plansApi.update(id, data, organizationId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.plans.lists })
       qc.invalidateQueries({ queryKey: qk.plans.detail(variables.id) })

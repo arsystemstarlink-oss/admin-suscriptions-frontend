@@ -50,8 +50,10 @@ export const clientsApi = {
     return response.data
   },
 
-  update: async (id: string, data: UpdateClientRequest): Promise<Client> => {
-    const response = await api.put<Client>(`/clients/${id}`, data)
+  update: async (id: string, data: UpdateClientRequest, organizationId?: string): Promise<Client> => {
+    const response = await api.put<Client>(`/clients/${id}`, data, {
+      params: organizationId ? { organizationId } : undefined,
+    })
     return response.data
   },
 

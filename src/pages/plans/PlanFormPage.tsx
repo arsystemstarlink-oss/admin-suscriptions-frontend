@@ -11,6 +11,7 @@ import { Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useOrganizationStore } from '@/stores/organization.store'
 import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 
 const planSchema = z.object({
@@ -33,6 +34,7 @@ export function PlanFormPage() {
   const updateMutation = useUpdatePlan()
   const [error, setError] = useState<string | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const {
     register,
@@ -70,7 +72,11 @@ export function PlanFormPage() {
       }
 
       if (isEdit && id) {
-        await updateMutation.mutateAsync({ id, data: payload })
+        await updateMutation.mutateAsync({
+          id,
+          data: payload,
+          organizationId: data?.organizationId ?? organizationId ?? undefined,
+        })
         toast.success('Plan actualizado correctamente')
         navigate('/subscriptions/plans')
       } else {

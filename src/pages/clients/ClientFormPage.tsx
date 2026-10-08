@@ -116,7 +116,11 @@ export function ClientFormPage() {
       }
 
       if (isEdit && id) {
-        await updateMutation.mutateAsync({ id, data: payload })
+        await updateMutation.mutateAsync({
+          id,
+          data: payload,
+          organizationId: data?.client.organizationId ?? organizationId ?? undefined,
+        })
         toast.success('Cliente actualizado correctamente')
         navigate(`/subscriptions/clients/${id}`)
       } else {

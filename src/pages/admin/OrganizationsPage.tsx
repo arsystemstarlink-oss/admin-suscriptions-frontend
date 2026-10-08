@@ -9,6 +9,7 @@ import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
 import { EditOrganizationSheet } from '@/components/organizations/EditOrganizationSheet'
+import { OrganizationAdminsSection } from '@/components/organizations/OrganizationAdminsSection'
 import type { Organization } from '@/types/api'
 
 export function OrganizationsPage() {
@@ -90,53 +91,54 @@ export function OrganizationsPage() {
         {organizations.map((organization) => (
           <ListCard
             key={organization.id}
-            className="md:flex-row md:items-center md:justify-between"
+            className="flex-col"
           >
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-foreground">{organization.name}</p>
-                {organization.active ? (
-                  <Badge
-                    variant="outline"
-                    className="text-success bg-success/10 border-success/20"
-                  >
-                    Activa
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-destructive bg-destructive/10 border-destructive/20"
-                  >
-                    Inactiva
-                  </Badge>
-                )}
-                {organization.twilioConfigured ? (
-                  <Badge
-                    variant="outline"
-                    className="text-info bg-info/10 border-info/20"
-                  >
-                    <MessageCircle className="h-3 w-3 mr-1 shrink-0" />
-                    WhatsApp
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-warning bg-warning/10 border-warning/20"
-                  >
-                    <MessageCircleOff className="h-3 w-3 mr-1 shrink-0" />
-                    Sin WhatsApp
-                  </Badge>
-                )}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium text-foreground">{organization.name}</p>
+                  {organization.active ? (
+                    <Badge
+                      variant="outline"
+                      className="text-success bg-success/10 border-success/20"
+                    >
+                      Activa
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-destructive bg-destructive/10 border-destructive/20"
+                    >
+                      Inactiva
+                    </Badge>
+                  )}
+                  {organization.twilioConfigured ? (
+                    <Badge
+                      variant="outline"
+                      className="text-info bg-info/10 border-info/20"
+                    >
+                      <MessageCircle className="h-3 w-3 mr-1 shrink-0" />
+                      WhatsApp
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-warning bg-warning/10 border-warning/20"
+                    >
+                      <MessageCircleOff className="h-3 w-3 mr-1 shrink-0" />
+                      Sin WhatsApp
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
+                  {organization.slug && <span className="font-medium">{organization.slug}</span>}
+                  <span className="text-xs">
+                    Creada: {new Date(organization.createdAt).toLocaleDateString('es-ES')}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
-                {organization.slug && <span className="font-medium">{organization.slug}</span>}
-                <span className="text-xs">
-                  Creada: {new Date(organization.createdAt).toLocaleDateString('es-ES')}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {organization.slug && (
+              <div className="flex items-center gap-2">
+                {organization.slug && (
                 <Button
                   variant="outline"
                   size="icon"
@@ -150,31 +152,38 @@ export function OrganizationsPage() {
                     <Link2 className="h-4 w-4 shrink-0" />
                   )}
                 </Button>
-              )}
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setEditingOrganization(organization)}
-              >
-                <Edit className="h-4 w-4 shrink-0" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => {
-                  if (
-                    confirm(
-                      `¿Eliminar la organización ${organization.name}? Se eliminarán todos sus datos: usuarios, clientes, planes, suscripciones, períodos y mensajes de WhatsApp. Esta acción es irreversible.`,
-                    )
-                  ) {
-                    deleteMutation.mutate(organization.id)
-                  }
-                }}
-                disabled={deleteMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4 text-destructive shrink-0" />
-              </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditingOrganization(organization)}
+                  aria-label={`Editar organización ${organization.name}`}
+                >
+                  <Edit className="h-4 w-4 shrink-0" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `¿Eliminar la organización ${organization.name}? Se eliminarán todos sus datos: usuarios, clientes, planes, suscripciones, períodos y mensajes de WhatsApp. Esta acción es irreversible.`,
+                      )
+                    ) {
+                      deleteMutation.mutate(organization.id)
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  aria-label={`Eliminar organización ${organization.name}`}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive shrink-0" />
+                </Button>
+              </div>
             </div>
+            <OrganizationAdminsSection
+              organizationId={organization.id}
+              organizationName={organization.name}
+            />
           </ListCard>
         ))}
       </div>

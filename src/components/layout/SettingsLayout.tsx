@@ -17,14 +17,6 @@ export function SettingsLayout() {
         subtitle: 'Gestiona el sistema y tareas automáticas',
         end: true,
       },
-      {
-        to: '/config/admins',
-        icon: UserPlus,
-        label: 'Admins',
-        title: 'Admins',
-        subtitle: 'Creación de administradores adicionales',
-        end: false,
-      },
     ]
 
     if (isSuperAdmin) {
@@ -34,6 +26,15 @@ export function SettingsLayout() {
         label: 'Organizaciones',
         title: 'Organizaciones',
         subtitle: 'Gestiona las organizaciones del sistema',
+        end: false,
+      })
+    } else {
+      base.push({
+        to: '/config/admins',
+        icon: UserPlus,
+        label: 'Admins',
+        title: 'Admins',
+        subtitle: 'Creación de administradores adicionales',
         end: false,
       })
     }

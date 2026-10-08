@@ -101,11 +101,17 @@ type AdminFormField =
 
 interface CreateAdminFormProps {
   mode: 'setup' | 'register'
+  organizationId?: string
   onSuccess?: () => void
   onSetupDisabled?: () => void
 }
 
-export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdminFormProps) {
+export function CreateAdminForm({
+  mode,
+  organizationId,
+  onSuccess,
+  onSetupDisabled,
+}: CreateAdminFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSuperAdmin = useIsSuperAdmin()
   const isSuperRegister = mode === 'register' && isSuperAdmin
@@ -174,16 +180,21 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
       }
 
       if (isSuperRegister && mode === 'register') {
-        payload.role = data.role
-        if (data.role === 'admin') {
-          let organizationId = data.organizationId
-          if (organizationId === NEW_ORG_VALUE) {
-            const created = await organizationsApi.create({
-              name: (data.newOrganizationName || '').trim(),
-            })
-            organizationId = created.id
-          }
+        if (organizationId) {
+          payload.role = 'admin'
           payload.organizationId = organizationId
+        } else {
+          payload.role = data.role
+          if (data.role === 'admin') {
+            let selectedOrganizationId = data.organizationId
+            if (selectedOrganizationId === NEW_ORG_VALUE) {
+              const created = await organizationsApi.create({
+                name: (data.newOrganizationName || '').trim(),
+              })
+              selectedOrganizationId = created.id
+            }
+            payload.organizationId = selectedOrganizationId
+          }
         }
       }
 
@@ -227,7 +238,7 @@ export function CreateAdminForm({ mode, onSuccess, onSetupDisabled }: CreateAdmi
         </div>
       )}
 
-      {isSuperRegister && (
+      {isSuperRegister && !organizationId && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor={`${prefix}-role`}>Rol *</Label>

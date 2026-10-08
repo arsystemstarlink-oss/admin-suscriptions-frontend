@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { useAdmins, useDeleteAdmin } from '@/hooks/useAdmins'
 import { useOrganizations } from '@/hooks/useOrganizations'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -69,6 +69,8 @@ export function AdminsPage() {
 
   const admins = (data?.admins || []).filter((admin) => admin.role !== 'super-admin')
   const isEmpty = !isLoading && admins.length === 0
+
+  if (isSuperAdmin) return <Navigate to="/config/organizations" replace />
 
   return (
     <>

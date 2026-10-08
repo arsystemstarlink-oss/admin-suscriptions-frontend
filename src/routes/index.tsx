@@ -6,6 +6,11 @@ import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import {
+  LegacyClientEditRedirect,
+  LegacyClientRedirect,
+  LegacyPlanRedirect,
+} from '@/routes/LegacyRedirects'
+import {
   LoginPage,
   DashboardPage,
   ClientsListPage,
@@ -184,6 +189,12 @@ export const router = createBrowserRouter(
           {
             index: true,
             element: (
+              <Navigate to="/config/profile" replace />
+            ),
+          },
+          {
+            path: 'tasks',
+            element: (
               <Suspense fallback={<PageLoader />}>
                 <AdminToolsPage />
               </Suspense>
@@ -242,12 +253,36 @@ export const router = createBrowserRouter(
         element: <Navigate to="/subscriptions/clients" replace />,
       },
       {
+        path: 'clients/new',
+        element: <Navigate to="/subscriptions/clients/new" replace />,
+      },
+      {
+        path: 'clients/:id/edit',
+        element: <LegacyClientEditRedirect />,
+      },
+      {
+        path: 'clients/:id',
+        element: <LegacyClientRedirect />,
+      },
+      {
         path: 'clients/*',
         element: <Navigate to="/subscriptions/clients" replace />,
       },
       {
         path: 'plans',
         element: <Navigate to="/subscriptions/plans" replace />,
+      },
+      {
+        path: 'plans/new',
+        element: <Navigate to="/subscriptions/plans/new" replace />,
+      },
+      {
+        path: 'plans/:id/edit',
+        element: <LegacyPlanRedirect />,
+      },
+      {
+        path: 'plans/:id',
+        element: <LegacyPlanRedirect />,
       },
       {
         path: 'plans/*',

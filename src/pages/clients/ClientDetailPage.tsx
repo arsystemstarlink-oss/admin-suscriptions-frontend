@@ -1,13 +1,14 @@
-import { useParams, Link, useLocation } from 'react-router-dom'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useClientDetail } from '@/hooks/useClients'
+import { useOrganizationDetail } from '@/hooks/useOrganizations'
 import { useUIStore } from '@/stores/ui.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod, canPayAdvance } from '@/lib/utils'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
@@ -19,14 +20,21 @@ import type { SubscriptionWithDetails } from '@/types/api'
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { data, isLoading, error } = useClientDetail(id!, organizationId || undefined, {
     enabled: !isSuperAdmin || !!organizationId,
   })
+  const {
+    data: organizationData,
+    isLoading: isLoadingOrganization,
+    isError: organizationError,
+  } = useOrganizationDetail(data?.client.organizationId ?? '')
   const { openQuickPay } = useUIStore()
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
+  const [consultaLinkCopied, setConsultaLinkCopied] = useState(false)
 
   if (isLoading) {
     return (
@@ -60,6 +68,10 @@ export function ClientDetailPage() {
 
   const { client, subscriptions, summary } = data
   const initial = getInitial(client.firstName)
+  const organizationSlug = organizationData?.organization.slug
+  const consultationUrl = organizationSlug
+    ? `${window.location.origin}${import.meta.env.BASE_URL}consulta/${encodeURIComponent(organizationSlug)}`
+    : null
 
   const handlePaySubscription = (sub: SubscriptionWithDetails) => {
     if (sub.currentPeriod && sub.currentPeriod.status !== 'PAID') {
@@ -76,7 +88,19 @@ export function ClientDetailPage() {
 
   const handleOpenChat = () => {
     if (client.phone) {
-      window.open(`/chats?phone=${encodeURIComponent(client.phone)}`, '_blank')
+      navigate(`/chats?phone=${encodeURIComponent(client.phone)}`)
+    }
+  }
+
+  const handleCopyConsultationLink = async () => {
+    if (!consultationUrl) return
+
+    try {
+      await navigator.clipboard.writeText(consultationUrl)
+      setConsultaLinkCopied(true)
+      window.setTimeout(() => setConsultaLinkCopied(false), 2000)
+    } catch {
+      window.prompt('Copia el enlace de consulta:', consultationUrl)
     }
   }
 
@@ -84,6 +108,7 @@ export function ClientDetailPage() {
     <div className="flex flex-col gap-3 pb-[calc(100px+env(safe-area-inset-bottom))] sm:gap-4">
       
       <DetailNav
+        className="mb-2"
         backTo="/subscriptions/clients"
         actions={
           <>
@@ -98,12 +123,12 @@ export function ClientDetailPage() {
                 <span className="hidden sm:inline">Nueva Suscripción</span>
               </Link>
             </Button>
-            <Button variant="outline" size="icon" asChild className="rounded-full bg-surface text-surface-foreground border-border shadow-sm">
-              <Link to={`/subscriptions/clients/${id}/edit`}>
+            <Button variant="outline" size="icon" asChild className="rounded-full bg-surface text-surface-foreground border-border shadow-sm" aria-label="Editar cliente" title="Editar cliente">
+              <Link to={`/subscriptions/clients/${id}/edit`} aria-label="Editar cliente">
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setShowDeleteModal(true)} className="rounded-full shadow-sm">
+            <Button variant="outline" size="icon" onClick={() => setShowDeleteModal(true)} className="rounded-full shadow-sm" aria-label="Eliminar cliente" title="Eliminar cliente">
               <Trash2 className="h-4 w-4 shrink-0" />
             </Button>
           </>
@@ -117,7 +142,7 @@ export function ClientDetailPage() {
             {initial}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold leading-tight text-foreground sm:text-xl">
+            <h1 className="truncate text-xl font-bold leading-tight text-foreground">
               {getClientFullName(client)}
             </h1>
             <div className="mt-1 flex flex-col gap-0.5 text-xs text-muted-foreground sm:gap-1 sm:text-sm">
@@ -138,14 +163,39 @@ export function ClientDetailPage() {
           </div>
         </div>
 
-        <div className="mt-3 sm:mt-5">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5">
           <button
             onClick={handleOpenChat}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-muted font-semibold text-surface-muted-foreground transition-colors hover:bg-surface-hover active:bg-surface-active touch-manipulation sm:h-11"
+            disabled={!client.phone}
+            aria-label="Abrir chat de WhatsApp"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-muted font-semibold text-surface-muted-foreground transition-colors hover:bg-surface-hover active:bg-surface-active touch-manipulation disabled:opacity-50 sm:h-11"
           >
-            <MessageSquare className="h-4 w-4" /> WhatsApp
+            <MessageSquare className="h-4 w-4" /> Abrir WhatsApp
           </button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCopyConsultationLink}
+            disabled={!consultationUrl || isLoadingOrganization}
+            aria-label={consultaLinkCopied ? 'Enlace de consulta copiado' : 'Copiar enlace de consulta'}
+            title={
+              organizationError
+                ? 'No se pudo cargar el enlace de consulta'
+                : !organizationSlug && !isLoadingOrganization
+                  ? 'La organización no tiene un enlace de consulta'
+                  : 'Copiar enlace de consulta'
+            }
+            className="h-10 gap-2 px-2 text-xs sm:h-11 sm:px-3 sm:text-sm"
+          >
+            {consultaLinkCopied ? <Check className="h-4 w-4 shrink-0" /> : <Link2 className="h-4 w-4 shrink-0" />}
+            {consultaLinkCopied ? 'Copiado' : 'Copiar enlace'}
+          </Button>
         </div>
+        {organizationError && (
+          <p role="status" className="mt-2 text-xs text-destructive">
+            No se pudo cargar el enlace de consulta de la organización.
+          </p>
+        )}
       </div>
 
       {/* Mini KPIs Horizontales */}

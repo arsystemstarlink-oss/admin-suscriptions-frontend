@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 const navItems = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { to: '/subscriptions', icon: Link2, label: 'Suscripciones' },
-  { to: '/', icon: LayoutDashboard, label: 'Panel' },
   { to: '/payment-reports', icon: ReceiptText, label: 'Reportes', badgeKey: 'reports' as const },
-  { to: '/chats', icon: MessageSquare, label: 'Mensajes' },
-  { to: '/config', icon: Settings, label: 'Configuración' },
+  { to: '/chats', icon: MessageSquare, label: 'Chats' },
+  { to: '/config', icon: Settings, label: 'Ajustes' },
 ]
 
 function CollapsedAccountMenu({
@@ -94,13 +94,10 @@ function CollapsedAccountMenu({
 
 interface SidebarProps {
   collapsed: boolean
-  isMobile: boolean
-  mobileOpen: boolean
-  onMobileClose: () => void
   onToggleSidebar: () => void
 }
 
-export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onToggleSidebar }: SidebarProps) {
+export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
   const { user, logout } = useAuthStore()
   const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
@@ -110,16 +107,6 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
     { enabled: !isSuperAdmin || !!organizationId },
   )
 
-  const previousPathname = useRef(location.pathname)
-
-  useEffect(() => {
-    if (previousPathname.current === location.pathname) return
-    previousPathname.current = location.pathname
-    if (isMobile && mobileOpen) {
-      onMobileClose()
-    }
-  }, [location.pathname, isMobile, mobileOpen, onMobileClose])
-
   const sidebarContent = (
     <div className="flex flex-col h-full">
       <nav className="flex-1 space-y-1 p-3">
@@ -127,18 +114,17 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === '/'}
-            onClick={isMobile ? onMobileClose : undefined}
+            end={item.to === '/dashboard'}
             className={({ isActive }) =>
               cn(
                 'flex items-center rounded-md text-sm font-medium transition-all',
-                collapsed && !isMobile ? 'justify-center p-2' : 'gap-3 px-3 py-2.5',
+                collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5',
                 (isActive || (item.to === '/config' && location.pathname.startsWith('/config')))
                   ? 'bg-secondary text-secondary-foreground border border-secondary/40 shadow-sm hover:bg-secondary/90'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )
             }
-            title={collapsed && !isMobile ? item.label : undefined}
+            title={collapsed ? item.label : undefined}
           >
             <span className="relative shrink-0">
               <item.icon className="h-5 w-5 shrink-0" />
@@ -148,7 +134,7 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
                 </span>
               )}
             </span>
-            {(!collapsed || isMobile) && (
+            {!collapsed && (
               <span className="flex flex-1 items-center gap-2">
                 {item.label}
                 {'badgeKey' in item && item.badgeKey === 'reports' && (pendingReports?.pending ?? 0) > 0 && (
@@ -163,12 +149,11 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
       </nav>
 
       <div className="border-t border-border p-3">
-        {(!collapsed || isMobile) ? (
+        {!collapsed ? (
           <div className="group relative rounded-lg border border-border bg-muted/50 p-3 transition-colors hover:bg-muted/80">
             <div className="flex items-center gap-3">
               <NavLink
                 to="/config/profile"
-                onClick={isMobile ? onMobileClose : undefined}
                 className="flex items-center gap-3 flex-1 min-w-0"
                 title="Ver perfil"
               >
@@ -204,40 +189,6 @@ export function Sidebar({ collapsed, isMobile, mobileOpen, onMobileClose, onTogg
       </div>
     </div>
   )
-
-  useEffect(() => {
-    if (!isMobile || !mobileOpen) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onMobileClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isMobile, mobileOpen, onMobileClose])
-
-  if (isMobile) {
-    return (
-      <>
-        {mobileOpen && (
-          <div
-            className="fixed top-16 left-0 right-0 bottom-0 bg-overlay z-40 md:hidden"
-            onClick={onMobileClose}
-            aria-hidden="true"
-          />
-        )}
-        <aside
-          role="dialog"
-          aria-modal={mobileOpen}
-          aria-label="Menú de navegación"
-          className={cn(
-            'fixed top-16 left-0 bottom-0 z-50 w-[min(16rem,85vw)] bg-card border-r border-border shadow-lg transform transition-transform duration-300 overscroll-contain md:hidden',
-            mobileOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
-          )}
-        >
-          {sidebarContent}
-        </aside>
-      </>
-    )
-  }
 
   return (
     <aside

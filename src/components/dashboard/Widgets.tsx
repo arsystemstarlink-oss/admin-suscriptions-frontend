@@ -14,9 +14,21 @@ import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, Chevr
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { isAxiosError } from 'axios'
+import { useSendMessage } from '@/hooks/useWhatsApp'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 const WIDGET_COLLAPSED_COUNT = 3
 const WIDGET_EXPANDED_COUNT = 8
+const OVERDUE_REMINDER_TEMPLATE = 'subscription_suspension_warning_1day_2v_hxfcc8ae438db9df662a0e1f7d801e946b'
 
 export interface DashboardWidgetProps {
   organizationId?: string
@@ -185,7 +197,7 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
                     onClick={(e) => handlePay(period.periodId, e)}
                     disabled={loadingId === period.periodId}
                     className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
-                    aria-label="Cobrar"
+                    aria-label="Revisar período y monto del cobro"
                   >
                     {loadingId === period.periodId ? (
                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
@@ -230,17 +242,41 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
   const { openQuickPay } = useUIStore()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const sendMessage = useSendMessage(organizationId)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [reminderDialogOpen, setReminderDialogOpen] = useState(false)
+  const [selectedReminderIds, setSelectedReminderIds] = useState<string[]>([])
+  const [isSendingReminders, setIsSendingReminders] = useState(false)
+  const [reminderResult, setReminderResult] = useState<{
+    sent: number
+    failures: Array<{ name: string; message: string }>
+  } | null>(null)
   const exchangeSource = useExchangeStore((s) => s.source)
   const { data: exchangeRates } = useDolarRates()
   const activeRate = getRateForSource(exchangeRates, exchangeSource)
-  const items = data?.topDebtors.items ?? []
+  const items = useMemo(() => data?.topDebtors.items ?? [], [data?.topDebtors.items])
   const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
   const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
+  const overdueItems = useMemo(() => data?.overdueDebt.items ?? [], [data?.overdueDebt.items])
+  const reminderCandidates = useMemo(
+    () => items.filter((debtor) =>
+      Boolean(debtor.clientPhone && findDebtorOldestOverdue(overdueItems, debtor)),
+    ),
+    [items, overdueItems],
+  )
+  const selectedReminderCandidates = reminderCandidates.filter((debtor) =>
+    selectedReminderIds.includes(debtor.clientId),
+  )
   useEffect(() => {
     setExpanded(false)
   }, [items.length])
+
+  useEffect(() => {
+    if (!reminderDialogOpen) return
+    setSelectedReminderIds(reminderCandidates.map((debtor) => debtor.clientId))
+    setReminderResult(null)
+  }, [reminderDialogOpen, reminderCandidates])
 
   const handlePay = async (debtor: DebtorItem, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -264,27 +300,87 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
     }
   }
 
+  const handleSendBulkReminders = async () => {
+    if (isSendingReminders || selectedReminderCandidates.length === 0) return
+
+    setIsSendingReminders(true)
+    setReminderResult(null)
+    const failures: Array<{ name: string; message: string }> = []
+    let sent = 0
+
+    for (const debtor of selectedReminderCandidates) {
+      const overduePeriod = findDebtorOldestOverdue(overdueItems, debtor)
+      if (!overduePeriod) {
+        failures.push({ name: debtor.clientName, message: 'No se encontró un período vencido.' })
+        continue
+      }
+
+      try {
+        await sendMessage.mutateAsync({
+          to: debtor.clientPhone,
+          templateName: OVERDUE_REMINDER_TEMPLATE,
+          variables: {
+            '1': debtor.clientName,
+            '2': overduePeriod.kitNumber,
+            '3': overduePeriod.endDate.split('T')[0],
+          },
+        })
+        sent += 1
+      } catch (error) {
+        failures.push({
+          name: debtor.clientName,
+          message: isAxiosError<{ error?: { code?: string; message?: string } }>(error)
+            ? error.response?.data.error?.message ?? error.response?.data.error?.code ?? error.message
+            : error instanceof Error
+              ? error.message
+              : 'No se pudo enviar el aviso.',
+        })
+      }
+    }
+
+    setReminderResult({ sent, failures })
+    if (failures.length > 0) {
+      toast.error(`Se enviaron ${sent} avisos; ${failures.length} no pudieron enviarse.`)
+    } else {
+      toast.success(`Se enviaron ${sent} avisos de vencimiento por WhatsApp.`)
+    }
+    setIsSendingReminders(false)
+  }
+
   return (
     <div className="bg-surface text-surface-foreground rounded-2xl border border-border shadow-sm overflow-hidden">
-      <button
-        onClick={() => navigate('/subscriptions?hasOverdue=true')}
-        className="w-full flex items-center justify-between p-4 border-b border-border group text-left"
-      >
-        <span className="flex items-center gap-2 min-w-0">
-          <span className="p-1.5 rounded-lg bg-destructive/10 text-destructive shrink-0">
+      <div className="flex items-center justify-between gap-2 border-b border-border p-4">
+        <button
+          type="button"
+          onClick={() => navigate('/subscriptions?hasOverdue=true')}
+          className="group flex min-w-0 items-center gap-2 text-left"
+        >
+          <span className="shrink-0 rounded-lg bg-destructive/10 p-1.5 text-destructive">
             <AlertTriangle className="h-4 w-4 shrink-0" />
           </span>
-          <h2 className="text-base font-bold text-foreground group-hover:text-primary transition-colors truncate">Top Deudores</h2>
-        </span>
-        <span className="flex items-center gap-2 shrink-0">
-          {data && data.topDebtors.count > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-destructive/10 text-destructive">
-              {data.topDebtors.count}
-            </span>
-          )}
-          <ChevronRight className="h-5 w-5 text-subtle-foreground hidden sm:block group-hover:translate-x-0.5 transition-transform" />
-        </span>
-      </button>
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary">Top Deudores</span>
+            {data && data.topDebtors.count > 0 && (
+              <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
+                {data.topDebtors.count}
+              </span>
+            )}
+          </span>
+          <ChevronRight className="hidden h-5 w-5 shrink-0 text-subtle-foreground transition-transform group-hover:translate-x-0.5 sm:block" />
+        </button>
+        {reminderCandidates.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setReminderDialogOpen(true)}
+            className="shrink-0"
+          >
+            <MessageSquare className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Recordar</span>
+          </Button>
+        )}
+      </div>
 
       <div className="p-2">
         {isLoading ? (
@@ -334,7 +430,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                     onClick={(e) => handlePay(debtor, e)}
                     disabled={loadingId === debtor.clientId}
                     className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
-                    aria-label="Cobrar"
+                    aria-label="Revisar período y monto del cobro"
                   >
                     {loadingId === debtor.clientId ? (
                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
@@ -357,6 +453,85 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
           viewAllLabel={`Ver todos (${items.length})`}
         />
       )}
+      <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
+        <DialogContent className="bg-surface-elevated text-surface-elevated-foreground">
+          <DialogHeader>
+            <DialogTitle>Recordatorio masivo por WhatsApp</DialogTitle>
+            <DialogDescription>
+              Se enviará a los principales deudores seleccionados la plantilla aprobada de aviso de vencimiento.
+              La lista solo incluye clientes con teléfono y un período vencido disponible; el contenido de la plantilla se administra en Twilio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {selectedReminderCandidates.length} de {reminderCandidates.length} clientes seleccionados
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isSendingReminders || reminderResult !== null}
+                onClick={() => setSelectedReminderIds(
+                  selectedReminderCandidates.length === reminderCandidates.length
+                    ? []
+                    : reminderCandidates.map((debtor) => debtor.clientId),
+                )}
+              >
+                {selectedReminderCandidates.length === reminderCandidates.length ? 'Ninguno' : 'Seleccionar todos'}
+              </Button>
+            </div>
+            <ul className="max-h-56 space-y-2 overflow-y-auto">
+              {reminderCandidates.map((debtor) => (
+                <li key={debtor.clientId}>
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-surface p-3 text-surface-foreground">
+                    <input
+                      type="checkbox"
+                      checked={selectedReminderIds.includes(debtor.clientId)}
+                      disabled={isSendingReminders || reminderResult !== null}
+                      onChange={(event) => setSelectedReminderIds((current) =>
+                        event.target.checked
+                          ? [...current, debtor.clientId]
+                          : current.filter((clientId) => clientId !== debtor.clientId),
+                      )}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-foreground">{debtor.clientName}</span>
+                      <span className="block text-xs text-muted-foreground">{debtor.clientPhone}</span>
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {reminderResult && (
+              <div role="status" className="space-y-2 rounded-lg border border-border bg-surface-muted p-3 text-sm">
+                <p className="font-medium text-foreground">Enviados: {reminderResult.sent}. Fallidos: {reminderResult.failures.length}.</p>
+                {reminderResult.failures.length > 0 && (
+                  <ul className="space-y-1 text-destructive">
+                    {reminderResult.failures.map((failure) => (
+                      <li key={`${failure.name}-${failure.message}`}>{failure.name}: {failure.message}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            {reminderResult ? (
+              <Button type="button" onClick={() => setReminderDialogOpen(false)}>Cerrar</Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleSendBulkReminders}
+                disabled={isSendingReminders || selectedReminderCandidates.length === 0}
+              >
+                {isSendingReminders ? 'Enviando…' : `Enviar a ${selectedReminderCandidates.length}`}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

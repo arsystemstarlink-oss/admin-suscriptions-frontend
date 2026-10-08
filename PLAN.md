@@ -27,7 +27,7 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  CAPA 4: SUPERFICIE OPERATIVA (Pages + Modals + Command Bar)       │
+│  CAPA 4: SUPERFICIE OPERATIVA (Pages + Modals + Navegación)        │
 │  → El operador NUNCA ve URLs, solo contextos de trabajo            │
 ├─────────────────────────────────────────────────────────────────────┤
 │  CAPA 3: COMPOSICIÓN DE DATOS (Hooks de Vista 360°)               │
@@ -40,7 +40,7 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 │  → Auth refresh silencioso, cola de 401s, error mapping            │
 ├─────────────────────────────────────────────────────────────────────┤
 │  CAPA 0: ESTADO CLIENTE MÍNIMO (Zustand)                          │
-│  → Solo: auth tokens, UI modals, command bar focus                 │
+│  → Solo: auth tokens y estado de modales de interfaz               │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -88,8 +88,9 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 | `src/guards/AuthGuard.tsx` | Redirect a `/login` si no hay tokens |
 | `src/pages/LoginPage.tsx` | Formulario con validación Zod, manejo de `INVALID_CREDENTIALS` |
 | `src/components/layout/AuthenticatedLayout.tsx` | Sidebar + TopBar + Outlet |
-| `src/components/layout/Sidebar.tsx` | Navegación: Dashboard, Clientes, Planes, Suscripciones, Facturación |
-| `src/components/layout/TopBar.tsx` | User info + logout |
+| `src/components/layout/Sidebar.tsx` | Navegación de escritorio: Inicio, Suscripciones, Reportes, Chats y Ajustes |
+| `src/components/layout/MobileAppShell.tsx` | Navegación móvil con enlaces accesibles |
+| `src/components/layout/TopBar.tsx` | Selector de organización y acciones de usuario |
 | `src/routes/index.tsx` | Configuración de rutas con AuthGuard |
 
 ---
@@ -104,9 +105,9 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 | `src/hooks/useDashboard.ts` | `useDashboardSummary()`, `useDashboardAlerts()` con stale-time corto (10s) |
 | `src/pages/DashboardPage.tsx` | Layout de widgets |
 | `src/components/dashboard/KPICards.tsx` | Cards: Total Clientes, Subs Activas, Ingresos Mes, Deuda Total |
-| `src/components/dashboard/TopDebtorsWidget.tsx` | Tabla de deudores con botón [💰 Cobrar] |
-| `src/components/dashboard/ExpiringSoonWidget.tsx` | Lista de próximos a vencer con [📞 Contactar] |
-| `src/components/dashboard/StatusChart.tsx` | Gráfico distribución ACTIVE vs SUSPENDED |
+| `src/components/dashboard/Widgets.tsx` | Widgets de pagos pendientes, deudores y vencimientos próximos |
+| `src/components/dashboard/QuickActions.tsx` | Accesos a nueva suscripción, cliente y suscripciones vencidas |
+| `src/components/dashboard/Widgets.tsx` | Envío masivo de plantilla aprobada a los principales deudores |
 
 ---
 
@@ -118,13 +119,11 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 |---|---|
 | `src/api/clients.api.ts` | `list()`, `getById()`, `create()`, `update()`, `remove()` |
 | `src/hooks/useClients.ts` | Hooks con TanStack Query + mutations con invalidation |
-| `src/pages/clients/ClientsListPage.tsx` | DataTable con filtros laterales (status, hasOverdue), búsqueda con debounce |
-| `src/pages/clients/ClientDetailPage.tsx` | Vista 360°: header con resumen + tabs |
-| `src/components/clients/ClientHeader.tsx` | Datos + badges de estado + deuda total |
-| `src/components/clients/SubscriptionTabs.tsx` | Cards de suscripciones con indicadores de período actual |
-| `src/components/clients/PaymentHistory.tsx` | Historial filtrado por cliente |
+| `src/pages/clients/ClientsListPage.tsx` | Lista de tarjetas con filtros de estado/vencimientos y búsqueda con debounce |
+| `src/pages/clients/ClientDetailPage.tsx` | Vista 360°: datos, resumen, suscripciones e historial |
+| `src/pages/clients/ClientDetailPage.tsx` | Acceso al chat y enlace público de consulta del cliente |
 | `src/pages/clients/ClientFormPage.tsx` | Crear/editar con validación Zod |
-| `src/components/modals/BlockedDeleteModal.tsx` | Modal para `CLIENT_HAS_ACTIVE_SUBSCRIPTIONS` |
+| `src/components/modals/DeleteClientSheet.tsx` | Confirmación de borrado y manejo de restricciones |
 
 ---
 
@@ -136,9 +135,9 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 |---|---|
 | `src/api/plans.api.ts` | `list()`, `getById()`, `create()`, `update()`, `remove()` |
 | `src/hooks/usePlans.ts` | Hooks con invalidation |
-| `src/pages/plans/PlansListPage.tsx` | Grid/tabla con toggle de estado, edición inline |
+| `src/pages/plans/PlansListPage.tsx` | Tarjetas con toggle de estado y acceso a edición |
 | `src/pages/plans/PlanFormPage.tsx` | Crear/editar plan |
-| `src/components/modals/BlockedDeletePlanModal.tsx` | Modal para `PLAN_HAS_SUBSCRIPTIONS` |
+| `src/components/modals/DeletePlanSheet.tsx` | Confirmación de borrado y manejo de restricciones |
 
 ---
 
@@ -150,39 +149,38 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 |---|---|
 | `src/api/subscriptions.api.ts` | `list()`, `getById()`, `create()`, `update()`, `remove()` |
 | `src/hooks/useSubscriptions.ts` | Hooks con invalidation |
-| `src/pages/subscriptions/SubscriptionsListPage.tsx` | Tabla con filtros (status, hasOverdue, search) |
-| `src/pages/subscriptions/SubscriptionDetailPage.tsx` | Timeline de períodos + resumen financiero + botón "Generar próximo período" |
-| `src/pages/subscriptions/SubscriptionFormPage.tsx` | Crear suscripción: selector de cliente + plan + billingDay (1-28 validado) |
+| `src/pages/subscriptions/SubscriptionsListPage.tsx` | Tarjetas con búsqueda, filtros de estado/cobranza y accesos a detalle y cobro |
+| `src/pages/subscriptions/SubscriptionDetailPage.tsx` | Timeline de períodos, resumen financiero y acciones de suscripción |
+| `src/pages/subscriptions/SubscriptionFormPage.tsx` | Crear suscripción con selector de cliente y plan |
+| `src/pages/subscriptions/SubscriptionEditPage.tsx` | Editar plan, cuenta, día de cobro y períodos vencidos máximos |
 
 ---
 
 ### ✅ Fase 7 — Centro de Operaciones (Flujo Crítico de Cobranza)
 > **Estado:** Completada
-> **Entregable:** Omni-Search (Ctrl+K), QuickPayModal transaccional, feedback de reactivación, invalidation en cascada.
+> **Entregable:** QuickPayModal transaccional, feedback de reactivación e invalidation en cascada.
 
 | Tarea | Detalle |
 |---|---|
 | `src/stores/ui.store.ts` | Estado del QuickPayModal (open/close, contexto precargado) |
 | `src/hooks/useBilling.ts` | `useRegisterPayment()` con optimistic update + invalidation en cascada, `useGenerateNextPeriod()`, `useEvaluateOverdue()` |
-| `src/components/command/OmniSearch.tsx` | Búsqueda unificada: clientes + suscripciones en paralelo, debounce 300ms |
-| `src/components/command/SearchResults.tsx` | Tarjetas de resultado con composición Client+Subscription+BillingPeriod |
-| `src/components/payment/QuickPayModal.tsx` | Modal transaccional: contexto + formulario mínimo + estado de éxito |
-| `src/components/payment/PaymentForm.tsx` | Método de pago (select), monto (autofill), fecha, notas |
-| `src/components/payment/PaymentSuccessState.tsx` | Feedback de reactivación (SUSPENDED → ACTIVE) |
-| Hotkeys | Ctrl+K para Omni-Search, Enter para confirmar pago, ESC para cerrar modal |
+| `src/components/payment/QuickPayModal.tsx` | Revisión de monto y período antes de confirmar el cobro |
+| `src/components/payment/EditPaymentSheet.tsx` | Edición de un pago registrado |
+| `src/components/payment/PayAdvanceSheet.tsx` | Pago de períodos por adelantado |
 
 ---
 
 ### ✅ Fase 8 — Facturación, Admin y Polish Final
 > **Estado:** Completada
-> **Entregable:** Lista de períodos con filtros, registro de pago desde tabla, admin tools, consistencia visual global.
+> **Entregable:** Reportes de pagos, administración de tareas automáticas y consistencia visual global.
 
 | Tarea | Detalle |
 |---|---|
 | `src/api/billing.api.ts` | `list()`, `getById()`, `payPeriod()`, `generateNext()`, `evaluateOverdue()` |
 | `src/hooks/useBilling.ts` | Hooks con invalidation |
-| `src/pages/billing/BillingPeriodsPage.tsx` | Tabla con filtros (status, search, expiresBefore), badges de estado |
-| `src/pages/admin/AdminToolsPage.tsx` | Botón "Ejecutar evaluación de vencimientos" con modal de confirmación |
+| `src/pages/admin/PaymentReportsPage.tsx` | Reportes de pagos con filtros y estados |
+| `src/pages/admin/AdminToolsPage.tsx` | Configuración y ejecución de tareas automáticas |
+| `src/components/layout/SettingsLayout.tsx` | Secciones de Perfil, Tareas automáticas y administración |
 | Skeleton loaders | Para todas las listas y vistas de detalle |
 | Empty states | "Sin resultados" con acción sugerida en cada vista |
 | 404 page | Página de recurso no encontrado |
@@ -200,7 +198,7 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 | **4** | CRUD de clientes completo, vista 360° muestra suscripciones + historial, error de borrado muestra modal |
 | **5** | CRUD de planes completo, eliminación bloqueada muestra modal accionable |
 | **6** | CRUD de suscripciones, billingDay validado 1-28, timeline de períodos visible |
-| **7** | Ctrl+K abre búsqueda, cobro en <8 segundos con teclado, reactivación refleja al instante en dashboard |
+| **7** | Cobro en <8 segundos con teclado y reactivación reflejada al instante en el panel |
 | **8** | Todos los módulos integrados, skeleton loaders, empty states, sin errores en consola |
 
 ---
@@ -219,7 +217,7 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 | **SubscriptionsListPage** | `GET /subscriptions` (con filtros avanzados) |
 | **SubscriptionDetailPage** | `GET /subscriptions/:id`, `PUT /subscriptions/:id`, `POST /billing-periods/generate-next/:subscriptionId` |
 | **SubscriptionEditPage** | `GET /subscriptions/:id`, `PUT /subscriptions/:id`, `GET /plans` |
-| **BillingPeriodsPage** | `GET /billing-periods`, `POST /billing-periods/:id/pay` |
+| **PaymentReportsPage** | Endpoints de reportes de pago |
 | **AdminToolsPage** | `POST /billing-periods/evaluate-overdue` |
 
 ---
@@ -228,7 +226,7 @@ Este frontend **no es un sitio web** — es una herramienta POS operativa. Cada 
 
 1. **Backend es el cerebro, frontend es el músculo** — Nunca calcular deuda/vencimientos en el cliente
 2. **Vistas 360°** — Fusionar Client + Subscription + BillingPeriod en una sola vista
-3. **Fricción cero** — Omni-Search con Ctrl+K, cobro en <8 segundos con teclado
+3. **Fricción cero** — Cobro en <8 segundos con teclado
 4. **Errores humanos** — Mapear códigos 400 a modales/toasts accionables, nunca texto técnico
 5. **Invalidation en cascada** — Un pago actualiza billing + subscriptions + clients + dashboard
 6. **Code-splitting** — Lazy loading de rutas con React.lazy + Suspense para optimizar bundle

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
 import { usePendingReportsCount } from '@/hooks/usePaymentReports';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import type { Organization } from '@/types/api';
 
-const ALL_ORGS_VALUE = '__all__'
+const NO_ORGANIZATION_VALUE = '__none__'
 
 interface MobileAppShellProps {
   children?: React.ReactNode
@@ -39,7 +39,6 @@ export default function MobileAppShell({
   selectedOrganizationId,
   onOrganizationChange,
 }: MobileAppShellProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const orgId = selectedOrganizationId ?? undefined
   const badgesEnabled = !isSuperAdmin || !!selectedOrganizationId
@@ -47,18 +46,6 @@ export default function MobileAppShell({
   const { data: pendingReports } = usePendingReportsCount({ organizationId: orgId }, { enabled: badgesEnabled });
   const pendingReportsCount = pendingReports?.pending ?? 0;
 
-  // Determinar la tab activa basada en la ruta
-  const getActiveTab = () => {
-    const path = location.pathname;
-    if (path === '/' || path === '/dashboard') return 'home';
-    if (path.startsWith('/subscriptions')) return 'subs';
-    if (path.startsWith('/payment-reports')) return 'reports';
-    if (path.startsWith('/chats')) return 'chats';
-    if (path.startsWith('/config') || path.startsWith('/settings') || path.startsWith('/plans')) return 'settings';
-    return 'home';
-  };
-
-  const activeTab = getActiveTab();
   const isChatsPage = location.pathname.startsWith('/chats');
 
   const navItems: Array<{
@@ -68,9 +55,9 @@ export default function MobileAppShell({
     path: string
     badge?: number
   }> = [
-    { id: 'reports', icon: ReceiptText, label: 'Reportes', path: '/payment-reports', badge: pendingReportsCount },
+    { id: 'home', icon: Home, label: 'Inicio', path: '/dashboard' },
     { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
-    { id: 'home', icon: Home, label: 'Inicio', path: '/' },
+    { id: 'reports', icon: ReceiptText, label: 'Reportes', path: '/payment-reports', badge: pendingReportsCount },
     { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];
@@ -79,7 +66,7 @@ export default function MobileAppShell({
   const effectiveValue =
     selectedOrganizationId && organizations?.some((org) => org.id === selectedOrganizationId)
       ? selectedOrganizationId
-      : ALL_ORGS_VALUE
+      : NO_ORGANIZATION_VALUE
 
   return (
     <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-background text-foreground select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
@@ -90,7 +77,7 @@ export default function MobileAppShell({
           {isSuperAdmin && (
             <Select
               value={effectiveValue}
-              onValueChange={(value) => onOrganizationChange?.(value === ALL_ORGS_VALUE ? null : value)}
+              onValueChange={(value) => onOrganizationChange?.(value === NO_ORGANIZATION_VALUE ? null : value)}
             >
               <SelectTrigger
                 aria-label="Organización activa"
@@ -109,7 +96,7 @@ export default function MobileAppShell({
                 <SelectValue placeholder={organizationsLoading ? 'Cargando…' : 'Org'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ALL_ORGS_VALUE}>Seleccionar…</SelectItem>
+                <SelectItem value={NO_ORGANIZATION_VALUE}>Ninguna organización</SelectItem>
                 {organizations?.map((org) => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.name}
@@ -160,47 +147,53 @@ export default function MobileAppShell({
 
       {/* Bottom Navigation */}
       <nav aria-label="Navegación principal móvil" className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 border-t border-border backdrop-blur-xl pb-[env(safe-area-inset-bottom)] transition-colors">
-        <ul role="tablist" className="flex items-center justify-around px-2 py-1">
+        <ul className="flex items-center justify-around px-2 py-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
             const badgeCount = item.badge ?? 0;
             
             return (
               <li key={item.id} className="flex-1 flex justify-center">
-                <button
-                  onClick={() => navigate(item.path)}
+                <NavLink
+                  to={item.path}
+                  end={item.path === '/dashboard'}
                   className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 active:scale-95 transition-transform touch-manipulation focus:outline-none"
-                  aria-label={badgeCount > 0 ? `${item.label}, ${badgeCount} sin leer` : item.label}
-                  aria-selected={isActive}
-                  role="tab"
+                  aria-label={
+                    badgeCount > 0
+                      ? `${item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`
+                      : item.label
+                  }
                 >
-                  <span className="relative">
-                    <Icon
-                      size={24}
-                      strokeWidth={isActive ? 2.5 : 2}
-                      className={`transition-colors ${
-                        isActive
-                          ? 'text-primary'
-                          : 'text-muted-foreground'
-                      }`}
-                    />
-                    {badgeCount > 0 && (
+                  {({ isActive }) => (
+                    <>
+                      <span className="relative">
+                        <Icon
+                          size={24}
+                          strokeWidth={isActive ? 2.5 : 2}
+                          className={`transition-colors ${
+                            isActive
+                              ? 'text-primary'
+                              : 'text-muted-foreground'
+                          }`}
+                        />
+                        {badgeCount > 0 && (
                         <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-success px-1 text-[10px] font-semibold leading-none text-success-foreground">
-                        {badgeCount > 99 ? '99+' : badgeCount}
+                          {badgeCount > 99 ? '99+' : badgeCount}
+                        </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                  <span
-                    className={`text-[10px] font-medium tracking-wide transition-colors ${
-                      isActive
-                        ? 'text-foreground'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </button>
+                      <span
+                        className={`text-[10px] font-medium tracking-wide transition-colors ${
+                          isActive
+                            ? 'text-foreground'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                    </>
+                  )}
+                </NavLink>
               </li>
             );
           })}

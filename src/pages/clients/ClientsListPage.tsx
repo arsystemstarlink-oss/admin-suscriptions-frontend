@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Users, Phone, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { getClientFullName, getInitial } from '@/lib/utils'
 
@@ -92,7 +93,7 @@ export function ClientsListPage() {
             Suspendidos
           </FilterPill>
           <FilterPill active={hasOverdue === true} variant="destructive" onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}>
-            Con Deuda
+            Vencidos
           </FilterPill>
         </>
       ) : undefined}
@@ -109,9 +110,12 @@ export function ClientsListPage() {
       ) : undefined}
       isLoading={isLoading && !showEmpty}
       isEmpty={showEmpty || isEmpty}
+      emptyStateContent={showEmpty ? (
+        <OrganizationSelectionEmptyState description="Elige una organización para consultar sus clientes." />
+      ) : undefined}
       emptyIcon={<Users className="h-16 w-16 text-subtle-foreground" />}
-      emptyTitle={showEmpty ? 'Selecciona una organización' : 'Sin clientes'}
-      emptyDescription={showEmpty ? 'Elige una organización en la barra superior para ver los clientes.' : 'No encontramos resultados. Modifica los filtros o añade uno nuevo.'}
+      emptyTitle="Sin clientes"
+      emptyDescription="No encontramos resultados. Modifica los filtros o añade uno nuevo."
       emptyAction={!showEmpty && isEmpty ? (
         <Button onClick={() => navigate('/subscriptions/clients/new')}>
           <Plus className="h-4 w-4 mr-2 shrink-0" />
@@ -125,8 +129,12 @@ export function ClientsListPage() {
         return (
           <ListCard
             key={client.id}
-            onClick={() => navigate(`/subscriptions/clients/${client.id}`, { state: { from: `${location.pathname}${location.search}` } })}
+            asChild
           >
+            <Link
+              to={`/subscriptions/clients/${client.id}`}
+              state={{ from: `${location.pathname}${location.search}` }}
+            >
             <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
               <div className="relative shrink-0">
                 <div className="flex items-center justify-center h-12 w-12 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-lg">
@@ -172,6 +180,7 @@ export function ClientsListPage() {
                 </div>
               </div>
             </div>
+            </Link>
           </ListCard>
         )
       })}

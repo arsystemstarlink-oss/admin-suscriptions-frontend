@@ -25,6 +25,7 @@ import { EditPaymentSheet } from '@/components/payment/EditPaymentSheet'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 
 export function SubscriptionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -46,10 +47,7 @@ export function SubscriptionDetailPage() {
 
   if (isSuperAdmin && !organizationId) {
     return (
-      <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
-        <span className="shrink-0 mt-0.5">⚠️</span>
-        <span>Selecciona una organización para ver la suscripción.</span>
-      </div>
+      <OrganizationSelectionEmptyState description="Elige una organización para consultar esta suscripción." />
     )
   }
 
@@ -207,7 +205,7 @@ export function SubscriptionDetailPage() {
 
         <div className="flex items-start justify-between gap-2 sm:gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-foreground truncate flex items-center gap-2 sm:text-2xl">
+            <h1 className="text-xl font-bold tracking-tight text-foreground truncate flex items-center gap-2">
               <Box className="h-5 w-5 text-muted-foreground sm:h-6 sm:w-6" />
               {subscription.accountNumber ? subscription.accountNumber : subscription.kitNumber}
             </h1>

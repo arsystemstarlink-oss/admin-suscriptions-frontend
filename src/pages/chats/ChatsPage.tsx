@@ -12,6 +12,7 @@ import { cn, getClientFullName, getInitial } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/design-system/PageHeader'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
@@ -309,16 +310,13 @@ export function ChatsPage() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
       <PageHeader
-        title="Mensajes"
+        title="Chats"
         description="Conversaciones de WhatsApp con clientes"
         className={cn('block shrink-0', isMobile && selectedPhone && 'hidden')}
       />
 
       {showEmpty ? (
-        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
-          <span className="shrink-0 mt-0.5">⚠️</span>
-          <span>Selecciona una organización para ver las conversaciones.</span>
-        </div>
+        <OrganizationSelectionEmptyState description="Elige una organización para consultar las conversaciones." />
       ) : (
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
           <Card className={cn(

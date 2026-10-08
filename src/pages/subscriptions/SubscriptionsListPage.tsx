@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -16,11 +16,11 @@ import { getClientFullName, canPayAdvance } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui.store'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { toast } from 'sonner'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
 
 export function SubscriptionsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
   const { openQuickPay } = useUIStore()
@@ -38,7 +38,7 @@ export function SubscriptionsListPage() {
   const { data, isLoading } = useSubscriptions(
     {
       organizationId: organizationId ?? undefined,
-      status: statusFilter ?? 'ACTIVE',
+      status: statusFilter ?? undefined,
       limit: 200,
     },
     { enabled: !isSuperAdmin || !!organizationId }
@@ -218,20 +218,20 @@ export function SubscriptionsListPage() {
         }
         filters={!showEmpty ? (
           <>
-            <FilterPill active={statusFilter === 'ACTIVE' || statusFilter === null} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
+            <FilterPill active={statusFilter === 'ACTIVE'} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
               Activas
             </FilterPill>
             <FilterPill active={statusFilter === 'SUSPENDED'} onClick={() => handleFilter('status', statusFilter === 'SUSPENDED' ? null : 'SUSPENDED')}>
               Suspendidas
             </FilterPill>
             <FilterPill active={hasOverdue === true} variant="destructive" onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}>
-              Con Deuda
+              Vencidos
             </FilterPill>
             <FilterPill active={expiringFilter} onClick={() => handleFilter('expiring', expiringFilter ? null : 'true')}>
               Por Vencer
             </FilterPill>
             <FilterPill active={pendingFilter} onClick={() => handleFilter('pending', pendingFilter ? null : 'true')}>
-              Por cobrar
+              Pendientes
             </FilterPill>
             {hasActiveFilters && (
               <FilterPill variant="secondary" onClick={clearAllFilters}>
@@ -244,10 +244,7 @@ export function SubscriptionsListPage() {
       />
 
       {showEmpty ? (
-        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
-          <span className="shrink-0 mt-0.5">⚠️</span>
-          <span>Selecciona una organización para ver las suscripciones.</span>
-        </div>
+        <OrganizationSelectionEmptyState description="Elige una organización para consultar sus suscripciones." />
       ) : (
         <>
           {/* Métricas de Cobranza (filtros rápidos) */}
@@ -313,9 +310,13 @@ export function SubscriptionsListPage() {
               {visibleSubscriptions.map((sub) => (
                 <div
                   key={sub.id}
-                  onClick={() => navigate(`/subscriptions/${sub.id}`, { state: { from: `${location.pathname}${location.search}` } })}
-                  className={`block p-3 sm:p-4 rounded-xl sm:rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm cursor-pointer ${getCardTone(sub)}`}
+                  className={`rounded-xl sm:rounded-2xl border shadow-sm ${getCardTone(sub)}`}
                 >
+                  <Link
+                    to={`/subscriptions/${sub.id}`}
+                    state={{ from: `${location.pathname}${location.search}` }}
+                    className="block rounded-xl sm:rounded-2xl p-3 sm:p-4 active:scale-[0.98] transition-all touch-manipulation"
+                  >
                   {/* Top Row: Client & Status */}
                   <div className="flex justify-between items-start gap-2 mb-2 sm:mb-3">
                     <div className="min-w-0 flex-1 pr-2 sm:pr-4">
@@ -336,7 +337,7 @@ export function SubscriptionsListPage() {
                       </span>
                       {sub.hasDebt && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide text-destructive bg-destructive/10">
-                          Deuda
+                          Vencidos
                         </span>
                       )}
                     </div>
@@ -364,9 +365,10 @@ export function SubscriptionsListPage() {
                       <p className="text-base sm:text-lg font-bold text-foreground leading-none mt-0.5">{sub.billingDay}</p>
                     </div>
                   </div>
+                  </Link>
 
                   {/* Bottom Row: Price, Alerts & Charge */}
-                  <div className="flex items-center justify-between gap-2 text-[13px] sm:text-sm">
+                  <div className="flex items-center justify-between gap-2 px-3 pb-3 text-[13px] sm:px-4 sm:pb-4 sm:text-sm">
                     <span className="font-semibold text-foreground truncate">
                       {formatCurrency(sub.plan.price)}<span className="text-subtle-foreground font-normal">/mes</span>
                     </span>
@@ -381,12 +383,12 @@ export function SubscriptionsListPage() {
                         )}
                         {sub.pendingPeriods > 0 && (!sub.currentPeriod || sub.currentPeriod.status !== 'PENDING') && (
                           <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-info/10 text-info">
-                            {sub.pendingPeriods} pend.
+                            {sub.pendingPeriods} pendientes
                           </span>
                         )}
                         {sub.overduePeriods > 0 && (
                           <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-destructive/10 text-destructive">
-                            {sub.overduePeriods} venc.
+                            {sub.overduePeriods} vencidos
                           </span>
                         )}
                       </div>
@@ -394,24 +396,22 @@ export function SubscriptionsListPage() {
                       {(sub.hasDebt || sub.pendingPeriods > 0 || (sub.currentPeriod && sub.currentPeriod.status !== 'PAID')) && (
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
+                          onClick={() => {
                             handleQuickPay(sub)
                           }}
                           disabled={payingId === sub.id}
                           className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
-                          aria-label="Cobrar"
-                          title="Cobrar"
+                          aria-label="Revisar período y monto del cobro"
+                          title="Revisar período y monto del cobro"
                         >
                           <Zap className="h-4 w-4 shrink-0" />
-                          <span className="hidden min-[380px]:inline">{payingId === sub.id ? '...' : 'Cobrar'}</span>
+                          <span className="hidden min-[380px]:inline">{payingId === sub.id ? '...' : 'Revisar'}</span>
                         </button>
                       )}
                       {canPayAdvance(sub) && (
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
+                          onClick={() => {
                             setAdvanceSub(sub)
                           }}
                           className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-surface-muted text-surface-muted-foreground border border-border-subtle text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-surface-hover active:bg-surface-active active:scale-95 touch-manipulation"

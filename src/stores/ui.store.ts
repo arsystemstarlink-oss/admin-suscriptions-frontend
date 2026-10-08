@@ -8,12 +8,9 @@ interface QuickPayContext {
 interface UIState {
   quickPayOpen: boolean
   quickPayContext: QuickPayContext | null
-  omniSearchOpen: boolean
   readChatTimestamps: Record<string, number>
   openQuickPay: (context: QuickPayContext) => void
   closeQuickPay: () => void
-  openOmniSearch: () => void
-  closeOmniSearch: () => void
   markChatAsRead: (phone: string, readAt?: number) => void
 }
 
@@ -42,13 +39,10 @@ const persistReadChatTimestamps = (timestamps: Record<string, number>) => {
 export const useUIStore = create<UIState>((set) => ({
   quickPayOpen: false,
   quickPayContext: null,
-  omniSearchOpen: false,
   readChatTimestamps: getStoredReadChatTimestamps(),
 
   openQuickPay: (context) => set({ quickPayOpen: true, quickPayContext: context }),
   closeQuickPay: () => set({ quickPayOpen: false, quickPayContext: null }),
-  openOmniSearch: () => set({ omniSearchOpen: true }),
-  closeOmniSearch: () => set({ omniSearchOpen: false }),
   markChatAsRead: (phone, readAt = Date.now()) =>
     set((state) => {
       const nextReadChatTimestamps = {

@@ -14,7 +14,7 @@ export function QuickActions() {
           <Plus className="h-5 w-5" />
         </div>
         <span className="text-[11px] font-bold text-foreground uppercase tracking-wide leading-tight">
-          Nueva Sub
+          Nueva Suscripción
         </span>
       </button>
 
@@ -38,7 +38,7 @@ export function QuickActions() {
           <CreditCard className="h-5 w-5" />
         </div>
         <span className="text-[11px] font-bold text-foreground uppercase tracking-wide leading-tight">
-          Cobros
+          Vencidos
         </span>
       </button>
     </div>

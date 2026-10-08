@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
 import { useTokenRefresh } from '@/hooks/useTokenRefresh'
@@ -25,7 +24,6 @@ export function AuthenticatedLayout() {
   const mainRef = useRef<HTMLElement>(null)
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
   const [isMobile, setIsMobile] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
@@ -102,7 +100,6 @@ export function AuthenticatedLayout() {
           selectedOrganizationId={selectedOrganizationId}
           onOrganizationChange={setOrganization}
         />
-        <OmniSearch />
         <QuickPayModal />
       </>
     )
@@ -111,8 +108,6 @@ export function AuthenticatedLayout() {
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <TopBar
-        isMobile={isMobile}
-        onMobileToggle={() => setMobileOpen(!mobileOpen)}
         isSuperAdmin={isSuperAdmin}
         organizations={organizations}
         organizationsLoading={organizationsLoading}
@@ -124,9 +119,6 @@ export function AuthenticatedLayout() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           collapsed={collapsed}
-          isMobile={isMobile}
-          mobileOpen={mobileOpen}
-          onMobileClose={() => setMobileOpen(false)}
           onToggleSidebar={toggleSidebar}
         />
         <main
@@ -139,7 +131,6 @@ export function AuthenticatedLayout() {
           <Outlet />
         </main>
       </div>
-      <OmniSearch />
       <QuickPayModal />
     </div>
   )

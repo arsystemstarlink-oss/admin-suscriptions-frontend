@@ -41,7 +41,7 @@ export function DetailNav({ backTo, backLabel = 'Volver', title, actions, classN
         </button>
         {title && <div className="min-w-0">{title}</div>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex items-center gap-3">{actions}</div>}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { QuickActions } from '@/components/dashboard/QuickActions'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { PageHeader } from '@/components/design-system/PageHeader'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 
 export function DashboardPage() {
   const isSuperAdmin = useIsSuperAdmin()
@@ -17,10 +18,7 @@ export function DashboardPage() {
           title="Panel"
           description="Centro de operaciones del sistema"
         />
-        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
-          <span className="shrink-0 mt-0.5">⚠️</span>
-          <span>Selecciona una organización para ver el panel general.</span>
-        </div>
+        <OrganizationSelectionEmptyState description="Elige una organización para consultar el panel general." />
       </div>
     )
   }

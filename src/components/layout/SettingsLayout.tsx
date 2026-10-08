@@ -10,12 +10,12 @@ export function SettingsLayout() {
   const tabs = useMemo<PageSubNavTab[]>(() => {
     const base: PageSubNavTab[] = [
       {
-        to: '/config',
+        to: '/config/tasks',
         icon: ClipboardList,
-        label: 'Ejecutador',
-        title: 'Ejecutador de Tareas',
+        label: 'Tareas automáticas',
+        title: 'Tareas automáticas',
         subtitle: 'Gestiona el sistema y tareas automáticas',
-        end: true,
+        end: false,
       },
     ]
 

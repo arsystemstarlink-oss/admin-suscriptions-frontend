@@ -124,8 +124,8 @@ export function QuickPayModal() {
         {!showSuccess ? (
           <>
             <SheetHeader>
-              <SheetTitle>Registrar Pago</SheetTitle>
-              <SheetDescription>Confirma los datos para procesar el pago</SheetDescription>
+              <SheetTitle>Revisar cobro</SheetTitle>
+              <SheetDescription>Verifica el período y el monto antes de registrar el pago</SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto p-6 pt-4">

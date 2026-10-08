@@ -19,9 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ArrowLeft, CalendarDays, LockKeyhole, Minus, Plus } from 'lucide-react'
+import { CalendarDays, LockKeyhole, Minus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
+import { DetailNav } from '@/components/design-system/DetailNav'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 
 const subscriptionEditSchema = z.object({
   planId: z.string().min(1, 'Seleccione un plan'),
@@ -96,10 +98,7 @@ export function SubscriptionEditPage() {
 
   if (isSuperAdmin && !organizationId) {
     return (
-      <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
-        <span className="shrink-0 mt-0.5">⚠️</span>
-        <span>Selecciona una organización para editar la suscripción.</span>
-      </div>
+      <OrganizationSelectionEmptyState description="Elige una organización para editar la suscripción." />
     )
   }
 
@@ -131,21 +130,17 @@ export function SubscriptionEditPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to={`/subscriptions/${id}`}>
-            <ArrowLeft className="h-5 w-5 shrink-0" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Editar Suscripción</h1>
-          <p className="text-muted-foreground mt-1">
-            {subscription?.kitNumber
-              ? `${subscription.kitNumber}`
-              : 'Modificar configuración'}
-          </p>
-        </div>
-      </div>
+      <DetailNav
+        backTo={`/subscriptions/${id}`}
+        title={
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Editar Suscripción</h1>
+            <p className="text-sm text-muted-foreground">
+              {subscription?.kitNumber || 'Modificar configuración'}
+            </p>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader>

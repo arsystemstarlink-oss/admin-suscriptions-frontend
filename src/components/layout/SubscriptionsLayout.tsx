@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
 import { Link2, Users, Package } from 'lucide-react'
 
@@ -30,9 +30,16 @@ const tabs: PageSubNavTab[] = [
 ]
 
 export function SubscriptionsLayout() {
+  const { pathname } = useLocation()
+  const showSubNav = [
+    '/subscriptions',
+    '/subscriptions/clients',
+    '/subscriptions/plans',
+  ].includes(pathname)
+
   return (
     <div className="space-y-4 md:space-y-6">
-      <PageSubNav tabs={tabs} />
+      {showSubNav && <PageSubNav tabs={tabs} />}
       <Outlet />
     </div>
   )

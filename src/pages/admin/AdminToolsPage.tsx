@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { formatDate } from '@/lib/constants'
 import type { NotificationFailure, NotificationType, SchedulerLog } from '@/types/api'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   reminder: 'Recordatorio',
@@ -196,10 +197,7 @@ export function AdminToolsPage() {
     <div className="space-y-4 md:space-y-6">
 
       {isSuperAdmin && !selectedOrganizationId && (
-        <div className="p-4 text-sm text-warning bg-warning/10 border border-warning/20 rounded-2xl flex items-start gap-3">
-          <span className="shrink-0 mt-0.5">⚠️</span>
-          <span>Selecciona una organización para configurar el programador de tareas.</span>
-        </div>
+        <OrganizationSelectionEmptyState description="Elige una organización para configurar las tareas automáticas." />
       )}
 
       {(!isSuperAdmin || selectedOrganizationId) && (

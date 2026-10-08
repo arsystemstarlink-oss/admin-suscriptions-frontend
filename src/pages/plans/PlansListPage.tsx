@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { DeletePlanSheet } from '@/components/modals/DeletePlanSheet'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 
 export function PlansListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -92,9 +93,12 @@ export function PlansListPage() {
       ) : undefined}
       isLoading={isLoading && !showEmpty}
       isEmpty={showEmpty || isEmpty}
+      emptyStateContent={showEmpty ? (
+        <OrganizationSelectionEmptyState description="Elige una organización para consultar sus planes." />
+      ) : undefined}
       emptyIcon={<Package className="h-16 w-16 text-subtle-foreground" />}
-      emptyTitle={showEmpty ? 'Selecciona una organización' : 'No se encontraron planes'}
-      emptyDescription={showEmpty ? 'Elige una organización en la barra superior para ver los planes.' : 'Modifica los filtros o crea un nuevo plan.'}
+      emptyTitle="No se encontraron planes"
+      emptyDescription="Modifica los filtros o crea un nuevo plan."
       emptyAction={!showEmpty && isEmpty ? (
         <Button onClick={() => navigate('/subscriptions/plans/new')}>
           <Plus className="h-4 w-4 mr-2 shrink-0" />

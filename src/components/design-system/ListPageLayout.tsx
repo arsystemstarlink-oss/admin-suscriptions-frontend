@@ -22,6 +22,7 @@ interface ListPageLayoutProps {
   emptyTitle?: string
   emptyDescription?: string
   emptyAction?: ReactNode
+  emptyStateContent?: ReactNode
   children: ReactNode
   className?: string
 }
@@ -39,6 +40,7 @@ export function ListPageLayout({
   emptyTitle,
   emptyDescription,
   emptyAction,
+  emptyStateContent,
   children,
   className,
 }: ListPageLayoutProps) {
@@ -76,12 +78,14 @@ export function ListPageLayout({
           ))}
         </div>
       ) : isEmpty ? (
-        <EmptyState
-          icon={emptyIcon}
-          title={emptyTitle || 'Sin resultados'}
-          description={emptyDescription}
-          action={emptyAction}
-        />
+        emptyStateContent ?? (
+          <EmptyState
+            icon={emptyIcon}
+            title={emptyTitle || 'Sin resultados'}
+            description={emptyDescription}
+            action={emptyAction}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {children}

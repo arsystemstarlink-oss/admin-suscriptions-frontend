@@ -8,6 +8,8 @@ import {
   XCircle,
   RefreshCw,
   HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
@@ -37,6 +39,7 @@ export function NotificationSettings() {
     refresh,
   } = usePushNotifications()
   const [isStandaloneApp] = useState(() => isStandalone())
+  const [showHelp, setShowHelp] = useState(false)
 
   const handleEnable = async () => {
     const ok = await enable()
@@ -66,80 +69,96 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-muted-foreground shrink-0" />
-            <h2 className="font-semibold text-lg">Notificaciones</h2>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-lg">Notificaciones en este dispositivo</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Controla las alertas que recibes aquí.
+              </p>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0 space-y-4 sm:space-y-5">
-          <p className="text-sm text-muted-foreground">
-            Recibe alertas en este dispositivo aunque la app esté cerrada: vencimientos de
-            suscripciones, pagos pendientes y mensajes entrantes.
+        <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Recibe alertas de suscripciones próximas a vencer, pagos pendientes y mensajes entrantes,
+            incluso cuando la app no está abierta.
           </p>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
-              <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground mx-auto mb-2" />
-              <p className="text-xs sm:text-sm text-muted-foreground">Navegador</p>
-              <div className="mt-2 flex justify-center">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:justify-center sm:p-4 sm:text-center">
+              <div className="flex min-w-0 items-center gap-2 sm:flex-col sm:gap-1.5">
+                <Globe className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                <p className="text-sm font-medium text-foreground">Navegador</p>
+              </div>
+              <div className="flex shrink-0 justify-end sm:mt-1">
                 {supported ? (
-                  <Badge className="text-[10px] sm:text-xs bg-success/10 text-success">
+                  <Badge variant="outline" className="border-success/20 bg-success/10 text-xs text-success">
                     <CheckCircle2 className="h-3 w-3 mr-1 shrink-0" />
-                    <span className="hidden sm:inline">Soportado</span>
-                    <span className="sm:hidden">OK</span>
+                    Soportado
                   </Badge>
                 ) : (
-                  <Badge variant="destructive" className="text-[10px] sm:text-xs">
+                  <Badge variant="destructive" className="text-xs">
                     <XCircle className="h-3 w-3 mr-1 shrink-0" />
-                    No
+                    No compatible
                   </Badge>
                 )}
               </div>
             </div>
 
-            <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
-              <Smartphone className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground mx-auto mb-2" />
-              <p className="text-xs sm:text-sm text-muted-foreground">Permiso</p>
-              <div className="mt-2 flex justify-center">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:justify-center sm:p-4 sm:text-center">
+              <div className="flex min-w-0 items-center gap-2 sm:flex-col sm:gap-1.5">
+                <Smartphone className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                <p className="text-sm font-medium text-foreground">Permiso</p>
+              </div>
+              <div className="flex shrink-0 justify-end sm:mt-1">
                 {permission ? (
                   <Badge
-                    className={`text-[10px] sm:text-xs ${
+                    variant="outline"
+                    className={`text-xs ${
                       permission === 'granted'
-                        ? 'bg-success/10 text-success'
+                        ? 'border-success/20 bg-success/10 text-success'
                         : permission === 'denied'
-                          ? 'bg-destructive/10 text-destructive'
-                          : 'bg-warning/10 text-warning'
+                          ? 'border-destructive/20 bg-destructive/10 text-destructive'
+                          : 'border-warning/20 bg-warning/10 text-warning'
                     }`}
                   >
                     {permission === 'granted' && <CheckCircle2 className="h-3 w-3 mr-1 shrink-0" />}
-                    <span className="hidden sm:inline">{permissionLabels[permission]}</span>
-                    <span className="sm:hidden">
-                      {permission === 'granted' ? 'OK' : permission === 'denied' ? 'Denegado' : 'Pendiente'}
-                    </span>
+                    {permissionLabels[permission]}
                   </Badge>
                 ) : (
-                  <p className="text-xs text-muted-foreground">—</p>
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    No disponible
+                  </Badge>
                 )}
               </div>
             </div>
 
-            <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
-              <Server className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground mx-auto mb-2" />
-              <p className="text-xs sm:text-sm text-muted-foreground">Servidor</p>
-              <div className="mt-2 flex justify-center">
-                {supported && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:justify-center sm:p-4 sm:text-center">
+              <div className="flex min-w-0 items-center gap-2 sm:flex-col sm:gap-1.5">
+                <Server className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
+                <p className="text-sm font-medium text-foreground">Suscripción</p>
+              </div>
+              <div className="flex shrink-0 justify-end sm:mt-1">
+                {supported ? (
                   <Badge
-                    className={`text-[10px] sm:text-xs ${
+                    variant="outline"
+                    className={`text-xs ${
                       subscribed
-                        ? 'bg-success/10 text-success'
-                        : 'bg-muted text-muted-foreground'
+                        ? 'border-success/20 bg-success/10 text-success'
+                        : 'border-border text-muted-foreground'
                     }`}
                   >
-                    <span className="hidden sm:inline">{subscribed ? 'Notificaciones activas' : 'Inactivas'}</span>
-                    <span className="sm:hidden">{subscribed ? 'Activas' : 'Inactivas'}</span>
+                    {subscribed ? 'Activas' : 'Inactivas'}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    No disponible
                   </Badge>
                 )}
               </div>
@@ -152,7 +171,7 @@ export function NotificationSettings() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-3">
             {supported && subscribed ? (
               <>
                 <Button variant="destructive" onClick={handleDisable} disabled={toggling} className="w-full sm:w-auto">
@@ -198,14 +217,28 @@ export function NotificationSettings() {
       </Card>
 
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
-        <CardHeader className="p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-muted-foreground shrink-0" />
-            <h2 className="font-semibold text-lg">Cómo funciona</h2>
-          </div>
+        <CardHeader className="p-3 sm:p-4">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-3 rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => setShowHelp((current) => !current)}
+            aria-expanded={showHelp}
+            aria-controls="notification-help-content"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <HelpCircle className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <span className="font-semibold">Compatibilidad y ayuda</span>
+            </span>
+            {showHelp ? (
+              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </button>
         </CardHeader>
-        <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
-          <ul className="space-y-3 text-sm text-muted-foreground">
+        {showHelp && (
+          <CardContent id="notification-help-content" className="p-4 pt-0 sm:p-5 sm:pt-0">
+          <ul className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
             <li className="flex items-start gap-2">
               <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
               <span>
@@ -236,7 +269,8 @@ export function NotificationSettings() {
               </span>
             </li>
           </ul>
-        </CardContent>
+          </CardContent>
+        )}
       </Card>
     </div>
   )

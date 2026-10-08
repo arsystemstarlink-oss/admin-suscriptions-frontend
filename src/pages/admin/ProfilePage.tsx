@@ -14,7 +14,16 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
-import { UserCog, ShieldCheck, ChevronDown, ChevronUp, LogOut } from 'lucide-react'
+import {
+  UserCog,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  LogOut,
+  Mail,
+  Phone,
+  UserRound,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { FormGroup } from '@/components/design-system'
 import { NotificationSettings } from '@/pages/admin/NotificationsPage'
@@ -114,7 +123,7 @@ export function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="space-y-4 md:space-y-6">
+      <div className="space-y-3 sm:space-y-4 md:space-y-6">
         <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
           <CardContent className="py-12 text-center text-muted-foreground">
             No se pudo cargar el perfil del usuario.
@@ -225,20 +234,20 @@ export function ProfilePage() {
             </button>
 
             {showDetails && (
-              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
-                <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:items-center sm:p-4 sm:text-center">
                   <p className="text-xs text-muted-foreground mb-1">Rol</p>
-                  <p className="text-base font-semibold text-foreground">
+                  <p className="text-sm font-semibold text-foreground sm:text-base">
                     {user.role === 'super-admin' ? 'Super Admin' : 'Admin'}
                   </p>
                 </div>
-                <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:items-center sm:p-4 sm:text-center">
                   <p className="text-xs text-muted-foreground mb-1">Miembro desde</p>
-                  <p className="text-base font-semibold text-foreground">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
+                  <p className="text-sm font-semibold text-foreground sm:text-base">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
                 </div>
-                <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle text-center">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:items-center sm:p-4 sm:text-center">
                   <p className="text-xs text-muted-foreground mb-1">Último acceso</p>
-                  <p className="text-base font-semibold text-foreground">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
+                  <p className="text-sm font-semibold text-foreground sm:text-base">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
                 </div>
               </div>
             )}
@@ -251,7 +260,7 @@ export function ProfilePage() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <UserCog className="h-5 w-5 text-muted-foreground shrink-0" />
-              <h2 className="font-semibold text-lg truncate">Editar Perfil</h2>
+              <h2 className="font-semibold text-lg truncate">Datos personales</h2>
             </div>
             <Button
               variant="ghost"
@@ -262,6 +271,11 @@ export function ProfilePage() {
               {isEditingProfile ? 'Cancelar' : 'Editar'}
             </Button>
           </div>
+          {!isEditingProfile && (
+            <p className="mt-1 pl-7 text-sm text-muted-foreground">
+              Información de contacto asociada a tu cuenta
+            </p>
+          )}
         </CardHeader>
         {isEditingProfile ? (
           <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
@@ -354,18 +368,33 @@ export function ProfilePage() {
           </CardContent>
         ) : (
           <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Nombre</p>
-                <p className="text-sm sm:text-base font-semibold text-foreground">{user.name}</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+              <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-surface-foreground">
+                  <UserRound className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Nombre</p>
+                  <p className="break-words text-sm font-semibold text-foreground sm:text-base">{user.name}</p>
+                </div>
               </div>
-              <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Correo</p>
-                <p className="text-sm sm:text-base font-semibold text-foreground">{user.email}</p>
+              <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-surface-foreground">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Correo</p>
+                  <p className="break-all text-sm font-semibold text-foreground sm:text-base">{user.email}</p>
+                </div>
               </div>
-              <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle md:col-span-2">
-                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Teléfono</p>
-                <p className="text-sm sm:text-base font-semibold text-foreground">{user.phone || '—'}</p>
+              <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:col-span-2 sm:p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-surface-foreground">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Teléfono</p>
+                  <p className="text-sm font-semibold text-foreground sm:text-base">{user.phone || 'Sin teléfono registrado'}</p>
+                </div>
               </div>
             </div>
           </CardContent>

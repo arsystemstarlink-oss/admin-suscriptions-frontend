@@ -18,6 +18,7 @@ import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
 import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useOrganizationStore } from '@/stores/organization.store'
 import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 
 const subscriptionSchema = z.object({
@@ -46,6 +47,7 @@ export function SubscriptionFormPage() {
   const [searchParams] = useSearchParams()
   const preselectedClientId = searchParams.get('clientId')
   const isSuperAdmin = useIsSuperAdmin()
+  const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const createMutation = useCreateSubscription()
   const [error, setError] = useState<string | null>(null)
 
@@ -59,6 +61,7 @@ export function SubscriptionFormPage() {
   } = useForm<SubscriptionForm>({
     resolver: zodResolver(subscriptionSchema),
     defaultValues: {
+      organizationId: isSuperAdmin ? selectedOrganizationId ?? undefined : undefined,
       maxOverduePeriods: 2,
       historicalPayments: [],
     },
@@ -162,7 +165,12 @@ export function SubscriptionFormPage() {
     })
   }
 
-  const clients = clientsData?.clients || []
+  const clients = useMemo(
+    () => [...(clientsData?.clients || [])].sort((a, b) =>
+      getClientFullName(a).localeCompare(getClientFullName(b), 'es', { sensitivity: 'base' }),
+    ),
+    [clientsData?.clients],
+  )
   const plans = plansData?.plans || []
 
   useEffect(() => {

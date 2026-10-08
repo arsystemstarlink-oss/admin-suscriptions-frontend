@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { AlertTriangle, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock } from 'lucide-react'
+import { AlertTriangle, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock, UserRound } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, hasOlderUnpaidPeriod, canPayAdvance, isAdvancePeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
@@ -231,7 +231,7 @@ export function SubscriptionDetailPage() {
               <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
                 {getInitial(subscription.client.firstName)}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-foreground truncate">
                   {getClientFullName(subscription.client)}
                 </p>
@@ -240,6 +240,18 @@ export function SubscriptionDetailPage() {
                   {subscription.client.dni && ` • C.I. ${subscription.client.dni}`}
                 </p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="shrink-0 px-2 sm:px-3"
+                aria-label={`Ver perfil de ${getClientFullName(subscription.client)}`}
+              >
+                <Link to={`/subscriptions/clients/${subscription.client.id}`} state={{ from: `/subscriptions/${id}` }}>
+                  <UserRound className="h-4 w-4" />
+                  <span>Ver perfil</span>
+                </Link>
+              </Button>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">Cliente eliminado o no disponible</p>

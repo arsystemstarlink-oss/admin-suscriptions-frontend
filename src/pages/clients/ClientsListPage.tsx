@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -32,6 +32,12 @@ export function ClientsListPage() {
     hasOverdue,
     organizationId: organizationId || undefined,
   }, { enabled: !isSuperAdmin || !!organizationId })
+  const clients = useMemo(
+    () => [...(data?.clients || [])].sort((a, b) =>
+      getClientFullName(a).localeCompare(getClientFullName(b), 'es', { sensitivity: 'base' }),
+    ),
+    [data?.clients],
+  )
 
   const handleSearch = (value: string) => {
     setSearch(value)
@@ -54,7 +60,14 @@ export function ClientsListPage() {
     setSearchParams(params)
   }
 
-  const isEmpty = !data || data.clients.length === 0
+  const handleShowAll = () => {
+    const params = new URLSearchParams(searchParams)
+    params.delete('subscriptionStatus')
+    params.delete('hasOverdue')
+    setSearchParams(params)
+  }
+
+  const isEmpty = !data || clients.length === 0
   const showEmpty = isSuperAdmin && !organizationId
 
   return (
@@ -66,6 +79,12 @@ export function ClientsListPage() {
       }}
       filters={!showEmpty ? (
         <>
+          <FilterPill
+            active={!subscriptionStatus && hasOverdue === undefined}
+            onClick={handleShowAll}
+          >
+            Todos
+          </FilterPill>
           <FilterPill active={subscriptionStatus === 'ACTIVE'} onClick={() => handleFilter('subscriptionStatus', subscriptionStatus === 'ACTIVE' ? null : 'ACTIVE')}>
             Activos
           </FilterPill>
@@ -100,7 +119,7 @@ export function ClientsListPage() {
         </Button>
       ) : undefined}
     >
-      {!showEmpty && data?.clients.map((client) => {
+      {!showEmpty && clients.map((client) => {
         const initial = getInitial(client.firstName)
         
         return (

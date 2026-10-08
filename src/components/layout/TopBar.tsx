@@ -1,4 +1,3 @@
-import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-react'
 import { BrandMark } from '@/components/brand/BrandMark'
@@ -17,7 +16,6 @@ import type { Organization } from '@/types/api'
 interface TopBarProps {
   isMobile: boolean
   onMobileToggle: () => void
-  onOpenSearch?: () => void
   isSuperAdmin?: boolean
   organizations?: Organization[]
   organizationsLoading?: boolean
@@ -32,7 +30,6 @@ const ALL_ORGS_VALUE = '__all__'
 export function TopBar({
   isMobile,
   onMobileToggle,
-  onOpenSearch,
   isSuperAdmin,
   organizations,
   organizationsLoading,
@@ -41,7 +38,6 @@ export function TopBar({
   selectedOrganizationId,
   onOrganizationChange,
 }: TopBarProps) {
-  const { openOmniSearch } = useUIStore()
   const hasOrganizations = !!organizations && organizations.length > 0
   const effectiveValue =
     selectedOrganizationId && organizations?.some((org) => org.id === selectedOrganizationId)
@@ -65,6 +61,10 @@ export function TopBar({
 
         <BrandMark size="md" variant="light" />
 
+      </div>
+
+      <div className="flex items-center gap-2">
+        <ExchangeRateBadge className="shrink-0" />
         {isSuperAdmin && (
           <Select
             value={effectiveValue}
@@ -111,11 +111,7 @@ export function TopBar({
             </SelectContent>
           </Select>
         )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <ExchangeRateBadge className="shrink-0" />
-        <HeaderActions onOpenSearch={onOpenSearch ?? openOmniSearch} />
+        <HeaderActions />
       </div>
     </header>
   )

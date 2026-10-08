@@ -5,7 +5,6 @@ import { TopBar } from './TopBar'
 import { OmniSearch } from '@/components/command/OmniSearch'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
-import { useUIStore } from '@/stores/ui.store'
 import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { useOrganizations } from '@/hooks/useOrganizations'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -88,7 +87,6 @@ export function AuthenticatedLayout() {
     })
   }
 
-  const { openOmniSearch } = useUIStore()
   const isChatsPage = location.pathname.startsWith('/chats')
   useTokenRefresh()
 
@@ -96,7 +94,6 @@ export function AuthenticatedLayout() {
     return (
       <>
         <MobileAppShell
-          onOpenSearch={openOmniSearch}
           isSuperAdmin={isSuperAdmin}
           organizations={organizations}
           organizationsLoading={organizationsLoading}

@@ -20,7 +20,6 @@ const ALL_ORGS_VALUE = '__all__'
 
 interface MobileAppShellProps {
   children?: React.ReactNode
-  onOpenSearch?: () => void
   isSuperAdmin?: boolean
   organizations?: Organization[]
   organizationsLoading?: boolean
@@ -32,7 +31,6 @@ interface MobileAppShellProps {
 
 export default function MobileAppShell({
   children,
-  onOpenSearch,
   isSuperAdmin,
   organizations,
   organizationsLoading,
@@ -137,11 +135,7 @@ export default function MobileAppShell({
             </Select>
           )}
           <div className="shrink-0">
-            <HeaderActions
-              showChatsButton={false}
-              showSearchButton={false}
-              onOpenSearch={onOpenSearch ?? (() => {})}
-            />
+            <HeaderActions />
           </div>
         </div>
       </header>

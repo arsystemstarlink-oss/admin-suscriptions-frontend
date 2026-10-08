@@ -200,15 +200,15 @@ export function ClientDetailPage() {
 
       {/* Mini KPIs Horizontales */}
       <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 no-scrollbar touch-pan-x -mx-4 sm:gap-3">
-        <div className="flex w-[40vw] min-w-[125px] shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-[140px] sm:rounded-2xl sm:p-4">
+        <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Activas</p>
           <p className="text-xl font-bold leading-tight text-success sm:text-2xl">{summary.activeSubscriptions}</p>
         </div>
-        <div className="flex w-[40vw] min-w-[125px] shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-[140px] sm:rounded-2xl sm:p-4">
+        <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Deuda</p>
           <p className="text-xl font-bold leading-tight text-destructive sm:text-2xl">{summary.totalOverdue}</p>
         </div>
-        <div className="flex w-[40vw] min-w-[125px] shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-[140px] sm:rounded-2xl sm:p-4">
+        <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Total Subs</p>
           <p className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{summary.totalSubscriptions}</p>
         </div>

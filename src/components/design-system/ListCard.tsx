@@ -16,7 +16,7 @@ export function ListCard({ children, className, onClick, asChild = false }: List
 
   return (
     <Component
-      className={cn(baseClasses, interactiveClasses, className)}
+      className={cn(baseClasses, asChild && 'block', interactiveClasses, className)}
       onClick={onClick}
     >
       {children}

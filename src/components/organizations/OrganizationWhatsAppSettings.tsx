@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, LoaderCircle, MessageCircle, Save } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ClipboardCopy, LoaderCircle, MessageCircle, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
 import {
   useOrganizationWhatsAppConfig,
   useUpdateOrganizationWhatsAppConfig,
@@ -26,6 +27,9 @@ interface WhatsAppFormState {
   dueDateWarningTemplate: string
   suspensionNoticeTemplate: string
 }
+
+const DEFAULT_DUE_DATE_WARNING_DRAFT =
+  'Hola {{1}}, el servicio asociado al kit {{2}} tiene un período vencido desde el {{3}}. Por favor, comunícate con nosotros para regularizar el pago.'
 
 function getFormState(config: OrganizationWhatsAppConfig): WhatsAppFormState {
   return {
@@ -82,6 +86,7 @@ export function OrganizationWhatsAppSettings({
   const configQuery = useOrganizationWhatsAppConfig(organizationId)
   const updateMutation = useUpdateOrganizationWhatsAppConfig()
   const [form, setForm] = useState<WhatsAppFormState | null>(null)
+  const [dueDateWarningDraft, setDueDateWarningDraft] = useState(DEFAULT_DUE_DATE_WARNING_DRAFT)
   const [removeAuthToken, setRemoveAuthToken] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
 
@@ -92,8 +97,29 @@ export function OrganizationWhatsAppSettings({
     setValidationError(null)
   }, [configQuery.data])
 
+  useEffect(() => {
+    setDueDateWarningDraft(DEFAULT_DUE_DATE_WARNING_DRAFT)
+  }, [organizationId])
+
   const updateForm = <K extends keyof WhatsAppFormState>(key: K, value: WhatsAppFormState[K]) => {
     setForm((current) => (current ? { ...current, [key]: value } : current))
+  }
+
+  const copyDueDateWarningDraft = async () => {
+    const missingVariables = ['{{1}}', '{{2}}', '{{3}}'].filter(
+      (variable) => !dueDateWarningDraft.includes(variable),
+    )
+    if (missingVariables.length > 0) {
+      toast.error(`Incluye las variables requeridas: ${missingVariables.join(', ')}.`)
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(dueDateWarningDraft)
+      toast.success('Borrador copiado. Pégalo en Twilio para solicitar la aprobación.')
+    } catch {
+      toast.error('No se pudo copiar el borrador. Revisa los permisos del portapapeles.')
+    }
   }
 
   const save = async () => {
@@ -344,7 +370,32 @@ export function OrganizationWhatsAppSettings({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-due-template">Plantilla de aviso de vencimiento</Label>
+          <Label htmlFor="org-whatsapp-due-template-draft">Borrador personalizado del aviso de vencimiento</Label>
+          <textarea
+            id="org-whatsapp-due-template-draft"
+            value={dueDateWarningDraft}
+            onChange={(event) => setDueDateWarningDraft(event.target.value)}
+            rows={4}
+            className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="Escribe aquí el texto que quieres enviar a revisión de WhatsApp."
+          />
+          <p className="text-xs text-muted-foreground">
+            Personaliza el texto y conserva {'{{1}}'} nombre, {'{{2}}'} kit y {'{{3}}'} fecha de vencimiento.
+            Copia el borrador y solicita su aprobación en Twilio; este formulario no lo envía ni lo somete.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={copyDueDateWarningDraft}
+            disabled={!dueDateWarningDraft.trim()}
+          >
+            <ClipboardCopy className="mr-2 h-4 w-4" />
+            Copiar para solicitar aprobación
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="org-whatsapp-due-template">Content SID aprobado del aviso de vencimiento</Label>
           <Input
             id="org-whatsapp-due-template"
             placeholder="HX..."
@@ -352,7 +403,7 @@ export function OrganizationWhatsAppSettings({
             onChange={(event) => updateForm('dueDateWarningTemplate', event.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Variables: {'{1}'} nombre, {'{2}'} kit, {'{3}'} fecha de vencimiento.
+            Pega aquí el Content SID después de que Twilio apruebe el borrador.
           </p>
         </div>
 

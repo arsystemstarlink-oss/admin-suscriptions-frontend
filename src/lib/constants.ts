@@ -55,9 +55,9 @@ export const CLIENT_SUBSCRIPTION_STATUS_COLORS: Record<string, string> = {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-MX', {
+  return new Intl.NumberFormat('es-VE', {
     style: 'currency',
-    currency: 'MXN',
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)

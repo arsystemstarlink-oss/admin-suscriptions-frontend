@@ -7,7 +7,7 @@ import { usePlanDetail, useCreatePlan, useUpdatePlan } from '@/hooks/usePlans'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Package, DollarSign } from 'lucide-react'
+import { AlertTriangle, Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -118,7 +118,7 @@ export function PlanFormPage() {
       <form id="plan-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
           <div className="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
-            <span className="shrink-0 mt-0.5">⚠️</span>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}

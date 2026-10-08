@@ -153,7 +153,7 @@ export function ClientsListPage() {
                   </h3>
                   {client.hasDebt && (
                     <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-destructive bg-destructive/10">
-                      Deuda
+                      Vencidos
                     </span>
                   )}
                 </div>

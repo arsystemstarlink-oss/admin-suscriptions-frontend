@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 interface UseSubscriptionsParams {
   clientId?: string
   status?: 'ACTIVE' | 'SUSPENDED'
+  search?: string
   hasOverduePeriods?: boolean
   organizationId?: string
   limit?: number

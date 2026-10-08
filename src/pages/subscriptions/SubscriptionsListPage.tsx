@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSubscriptions } from '@/hooks/useSubscriptions'
@@ -25,6 +25,8 @@ export function SubscriptionsListPage() {
   const queryClient = useQueryClient()
   const { openQuickPay } = useUIStore()
   const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') || '')
+  const [offset, setOffset] = useState(0)
   const [payingId, setPayingId] = useState<string | null>(null)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
@@ -35,11 +37,19 @@ export function SubscriptionsListPage() {
   const expiringFilter = searchParams.get('expiring') === 'true'
   const pendingFilter = searchParams.get('pending') === 'true'
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => window.clearTimeout(timeout)
+  }, [search])
+
   const { data, isLoading } = useSubscriptions(
     {
       organizationId: organizationId ?? undefined,
       status: statusFilter ?? undefined,
-      limit: 200,
+      hasOverduePeriods: hasOverdue ?? undefined,
+      search: debouncedSearch || undefined,
+      limit: 50,
+      offset,
     },
     { enabled: !isSuperAdmin || !!organizationId }
   )
@@ -48,6 +58,7 @@ export function SubscriptionsListPage() {
 
   const handleSearch = (value: string) => {
     setSearch(value)
+    setOffset(0)
     const params = new URLSearchParams(searchParams)
     if (value) params.set('search', value)
     else params.delete('search')
@@ -55,6 +66,7 @@ export function SubscriptionsListPage() {
   }
 
   const handleFilter = (key: string, value: string | null) => {
+    setOffset(0)
     const params = new URLSearchParams(searchParams)
     if (value) params.set(key, value)
     else params.delete(key)
@@ -63,6 +75,7 @@ export function SubscriptionsListPage() {
 
   const clearAllFilters = () => {
     setSearch('')
+    setOffset(0)
     setSearchParams({})
   }
 
@@ -122,28 +135,12 @@ export function SubscriptionsListPage() {
   const visibleSubscriptions = useMemo(() => {
     const items = [...(data?.subscriptions ?? [])].filter((sub) => sub.client != null)
 
-    const normalizedSearch = search.trim().toLowerCase()
-
     return items.filter((sub) => {
-      if (statusFilter && sub.status !== statusFilter) return false
-      if (hasOverdue !== undefined && sub.hasDebt !== hasOverdue) return false
       if (expiringFilter && !isExpiringSub(sub)) return false
       if (pendingFilter && !isPendingSub(sub)) return false
-      if (!normalizedSearch) return true
-
-      const haystack = [
-        getClientFullName(sub.client),
-        sub.client?.phone ?? '',
-        sub.client?.dni || '',
-        sub.plan.name,
-        sub.kitNumber,
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(normalizedSearch)
+      return true
     })
-  }, [data, search, statusFilter, hasOverdue, expiringFilter, pendingFilter])
+  }, [data, expiringFilter, pendingFilter])
 
   const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter || pendingFilter)
 
@@ -248,6 +245,7 @@ export function SubscriptionsListPage() {
       ) : (
         <>
           {/* Métricas de Cobranza (filtros rápidos) */}
+          <p className="text-xs text-muted-foreground">Resumen de la página actual</p>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
@@ -401,11 +399,11 @@ export function SubscriptionsListPage() {
                           }}
                           disabled={payingId === sub.id}
                           className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
-                          aria-label="Revisar período y monto del cobro"
-                          title="Revisar período y monto del cobro"
+                          aria-label={`Cobrar a ${getClientFullName(sub.client)}`}
+                          title={`Cobrar a ${getClientFullName(sub.client)}`}
                         >
                           <Zap className="h-4 w-4 shrink-0" />
-                          <span className="hidden min-[380px]:inline">{payingId === sub.id ? '...' : 'Revisar'}</span>
+                          <span className="hidden min-[380px]:inline">{payingId === sub.id ? '...' : 'Cobrar'}</span>
                         </button>
                       )}
                       {canPayAdvance(sub) && (
@@ -426,6 +424,33 @@ export function SubscriptionsListPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {data?.pagination && data.pagination.total > data.pagination.limit && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 text-sm text-surface-foreground">
+              <span className="text-muted-foreground">
+                {offset + 1}–{Math.min(offset + data.subscriptions.length, data.pagination.total)} de {data.pagination.total}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={offset === 0 || isLoading}
+                  onClick={() => setOffset((current) => Math.max(0, current - data.pagination.limit))}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.pagination.hasMore || isLoading}
+                  onClick={() => setOffset((current) => current + data.pagination.limit)}
+                >
+                  Siguiente
+                </Button>
+              </div>
             </div>
           )}
         </>

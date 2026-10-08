@@ -1,6 +1,6 @@
 import { useDashboardAlerts } from '@/hooks/useDashboard'
 import { useUIStore } from '@/stores/ui.store'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
@@ -16,7 +16,11 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { isAxiosError } from 'axios'
 import { useSendMessage } from '@/hooks/useWhatsApp'
+import { useOrganizationWhatsAppConfig } from '@/hooks/useOrganizations'
+import { useAuthStore } from '@/stores/auth.store'
+import { whatsappApi } from '@/api/whatsapp.api'
 import { Button } from '@/components/ui/button'
+import type { BillingPeriodWithDetails } from '@/types/api'
 import {
   Dialog,
   DialogContent,
@@ -28,7 +32,6 @@ import {
 
 const WIDGET_COLLAPSED_COUNT = 3
 const WIDGET_EXPANDED_COUNT = 8
-const OVERDUE_REMINDER_TEMPLATE = 'subscription_suspension_warning_1day_2v_hxfcc8ae438db9df662a0e1f7d801e946b'
 
 export interface DashboardWidgetProps {
   organizationId?: string
@@ -197,7 +200,8 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
                     onClick={(e) => handlePay(period.periodId, e)}
                     disabled={loadingId === period.periodId}
                     className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
-                    aria-label="Revisar período y monto del cobro"
+                    aria-label={`Cobrar a ${period.clientName}`}
+                    title={`Cobrar a ${period.clientName}`}
                   >
                     {loadingId === period.periodId ? (
                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
@@ -237,11 +241,49 @@ function findDebtorOldestOverdue(overdueItems: AlertItem[], debtor: DebtorItem):
   return overdueItems.find((p) => p.clientName === debtor.clientName)
 }
 
+interface ReminderCandidate {
+  clientId: string
+  clientName: string
+  clientPhone: string
+  overduePeriod: BillingPeriodWithDetails
+}
+
+function toReminderCandidates(periods: BillingPeriodWithDetails[]): ReminderCandidate[] {
+  const oldestByClient = new Map<string, ReminderCandidate>()
+  const oldestFirst = [...periods].sort(
+    (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime(),
+  )
+
+  for (const period of oldestFirst) {
+    const client = period.client
+    if (!client?.id || !client.phone || oldestByClient.has(client.id)) continue
+    oldestByClient.set(client.id, {
+      clientId: client.id,
+      clientName: `${client.firstName} ${client.lastName}`.trim(),
+      clientPhone: client.phone,
+      overduePeriod: period,
+    })
+  }
+
+  return [...oldestByClient.values()]
+}
+
+function isFromToday(dateString: string): boolean {
+  const date = new Date(dateString)
+  const today = new Date()
+  return !Number.isNaN(date.getTime())
+    && date.getFullYear() === today.getFullYear()
+    && date.getMonth() === today.getMonth()
+    && date.getDate() === today.getDate()
+}
+
 export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetProps) {
   const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
   const { openQuickPay } = useUIStore()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const userOrganizationId = useAuthStore((state) => state.user?.organizationId)
+  const effectiveOrganizationId = organizationId ?? userOrganizationId ?? undefined
   const sendMessage = useSendMessage(organizationId)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -250,21 +292,47 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
   const [isSendingReminders, setIsSendingReminders] = useState(false)
   const [reminderResult, setReminderResult] = useState<{
     sent: number
+    skipped: number
     failures: Array<{ name: string; message: string }>
   } | null>(null)
   const exchangeSource = useExchangeStore((s) => s.source)
   const { data: exchangeRates } = useDolarRates()
   const activeRate = getRateForSource(exchangeRates, exchangeSource)
+  const { data: whatsAppConfig, isLoading: isLoadingWhatsAppConfig, isError: whatsAppConfigError } =
+    useOrganizationWhatsAppConfig(effectiveOrganizationId ?? '', reminderDialogOpen)
+  const overduePeriodsQuery = useQuery({
+    queryKey: [...qk.billing.lists, 'all-overdue-reminder-candidates', effectiveOrganizationId],
+    enabled: reminderDialogOpen && enabled,
+    queryFn: async () => {
+      const periods: BillingPeriodWithDetails[] = []
+      let offset = 0
+
+      while (true) {
+        const page = await billingApi.list({
+          status: 'OVERDUE',
+          organizationId: effectiveOrganizationId,
+          limit: 100,
+          offset,
+        })
+        periods.push(...page.periods)
+        if (!page.pagination.hasMore) return periods
+
+        const nextOffset = page.pagination.offset + page.pagination.limit
+        if (nextOffset <= offset) {
+          throw new Error('La paginación de períodos vencidos no avanzó.')
+        }
+        offset = nextOffset
+      }
+    },
+  })
   const items = useMemo(() => data?.topDebtors.items ?? [], [data?.topDebtors.items])
   const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
   const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
-  const overdueItems = useMemo(() => data?.overdueDebt.items ?? [], [data?.overdueDebt.items])
   const reminderCandidates = useMemo(
-    () => items.filter((debtor) =>
-      Boolean(debtor.clientPhone && findDebtorOldestOverdue(overdueItems, debtor)),
-    ),
-    [items, overdueItems],
+    () => toReminderCandidates(overduePeriodsQuery.data ?? []),
+    [overduePeriodsQuery.data],
   )
+  const reminderTemplateName = whatsAppConfig?.templates.dueDateWarning?.trim()
   const selectedReminderCandidates = reminderCandidates.filter((debtor) =>
     selectedReminderIds.includes(debtor.clientId),
   )
@@ -307,21 +375,39 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
     setReminderResult(null)
     const failures: Array<{ name: string; message: string }> = []
     let sent = 0
+    let skipped = 0
+
+    if (!reminderTemplateName) {
+      setReminderResult({
+        sent,
+        skipped,
+        failures: [{ name: 'Configuración de WhatsApp', message: 'No hay una plantilla de aviso de vencimiento configurada para esta organización.' }],
+      })
+      setIsSendingReminders(false)
+      return
+    }
 
     for (const debtor of selectedReminderCandidates) {
-      const overduePeriod = findDebtorOldestOverdue(overdueItems, debtor)
-      if (!overduePeriod) {
-        failures.push({ name: debtor.clientName, message: 'No se encontró un período vencido.' })
-        continue
-      }
-
       try {
+        const history = await whatsappApi.getMessagesByPhone(debtor.clientPhone, effectiveOrganizationId)
+        const alreadySentToday = history.messages.some((message) =>
+          message.direction === 'OUTBOUND'
+          && message.templateName === reminderTemplateName
+          && message.status !== 'FAILED'
+          && isFromToday(message.createdAt),
+        )
+        if (alreadySentToday) {
+          skipped += 1
+          continue
+        }
+
+        const overduePeriod = debtor.overduePeriod
         await sendMessage.mutateAsync({
           to: debtor.clientPhone,
-          templateName: OVERDUE_REMINDER_TEMPLATE,
+          templateName: reminderTemplateName,
           variables: {
             '1': debtor.clientName,
-            '2': overduePeriod.kitNumber,
+            '2': overduePeriod.subscription.kitNumber,
             '3': overduePeriod.endDate.split('T')[0],
           },
         })
@@ -338,9 +424,11 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
       }
     }
 
-    setReminderResult({ sent, failures })
+    setReminderResult({ sent, skipped, failures })
     if (failures.length > 0) {
-      toast.error(`Se enviaron ${sent} avisos; ${failures.length} no pudieron enviarse.`)
+      toast.error(`Se enviaron ${sent} avisos; ${skipped} ya se habían enviado hoy y ${failures.length} no pudieron enviarse.`)
+    } else if (skipped > 0) {
+      toast.success(`Se enviaron ${sent} avisos; ${skipped} ya se habían enviado hoy.`)
     } else {
       toast.success(`Se enviaron ${sent} avisos de vencimiento por WhatsApp.`)
     }
@@ -375,6 +463,8 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
             size="sm"
             onClick={() => setReminderDialogOpen(true)}
             className="shrink-0"
+            aria-label="Enviar recordatorios de vencimiento por WhatsApp"
+            title="Enviar recordatorios de vencimiento por WhatsApp"
           >
             <MessageSquare className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Recordar</span>
@@ -430,7 +520,8 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                     onClick={(e) => handlePay(debtor, e)}
                     disabled={loadingId === debtor.clientId}
                     className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
-                    aria-label="Revisar período y monto del cobro"
+                    aria-label={`Cobrar a ${debtor.clientName}`}
+                    title={`Cobrar a ${debtor.clientName}`}
                   >
                     {loadingId === debtor.clientId ? (
                       <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
@@ -453,16 +544,44 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
           viewAllLabel={`Ver todos (${items.length})`}
         />
       )}
-      <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
+      <Dialog
+        open={reminderDialogOpen}
+        onOpenChange={(open) => {
+          if (isSendingReminders && !open) return
+          setReminderDialogOpen(open)
+        }}
+      >
         <DialogContent className="bg-surface-elevated text-surface-elevated-foreground">
           <DialogHeader>
             <DialogTitle>Recordatorio masivo por WhatsApp</DialogTitle>
             <DialogDescription>
-              Se enviará a los principales deudores seleccionados la plantilla aprobada de aviso de vencimiento.
-              La lista solo incluye clientes con teléfono y un período vencido disponible; el contenido de la plantilla se administra en Twilio.
+              Se enviará a los clientes con teléfono y un período vencido disponible. Se usa la plantilla de aviso de vencimiento configurada para esta organización.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {isLoadingWhatsAppConfig && (
+              <p role="status" className="text-sm text-muted-foreground">Cargando la plantilla de WhatsApp...</p>
+            )}
+            {whatsAppConfigError && (
+              <p role="alert" className="text-sm text-destructive">No se pudo cargar la configuración de WhatsApp.</p>
+            )}
+            {!isLoadingWhatsAppConfig && !whatsAppConfigError && !reminderTemplateName && (
+              <p role="alert" className="text-sm text-destructive">Configura una plantilla de aviso de vencimiento en Configuración de WhatsApp antes de enviar.</p>
+            )}
+            {overduePeriodsQuery.isFetching && (
+              <p role="status" className="text-sm text-muted-foreground">Cargando todos los períodos vencidos...</p>
+            )}
+            {overduePeriodsQuery.isError && (
+              <div role="alert" className="flex items-center justify-between gap-3 text-sm text-destructive">
+                <span>No se pudo cargar la lista completa de vencidos.</span>
+                <Button type="button" variant="outline" size="sm" onClick={() => void overduePeriodsQuery.refetch()}>
+                  Reintentar
+                </Button>
+              </div>
+            )}
+            {!overduePeriodsQuery.isFetching && !overduePeriodsQuery.isError && reminderCandidates.length === 0 && (
+              <p className="text-sm text-muted-foreground">No hay clientes vencidos con teléfono disponible.</p>
+            )}
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 {selectedReminderCandidates.length} de {reminderCandidates.length} clientes seleccionados
@@ -471,7 +590,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={isSendingReminders || reminderResult !== null}
+                disabled={isSendingReminders || reminderResult !== null || overduePeriodsQuery.isFetching || reminderCandidates.length === 0}
                 onClick={() => setSelectedReminderIds(
                   selectedReminderCandidates.length === reminderCandidates.length
                     ? []
@@ -488,7 +607,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                     <input
                       type="checkbox"
                       checked={selectedReminderIds.includes(debtor.clientId)}
-                      disabled={isSendingReminders || reminderResult !== null}
+                      disabled={isSendingReminders || reminderResult !== null || overduePeriodsQuery.isFetching}
                       onChange={(event) => setSelectedReminderIds((current) =>
                         event.target.checked
                           ? [...current, debtor.clientId]
@@ -506,7 +625,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
             </ul>
             {reminderResult && (
               <div role="status" className="space-y-2 rounded-lg border border-border bg-surface-muted p-3 text-sm">
-                <p className="font-medium text-foreground">Enviados: {reminderResult.sent}. Fallidos: {reminderResult.failures.length}.</p>
+                <p className="font-medium text-foreground">Enviados: {reminderResult.sent}. Ya enviados hoy: {reminderResult.skipped}. Fallidos: {reminderResult.failures.length}.</p>
                 {reminderResult.failures.length > 0 && (
                   <ul className="space-y-1 text-destructive">
                     {reminderResult.failures.map((failure) => (
@@ -524,7 +643,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
               <Button
                 type="button"
                 onClick={handleSendBulkReminders}
-                disabled={isSendingReminders || selectedReminderCandidates.length === 0}
+                disabled={isSendingReminders || overduePeriodsQuery.isFetching || overduePeriodsQuery.isError || isLoadingWhatsAppConfig || whatsAppConfigError || !reminderTemplateName || selectedReminderCandidates.length === 0}
               >
                 {isSendingReminders ? 'Enviando…' : `Enviar a ${selectedReminderCandidates.length}`}
               </Button>

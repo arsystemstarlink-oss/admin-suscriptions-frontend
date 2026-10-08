@@ -10,6 +10,14 @@ export function SettingsLayout() {
   const tabs = useMemo<PageSubNavTab[]>(() => {
     const base: PageSubNavTab[] = [
       {
+        to: '/config/profile',
+        icon: User,
+        label: 'Perfil',
+        title: 'Perfil',
+        subtitle: 'Información de tu cuenta de administrador',
+        end: false,
+      },
+      {
         to: '/config/tasks',
         icon: ClipboardList,
         label: 'Tareas automáticas',
@@ -38,15 +46,6 @@ export function SettingsLayout() {
         end: false,
       })
     }
-
-    base.push({
-      to: '/config/profile',
-      icon: User,
-      label: 'Perfil',
-      title: 'Perfil',
-      subtitle: 'Información de tu cuenta de administrador',
-      end: false,
-    })
 
     return base
   }, [isSuperAdmin])

@@ -104,6 +104,18 @@ export function ClientDetailPage() {
     }
   }
 
+  const handleSendConsultationLink = () => {
+    if (!consultationUrl || !client.phone) return
+
+    const phone = client.phone.replace(/\D/g, '')
+    const message = `Hola ${getClientFullName(client)}, consulta aquí la información de tu suscripción: ${consultationUrl}`
+    window.open(
+      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+      '_blank',
+      'noopener,noreferrer',
+    )
+  }
+
   return (
     <div className="flex flex-col gap-3 pb-[calc(100px+env(safe-area-inset-bottom))] sm:gap-4">
       
@@ -190,6 +202,18 @@ export function ClientDetailPage() {
             {consultaLinkCopied ? <Check className="h-4 w-4 shrink-0" /> : <Link2 className="h-4 w-4 shrink-0" />}
             {consultaLinkCopied ? 'Copiado' : 'Copiar enlace'}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSendConsultationLink}
+            disabled={!consultationUrl || isLoadingOrganization || !client.phone}
+            aria-label="Enviar enlace de consulta por WhatsApp"
+            title={!client.phone ? 'El cliente no tiene un teléfono' : 'Enviar enlace de consulta por WhatsApp'}
+            className="col-span-2 h-10 gap-2 px-2 text-xs sm:h-11 sm:px-3 sm:text-sm"
+          >
+            <MessageSquare className="h-4 w-4 shrink-0" />
+            Enviar por WhatsApp
+          </Button>
         </div>
         {organizationError && (
           <p role="status" className="mt-2 text-xs text-destructive">
@@ -205,7 +229,7 @@ export function ClientDetailPage() {
           <p className="text-xl font-bold leading-tight text-success sm:text-2xl">{summary.activeSubscriptions}</p>
         </div>
         <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Deuda</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Vencidos</p>
           <p className="text-xl font-bold leading-tight text-destructive sm:text-2xl">{summary.totalOverdue}</p>
         </div>
         <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
@@ -245,7 +269,7 @@ export function ClientDetailPage() {
                     </div>
                     {sub.hasDebt && (
                       <Badge variant="destructive" className="shrink-0 gap-1 px-2 py-0.5 text-[10px]">
-                        <ShieldAlert className="h-3 w-3" /> Deuda
+                        <ShieldAlert className="h-3 w-3" /> Vencidos
                       </Badge>
                     )}
                   </div>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Minus, Trash2, Box, CalendarDays, DollarSign, Clock, Users } from 'lucide-react'
+import { AlertTriangle, Plus, Minus, Trash2, Box, CalendarDays, DollarSign, Clock, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
@@ -198,7 +198,7 @@ export function SubscriptionFormPage() {
       <form id="subscription-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {error && (
           <div className="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
-            <span className="shrink-0 mt-0.5">⚠️</span>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}

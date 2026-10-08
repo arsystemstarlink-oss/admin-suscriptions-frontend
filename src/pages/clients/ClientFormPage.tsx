@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { User, MapPin } from 'lucide-react'
+import { AlertTriangle, User, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { normalizeDni } from '@/lib/utils'
@@ -164,7 +164,7 @@ export function ClientFormPage() {
       <form id="client-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6" autoComplete="new-password">
         {error && (
           <div className="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
-            <span className="shrink-0 mt-0.5">⚠️</span>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}

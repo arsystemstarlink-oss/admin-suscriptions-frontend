@@ -393,7 +393,7 @@ export function ChatsPage() {
                                 )}
                                 {item.hasDebt && (
                                   <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                                    Deuda
+                                    Vencidos
                                   </Badge>
                                 )}
                               </div>

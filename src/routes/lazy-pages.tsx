@@ -14,7 +14,6 @@ export const SubscriptionEditPage = lazy(() => import('@/pages/subscriptions/Sub
 export const AdminToolsPage = lazy(() => import('@/pages/admin/AdminToolsPage').then(m => ({ default: m.AdminToolsPage })))
 export const SubscriptionsLayout = lazy(() => import('@/components/layout/SubscriptionsLayout').then(m => ({ default: m.SubscriptionsLayout })))
 export const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
-export const NotificationsPage = lazy(() => import('@/pages/admin/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 export const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
 export const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
 export const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))

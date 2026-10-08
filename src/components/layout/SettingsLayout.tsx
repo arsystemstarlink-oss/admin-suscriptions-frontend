@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { ClipboardList, User, UserPlus, Bell, Building2 } from 'lucide-react'
+import { ClipboardList, User, UserPlus, Building2 } from 'lucide-react'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 
 export function SettingsLayout() {
@@ -39,24 +39,14 @@ export function SettingsLayout() {
       })
     }
 
-    base.push(
-      {
-        to: '/config/notifications',
-        icon: Bell,
-        label: 'Notificaciones',
-        title: 'Notificaciones',
-        subtitle: 'Recibe alertas en tu dispositivo',
-        end: false,
-      },
-      {
-        to: '/config/profile',
-        icon: User,
-        label: 'Perfil',
-        title: 'Perfil',
-        subtitle: 'Información de tu cuenta de administrador',
-        end: false,
-      },
-    )
+    base.push({
+      to: '/config/profile',
+      icon: User,
+      label: 'Perfil',
+      title: 'Perfil',
+      subtitle: 'Información de tu cuenta de administrador',
+      end: false,
+    })
 
     return base
   }, [isSuperAdmin])

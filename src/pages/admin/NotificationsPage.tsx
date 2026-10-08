@@ -22,7 +22,7 @@ const permissionLabels: Record<NotificationPermission, string> = {
   denied: 'Permiso denegado',
 }
 
-export function NotificationsPage() {
+export function NotificationSettings() {
   const {
     supported,
     permission,

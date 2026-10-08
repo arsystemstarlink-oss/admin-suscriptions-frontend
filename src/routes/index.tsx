@@ -20,7 +20,6 @@ import {
   AdminToolsPage,
   SubscriptionsLayout,
   ProfilePage,
-  NotificationsPage,
   AdminsPage,
   OrganizationsPage,
   SetupPage,
@@ -200,11 +199,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'notifications',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <NotificationsPage />
-              </Suspense>
-            ),
+            element: <Navigate to="/config/profile" replace />,
           },
           {
             path: 'admins',

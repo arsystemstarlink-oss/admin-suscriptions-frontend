@@ -17,6 +17,7 @@ import { EmailInput } from '@/components/ui/email-input'
 import { UserCog, ShieldCheck, ChevronDown, ChevronUp, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { FormGroup } from '@/components/design-system'
+import { NotificationSettings } from '@/pages/admin/NotificationsPage'
 import type { ApiError } from '@/types/api'
 
 const profileSchema = z.object({
@@ -467,6 +468,8 @@ export function ProfilePage() {
           </CardContent>
         )}
       </Card>
+
+      <NotificationSettings />
     </div>
   )
 }

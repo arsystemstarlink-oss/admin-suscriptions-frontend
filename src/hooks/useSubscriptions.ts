@@ -44,10 +44,18 @@ export function useCreateSubscription() {
 
 export function useUpdateSubscription() {
   const qc = useQueryClient()
+  const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateSubscriptionRequest }) =>
-      subscriptionsApi.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+      organizationId,
+    }: {
+      id: string
+      data: UpdateSubscriptionRequest
+      organizationId?: string
+    }) => subscriptionsApi.update(id, data, organizationId ?? selectedOrganizationId ?? undefined),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       qc.invalidateQueries({ queryKey: qk.subscriptions.detail(variables.id) })

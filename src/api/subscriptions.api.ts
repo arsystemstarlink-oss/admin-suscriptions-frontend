@@ -43,8 +43,14 @@ export const subscriptionsApi = {
     return response.data
   },
 
-  update: async (id: string, data: UpdateSubscriptionRequest): Promise<SubscriptionWithDetails> => {
-    const response = await api.put<SubscriptionWithDetails>(`/subscriptions/${id}`, data)
+  update: async (
+    id: string,
+    data: UpdateSubscriptionRequest,
+    organizationId?: string
+  ): Promise<SubscriptionWithDetails> => {
+    const response = await api.put<SubscriptionWithDetails>(`/subscriptions/${id}`, data, {
+      params: organizationId ? { organizationId } : undefined,
+    })
     return response.data
   },
 

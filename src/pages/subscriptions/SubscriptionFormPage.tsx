@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, type ChangeEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreateSubscription } from '@/hooks/useSubscriptions'
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Box, CalendarDays, DollarSign, Clock, Users } from 'lucide-react'
+import { Plus, Minus, Trash2, Box, CalendarDays, DollarSign, Clock, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
@@ -27,7 +27,7 @@ const subscriptionSchema = z.object({
   kitNumber: z.string().min(5, 'Ingrese el número de kit (ej: KIT-001)'),
   accountNumber: z.string().optional(),
   billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
-  maxOverduePeriods: z.coerce.number().min(1).max(12).optional(),
+  maxOverduePeriods: z.coerce.number().min(1).max(3).optional(),
   activationDate: z.string().optional(),
   historicalPayments: z.array(z.object({
     periodLabel: z.string().min(1, 'Etiqueta requerida'),
@@ -321,15 +321,53 @@ export function SubscriptionFormPage() {
             </div>
 
             <div className="space-y-2.5">
-              <Label htmlFor="maxOverduePeriods" className="text-foreground">Límite Vencidos</Label>
-              <Input
-                id="maxOverduePeriods"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={12}
-                {...register('maxOverduePeriods')}
-                className="h-12 text-center font-bold text-lg"
+              <Controller
+                name="maxOverduePeriods"
+                control={control}
+                render={({ field }) => {
+                  const value = field.value ?? 2
+                  return (
+                    <div className="space-y-2.5">
+                      <Label htmlFor="maxOverduePeriods" className="text-foreground">Máx. Períodos Vencidos</Label>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="Disminuir períodos vencidos"
+                          disabled={value <= 1}
+                          onClick={() => field.onChange(Math.max(1, value - 1))}
+                          className="h-12 w-12 shrink-0"
+                        >
+                          <Minus aria-hidden="true" />
+                        </Button>
+                        <Input
+                          id="maxOverduePeriods"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={3}
+                          value={value}
+                          readOnly
+                          aria-live="polite"
+                          className="h-12 text-center text-lg font-bold"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label="Aumentar períodos vencidos"
+                          disabled={value >= 3}
+                          onClick={() => field.onChange(Math.min(3, value + 1))}
+                          className="h-12 w-12 shrink-0"
+                        >
+                          <Plus aria-hidden="true" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Elige entre 1 y 3 períodos.</p>
+                    </div>
+                  )
+                }}
               />
             </div>
           </div>

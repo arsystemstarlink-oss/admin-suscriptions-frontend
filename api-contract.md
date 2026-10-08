@@ -559,7 +559,7 @@ interface DebtorItem {
   kitNumber: string;           // Se convierte a UPPERCASE automaticamente
   accountNumber?: string;      // Numero de cuenta Starlink (ej: "ACC-8381534-78084-24")
   billingDay: number;          // 1-28
-  maxOverduePeriods: number;   // minimo 1
+  maxOverduePeriods: number;   // 1-3
   activationDate?: string;     // Formato YYYY-MM-DD, no futura
   historicalPayments?: HistoricalPaymentDto[];
 }
@@ -569,8 +569,10 @@ interface DebtorItem {
 
 **PUT /subscriptions/:id**
 ```typescript
+// Query: ?organizationId=org_X (para super-admin)
 // Request (partial)
 { planId?: string; kitNumber?: string; accountNumber?: string; billingDay?: number; maxOverduePeriods?: number; status?: SubscriptionStatus }
+// maxOverduePeriods: 1-3
 // kitNumber se convierte a UPPERCASE automaticamente
 // Response 200 → Subscription
 ```

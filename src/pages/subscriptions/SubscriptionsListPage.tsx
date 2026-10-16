@@ -122,7 +122,7 @@ export function SubscriptionsListPage() {
   const isOverdueSub = (sub: SubscriptionWithDetails) => sub.hasDebt
 
   const isExpiringSub = (sub: SubscriptionWithDetails) =>
-    sub.currentPeriod?.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate)
+    sub.currentPeriod != null && isExpiringSoon(sub.currentPeriod.endDate)
 
   const isPendingSub = (sub: SubscriptionWithDetails) =>
     sub.status === 'ACTIVE' && sub.pendingPeriods > 0
@@ -148,11 +148,21 @@ export function SubscriptionsListPage() {
   const visibleSubscriptions = useMemo(() => {
     const items = [...(pageData?.subscriptions ?? [])].filter((sub) => sub.client != null)
 
-    return items.filter((sub) => {
+    const filtered = items.filter((sub) => {
       if (expiringFilter && !isExpiringSub(sub)) return false
       if (pendingFilter && !isPendingSub(sub)) return false
       return true
     })
+
+    if (expiringFilter) {
+      filtered.sort((a, b) => {
+        const aTime = a.currentPeriod?.endDate ? new Date(a.currentPeriod.endDate).getTime() : Infinity
+        const bTime = b.currentPeriod?.endDate ? new Date(b.currentPeriod.endDate).getTime() : Infinity
+        return aTime - bTime
+      })
+    }
+
+    return filtered
   }, [pageData, expiringFilter, pendingFilter])
 
   const handleNextPage = async () => {
@@ -398,7 +408,7 @@ export function SubscriptionsListPage() {
 
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       <div className="flex gap-1 sm:gap-1.5">
-                        {sub.currentPeriod && sub.currentPeriod.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate) && (
+                        {sub.currentPeriod && isExpiringSoon(sub.currentPeriod.endDate) && (
                           <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-warning/10 text-warning">
                             <Calendar className="h-3 w-3" />
                             {getExpiringLabel(sub.currentPeriod.endDate)}

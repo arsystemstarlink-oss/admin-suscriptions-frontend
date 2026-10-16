@@ -96,7 +96,9 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
 
   const items = useMemo<PendingAlertItem[]>(() => {
     const overdue = (data?.overdueDebt.items ?? []).map((item) => ({ ...item, isOverdue: true }))
-    const expiring = (data?.expiringSoon.items ?? []).map((item) => ({ ...item, isOverdue: false }))
+    const expiring = (data?.expiringSoon.items ?? [])
+      .filter((item) => item.status !== 'PAID')
+      .map((item) => ({ ...item, isOverdue: false }))
     return [...overdue, ...expiring]
   }, [data])
 

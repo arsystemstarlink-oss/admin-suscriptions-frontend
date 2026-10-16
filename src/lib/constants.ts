@@ -73,7 +73,7 @@ export function formatDate(dateString: string): string {
   }).format(date)
 }
 
-export function isExpiringSoon(endDate: string, daysThreshold: number = 3): boolean {
+export function isExpiringSoon(endDate: string, daysThreshold: number = 7): boolean {
   const today = new Date()
   const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
   const end = new Date(endDate)

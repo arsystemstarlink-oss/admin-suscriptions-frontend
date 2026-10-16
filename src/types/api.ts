@@ -302,6 +302,7 @@ export interface DashboardSummary {
 export interface AlertItem {
   periodId: string
   periodLabel: string
+  status: BillingPeriodStatus
   amount: number
   endDate: string
   subscriptionId: string

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -52,6 +52,7 @@ const fieldClassName = 'h-12'
 export function ClientFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const isEdit = !!id
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
@@ -122,7 +123,11 @@ export function ClientFormPage() {
           organizationId: data?.client.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Cliente actualizado correctamente')
-        navigate(`/subscriptions/clients/${id}`)
+        if (location.key !== 'default') {
+          navigate(-1)
+        } else {
+          navigate(`/subscriptions/clients/${id}`, { replace: true })
+        }
       } else {
         const newClient = await createMutation.mutateAsync(payload as CreateClientRequest)
         toast.success('Cliente creado correctamente')

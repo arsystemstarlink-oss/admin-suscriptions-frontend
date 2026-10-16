@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, Link, useLocation } from 'react-router-dom'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -38,6 +38,7 @@ type SubscriptionEditForm = z.infer<typeof subscriptionEditSchema>
 export function SubscriptionEditPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
   const { data: subscriptionData, isLoading: isLoadingSub } = useSubscriptionDetail(id!, organizationId ?? undefined, {
@@ -90,7 +91,11 @@ export function SubscriptionEditPage() {
         },
       })
       toast.success('Suscripción actualizada correctamente')
-      navigate(`/subscriptions/${id}`)
+      if (location.key !== 'default') {
+        navigate(-1)
+      } else {
+        navigate(`/subscriptions/${id}`, { replace: true })
+      }
     } catch (err: unknown) {
       handleApiError(err, { setFieldError: setError })
     }

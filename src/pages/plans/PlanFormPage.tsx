@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -28,6 +28,7 @@ const fieldClassName = 'h-12'
 export function PlanFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const isEdit = !!id
   const { data, isLoading } = usePlanDetail(id!)
   const createMutation = useCreatePlan()
@@ -78,7 +79,11 @@ export function PlanFormPage() {
           organizationId: data?.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Plan actualizado correctamente')
-        navigate('/subscriptions/plans')
+        if (location.key !== 'default') {
+          navigate(-1)
+        } else {
+          navigate('/subscriptions/plans', { replace: true })
+        }
       } else {
         await createMutation.mutateAsync(payload)
         toast.success('Plan creado correctamente')

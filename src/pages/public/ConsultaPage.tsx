@@ -32,6 +32,8 @@ import {
 import { BrandMark } from '@/components/brand/BrandMark'
 import { ExchangeTicker } from '@/components/exchange/ExchangeTicker'
 import { InstallConsultaButton } from '@/components/public/InstallConsultaButton'
+import { TurnstileWidget } from '@/components/public/TurnstileWidget'
+import { isCaptchaEnabled, TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { BsReference } from '@/components/exchange/BsReference'
 import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
@@ -111,11 +113,13 @@ function loadStoredCredentials(): StoredConsultaCredentials | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<StoredConsultaCredentials>
     if (!parsed || typeof parsed !== 'object') return null
+    // Opt-in: solo se restauran los datos si el usuario pidió recordarlos.
+    if (parsed.remember !== true) return null
     const dniPrefix = parsed.dniPrefix === 'J-' ? 'J-' : 'V-'
     const dniDigits = typeof parsed.dniDigits === 'string' ? parsed.dniDigits.replace(/\D/g, '').slice(0, 9) : ''
     const phone = typeof parsed.phone === 'string' ? parsed.phone : ''
     if (!/^\d{7,9}$/.test(dniDigits) || phone.replace(/\D/g, '').length < 10) return null
-    return { dniPrefix, dniDigits, phone, remember: parsed.remember !== false }
+    return { dniPrefix, dniDigits, phone, remember: true }
   } catch {
     return null
   }
@@ -140,8 +144,12 @@ export function ConsultaPage() {
   const [lastCredentials, setLastCredentials] = useState<{ dni: string; phone: string } | null>(null)
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string | null>(null)
   const [expandedSubscriptions, setExpandedSubscriptions] = useState<Record<string, boolean>>({})
-  const [rememberMe, setRememberMe] = useState(storedCredentials?.remember ?? true)
+  const [rememberMe, setRememberMe] = useState(storedCredentials?.remember ?? false)
   const [rememberToast, setRememberToast] = useState<string | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetSignal, setCaptchaResetSignal] = useState(0)
+  const [reportCaptchaToken, setReportCaptchaToken] = useState<string | null>(null)
+  const [reportCaptchaResetSignal, setReportCaptchaResetSignal] = useState(0)
 
   const lookupMutation = usePublicLookup(orgSlug)
   const reportMutation = usePublicCreateReport(orgSlug)
@@ -170,7 +178,9 @@ export function ConsultaPage() {
   const phoneNationalDigits = phoneValue.replace(/\D/g, '').replace(/^58/, '').replace(/^0/, '')
   const phoneIsValid = phoneValue.replace(/\D/g, '').length >= 10
   const dniIsValid = /^\d{7,9}$/.test(dniDigits)
-  const canSubmit = dniIsValid && phoneIsValid && !lookupMutation.isPending
+  const captchaReady = !isCaptchaEnabled || !!captchaToken
+  const reportCaptchaReady = !isCaptchaEnabled || !!reportCaptchaToken
+  const canSubmit = dniIsValid && phoneIsValid && captchaReady && !lookupMutation.isPending
 
   useEffect(() => {
     setLookupResult(null)
@@ -221,7 +231,16 @@ export function ConsultaPage() {
     dniInputRef.current?.focus()
   }
 
+  const resetCaptcha = () => {
+    setCaptchaToken(null)
+    setCaptchaResetSignal((v) => v + 1)
+  }
+
   const onLookup = async (data: LookupForm) => {
+    if (isCaptchaEnabled && !captchaToken) {
+      setLookupError('Completa la verificación de seguridad para continuar.')
+      return
+    }
     setLookupError(null)
     setSelectedPeriodId(null)
     setReportSuccess(false)
@@ -231,6 +250,7 @@ export function ConsultaPage() {
       const result = await lookupMutation.mutateAsync({
         dni: normalizedDni,
         phone: data.phone,
+        turnstileToken: captchaToken ?? undefined,
       })
       setLookupResult(result)
       setLastCredentials({ dni: normalizedDni, phone: data.phone })
@@ -248,6 +268,8 @@ export function ConsultaPage() {
       setLastCredentials(null)
       const apiError = err as ApiError
       setLookupError(apiError.message || GENERIC_NOT_FOUND)
+    } finally {
+      resetCaptcha()
     }
   }
 
@@ -311,14 +333,21 @@ export function ConsultaPage() {
     defaultValues: { paidAt: new Date().toISOString().split('T')[0] },
   })
 
+  const resetReportCaptcha = () => {
+    setReportCaptchaToken(null)
+    setReportCaptchaResetSignal((v) => v + 1)
+  }
+
   const closeSheet = () => {
     setSelectedPeriodId(null)
     setReportSuccess(false)
     resetReport()
+    resetReportCaptcha()
   }
 
   const onReport = async (data: ReportForm) => {
     if (!selectedPeriod || !lookupResult || !lastCredentials) return
+    if (isCaptchaEnabled && !reportCaptchaToken) return
     try {
       await reportMutation.mutateAsync({
         dni: lastCredentials.dni,
@@ -327,16 +356,30 @@ export function ConsultaPage() {
         paymentMethod: data.paymentMethod as PaymentMethod,
         paidAt: data.paidAt,
         notes: data.notes || undefined,
+        turnstileToken: reportCaptchaToken ?? undefined,
       })
       setReportSuccess(true)
-      try {
-        const refreshed = await lookupMutation.mutateAsync(lastCredentials)
-        setLookupResult(refreshed)
-      } catch {
-        // mantiene el resultado anterior si la re-consulta falla
-      }
+      // Refresco local: el período queda marcado en verificación sin repetir
+      // la consulta (que exigiría otro CAPTCHA).
+      setLookupResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              periods: prev.periods.map((p) =>
+                p.id === selectedPeriod.id ? { ...p, hasPendingReport: true } : p,
+              ),
+              totals: {
+                ...prev.totals,
+                pendingVerificationCount: prev.totals.pendingVerificationCount + 1,
+                pendingVerificationAmount: prev.totals.pendingVerificationAmount + selectedPeriod.amount,
+              },
+            }
+          : prev,
+      )
     } catch {
       // el mensaje de error se muestra inline via reportApiError
+    } finally {
+      resetReportCaptcha()
     }
   }
 
@@ -539,6 +582,17 @@ export function ConsultaPage() {
             </div>
           )}
 
+          {isCaptchaEnabled && (
+            <div className="flex justify-center">
+              <TurnstileWidget
+                siteKey={TURNSTILE_SITE_KEY}
+                action="public_consulta"
+                onToken={setCaptchaToken}
+                resetSignal={captchaResetSignal}
+              />
+            </div>
+          )}
+
           <Button
             type="submit"
             className="h-12 w-full text-base font-semibold"
@@ -573,9 +627,9 @@ export function ConsultaPage() {
               />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-foreground">Recordarme en este dispositivo</span>
+              <span className="block text-sm font-medium text-foreground">Recordar mis datos en este dispositivo</span>
               <span className="block text-xs text-muted-foreground">
-                Guarda tu cédula y teléfono solo en este navegador para consultas rápidas.
+                Guarda tu cédula y teléfono en este navegador para consultas rápidas. No lo actives en equipos compartidos.
               </span>
             </span>
           </button>
@@ -937,6 +991,17 @@ export function ConsultaPage() {
                         <p className="text-sm font-medium">{reportApiError.message}</p>
                       </div>
                     )}
+
+                    {isCaptchaEnabled && (
+                      <div className="flex justify-center">
+                        <TurnstileWidget
+                          siteKey={TURNSTILE_SITE_KEY}
+                          action="public_consulta"
+                          onToken={setReportCaptchaToken}
+                          resetSignal={reportCaptchaResetSignal}
+                        />
+                      </div>
+                    )}
                   </form>
                 )}
               </div>
@@ -946,7 +1011,7 @@ export function ConsultaPage() {
                   type="submit"
                   form="public-report-form"
                   className="h-14 w-full text-base font-semibold"
-                  disabled={reportMutation.isPending}
+                  disabled={reportMutation.isPending || !reportCaptchaReady}
                 >
                   {reportMutation.isPending ? (
                     'Enviando...'

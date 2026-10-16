@@ -361,6 +361,21 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'La suscripción no tiene períodos registrados.',
   },
+  CAPTCHA_REQUIRED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Completa la verificación de seguridad e intenta de nuevo.',
+  },
+  CAPTCHA_FAILED: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La verificación de seguridad falló. Recarga la página e intenta de nuevo.',
+  },
+  CAPTCHA_UNAVAILABLE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'No se pudo verificar la seguridad en este momento. Intenta de nuevo.',
+  },
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {

@@ -576,6 +576,7 @@ export interface PublicOrganization {
 export interface PublicLookupRequest {
   dni: string
   phone: string
+  turnstileToken?: string
 }
 
 export interface PublicLookupResponse {
@@ -799,6 +800,9 @@ export type ErrorCode =
   | 'HAS_UNPAID_PERIODS'
   | 'PERIOD_ALREADY_EXISTS'
   | 'NO_PERIODS'
+  | 'CAPTCHA_REQUIRED'
+  | 'CAPTCHA_FAILED'
+  | 'CAPTCHA_UNAVAILABLE'
 
 export interface ApiError {
   code: ErrorCode

@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { AlertTriangle, Plus, Minus, Trash2, Box, CalendarDays, DollarSign, Clock, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
@@ -50,6 +57,7 @@ export function SubscriptionFormPage() {
   const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const createMutation = useCreateSubscription()
   const [error, setError] = useState<string | null>(null)
+  const [isBillingDayPickerOpen, setIsBillingDayPickerOpen] = useState(false)
 
   const {
     register,
@@ -313,19 +321,58 @@ export function SubscriptionFormPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2.5">
-              <Label htmlFor="billingDay" className="text-foreground">Día de Corte *</Label>
-              <Input
-                id="billingDay"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={28}
-                {...register('billingDay')}
-                className="h-12 text-center font-bold text-lg"
+              <Controller
+                name="billingDay"
+                control={control}
+                render={({ field }) => (
+                  <Dialog open={isBillingDayPickerOpen} onOpenChange={setIsBillingDayPickerOpen}>
+                    <div className="space-y-2.5">
+                      <Label htmlFor="billingDay" className="text-foreground">Día de Corte *</Label>
+                      <Button
+                        id="billingDay"
+                        type="button"
+                        variant="outline"
+                        aria-haspopup="dialog"
+                        aria-expanded={isBillingDayPickerOpen}
+                        onClick={() => setIsBillingDayPickerOpen(true)}
+                        className="w-full h-12 justify-between px-3 font-bold text-lg"
+                      >
+                        <span>{field.value != null ? `Día ${field.value}` : 'Seleccione'}</span>
+                        <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+                      </Button>
+                      {errors.billingDay && (
+                        <p className="text-sm text-destructive font-medium">{errors.billingDay.message}</p>
+                      )}
+                      <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                          <DialogTitle>Selecciona el día de corte</DialogTitle>
+                          <DialogDescription>Elige un número del 1 al 28.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-7 gap-2" role="group" aria-label="Días disponibles">
+                          {Array.from({ length: 28 }, (_, index) => index + 1).map((day) => {
+                            const isSelected = field.value === day
+                            return (
+                              <Button
+                                key={day}
+                                type="button"
+                                variant={isSelected ? 'default' : 'outline'}
+                                aria-pressed={isSelected}
+                                onClick={() => {
+                                  field.onChange(day)
+                                  setIsBillingDayPickerOpen(false)
+                                }}
+                                className="h-10 w-full px-0"
+                              >
+                                {day}
+                              </Button>
+                            )
+                          })}
+                        </div>
+                      </DialogContent>
+                    </div>
+                  </Dialog>
+                )}
               />
-              {errors.billingDay && (
-                <p className="text-sm text-destructive font-medium text-center">{errors.billingDay.message}</p>
-              )}
             </div>
 
             <div className="space-y-2.5">

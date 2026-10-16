@@ -71,12 +71,25 @@ self.addEventListener('push', (event) => {
   const { title, body, icon, badge, data } = parsePushPayload(event)
 
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon,
-      badge,
-      data,
-    }),
+    (async () => {
+      await self.registration.showNotification(title, {
+        body,
+        icon,
+        badge,
+        data,
+      })
+
+      // Reenvía el aviso a las pestañas abiertas para que la app invalide
+      // solo las consultas afectadas, sin necesidad de hacer polling.
+      const windowClients = (await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })) as WindowClient[]
+
+      for (const client of windowClients) {
+        client.postMessage({ type: 'PUSH_RECEIVED', data: data ?? {} })
+      }
+    })(),
   )
 })
 

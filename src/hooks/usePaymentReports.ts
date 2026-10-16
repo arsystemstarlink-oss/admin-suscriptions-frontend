@@ -34,9 +34,7 @@ export function usePendingReportsCount(
   return useQuery({
     queryKey: [...qk.paymentReports.count, params?.organizationId],
     queryFn: () => paymentReportsApi.getPendingCount(params),
-    staleTime: 30_000,
-    refetchInterval: 5 * 60_000,
-    refetchIntervalInBackground: false,
+    staleTime: 60 * 60_000,
     ...options,
   })
 }

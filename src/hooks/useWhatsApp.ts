@@ -13,10 +13,17 @@ export function useWhatsAppMessages(phone: string | null, organizationId?: strin
   })
 }
 
-export function useWhatsAppConversations(organizationId?: string, options?: { enabled?: boolean }) {
-  return useQuery({
+export function whatsAppConversationsQueryOptions(organizationId?: string) {
+  return {
     queryKey: [...qk.whatsapp.conversations, organizationId],
     queryFn: () => whatsappApi.getConversations(organizationId),
+    staleTime: 5 * 60_000,
+  }
+}
+
+export function useWhatsAppConversations(organizationId?: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    ...whatsAppConversationsQueryOptions(organizationId),
     ...options,
   })
 }

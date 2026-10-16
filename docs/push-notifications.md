@@ -164,17 +164,43 @@ El backend envía JSON al navegador. El service worker del frontend acepta dos f
      "body": "Texto",
      "icon": "pwa-192.png",
      "badge": "pwa-192.png",
-     "data": { "url": "/dashboard" }
+     "data": { "type": "whatsapp-message", "url": "/chats" }
    }
    ```
 
 2. **Envoltorio `notification`** (compatible con convenciones de la web):
    ```json
-   { "notification": { "title": "Título", "body": "Texto", "data": { "url": "/dashboard" } } }
+   { "notification": { "title": "Título", "body": "Texto", "data": { "type": "payment-report", "url": "/payment-reports" } } }
    ```
 
 `icon` / `badge` opcionales; el SW usa `pwa-192.png` por defecto. Opciones de envío:
 `webpush.sendNotification(subscription, JSON.stringify(payload), { TTL: 60 * 60 })`.
+
+### 4.1 `data` y refresco en vivo
+
+Con la pestaña abierta, el service worker reenvía el aviso a la app
+(`postMessage({ type: 'PUSH_RECEIVED', data })`) y esta invalida **solo** las consultas
+afectadas, sin polling. Para ello el payload debe incluir en `data`:
+
+| Campo  | Tipo   | Descripción                                                        |
+| ------ | ------ | ------------------------------------------------------------------ |
+| `type` | string | Evento que cambió (ver tabla). Tiene prioridad para decidir el refresco. |
+| `url`  | string | Ruta relativa que se abre al hacer clic (también usada como respaldo). |
+
+`type` reconocidos y consultas que invalidan (`src/lib/push-sync.ts`):
+
+| `type`                  | Invalida                                                        |
+| ----------------------- | --------------------------------------------------------------- |
+| `whatsapp-message`      | conversaciones y contador de chats sin leer                     |
+| `payment-report`        | reportes de pago, períodos, suscripciones, dashboard            |
+| `subscription-expiring` | suscripciones, períodos, dashboard                              |
+| `billing-period`        | períodos, dashboard                                             |
+| `payment`               | reportes de pago, períodos, dashboard                           |
+| `scheduler`             | scheduler (config/logs), dashboard                              |
+
+Si se omite `type`, el frontend infiere por el prefijo de `url` (`/chats`, `/payment-reports`,
+`/subscriptions`, `/billing`, `/dashboard`, `/scheduler`). Sin `type` ni `url` reconocidos no se
+invalida nada, para evitar refetchs innecesarios.
 
 ---
 

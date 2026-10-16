@@ -99,7 +99,7 @@ export function SubscriptionsListPage() {
       const result = await queryClient.fetchQuery({
         queryKey: [...qk.billing.lists, { subscriptionId: sub.id, organizationId: organizationId ?? undefined, limit: 50 }],
         queryFn: () => billingApi.list({ subscriptionId: sub.id, organizationId: organizationId ?? undefined, limit: 50 }),
-        staleTime: 30_000,
+        staleTime: 0,
       })
       const unpaid = result.periods
         .filter((p) => p.status !== 'PAID' && p.subscription != null)

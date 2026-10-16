@@ -1,19 +1,14 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useUIStore } from '@/stores/ui.store'
-import { whatsappApi } from '@/api/whatsapp.api'
-import { qk } from '@/lib/query-keys'
+import { whatsAppConversationsQueryOptions } from '@/hooks/useWhatsApp'
 
 export function useUnreadChatsCount(organizationId?: string, options?: { enabled?: boolean }) {
   const { readChatTimestamps } = useUIStore()
   const enabled = options?.enabled ?? true
 
   const { data: conversations } = useQuery({
-    queryKey: [...qk.whatsapp.conversations, organizationId],
-    queryFn: () => whatsappApi.getConversations(organizationId),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: false,
+    ...whatsAppConversationsQueryOptions(organizationId),
     enabled,
   })
 

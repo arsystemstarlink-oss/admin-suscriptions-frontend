@@ -22,6 +22,18 @@ export const whatsappApi = {
     return response.data
   },
 
+  markConversationRead: async (
+    phone: string,
+    organizationId?: string,
+  ): Promise<{ success: boolean; read: boolean }> => {
+    const response = await api.post<{ success: boolean; read: boolean }>(
+      `/whatsapp/conversations/${encodeURIComponent(phone)}/read`,
+      undefined,
+      { params: { organizationId } },
+    )
+    return response.data
+  },
+
   sendMessage: async (
     data: SendMessageRequest,
     organizationId?: string,

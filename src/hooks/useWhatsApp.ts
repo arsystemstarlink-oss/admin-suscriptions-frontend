@@ -40,6 +40,17 @@ export function useSendMessage(organizationId?: string) {
   })
 }
 
+export function useMarkConversationRead(organizationId?: string) {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (phone: string) => whatsappApi.markConversationRead(phone, organizationId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.badges })
+    },
+  })
+}
+
 export function useDeleteChat() {
   const qc = useQueryClient()
 
@@ -49,6 +60,7 @@ export function useDeleteChat() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.phone) })
       qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
+      qc.invalidateQueries({ queryKey: qk.badges })
       toast.success('Conversación eliminada correctamente')
     },
     onError: (err) => handleApiError(err),

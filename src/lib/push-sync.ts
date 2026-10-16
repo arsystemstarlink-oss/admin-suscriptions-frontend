@@ -13,8 +13,8 @@ interface PushMessage {
   data?: PushMessageData
 }
 
-const WHATSAPP = [qk.whatsapp.conversations]
-const PAYMENT_REPORTS = [qk.paymentReports.lists, qk.paymentReports.count]
+const WHATSAPP = [qk.whatsapp.conversations, qk.badges]
+const PAYMENT_REPORTS = [qk.paymentReports.lists, qk.badges]
 const SUBSCRIPTIONS = [qk.subscriptions.lists]
 const BILLING = [qk.billing.lists]
 const DASHBOARD = [qk.dashboard.summary, qk.dashboard.alerts]

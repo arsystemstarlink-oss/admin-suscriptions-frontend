@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat } from '@/hooks/useWhatsApp'
+import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useMarkConversationRead } from '@/hooks/useWhatsApp'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,6 +46,7 @@ export function ChatsPage() {
   const { readChatTimestamps } = useUIStore()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const { mutate: markReadOnServer } = useMarkConversationRead(organizationId ?? undefined)
 
   const { data: clientsData, isLoading: clientsLoading } = useClients(
     { limit: 100, organizationId: organizationId ?? undefined },
@@ -199,8 +200,11 @@ export function ChatsPage() {
   useEffect(() => {
     if (selectedPhone) {
       markChatAsRead(selectedPhone, Date.now())
+      if (!isSuperAdmin || organizationId) {
+        markReadOnServer(selectedPhone)
+      }
     }
-  }, [selectedPhone, markChatAsRead])
+  }, [selectedPhone, markChatAsRead, markReadOnServer, isSuperAdmin, organizationId])
 
   useEffect(() => {
     if (!isMobile || !selectedPhone) return

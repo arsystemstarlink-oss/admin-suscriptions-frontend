@@ -42,7 +42,7 @@ export const qk = {
   },
   paymentReports: {
     lists: ['payment-reports', 'list'] as const,
-    count: ['payment-reports', 'count'] as const,
     detail: (id: string) => ['payment-reports', id, 'detail'] as const,
   },
+  badges: ['badges'] as const,
 } as const

@@ -866,6 +866,12 @@ export interface ConversationsResponse {
   total: number
 }
 
+export interface BadgesResponse {
+  unreadChats: number
+  pendingReports: number
+  generatedAt: string
+}
+
 export interface PushSubscriptionInfo {
   id: string
   endpoint: string

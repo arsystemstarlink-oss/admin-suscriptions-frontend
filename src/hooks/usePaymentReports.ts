@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { paymentReportsApi } from '@/api/payment-reports.api'
 import { publicPortalApi } from '@/api/public.api'
+import { badgesQueryOptions } from '@/hooks/useBadges'
 import { qk } from '@/lib/query-keys'
 import type {
   CreatePublicReportRequest,
@@ -32,10 +33,10 @@ export function usePendingReportsCount(
   options?: { enabled?: boolean },
 ) {
   return useQuery({
-    queryKey: [...qk.paymentReports.count, params?.organizationId],
-    queryFn: () => paymentReportsApi.getPendingCount(params),
-    staleTime: 60 * 60_000,
+    ...badgesQueryOptions(params?.organizationId),
+    select: (data) => ({ pending: data.pendingReports }),
     ...options,
+    enabled: options?.enabled ?? true,
   })
 }
 
@@ -47,7 +48,7 @@ export function useReviewPaymentReport() {
       paymentReportsApi.review(id, data),
     onSuccess: (response, variables) => {
       qc.invalidateQueries({ queryKey: qk.paymentReports.lists })
-      qc.invalidateQueries({ queryKey: qk.paymentReports.count })
+      qc.invalidateQueries({ queryKey: qk.badges })
       qc.invalidateQueries({ queryKey: qk.paymentReports.detail(variables.id) })
       qc.invalidateQueries({ queryKey: qk.billing.lists })
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
@@ -67,11 +68,11 @@ export function useReviewPaymentReport() {
       if (apiError.code === 'PAYMENT_REPORT_ALREADY_REVIEWED') {
         toast.warning('Este reporte ya fue revisado por otro administrador')
         qc.invalidateQueries({ queryKey: qk.paymentReports.lists })
-        qc.invalidateQueries({ queryKey: qk.paymentReports.count })
+        qc.invalidateQueries({ queryKey: qk.badges })
       } else if (apiError.code === 'PERIOD_ALREADY_PAID') {
         toast.warning('Este período ya fue pagado previamente')
         qc.invalidateQueries({ queryKey: qk.paymentReports.lists })
-        qc.invalidateQueries({ queryKey: qk.paymentReports.count })
+        qc.invalidateQueries({ queryKey: qk.badges })
         qc.invalidateQueries({ queryKey: qk.billing.lists })
       } else {
         toast.error(apiError.message || 'Error al procesar el reporte')

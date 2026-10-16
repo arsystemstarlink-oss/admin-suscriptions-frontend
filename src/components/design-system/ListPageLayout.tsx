@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { PageHeader } from '@/components/design-system/PageHeader'
-import { SearchInput } from '@/components/design-system/SearchInput'
+import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -53,23 +53,11 @@ export function ListPageLayout({
         />
       )}
 
-      <div className="sticky top-0 z-10 px-4 py-2 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0">
-            <SearchInput
-              value={searchProps.value}
-              onChange={searchProps.onChange}
-              placeholder={searchProps.placeholder}
-            />
-          </div>
-          {primaryAction && <div className="shrink-0">{primaryAction}</div>}
-        </div>
-        {filters && (
-          <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar touch-pan-x">
-            {filters}
-          </div>
-        )}
-      </div>
+      <PageToolbar
+        searchProps={searchProps}
+        primaryAction={primaryAction}
+        filters={filters}
+      />
 
       {isLoading ? (
         <div className="space-y-3 px-2">

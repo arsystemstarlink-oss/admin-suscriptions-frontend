@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
-import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
 import { EditOrganizationSheet } from '@/components/organizations/EditOrganizationSheet'
 import { OrganizationAdminsSection } from '@/components/organizations/OrganizationAdminsSection'
@@ -69,11 +68,16 @@ export function OrganizationsPage() {
           onChange: handleSearch,
           placeholder: 'Buscar por nombre o slug...',
         }}
-        filters={
-          <FilterPill active={createOpen} onClick={() => setCreateOpen(!createOpen)}>
-            <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-            Nueva Organización
-          </FilterPill>
+        primaryAction={
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2"
+            aria-label="Nueva organización"
+            title="Nueva organización"
+          >
+            <Plus className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
+            <span className="hidden sm:inline">Nueva Organización</span>
+          </Button>
         }
         isLoading={isLoading}
         isEmpty={isEmpty}

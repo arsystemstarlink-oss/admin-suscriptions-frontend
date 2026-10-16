@@ -17,8 +17,10 @@ administración y mensajería.
    npm install
    ```
 
-2. Copia `.env.example` a `.env.local` y configura `VITE_API_BASE_URL` con la URL base de la
-   API. Las variables opcionales y sus valores de ejemplo están descritos en `.env.example`.
+2. Copia `.env.example` a `.env.local`. En desarrollo, `VITE_API_BASE_URL` indica la API local:
+   Vite la usa primero y cambia a `VITE_API_FALLBACK_URL` si no está disponible. La conexión
+   remota se realiza mediante el proxy local, por lo que no depende de que el backend permita
+   CORS desde localhost.
 3. Inicia el servidor de desarrollo:
 
    ```bash

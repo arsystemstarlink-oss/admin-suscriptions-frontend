@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
-import { useClients } from '@/hooks/useClients'
+import { useInfiniteClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
-import { Users, Phone, Plus } from 'lucide-react'
+import { Users, Phone, Plus, LoaderCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
@@ -27,17 +27,24 @@ export function ClientsListPage() {
     return () => window.clearTimeout(timeout)
   }, [search])
 
-  const { data, isLoading } = useClients({
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteClients({
     search: debouncedSearch || undefined,
     subscriptionStatus: subscriptionStatus || undefined,
     hasOverdue,
     organizationId: organizationId || undefined,
+    limit: 50,
   }, { enabled: !isSuperAdmin || !!organizationId })
   const clients = useMemo(
-    () => [...(data?.clients || [])].sort((a, b) =>
+    () => [...(data?.pages.flatMap((page) => page.clients) ?? [])].sort((a, b) =>
       getClientFullName(a).localeCompare(getClientFullName(b), 'es', { sensitivity: 'base' }),
     ),
-    [data?.clients],
+    [data?.pages],
   )
 
   const handleSearch = (value: string) => {
@@ -123,67 +130,82 @@ export function ClientsListPage() {
         </Button>
       ) : undefined}
     >
-      {!showEmpty && clients.map((client) => {
-        const initial = getInitial(client.firstName)
-        
-        return (
-          <ListCard
-            key={client.id}
-            asChild
-          >
-            <Link
-              to={`/subscriptions/clients/${client.id}`}
-              state={{ from: `${location.pathname}${location.search}` }}
-            >
-            <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
-              <div className="relative shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-lg">
-                  {initial}
-                </div>
-                <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface ${
-                  client.subscriptionStatus === 'ACTIVE' ? 'bg-success' :
-                  client.subscriptionStatus === 'SUSPENDED' ? 'bg-destructive' : 'bg-muted-foreground'
-                }`} />
-              </div>
+      <>
+        {!showEmpty && clients.map((client) => {
+          const initial = getInitial(client.firstName)
 
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className="font-semibold text-base truncate pr-2">
-                    {getClientFullName(client)}
-                  </h3>
-                  {client.hasDebt && (
-                    <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-destructive bg-destructive/10">
-                      Vencidos
-                    </span>
-                  )}
+          return (
+            <ListCard
+              key={client.id}
+              asChild
+            >
+              <Link
+                to={`/subscriptions/clients/${client.id}`}
+                state={{ from: `${location.pathname}${location.search}` }}
+              >
+                <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
+                  <div className="relative shrink-0">
+                    <div className="flex items-center justify-center h-12 w-12 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-lg">
+                      {initial}
+                    </div>
+                    <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface ${
+                      client.subscriptionStatus === 'ACTIVE' ? 'bg-success' :
+                      client.subscriptionStatus === 'SUSPENDED' ? 'bg-destructive' : 'bg-muted-foreground'
+                    }`} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="font-semibold text-base truncate pr-2">
+                        {getClientFullName(client)}
+                      </h3>
+                      {client.hasDebt && (
+                        <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase text-destructive bg-destructive/10">
+                          Vencidos
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
+                      {client.phone && (
+                        <span className="flex items-center gap-1 truncate">
+                          <Phone size={14} />
+                          {client.phone}
+                        </span>
+                      )}
+                      {client.dni && (
+                        <span className="flex items-center gap-1 shrink-0">
+                          <CreditCardIcon size={14} />
+                          C.I. {client.dni}
+                        </span>
+                      )}
+                      {client.totalSubscriptions > 0 && (
+                        <span className="flex items-center gap-1 shrink-0">
+                          <CreditCardIcon size={14} />
+                          {client.totalSubscriptions}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
-                  {client.phone && (
-                    <span className="flex items-center gap-1 truncate">
-                      <Phone size={14} />
-                      {client.phone}
-                    </span>
-                  )}
-                  {client.dni && (
-                    <span className="flex items-center gap-1 shrink-0">
-                      <CreditCardIcon size={14} />
-                      C.I. {client.dni}
-                    </span>
-                  )}
-                  {client.totalSubscriptions > 0 && (
-                    <span className="flex items-center gap-1 shrink-0">
-                      <CreditCardIcon size={14} />
-                      {client.totalSubscriptions}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            </Link>
-          </ListCard>
-        )
-      })}
+              </Link>
+            </ListCard>
+          )
+        })}
+        {!showEmpty && hasNextPage && (
+          <div className="flex justify-center pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void fetchNextPage()}
+              disabled={isFetchingNextPage}
+            >
+              {isFetchingNextPage && <LoaderCircle className="animate-spin" />}
+              {isFetchingNextPage ? 'Cargando...' : 'Cargar más clientes'}
+            </Button>
+          </div>
+        )}
+      </>
     </ListPageLayout>
   )
 }

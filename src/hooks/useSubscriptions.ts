@@ -1,7 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { subscriptionsApi } from '@/api/subscriptions.api'
 import { qk } from '@/lib/query-keys'
-import type { CreateSubscriptionRequest, PayAdvanceRequest, UpdateSubscriptionRequest } from '@/types/api'
+import type {
+  CreateSubscriptionRequest,
+  Pagination,
+  PayAdvanceRequest,
+  UpdateSubscriptionRequest,
+} from '@/types/api'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { toast } from 'sonner'
 
@@ -15,10 +20,42 @@ interface UseSubscriptionsParams {
   offset?: number
 }
 
+type SubscriptionPageParam = Pick<Pagination, 'offset'> & { cursor?: string }
+
 export function useSubscriptions(params?: UseSubscriptionsParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...qk.subscriptions.lists, params],
     queryFn: () => subscriptionsApi.list(params),
+    ...options,
+  })
+}
+
+export function useInfiniteSubscriptions(
+  params: UseSubscriptionsParams,
+  options?: { enabled?: boolean }
+) {
+  const limit = params.limit ?? 50
+
+  return useInfiniteQuery({
+    queryKey: [...qk.subscriptions.lists, params, 'infinite'],
+    initialPageParam: { offset: 0 } as SubscriptionPageParam,
+    queryFn: ({ pageParam }) =>
+      subscriptionsApi.list({
+        ...params,
+        offset: pageParam.cursor ? undefined : pageParam.offset,
+        cursor: pageParam.cursor,
+      }),
+    getNextPageParam: (lastPage, pages): SubscriptionPageParam | undefined => {
+      if (!lastPage.pagination.hasMore) return undefined
+
+      if (params.search) {
+        return { offset: pages.length * limit }
+      }
+
+      return lastPage.pagination.nextCursor
+        ? { offset: 0, cursor: lastPage.pagination.nextCursor }
+        : undefined
+    },
     ...options,
   })
 }

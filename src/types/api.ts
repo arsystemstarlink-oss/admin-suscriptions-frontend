@@ -352,10 +352,11 @@ export interface DashboardAlerts {
 }
 
 export interface Pagination {
-  total: number
+  total?: number
   limit: number
   offset: number
   hasMore: boolean
+  nextCursor?: string
 }
 
 export interface PaginatedResponse<T> {

@@ -6,7 +6,7 @@ const REMOTE_API_URL =
   import.meta.env.VITE_API_FALLBACK_URL ||
   'https://admin-suscriptions-backend-production.up.railway.app/api'
 
-let activeBaseUrl = LOCAL_API_URL
+let activeBaseUrl = import.meta.env.DEV ? '/api' : LOCAL_API_URL
 
 export function getApiBaseUrl(): string {
   return activeBaseUrl

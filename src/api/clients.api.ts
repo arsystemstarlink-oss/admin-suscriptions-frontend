@@ -16,6 +16,7 @@ interface ClientsListParams {
   organizationId?: string
   limit?: number
   offset?: number
+  cursor?: string
 }
 
 interface ClientsListResponse {

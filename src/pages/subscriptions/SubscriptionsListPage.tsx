@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { useSubscriptions } from '@/hooks/useSubscriptions'
+import { useInfiniteSubscriptions } from '@/hooks/useSubscriptions'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
-import { Plus, Link2, RotateCcw, Box, Phone, Calendar, Zap, AlertTriangle, Clock } from 'lucide-react'
+import { Plus, Link2, RotateCcw, Box, Phone, Calendar, Zap, AlertTriangle, Clock, LoaderCircle } from 'lucide-react'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -26,7 +26,7 @@ export function SubscriptionsListPage() {
   const { openQuickPay } = useUIStore()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') || '')
-  const [offset, setOffset] = useState(0)
+  const [pageIndex, setPageIndex] = useState(0)
   const [payingId, setPayingId] = useState<string | null>(null)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
@@ -42,23 +42,36 @@ export function SubscriptionsListPage() {
     return () => window.clearTimeout(timeout)
   }, [search])
 
-  const { data, isLoading } = useSubscriptions(
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteSubscriptions(
     {
       organizationId: organizationId ?? undefined,
       status: statusFilter ?? undefined,
       hasOverduePeriods: hasOverdue ?? undefined,
       search: debouncedSearch || undefined,
       limit: 50,
-      offset,
     },
     { enabled: !isSuperAdmin || !!organizationId }
   )
+  const pageData = data?.pages[pageIndex]
+  const pageLimit = pageData?.pagination.limit ?? 50
+  const total = data?.pages[0]?.pagination.total
+  const canGoNext = pageIndex < (data?.pages.length ?? 0) - 1 || hasNextPage
+
+  useEffect(() => {
+    setPageIndex(0)
+  }, [organizationId, statusFilter, hasOverdue, debouncedSearch])
 
   const showEmpty = isSuperAdmin && !organizationId
 
   const handleSearch = (value: string) => {
     setSearch(value)
-    setOffset(0)
+    setPageIndex(0)
     const params = new URLSearchParams(searchParams)
     if (value) params.set('search', value)
     else params.delete('search')
@@ -66,7 +79,7 @@ export function SubscriptionsListPage() {
   }
 
   const handleFilter = (key: string, value: string | null) => {
-    setOffset(0)
+    setPageIndex(0)
     const params = new URLSearchParams(searchParams)
     if (value) params.set(key, value)
     else params.delete(key)
@@ -75,7 +88,7 @@ export function SubscriptionsListPage() {
 
   const clearAllFilters = () => {
     setSearch('')
-    setOffset(0)
+    setPageIndex(0)
     setSearchParams({})
   }
 
@@ -118,7 +131,7 @@ export function SubscriptionsListPage() {
     sub.plan?.price ?? sub.currentPeriod?.amount ?? 0
 
   const metrics = useMemo(() => {
-    const subs = data?.subscriptions ?? []
+    const subs = pageData?.subscriptions ?? []
     const overdueSubs = subs.filter(isOverdueSub)
     const expiringSubs = subs.filter(isExpiringSub)
     const pendingSubs = subs.filter(isPendingSub)
@@ -130,17 +143,29 @@ export function SubscriptionsListPage() {
       pendingCount: pendingSubs.length,
       pendingTotal: pendingSubs.reduce((sum, s) => sum + s.pendingPeriods * getSubPrice(s), 0),
     }
-  }, [data])
+  }, [pageData])
 
   const visibleSubscriptions = useMemo(() => {
-    const items = [...(data?.subscriptions ?? [])].filter((sub) => sub.client != null)
+    const items = [...(pageData?.subscriptions ?? [])].filter((sub) => sub.client != null)
 
     return items.filter((sub) => {
       if (expiringFilter && !isExpiringSub(sub)) return false
       if (pendingFilter && !isPendingSub(sub)) return false
       return true
     })
-  }, [data, expiringFilter, pendingFilter])
+  }, [pageData, expiringFilter, pendingFilter])
+
+  const handleNextPage = async () => {
+    if (pageIndex < (data?.pages.length ?? 0) - 1) {
+      setPageIndex((current) => current + 1)
+      return
+    }
+
+    const result = await fetchNextPage()
+    if (result.data?.pages[pageIndex + 1]) {
+      setPageIndex((current) => current + 1)
+    }
+  }
 
   const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter || pendingFilter)
 
@@ -426,18 +451,18 @@ export function SubscriptionsListPage() {
               ))}
             </div>
           )}
-          {data?.pagination && data.pagination.total > data.pagination.limit && (
+          {total !== undefined && total > pageLimit && (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 text-sm text-surface-foreground">
               <span className="text-muted-foreground">
-                {offset + 1}–{Math.min(offset + data.subscriptions.length, data.pagination.total)} de {data.pagination.total}
+                {pageIndex * pageLimit + 1}–{Math.min(pageIndex * pageLimit + (pageData?.subscriptions.length ?? 0), total)} de {total}
               </span>
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={offset === 0 || isLoading}
-                  onClick={() => setOffset((current) => Math.max(0, current - data.pagination.limit))}
+                  disabled={pageIndex === 0 || isFetchingNextPage}
+                  onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
                 >
                   Anterior
                 </Button>
@@ -445,9 +470,10 @@ export function SubscriptionsListPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={!data.pagination.hasMore || isLoading}
-                  onClick={() => setOffset((current) => current + data.pagination.limit)}
+                  disabled={!canGoNext || isFetchingNextPage}
+                  onClick={() => void handleNextPage()}
                 >
+                  {isFetchingNextPage && <LoaderCircle className="animate-spin" />}
                   Siguiente
                 </Button>
               </div>

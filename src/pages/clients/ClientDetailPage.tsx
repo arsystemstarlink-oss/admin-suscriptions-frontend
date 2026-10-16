@@ -16,6 +16,7 @@ import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -68,6 +69,7 @@ export function ClientDetailPage() {
 
   const { client, subscriptions, summary } = data
   const initial = getInitial(client.firstName)
+  const returnTo = getNavigationStatePath(location.state, 'from') ?? '/subscriptions/clients'
   const organizationSlug = organizationData?.organization.slug
   const consultationUrl = organizationSlug
     ? `${window.location.origin}${import.meta.env.BASE_URL}consulta/${encodeURIComponent(organizationSlug)}`
@@ -136,7 +138,7 @@ export function ClientDetailPage() {
               </Link>
             </Button>
             <Button variant="outline" size="icon" asChild className="rounded-full bg-surface text-surface-foreground border-border shadow-sm" aria-label="Editar cliente" title="Editar cliente">
-              <Link to={`/subscriptions/clients/${id}/edit`} aria-label="Editar cliente">
+              <Link to={`/subscriptions/clients/${id}/edit`} state={{ returnTo }} aria-label="Editar cliente">
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>

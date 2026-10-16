@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useSubscriptionDetail, useUpdateSubscription, useDeleteSubscription } from '@/hooks/useSubscriptions'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -20,16 +20,17 @@ import { getClientFullName, getInitial, hasOlderUnpaidPeriod, canPayAdvance, isA
 import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails, SubscriptionWithDetails } from '@/types/api'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
 import { EditPaymentSheet } from '@/components/payment/EditPaymentSheet'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 export function SubscriptionDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
   const { data, isLoading, error } = useSubscriptionDetail(id!, organizationId ?? undefined, {
@@ -83,6 +84,7 @@ export function SubscriptionDetailPage() {
 
   const { subscription, billingPeriods, summary } = data
   const showAdvanceButton = canPayAdvance(subscription)
+  const returnTo = getNavigationStatePath(location.state, 'from') ?? '/subscriptions'
 
   const handleStatusChange = async () => {
     if (!newStatus || !id) return
@@ -168,7 +170,7 @@ export function SubscriptionDetailPage() {
         actions={
           <>
             <Button variant="outline" size="icon" asChild className="rounded-full bg-surface text-surface-foreground border-border shadow-sm">
-              <Link to={`/subscriptions/${id}/edit`}>
+              <Link to={`/subscriptions/${id}/edit`} state={{ returnTo }}>
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>

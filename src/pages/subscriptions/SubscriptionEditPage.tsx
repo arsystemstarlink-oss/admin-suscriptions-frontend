@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 const subscriptionEditSchema = z.object({
   planId: z.string().min(1, 'Seleccione un plan'),
@@ -39,6 +40,7 @@ export function SubscriptionEditPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions'
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
   const { data: subscriptionData, isLoading: isLoadingSub } = useSubscriptionDetail(id!, organizationId ?? undefined, {
@@ -91,11 +93,7 @@ export function SubscriptionEditPage() {
         },
       })
       toast.success('Suscripción actualizada correctamente')
-      if (location.key !== 'default') {
-        navigate(-1)
-      } else {
-        navigate(`/subscriptions/${id}`, { replace: true })
-      }
+      navigate(`/subscriptions/${id}`, { replace: true, state: { from: returnTo } })
     } catch (err: unknown) {
       handleApiError(err, { setFieldError: setError })
     }
@@ -121,7 +119,9 @@ export function SubscriptionEditPage() {
       <div className="space-y-4">
         <p className="text-sm text-destructive">No pudimos cargar los datos de la suscripción para editarla.</p>
         <Button variant="outline" asChild>
-          <Link to={`/subscriptions/${id}`}>Volver a la suscripción</Link>
+          <Link to={`/subscriptions/${id}`} replace state={{ from: returnTo }}>
+            Volver a la suscripción
+          </Link>
         </Button>
       </div>
     )
@@ -325,7 +325,9 @@ export function SubscriptionEditPage() {
                 {isSubmitting ? 'Actualizando...' : 'Actualizar Suscripción'}
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link to={`/subscriptions/${id}`}>Cancelar</Link>
+                <Link to={`/subscriptions/${id}`} replace state={{ from: returnTo }}>
+                  Cancelar
+                </Link>
               </Button>
             </div>
           </form>

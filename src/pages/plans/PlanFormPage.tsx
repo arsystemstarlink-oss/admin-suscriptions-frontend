@@ -13,6 +13,7 @@ import { DetailNav } from '@/components/design-system/DetailNav'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 const planSchema = z.object({
   organizationId: z.string().optional(),
@@ -79,11 +80,8 @@ export function PlanFormPage() {
           organizationId: data?.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Plan actualizado correctamente')
-        if (location.key !== 'default') {
-          navigate(-1)
-        } else {
-          navigate('/subscriptions/plans', { replace: true })
-        }
+        const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/plans'
+        navigate(returnTo, { replace: true })
       } else {
         await createMutation.mutateAsync(payload)
         toast.success('Plan creado correctamente')

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { usePlans, useUpdatePlan } from '@/hooks/usePlans'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -18,6 +18,7 @@ export function PlansListPage() {
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const navigate = useNavigate()
+  const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
@@ -135,7 +136,10 @@ export function PlansListPage() {
               {plan.active ? 'Desactivar' : 'Activar'}
             </Button>
             <Button variant="outline" size="icon" asChild>
-              <Link to={`/subscriptions/plans/${plan.id}/edit`}>
+              <Link
+                to={`/subscriptions/plans/${plan.id}/edit`}
+                state={{ returnTo: `${location.pathname}${location.search}` }}
+              >
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
             </Button>

@@ -25,6 +25,7 @@ import { normalizeDni } from '@/lib/utils'
 import { handleApiError } from '@/lib/error-handler'
 import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
 import type { CreateClientRequest } from '@/types/api'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 const clientSchema = z.object({
   organizationId: z.string().optional(),
@@ -54,6 +55,7 @@ export function ClientFormPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isEdit = !!id
+  const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/clients'
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { data, isLoading } = useClientDetail(id!, organizationId || undefined, {
@@ -123,11 +125,7 @@ export function ClientFormPage() {
           organizationId: data?.client.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Cliente actualizado correctamente')
-        if (location.key !== 'default') {
-          navigate(-1)
-        } else {
-          navigate(`/subscriptions/clients/${id}`, { replace: true })
-        }
+        navigate(`/subscriptions/clients/${id}`, { replace: true, state: { from: returnTo } })
       } else {
         const newClient = await createMutation.mutateAsync(payload as CreateClientRequest)
         toast.success('Cliente creado correctamente')

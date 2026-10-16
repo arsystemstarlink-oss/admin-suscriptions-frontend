@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 interface DetailNavProps {
   backTo?: string
@@ -16,8 +17,8 @@ export function DetailNav({ backTo, backLabel = 'Volver', title, actions, classN
   const location = useLocation()
 
   const handleBack = () => {
-    const from = (location.state as { from?: string } | null)?.from
-    if (typeof from === 'string' && from.startsWith('/')) {
+    const from = getNavigationStatePath(location.state, 'from')
+    if (from) {
       navigate(from)
     } else if (location.key !== 'default') {
       navigate(-1)

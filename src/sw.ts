@@ -88,10 +88,17 @@ self.addEventListener('notificationclick', (event) => {
       ? (event.notification.data as Record<string, unknown>).url
       : undefined
 
-  const url =
-    typeof rawUrl === 'string' && rawUrl
-      ? new URL(rawUrl, self.location.origin).toString()
-      : self.location.origin
+  let url = self.location.origin
+  if (typeof rawUrl === 'string' && rawUrl) {
+    try {
+      const parsed = new URL(rawUrl, self.location.origin)
+      // Solo se permite abrir URLs del mismo origen; cualquier push que apunte
+      // a otro origen se redirige al origen de la app.
+      url = parsed.origin === self.location.origin ? parsed.toString() : self.location.origin
+    } catch {
+      url = self.location.origin
+    }
+  }
 
   event.waitUntil(
     (async () => {

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { User } from '@/types/api'
 import { authApi } from '@/api/auth.api'
+import { queryClient } from '@/lib/queryClient'
 import { useOrganizationStore } from '@/stores/organization.store'
 import {
   clearStoredTokens,
@@ -46,6 +47,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       authApi.logout(refreshToken).catch(() => {})
     }
     clearStoredTokens()
+    // Vacía la caché de React Query: en dispositivos compartidos los datos de
+    // la sesión anterior no deben quedar en memoria para el próximo usuario.
+    queryClient.clear()
     // La organización seleccionada es contexto de sesión del super-admin:
     // al cerrar sesión no debe sobrevivir (ni en storage ni en memoria)
     // para el próximo usuario.

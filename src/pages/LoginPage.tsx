@@ -18,7 +18,6 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Fingerprint,
 } from 'lucide-react'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { APP_NAME } from '@/lib/brand'
@@ -55,8 +54,6 @@ export function LoginPage() {
   )
   const [showSuccess, setShowSuccess] = useState(false)
   const [shakeError, setShakeError] = useState(false)
-  const [biometricAvailable] = useState(true)
-  const [biometricPending, setBiometricPending] = useState(false)
 
   const {
     register,
@@ -118,20 +115,6 @@ export function LoginPage() {
       triggerShake()
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleBiometricLogin = async () => {
-    setBiometricPending(true)
-    try {
-      // Flujo biométrico simulado: el dispositivo debe tener credenciales almacenadas.
-      // Si no hay soporte nativo, se informa al usuario sin romper la experiencia.
-      await new Promise((_, reject) => setTimeout(() => reject(new Error('BIOMETRIC_NOT_AVAILABLE')), 600))
-    } catch {
-      setError('Autenticación biométrica no disponible. Use sus credenciales.')
-      triggerShake()
-    } finally {
-      setBiometricPending(false)
     }
   }
 
@@ -399,43 +382,6 @@ export function LoginPage() {
               </label>
             </div>
           </div>
-
-          {/* Biometría — acceso secundario inferior */}
-          {biometricAvailable && (
-            <div className="mt-4">
-              <div className="relative flex items-center gap-3 my-3">
-                <div className="h-px flex-1 bg-border-subtle" />
-                <span className="text-[0.6875rem] font-medium text-subtle-foreground uppercase tracking-wider shrink-0">
-                  o continúa con
-                </span>
-                <div className="h-px flex-1 bg-border-subtle" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBiometricLogin}
-                disabled={isLoading || biometricPending}
-                className={cn(
-                  'h-13 w-full rounded-xl border-border bg-surface text-foreground shadow-sm hover:bg-surface-hover hover:border-border-strong active:bg-surface-active active:scale-[0.99] transition-all duration-200',
-                  'text-[0.9375rem] font-semibold tracking-tight',
-                  (isLoading || biometricPending) && 'opacity-70'
-                )}
-                aria-label="Iniciar sesión con Face ID o Touch ID"
-              >
-                {biometricPending ? (
-                  <span className="inline-flex items-center gap-2.5">
-                    <Loader2 className="h-[1.1rem] w-[1.1rem] animate-spin shrink-0" />
-                    <span>Verificando...</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-2.5">
-                    <Fingerprint className="h-[1.15rem] w-[1.15rem] text-primary" />
-                    <span>Face ID / Touch ID</span>
-                  </span>
-                )}
-              </Button>
-            </div>
-          )}
 
           {/* Pie de página — restringido, sin enlaces de registro */}
           <div className="mt-5 text-center">

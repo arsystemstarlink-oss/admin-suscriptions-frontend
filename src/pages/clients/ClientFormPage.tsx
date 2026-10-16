@@ -23,12 +23,11 @@ import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { normalizeDni } from '@/lib/utils'
 import { handleApiError } from '@/lib/error-handler'
-import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import type { CreateClientRequest } from '@/types/api'
 import { getNavigationStatePath } from '@/lib/navigation'
 
 const clientSchema = z.object({
-  organizationId: z.string().optional(),
   firstName: z.string().min(1, 'El nombre es requerido'),
   lastName: z.string().min(1, 'El apellido es requerido'),
   phone: z
@@ -102,13 +101,13 @@ export function ClientFormPage() {
   const onSubmit = async (formData: ClientForm) => {
     setFormError(null)
 
-    if (!isEdit && isSuperAdmin && !formData.organizationId) {
-      setFormError('Debe indicar la organización de destino.')
+    if (!isEdit && !organizationId) {
+      setFormError('Seleccione una organización para continuar.')
       return
     }
 
     try {
-      const { dniPrefix, dniDigits, organizationId, ...rest } = formData
+      const { dniPrefix, dniDigits, ...rest } = formData
       const payload = {
         ...rest,
         ...(!isEdit && organizationId ? { organizationId } : {}),
@@ -147,6 +146,12 @@ export function ClientFormPage() {
     )
   }
 
+  if (!isEdit && isSuperAdmin && !organizationId) {
+    return (
+      <OrganizationSelectionEmptyState description="Elige una organización para registrar el cliente." />
+    )
+  }
+
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
@@ -177,10 +182,6 @@ export function ClientFormPage() {
             <User className="h-5 w-5 text-muted-foreground" />
             Datos Personales
           </h2>
-
-          {!isEdit && (
-            <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
-          )}
 
           <div className="space-y-2.5">
             <Label htmlFor="firstName" className="text-foreground">Nombre *</Label>

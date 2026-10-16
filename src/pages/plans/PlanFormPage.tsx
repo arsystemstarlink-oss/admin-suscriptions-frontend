@@ -12,11 +12,10 @@ import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { getNavigationStatePath } from '@/lib/navigation'
 
 const planSchema = z.object({
-  organizationId: z.string().optional(),
   name: z.string().min(1, 'El nombre es requerido'),
   price: z.coerce.number().min(0.01, 'El precio debe ser mayor a 0'),
   description: z.string().optional(),
@@ -40,7 +39,6 @@ export function PlanFormPage() {
 
   const {
     register,
-    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -61,15 +59,15 @@ export function PlanFormPage() {
   const onSubmit = async (formData: PlanForm) => {
     setError(null)
 
-    if (!isEdit && isSuperAdmin && !formData.organizationId) {
-      setError('Debe indicar la organización de destino.')
+    if (!isEdit && !organizationId) {
+      setError('Seleccione una organización para continuar.')
       return
     }
 
     try {
       const payload = {
         ...formData,
-        ...(!isEdit && formData.organizationId ? { organizationId: formData.organizationId } : {}),
+        ...(!isEdit && organizationId ? { organizationId } : {}),
         description: formData.description || undefined,
       }
 
@@ -98,6 +96,12 @@ export function PlanFormPage() {
         <div className="h-10 w-48 bg-muted animate-pulse rounded-xl mb-4" />
         <div className="h-64 bg-surface animate-pulse rounded-2xl" />
       </div>
+    )
+  }
+
+  if (!isEdit && isSuperAdmin && !organizationId) {
+    return (
+      <OrganizationSelectionEmptyState description="Elige una organización para crear el plan." />
     )
   }
 
@@ -131,10 +135,6 @@ export function PlanFormPage() {
             <Package className="h-5 w-5 text-muted-foreground" />
             Información del Plan
           </h2>
-
-          {!isEdit && (
-            <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
-          )}
 
           <div className="space-y-2.5">
             <Label htmlFor="name" className="text-foreground">Nombre *</Label>

@@ -26,10 +26,9 @@ import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { SuperAdminOrganizationField } from '@/components/organizations/SuperAdminOrganizationField'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 
 const subscriptionSchema = z.object({
-  organizationId: z.string().optional(),
   clientId: z.string().min(1, 'Seleccione un cliente'),
   planId: z.string().min(1, 'Seleccione un plan'),
   kitNumber: z.string().min(5, 'Ingrese el número de kit (ej: KIT-001)'),
@@ -69,20 +68,18 @@ export function SubscriptionFormPage() {
   } = useForm<SubscriptionForm>({
     resolver: zodResolver(subscriptionSchema),
     defaultValues: {
-      organizationId: isSuperAdmin ? selectedOrganizationId ?? undefined : undefined,
       maxOverduePeriods: 2,
       historicalPayments: [],
     },
   })
 
-  const organizationId = watch('organizationId')
-  const orgEnabled = !isSuperAdmin || !!organizationId
+  const orgEnabled = !isSuperAdmin || !!selectedOrganizationId
   const { data: clientsData } = useClients(
-    { limit: 100, organizationId: organizationId || undefined },
+    { limit: 100, organizationId: selectedOrganizationId || undefined },
     { enabled: orgEnabled },
   )
   const { data: plansData } = usePlans(
-    { active: true, limit: 100, organizationId: organizationId || undefined },
+    { active: true, limit: 100, organizationId: selectedOrganizationId || undefined },
     { enabled: orgEnabled },
   )
 
@@ -127,14 +124,14 @@ export function SubscriptionFormPage() {
   const onSubmit = async (formData: SubscriptionForm) => {
     setError(null)
 
-    if (isSuperAdmin && !formData.organizationId) {
-      setError('Debe indicar la organización de destino.')
+    if (!selectedOrganizationId) {
+      setError('Seleccione una organización para continuar.')
       return
     }
 
     try {
       const request = {
-        ...(formData.organizationId ? { organizationId: formData.organizationId } : {}),
+        organizationId: selectedOrganizationId,
         clientId: formData.clientId,
         planId: formData.planId,
         kitNumber: formData.kitNumber,
@@ -190,6 +187,12 @@ export function SubscriptionFormPage() {
     }
   }, [preselectedClientId, clientsData, setValue])
 
+  if (isSuperAdmin && !selectedOrganizationId) {
+    return (
+      <OrganizationSelectionEmptyState description="Elige una organización para crear la suscripción." />
+    )
+  }
+
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
@@ -218,16 +221,14 @@ export function SubscriptionFormPage() {
             Datos Principales
           </h2>
 
-          <SuperAdminOrganizationField control={control} error={errors.organizationId?.message} />
-
           <div className="space-y-2.5">
             <Label className="text-foreground">Cliente *</Label>
             <Select value={watch('clientId') || ''} onValueChange={(value) => setValue('clientId', value)}>
               <SelectTrigger
                 className="h-12"
-                disabled={isSuperAdmin && !organizationId}
+                disabled={!selectedOrganizationId}
               >
-                <SelectValue placeholder={isSuperAdmin && !organizationId ? 'Seleccione primero la organización' : 'Seleccione un cliente'} />
+                <SelectValue placeholder={!selectedOrganizationId ? 'Seleccione primero la organización' : 'Seleccione un cliente'} />
               </SelectTrigger>
               <SelectContent>
                 {clients.map((client) => (
@@ -247,9 +248,9 @@ export function SubscriptionFormPage() {
             <Select onValueChange={(value) => setValue('planId', value)}>
               <SelectTrigger
                 className="h-12"
-                disabled={isSuperAdmin && !organizationId}
+                disabled={!selectedOrganizationId}
               >
-                <SelectValue placeholder={isSuperAdmin && !organizationId ? 'Seleccione primero la organización' : 'Seleccione un plan'} />
+                <SelectValue placeholder={!selectedOrganizationId ? 'Seleccione primero la organización' : 'Seleccione un plan'} />
               </SelectTrigger>
               <SelectContent>
                 {plans.map((plan) => (

@@ -118,7 +118,7 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 
 - Excepciones aceptadas: `dark:` de rotación Sun/Moon en `ThemeToggle` (animación de ícono, sin color) y `richColors` de Sonner (librería externa).
 - Los patrones de estado por entidad (suscripciones, períodos, clientes) viven en `src/lib/constants.ts`; importarlos, no reescribirlos inline.
-- La regla de obligatorio cumplimiento para agentes/devs está en `AGENTS.md`; este documento es la referencia completa de tokens y valores.
+- Las instrucciones del repositorio para agentes están en [copilot-instructions.md](../.github/copilot-instructions.md); este documento es la referencia completa de tokens y valores.
 
 ## 5. Checklist antes de commitear UI
 

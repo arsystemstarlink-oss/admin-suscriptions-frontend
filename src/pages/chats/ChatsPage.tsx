@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useMarkConversationRead } from '@/hooks/useWhatsApp'
+import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead } from '@/hooks/useWhatsApp'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, Send, Users, ArrowLeft, Trash2 } from 'lucide-react'
+import { Check, MessageSquare, Send, Users, ArrowLeft, Trash2 } from 'lucide-react'
 import { cn, getClientFullName, getInitial } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -17,6 +17,15 @@ import { EmptyState } from '@/components/design-system/EmptyState'
 import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 const isSameDay = (date: Date, reference: Date = new Date()): boolean =>
   date.getFullYear() === reference.getFullYear() &&
@@ -40,8 +49,16 @@ export function ChatsPage() {
   const [message, setMessage] = useState('')
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [selectedPhones, setSelectedPhones] = useState<Set<string>>(new Set())
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteTargets, setDeleteTargets] = useState<string[]>([])
+  const [deletePassword, setDeletePassword] = useState('')
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const sendingRef = useRef(false)
+  const selectionPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressTriggeredRef = useRef(false)
+  const ignoreNextConversationClickRef = useRef(false)
   const { markChatAsRead } = useUIStore()
   const { readChatTimestamps } = useUIStore()
   const isSuperAdmin = useIsSuperAdmin()
@@ -86,6 +103,7 @@ export function ChatsPage() {
   })
   const sendMessageMutation = useSendMessage(chatOrganizationId)
   const deleteChatMutation = useDeleteChat()
+  const deleteChatsMutation = useDeleteChats()
   const messages = useMemo(() => messagesData?.messages || [], [messagesData])
   const canSendFreeMessage = useMemo(() => {
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000
@@ -263,26 +281,100 @@ export function ChatsPage() {
     }
   }
 
-  const handleDeleteChat = () => {
-    if (!selectedPhone) return
+  const togglePhoneSelection = (phone: string) => {
+    setSelectedPhones((current) => {
+      const next = new Set(current)
+      if (next.has(phone)) {
+        next.delete(phone)
+      } else {
+        next.add(phone)
+      }
+      return next
+    })
+  }
 
-    if (
-      !confirm(
-        '¿Eliminar esta conversación? Todos los mensajes con este número se borrarán permanentemente.'
-      )
-    ) {
+  const clearSelectionPressTimer = () => {
+    if (selectionPressTimerRef.current) {
+      clearTimeout(selectionPressTimerRef.current)
+      selectionPressTimerRef.current = null
+    }
+  }
+
+  useEffect(() => () => clearSelectionPressTimer(), [])
+
+  const openDeleteConfirmation = (phones: string[]) => {
+    setDeleteTargets(phones)
+    setDeletePassword('')
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteChat = () => {
+    if (selectedPhone) openDeleteConfirmation([selectedPhone])
+  }
+
+  const handleDeleteSelectedChats = () => {
+    if (selectedPhones.size > 0) {
+      openDeleteConfirmation(Array.from(selectedPhones))
+    }
+  }
+
+  const handleConversationClick = (phone: string, hasChat: boolean) => {
+    if (ignoreNextConversationClickRef.current) {
+      ignoreNextConversationClickRef.current = false
       return
     }
 
-    deleteChatMutation.mutate(
-      { phone: selectedPhone, organizationId: isSuperAdmin ? chatOrganizationId : undefined },
-      {
-        onSuccess: () => {
-          setSelectedPhone(null)
-          setMessage('')
-        },
+    if (isSelectionMode) {
+      if (hasChat) togglePhoneSelection(phone)
+      return
+    }
+
+    openConversation(phone)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargets.length || !deletePassword) {
+      toast.error('Ingrese su contraseña actual para continuar')
+      return
+    }
+
+    const organizationIdForDeletion = isSuperAdmin
+      ? deleteTargets.length === 1
+        ? phoneToOrganizationId.get(deleteTargets[0]) ?? organizationId ?? undefined
+        : organizationId ?? undefined
+      : undefined
+    const completeDeletion = () => {
+      setDeleteDialogOpen(false)
+      setDeleteTargets([])
+      setDeletePassword('')
+      setSelectedPhones(new Set())
+      setIsSelectionMode(false)
+      setMessage('')
+      if (selectedPhone && deleteTargets.includes(selectedPhone)) {
+        closeConversation()
       }
-    )
+    }
+    const clearPassword = () => setDeletePassword('')
+
+    if (deleteTargets.length === 1) {
+      deleteChatMutation.mutate(
+        {
+          phone: deleteTargets[0],
+          password: deletePassword,
+          organizationId: organizationIdForDeletion,
+        },
+        { onSuccess: completeDeletion, onError: clearPassword }
+      )
+    } else {
+      deleteChatsMutation.mutate(
+        {
+          phones: deleteTargets,
+          password: deletePassword,
+          organizationId: organizationIdForDeletion,
+        },
+        { onSuccess: completeDeletion, onError: clearPassword }
+      )
+    }
   }
 
   const selectedClient = clients.find((c) => c.phone === selectedPhone)
@@ -327,8 +419,50 @@ export function ChatsPage() {
             'md:col-span-1 flex flex-col overflow-hidden min-h-0 rounded-2xl border border-border bg-surface text-surface-foreground shadow-sm',
             isMobile && selectedPhone && 'hidden'
           )}>
-            <CardHeader className="border-b border-border shrink-0 py-4 px-4">
-              <h2 className="font-semibold text-foreground">Conversaciones</h2>
+            <CardHeader className="border-b border-border shrink-0 gap-2 py-4 px-4">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-semibold text-foreground">
+                  {isSelectionMode ? `${selectedPhones.size} seleccionados` : 'Conversaciones'}
+                </h2>
+                {isSelectionMode ? (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDeleteSelectedChats}
+                      disabled={selectedPhones.size === 0 || deleteChatsMutation.isPending}
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Eliminar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPhones(new Set())
+                        setIsSelectionMode(false)
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsSelectionMode(true)}
+                    disabled={!conversationItems.some((item) => item.latestMessage)}
+                  >
+                    Seleccionar
+                  </Button>
+                )}
+              </div>
+              {isMobile && !isSelectionMode && (
+                <p className="text-xs text-muted-foreground">
+                  Mantén presionado un chat para seleccionar varios
+                </p>
+              )}
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-y-auto p-2">
               {clientsLoading && conversationItems.length === 0 ? (
@@ -347,6 +481,7 @@ export function ChatsPage() {
                   {conversationItems.map((item) => {
                     const latestMessage = item.latestMessage
                     const initial = getInitial(item.name)
+                    const isBulkSelected = selectedPhones.has(item.phone)
                     const isUnread =
                       !!latestMessage &&
                       latestMessage.direction === 'INBOUND' &&
@@ -356,15 +491,59 @@ export function ChatsPage() {
                       <button
                         key={item.key}
                         type="button"
-                        onClick={() => openConversation(item.phone)}
+                        aria-pressed={isSelectionMode ? isBulkSelected : selectedPhone === item.phone}
+                        onClick={() => handleConversationClick(item.phone, !!latestMessage)}
+                        onPointerDown={(event) => {
+                          if (event.pointerType !== 'touch' || !latestMessage || isSelectionMode) return
+                          clearSelectionPressTimer()
+                          longPressTriggeredRef.current = false
+                          selectionPressTimerRef.current = setTimeout(() => {
+                            selectionPressTimerRef.current = null
+                            longPressTriggeredRef.current = true
+                            setIsSelectionMode(true)
+                            setSelectedPhones(new Set([item.phone]))
+                          }, 500)
+                        }}
+                        onPointerUp={() => {
+                          clearSelectionPressTimer()
+                          if (longPressTriggeredRef.current) {
+                            ignoreNextConversationClickRef.current = true
+                            longPressTriggeredRef.current = false
+                          }
+                        }}
+                        onPointerLeave={() => {
+                          clearSelectionPressTimer()
+                          if (longPressTriggeredRef.current) {
+                            ignoreNextConversationClickRef.current = true
+                            longPressTriggeredRef.current = false
+                          }
+                        }}
+                        onPointerCancel={() => {
+                          clearSelectionPressTimer()
+                          longPressTriggeredRef.current = false
+                        }}
+                        onContextMenu={(event) => event.preventDefault()}
                         className={cn(
-                          'h-auto w-full justify-start text-left p-3 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm',
-                          selectedPhone === item.phone
+                          'h-auto w-full justify-start text-left p-3 rounded-2xl border active:scale-[0.98] transition-all touch-manipulation shadow-sm select-none',
+                          isBulkSelected || (selectedPhone === item.phone && !isSelectionMode)
                             ? 'bg-surface-active border-border-strong shadow-md shadow-primary/10 hover:bg-surface-hover'
                             : 'bg-surface text-surface-foreground border-border hover:bg-surface-hover'
                         )}
                       >
                         <div className="flex items-start gap-3">
+                          {isSelectionMode && (
+                            <span
+                              aria-hidden="true"
+                              className={cn(
+                                'mt-2 flex h-5 w-5 shrink-0 items-center justify-center rounded border',
+                                isBulkSelected
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-border-strong bg-surface'
+                              )}
+                            >
+                              {isBulkSelected && <Check className="h-3.5 w-3.5" />}
+                            </span>
+                          )}
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
                             {initial}
                           </div>
@@ -588,6 +767,71 @@ export function ChatsPage() {
           </div>
         </div>
       )}
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && (deleteChatMutation.isPending || deleteChatsMutation.isPending)) return
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setDeleteTargets([])
+            setDeletePassword('')
+          }
+        }}
+      >
+        <DialogContent className="bg-surface-elevated text-surface-elevated-foreground">
+          <DialogHeader>
+            <DialogTitle>
+              {deleteTargets.length > 1
+                ? `Eliminar ${deleteTargets.length} chats`
+                : 'Eliminar conversación'}
+            </DialogTitle>
+            <DialogDescription>
+              {deleteTargets.length > 1
+                ? `Se borrarán permanentemente los mensajes de ${deleteTargets.length} conversaciones.`
+                : 'Se borrarán permanentemente todos los mensajes de esta conversación.'}{' '}
+              Confirma tu identidad ingresando tu contraseña actual.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="delete-chats-password">Contraseña actual</Label>
+            <Input
+              id="delete-chats-password"
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              onChange={(event) => setDeletePassword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleConfirmDelete()
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleteChatMutation.isPending || deleteChatsMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={
+                !deletePassword ||
+                deleteChatMutation.isPending ||
+                deleteChatsMutation.isPending ||
+                (isSuperAdmin && !organizationId)
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleteChatMutation.isPending || deleteChatsMutation.isPending
+                ? 'Eliminando...'
+                : `Eliminar${deleteTargets.length > 1 ? ` ${deleteTargets.length}` : ''}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

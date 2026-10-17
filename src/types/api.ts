@@ -853,6 +853,10 @@ export interface DeleteMessagesResponse {
   message: string
 }
 
+export interface DeleteChatsResponse extends DeleteMessagesResponse {
+  chatsDeleted: number
+}
+
 export interface WhatsAppConversation {
   phone: string
   clientId?: string

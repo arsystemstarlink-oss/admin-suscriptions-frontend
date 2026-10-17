@@ -5,6 +5,7 @@ import type {
   MessagesByPhoneResponse,
   ConversationsResponse,
   DeleteMessagesResponse,
+  DeleteChatsResponse,
 } from '@/types/api'
 
 export const whatsappApi = {
@@ -46,12 +47,25 @@ export const whatsappApi = {
 
   deleteMessagesByPhone: async (
     phone: string,
+    password: string,
     organizationId?: string,
   ): Promise<DeleteMessagesResponse> => {
     const response = await api.delete<DeleteMessagesResponse>(
       `/whatsapp/messages/${encodeURIComponent(phone)}`,
-      { params: { organizationId } },
+      { params: { organizationId }, data: { password } },
     )
+    return response.data
+  },
+
+  deleteMessagesByPhones: async (
+    phones: string[],
+    password: string,
+    organizationId?: string,
+  ): Promise<DeleteChatsResponse> => {
+    const response = await api.delete<DeleteChatsResponse>('/whatsapp/messages/batch', {
+      params: { organizationId },
+      data: { phones, password },
+    })
     return response.data
   },
 }

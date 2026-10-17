@@ -55,13 +55,38 @@ export function useDeleteChat() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ phone, organizationId }: { phone: string; organizationId?: string }) =>
-      whatsappApi.deleteMessagesByPhone(phone, organizationId),
+    mutationFn: ({ phone, password, organizationId }: { phone: string; password: string; organizationId?: string }) =>
+      whatsappApi.deleteMessagesByPhone(phone, password, organizationId),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.phone) })
       qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
       qc.invalidateQueries({ queryKey: qk.badges })
       toast.success('Conversación eliminada correctamente')
+    },
+    onError: (err) => handleApiError(err),
+  })
+}
+
+export function useDeleteChats() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      phones,
+      password,
+      organizationId,
+    }: {
+      phones: string[]
+      password: string
+      organizationId?: string
+    }) => whatsappApi.deleteMessagesByPhones(phones, password, organizationId),
+    onSuccess: (_data, variables) => {
+      variables.phones.forEach((phone) => {
+        qc.invalidateQueries({ queryKey: qk.whatsapp.messages(phone) })
+      })
+      qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
+      qc.invalidateQueries({ queryKey: qk.badges })
+      toast.success(`${variables.phones.length} chats eliminados correctamente`)
     },
     onError: (err) => handleApiError(err),
   })

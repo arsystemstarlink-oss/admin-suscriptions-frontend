@@ -15,15 +15,15 @@ interface CreateOrganizationSheetProps {
 export function CreateOrganizationSheet({ open, onOpenChange }: CreateOrganizationSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="sm:max-w-2xl">
         <SheetHeader>
-          <SheetTitle>Crear nueva organización</SheetTitle>
+          <SheetTitle>Crear organización y acceso</SheetTitle>
           <SheetDescription>
-            Registra una organización adicional
+            Crea la organización y su cuenta de administrador en un solo paso.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-4">
-          <CreateOrganizationForm onSuccess={() => onOpenChange(false)} />
+          {open && <CreateOrganizationForm onSuccess={() => onOpenChange(false)} />}
         </div>
       </SheetContent>
     </Sheet>

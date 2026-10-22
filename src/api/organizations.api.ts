@@ -1,7 +1,12 @@
 import { api } from './client'
 import type {
   CreateOrganizationRequest,
+  OnboardOrganizationRequest,
+  OnboardOrganizationResponse,
   OrganizationWhatsAppConfig,
+  OrganizationListFilter,
+  RegisterOrganizationPlanPaymentRequest,
+  RegisterOrganizationPlanPaymentResponse,
   Organization,
   OrganizationDetailResponse,
   OrganizationsListResponse,
@@ -13,6 +18,7 @@ interface OrganizationsListParams {
   search?: string
   limit?: number
   offset?: number
+  filter?: OrganizationListFilter
 }
 
 export const organizationsApi = {
@@ -31,8 +37,24 @@ export const organizationsApi = {
     return response.data
   },
 
+  onboard: async (data: OnboardOrganizationRequest): Promise<OnboardOrganizationResponse> => {
+    const response = await api.post<OnboardOrganizationResponse>('/organizations/onboard', data)
+    return response.data
+  },
+
   update: async (id: string, data: UpdateOrganizationRequest): Promise<Organization> => {
     const response = await api.put<Organization>(`/organizations/${id}`, data)
+    return response.data
+  },
+
+  registerPlanPayment: async (
+    id: string,
+    data: RegisterOrganizationPlanPaymentRequest,
+  ): Promise<RegisterOrganizationPlanPaymentResponse> => {
+    const response = await api.post<RegisterOrganizationPlanPaymentResponse>(
+      `/organizations/${id}/plan-payments`,
+      data,
+    )
     return response.data
   },
 

@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import {
+  BUSINESS_PLANS,
+  CUSTOM_PLAN_MIN_CLIENTS,
+  ORGANIZATION_PLAN_STATUS_LABELS,
+} from '@/lib/constants'
 import { useUpdateOrganization, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { OrganizationWhatsAppSettings } from '@/components/organizations/OrganizationWhatsAppSettings'
 import { getErrorHandler } from '@/lib/error-handler'
@@ -26,7 +31,12 @@ import {
 } from '@/components/ui/sheet'
 import { AlertTriangle, Building2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { ApiError, Organization } from '@/types/api'
+import type {
+  ApiError,
+  BusinessPlanKey,
+  Organization,
+  OrganizationPlanStatus,
+} from '@/types/api'
 
 const editOrganizationSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -36,6 +46,40 @@ const editOrganizationSchema = z.object({
     .optional()
     .or(z.literal('')),
   active: z.enum(['true', 'false']),
+  plan: z.enum(['basico', 'pro', 'negocio', 'a-medida']),
+  clientLimit: z.coerce.number().int().min(1, 'El límite debe ser mayor que cero'),
+  planStatus: z.enum(['prueba', 'activo', 'vencido', 'suspendido']),
+  trialEndsAt: z.string(),
+  planExpiresAt: z.string(),
+}).superRefine((data, context) => {
+  if (data.plan === 'a-medida' && data.clientLimit < CUSTOM_PLAN_MIN_CLIENTS) {
+    context.addIssue({
+      code: 'custom',
+      path: ['clientLimit'],
+      message: `El plan A medida debe permitir al menos ${CUSTOM_PLAN_MIN_CLIENTS} clientes`,
+    })
+  }
+  if (data.planStatus === 'prueba' && data.plan !== 'basico') {
+    context.addIssue({
+      code: 'custom',
+      path: ['planStatus'],
+      message: 'La prueba gratis solo está disponible en el plan Básico',
+    })
+  }
+  if (data.planStatus === 'prueba' && !data.trialEndsAt) {
+    context.addIssue({
+      code: 'custom',
+      path: ['trialEndsAt'],
+      message: 'Indica cuándo termina la prueba',
+    })
+  }
+  if (data.planStatus === 'activo' && !data.planExpiresAt) {
+    context.addIssue({
+      code: 'custom',
+      path: ['planExpiresAt'],
+      message: 'Indica cuándo vence el plan',
+    })
+  }
 })
 
 type EditOrganizationForm = z.infer<typeof editOrganizationSchema>
@@ -58,6 +102,8 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
     handleSubmit,
     reset,
     setError: setFormError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<EditOrganizationForm>({
     resolver: zodResolver(editOrganizationSchema),
@@ -65,8 +111,14 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
       name: '',
       slug: '',
       active: 'true',
+      plan: 'basico',
+      clientLimit: 30,
+      planStatus: 'activo',
+      trialEndsAt: '',
+      planExpiresAt: '',
     },
   })
+  const selectedPlan = watch('plan')
 
   useEffect(() => {
     if (open && organization) {
@@ -74,6 +126,15 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
         name: organization.name,
         slug: organization.slug || '',
         active: organization.active ? 'true' : 'false',
+        plan: organization.plan ?? 'basico',
+        clientLimit:
+          organization.clientLimit ??
+          (organization.plan
+            ? BUSINESS_PLANS[organization.plan].clientLimit ?? CUSTOM_PLAN_MIN_CLIENTS
+            : BUSINESS_PLANS.basico.clientLimit),
+        planStatus: organization.planStatus ?? 'activo',
+        trialEndsAt: organization.trialEndsAt?.slice(0, 10) ?? '',
+        planExpiresAt: organization.planExpiresAt?.slice(0, 10) ?? '',
       })
       setError(null)
       setShowDeleteConfirm(false)
@@ -82,6 +143,11 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
 
   const onSubmit = async (data: EditOrganizationForm) => {
     setError(null)
+    if (organization.clientCount !== undefined && data.clientLimit < organization.clientCount) {
+      const message = `El límite no puede ser menor que los ${organization.clientCount} clientes actuales.`
+      setFormError('clientLimit', { type: 'manual', message })
+      return
+    }
     try {
       await updateMutation.mutateAsync({
         id: organization.id,
@@ -89,6 +155,15 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
           name: data.name.trim(),
           slug: data.slug?.trim() || undefined,
           active: data.active === 'true',
+          plan: data.plan,
+          clientLimit: data.clientLimit,
+          planStatus: data.planStatus,
+          trialEndsAt: data.trialEndsAt
+            ? new Date(`${data.trialEndsAt}T23:59:59.999Z`).toISOString()
+            : null,
+          planExpiresAt: data.planExpiresAt
+            ? new Date(`${data.planExpiresAt}T23:59:59.999Z`).toISOString()
+            : null,
         },
       })
       onOpenChange(false)
@@ -96,7 +171,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
       const apiError = err as Partial<ApiError>
       const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
       if (handler?.type === 'field-error' && handler.field) {
-        setFormError(handler.field as 'name' | 'slug', {
+        setFormError(handler.field as 'name' | 'slug' | 'clientLimit' | 'planStatus', {
           type: 'manual',
           message: handler.message,
         })
@@ -128,7 +203,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="sm:max-w-xl">
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -197,6 +272,108 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                 <p className="text-xs text-muted-foreground">
                   Las organizaciones inactivas no pueden recibir nuevos administradores.
                 </p>
+              </div>
+            </div>
+            <Separator className="my-4" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-plan">Plan</Label>
+                <Controller
+                  name="plan"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value: BusinessPlanKey) => {
+                        field.onChange(value)
+                        const limit = BUSINESS_PLANS[value].clientLimit
+                        setValue(
+                          'clientLimit',
+                          limit ?? Math.max(CUSTOM_PLAN_MIN_CLIENTS, organization.clientCount ?? 0),
+                        )
+                      }}
+                    >
+                      <SelectTrigger id="edit-org-plan">
+                        <SelectValue placeholder="Selecciona un plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(BUSINESS_PLANS).map(([key, plan]) => (
+                          <SelectItem key={key} value={key}>
+                            {plan.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-client-limit">Límite de clientes</Label>
+                <Input
+                  id="edit-org-client-limit"
+                  type="number"
+                  min={1}
+                  step={1}
+                  readOnly={selectedPlan !== 'a-medida'}
+                  {...register('clientLimit', { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {selectedPlan === 'a-medida'
+                    ? `Elige un límite de al menos ${CUSTOM_PLAN_MIN_CLIENTS} clientes.`
+                    : 'El límite se define según el plan elegido.'}
+                </p>
+                {errors.clientLimit && (
+                  <p className="text-sm text-destructive">{errors.clientLimit.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-plan-status">Estado del plan</Label>
+                <Controller
+                  name="planStatus"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(value: OrganizationPlanStatus) => field.onChange(value)}
+                    >
+                      <SelectTrigger id="edit-org-plan-status">
+                        <SelectValue placeholder="Selecciona un estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ORGANIZATION_PLAN_STATUS_LABELS).map(([key, label]) => (
+                          <SelectItem
+                            key={key}
+                            value={key}
+                            disabled={key === 'prueba' && selectedPlan !== 'basico'}
+                          >
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.planStatus && (
+                  <p className="text-sm text-destructive">{errors.planStatus.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-trial-ends">Fin de prueba</Label>
+                <Input id="edit-org-trial-ends" type="date" {...register('trialEndsAt')} />
+                {errors.trialEndsAt && (
+                  <p className="text-sm text-destructive">{errors.trialEndsAt.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-org-plan-expires">Vencimiento del plan</Label>
+                <Input id="edit-org-plan-expires" type="date" {...register('planExpiresAt')} />
+                {errors.planExpiresAt && (
+                  <p className="text-sm text-destructive">{errors.planExpiresAt.message}</p>
+                )}
               </div>
             </div>
             </form>

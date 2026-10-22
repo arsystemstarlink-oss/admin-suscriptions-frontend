@@ -344,6 +344,16 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     message: 'El reporte no puede procesarse en su estado actual.',
     sideEffect: 'invalidate-billing',
   },
+  PLAN_READ_ONLY: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Tu plan venció o está suspendido. Puedes consultar tus datos, pero no cambiarlos.',
+  },
+  CLIENT_LIMIT_REACHED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Llegaste al límite de clientes de tu plan. Elige un plan con más espacio para añadir otro.',
+  },
   HAS_UNPAID_PERIODS: {
     type: 'toast',
     variant: 'warning',

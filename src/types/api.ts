@@ -20,6 +20,9 @@ export enum BillingPeriodStatus {
 
 export type UserRole = 'super-admin' | 'admin'
 
+export type BusinessPlanKey = 'basico' | 'pro' | 'negocio' | 'a-medida'
+export type OrganizationPlanStatus = 'prueba' | 'activo' | 'vencido' | 'suspendido'
+
 export interface OrganizationTwilioConfigRequest {
   accountSid?: string | null
   authToken?: string | null
@@ -74,10 +77,32 @@ export interface Organization {
   name: string
   slug?: string
   active: boolean
+  plan?: BusinessPlanKey
+  clientLimit?: number
+  planStatus?: OrganizationPlanStatus
+  trialEndsAt?: string | null
+  planExpiresAt?: string | null
+  clientCount?: number
   twilio?: OrganizationTwilioInfo
   twilioConfigured?: boolean
   createdAt: string
   createdBy?: string
+}
+
+export type OrganizationListFilter = 'trial-expiring' | 'expired' | 'near-limit'
+export type OrganizationPlanPaymentMethod = 'transferencia' | 'usdt' | 'efectivo'
+
+export interface OrganizationPlanPayment {
+  id: string
+  organizationId: string
+  paidAt: string
+  amount: number
+  method: OrganizationPlanPaymentMethod
+  plan: BusinessPlanKey
+  newPlanExpiresAt: string
+  notes?: string
+  createdBy: string
+  createdAt: string
 }
 
 export interface OrganizationUserSummary {
@@ -105,11 +130,44 @@ export interface CreateOrganizationRequest {
   twilio?: OrganizationTwilioConfigRequest
 }
 
+export interface OnboardOrganizationRequest {
+  organization: Pick<CreateOrganizationRequest, 'name' | 'slug' | 'twilio'>
+  admin: {
+    name: string
+    email: string
+    password: string
+  }
+}
+
+export interface OnboardOrganizationResponse {
+  organization: Organization
+  admin: User
+}
+
 export interface UpdateOrganizationRequest {
   name?: string
   slug?: string
   active?: boolean
+  plan?: BusinessPlanKey
+  clientLimit?: number
+  planStatus?: OrganizationPlanStatus
+  trialEndsAt?: string | null
+  planExpiresAt?: string | null
   twilio?: OrganizationTwilioConfigRequest | null
+}
+
+export interface RegisterOrganizationPlanPaymentRequest {
+  paidAt: string
+  amount: number
+  method: OrganizationPlanPaymentMethod
+  plan: BusinessPlanKey
+  newPlanExpiresAt: string
+  notes?: string
+}
+
+export interface RegisterOrganizationPlanPaymentResponse {
+  payment: OrganizationPlanPayment
+  organization: Organization
 }
 
 export interface User {
@@ -118,6 +176,7 @@ export interface User {
   email: string
   role: UserRole
   organizationId: string | null
+  organization?: Organization
   phone?: string
   createdAt: string
   lastLoginAt?: string
@@ -796,6 +855,8 @@ export type ErrorCode =
   | 'PAYMENT_REPORT_ALREADY_EXISTS'
   | 'PAYMENT_REPORT_ALREADY_REVIEWED'
   | 'PAYMENT_REPORT_INVALID_STATE'
+  | 'PLAN_READ_ONLY'
+  | 'CLIENT_LIMIT_REACHED'
   | 'TWILIO_ERROR'
   | 'HAS_UNPAID_PERIODS'
   | 'PERIOD_ALREADY_EXISTS'

@@ -5,10 +5,12 @@ import {
   acquireRefreshLock,
   clearStoredTokens,
   getRefreshVersion,
+  getStoredUser,
   getStoredTokens,
   releaseRefreshLock,
   setStoredTokens,
 } from '@/lib/tokenStorage'
+import { getOrganizationPlanAccess } from '@/lib/business-plan'
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
@@ -22,6 +24,32 @@ function sleep(ms: number) {
 }
 
 api.interceptors.request.use((config) => {
+  const user = getStoredUser()
+  const method = config.method?.toUpperCase()
+  const url = (config.url || '').split('?')[0].replace(/\/+$/, '')
+  const isWriteRequest =
+    method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
+  const isAccountRequest = /\/auth\/(?:logout|refresh|me|change-password)$/.test(url)
+
+  if (user?.role === 'admin' && isWriteRequest && !isAccountRequest) {
+    const access = getOrganizationPlanAccess(user.organization)
+    if (access.isReadOnly) {
+      const error: ApiError = {
+        code: 'PLAN_READ_ONLY',
+        message: 'Tu plan venció o está suspendido. Puedes consultar tus datos, pero no cambiarlos.',
+      }
+      return Promise.reject(error)
+    }
+
+    if (method === 'POST' && /\/clients$/.test(url) && access.isAtLimit) {
+      const error: ApiError = {
+        code: 'CLIENT_LIMIT_REACHED',
+        message: 'Llegaste al límite de clientes de tu plan. Elige un plan con más espacio para añadir otro.',
+      }
+      return Promise.reject(error)
+    }
+  }
+
   const { accessToken } = getStoredTokens()
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`

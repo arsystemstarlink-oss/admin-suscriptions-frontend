@@ -3,6 +3,9 @@ import { organizationsApi } from '@/api/organizations.api'
 import { qk } from '@/lib/query-keys'
 import type {
   CreateOrganizationRequest,
+  OrganizationListFilter,
+  OnboardOrganizationRequest,
+  RegisterOrganizationPlanPaymentRequest,
   UpdateOrganizationRequest,
   UpdateOrganizationWhatsAppConfigRequest,
 } from '@/types/api'
@@ -13,6 +16,7 @@ interface UseOrganizationsParams {
   search?: string
   limit?: number
   offset?: number
+  filter?: OrganizationListFilter
 }
 
 export function useOrganizations(params?: UseOrganizationsParams, options?: { enabled?: boolean }) {
@@ -73,6 +77,18 @@ export function useCreateOrganization() {
   })
 }
 
+export function useOnboardOrganization() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: OnboardOrganizationRequest) => organizationsApi.onboard(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.organizations.lists })
+      toast.success('Organización y administrador creados')
+    },
+  })
+}
+
 export function useUpdateOrganization() {
   const qc = useQueryClient()
 
@@ -85,6 +101,25 @@ export function useUpdateOrganization() {
       toast.success('Organización actualizada correctamente')
     },
     onError: (err) => handleApiError(err),
+  })
+}
+
+export function useRegisterOrganizationPlanPayment() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: RegisterOrganizationPlanPaymentRequest
+    }) => organizationsApi.registerPlanPayment(id, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.organizations.lists })
+      qc.invalidateQueries({ queryKey: qk.organizations.detail(variables.id) })
+      toast.success('Pago del plan registrado y vencimiento actualizado')
+    },
   })
 }
 

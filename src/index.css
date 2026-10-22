@@ -161,6 +161,59 @@
     --info: 217 91% 65%;
     --info-foreground: 223 48% 10%;
   }
+
+  .plans-page-theme {
+    color-scheme: light;
+    font-family: 'Figtree', system-ui, sans-serif;
+    --background: 0 0% 100%;
+    --foreground: 224 66% 12%;
+    --surface: 0 0% 100%;
+    --surface-foreground: 224 66% 12%;
+    --surface-elevated: 0 0% 100%;
+    --surface-elevated-foreground: 224 66% 12%;
+    --surface-muted: 222 45% 95%;
+    --surface-muted-foreground: 225 24% 38%;
+    --surface-hover: 222 42% 92%;
+    --surface-active: 222 40% 89%;
+    --card: var(--surface);
+    --card-foreground: var(--surface-foreground);
+    --popover: var(--surface-elevated);
+    --popover-foreground: var(--surface-elevated-foreground);
+    --primary: 224 69% 18%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 100% 59%;
+    --secondary-foreground: 224 66% 12%;
+    --muted: 222 45% 95%;
+    --muted-foreground: 225 24% 38%;
+    --subtle-foreground: 225 17% 53%;
+    --disabled-foreground: 225 12% 61%;
+    --accent: 45 100% 90%;
+    --accent-foreground: 224 66% 12%;
+    --destructive: 0 74% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 224 35% 87%;
+    --border-subtle: 224 35% 90%;
+    --border-strong: 224 30% 78%;
+    --input: 222 45% 95%;
+    --ring: 224 69% 35%;
+    --overlay: 222 47% 8% / 0.55;
+    --header: 224 69% 18%;
+    --header-foreground: 214 65% 96%;
+    --header-hover: 221 64% 26%;
+    --success: 149 84% 26%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 36%;
+    --warning-foreground: 0 0% 100%;
+    --info: 221 80% 42%;
+    --info-foreground: 0 0% 100%;
+  }
+
+  .plans-page-theme h1,
+  .plans-page-theme h2,
+  .plans-page-theme h3,
+  .plans-page-theme .plans-logo {
+    font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
+  }
 }
 
 @layer base {

@@ -30,6 +30,7 @@ import {
   SetupPage,
   ChatsPage,
   ConsultaPage,
+  PlansPage,
   PaymentReportsPage,
   PageLoader,
 } from '@/routes/lazy-pages'
@@ -49,6 +50,14 @@ export const router = createBrowserRouter(
     element: (
       <Suspense fallback={<PageLoader />}>
         <SetupPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/planes',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PlansPage />
       </Suspense>
     ),
   },

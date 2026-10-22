@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
@@ -10,6 +10,8 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { cn } from '@/lib/utils'
+import { getOrganizationPlanAccess } from '@/lib/business-plan'
+import { PlanStatusBanner } from '@/components/plans/PlanStatusBanner'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -27,6 +29,9 @@ export function AuthenticatedLayout() {
 
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
+  const planAccess = getOrganizationPlanAccess(
+    user?.role === 'admin' ? user.organization : undefined,
+  )
   const { selectedOrganizationId, setOrganization } = useOrganizationStore()
 
   const { data: organizationsData, isLoading: organizationsLoading, isError: organizationsError, refetch: refetchOrganizations } = useOrganizations(
@@ -88,6 +93,20 @@ export function AuthenticatedLayout() {
   const isChatsPage = location.pathname.startsWith('/chats')
   useTokenRefresh()
 
+  const isClientCreateRoute = location.pathname === '/subscriptions/clients/new'
+  const isPlanWriteRoute =
+    /^\/subscriptions\/(?:new|[^/]+\/edit|clients\/new|clients\/[^/]+\/edit|plans\/new|plans\/[^/]+\/edit)$/.test(
+      location.pathname,
+    )
+
+  if (planAccess.isReadOnly && isPlanWriteRoute) {
+    return <Navigate to="/config/profile" replace />
+  }
+
+  if (planAccess.isAtLimit && isClientCreateRoute) {
+    return <Navigate to="/subscriptions/clients" replace />
+  }
+
   if (isMobile) {
     return (
       <>
@@ -99,7 +118,10 @@ export function AuthenticatedLayout() {
           onRetryOrganizations={() => refetchOrganizations()}
           selectedOrganizationId={selectedOrganizationId}
           onOrganizationChange={setOrganization}
-        />
+        >
+          <PlanStatusBanner />
+          <Outlet />
+        </MobileAppShell>
         <QuickPayModal />
       </>
     )
@@ -128,6 +150,7 @@ export function AuthenticatedLayout() {
             isChatsPage ? 'flex min-h-0 flex-col overflow-hidden' : 'overflow-auto'
           )}
         >
+          {planAccess.isReadOnly && <PlanStatusBanner />}
           <Outlet />
         </main>
       </div>

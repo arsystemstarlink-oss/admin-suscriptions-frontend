@@ -9,6 +9,7 @@ conserva por convención del proyecto.
 |---|---|---|
 | [Sistema visual](design-system.md) | Tokens, jerarquía de superficies y patrones visuales de la interfaz. | Frontend |
 | [Notificaciones push](push-notifications.md) | Requisitos y detalles de integración Web Push consumidos por el frontend. | Fuente y contenido canónicos: backend; frontend conserva una copia |
+| [Plan de negocio](plan-de-negocio-backend.md) | Campos, operaciones y reglas de backend para planes, límites y pagos manuales de suscripción. | Frontend define requisitos; backend implementa |
 
 ## Contrato de API
 

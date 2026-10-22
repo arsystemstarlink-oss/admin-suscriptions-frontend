@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -382,6 +383,16 @@ export function LoginPage() {
               </label>
             </div>
           </div>
+
+          <p className="mt-5 text-center text-sm text-muted-foreground">
+            ¿Quieres conocer la aplicación?{' '}
+            <Link
+              to="/planes"
+              className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Ver planes
+            </Link>
+          </p>
 
           {/* Pie de página — restringido, sin enlaces de registro */}
           <div className="mt-5 text-center">

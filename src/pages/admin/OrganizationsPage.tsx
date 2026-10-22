@@ -4,25 +4,34 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizations, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check } from 'lucide-react'
+import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check, ReceiptText } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
+import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
 import { EditOrganizationSheet } from '@/components/organizations/EditOrganizationSheet'
+import { OrganizationPlanPaymentSheet } from '@/components/organizations/OrganizationPlanPaymentSheet'
 import { OrganizationAdminsSection } from '@/components/organizations/OrganizationAdminsSection'
-import type { Organization } from '@/types/api'
+import { BUSINESS_PLANS, ORGANIZATION_PLAN_STATUS_LABELS, formatDate } from '@/lib/constants'
+import type { Organization, OrganizationListFilter } from '@/types/api'
 
 export function OrganizationsPage() {
   const isSuperAdmin = useIsSuperAdmin()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null)
+  const [paymentOrganization, setPaymentOrganization] = useState<Organization | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const requestedFilter = searchParams.get('filter')
+  const planFilter = (['trial-expiring', 'expired', 'near-limit'] as const).find(
+    (value) => value === requestedFilter,
+  )
 
   const { data, isLoading } = useOrganizations(
     {
       search: searchParams.get('search') || undefined,
       limit: 50,
       offset: 0,
+      filter: planFilter,
     },
     { enabled: isSuperAdmin },
   )
@@ -57,6 +66,16 @@ export function OrganizationsPage() {
     setSearchParams(params)
   }
 
+  const handleFilter = (filter: OrganizationListFilter | null) => {
+    const params = new URLSearchParams(searchParams)
+    if (filter) {
+      params.set('filter', filter)
+    } else {
+      params.delete('filter')
+    }
+    setSearchParams(params)
+  }
+
   const organizations = data?.organizations || []
   const isEmpty = !isLoading && organizations.length === 0
 
@@ -68,6 +87,32 @@ export function OrganizationsPage() {
           onChange: handleSearch,
           placeholder: 'Buscar por nombre o slug...',
         }}
+        filters={
+          <div className="flex flex-wrap gap-2">
+            <FilterPill active={!planFilter} onClick={() => handleFilter(null)}>
+              Todas
+            </FilterPill>
+            <FilterPill
+              active={planFilter === 'trial-expiring'}
+              onClick={() => handleFilter(planFilter === 'trial-expiring' ? null : 'trial-expiring')}
+            >
+              Prueba por vencer
+            </FilterPill>
+            <FilterPill
+              active={planFilter === 'expired'}
+              variant="destructive"
+              onClick={() => handleFilter(planFilter === 'expired' ? null : 'expired')}
+            >
+              Vencidas
+            </FilterPill>
+            <FilterPill
+              active={planFilter === 'near-limit'}
+              onClick={() => handleFilter(planFilter === 'near-limit' ? null : 'near-limit')}
+            >
+              Cerca del límite
+            </FilterPill>
+          </div>
+        }
         primaryAction={
           <Button
             onClick={() => setCreateOpen(true)}
@@ -116,6 +161,29 @@ export function OrganizationsPage() {
                       Inactiva
                     </Badge>
                   )}
+                  {organization.plan && (
+                    <Badge variant="outline" className="text-info bg-info/10 border-info/20">
+                      {BUSINESS_PLANS[organization.plan].label}
+                    </Badge>
+                  )}
+                  {organization.planStatus ? (
+                    <Badge
+                      variant="outline"
+                      className={
+                        organization.planStatus === 'activo'
+                          ? 'text-success bg-success/10 border-success/20'
+                          : organization.planStatus === 'prueba'
+                            ? 'text-info bg-info/10 border-info/20'
+                            : 'text-warning bg-warning/10 border-warning/20'
+                      }
+                    >
+                      {ORGANIZATION_PLAN_STATUS_LABELS[organization.planStatus]}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-warning bg-warning/10 border-warning/20">
+                      Plan pendiente
+                    </Badge>
+                  )}
                   {organization.twilioConfigured ? (
                     <Badge
                       variant="outline"
@@ -139,6 +207,23 @@ export function OrganizationsPage() {
                   <span className="text-xs">
                     Creada: {new Date(organization.createdAt).toLocaleDateString('es-ES')}
                   </span>
+                  {organization.clientCount !== undefined && organization.clientLimit !== undefined ? (
+                    <span className="text-xs font-medium">
+                      Uso: {organization.clientCount} de {organization.clientLimit} clientes
+                    </span>
+                  ) : (
+                    <span className="text-xs">Uso no disponible</span>
+                  )}
+                  {organization.planStatus === 'prueba' && organization.trialEndsAt && (
+                    <span className="text-xs">
+                      Fin de prueba: {formatDate(organization.trialEndsAt)}
+                    </span>
+                  )}
+                  {organization.planExpiresAt && organization.planStatus === 'activo' && (
+                    <span className="text-xs">
+                      Vencimiento: {formatDate(organization.planExpiresAt)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -157,6 +242,15 @@ export function OrganizationsPage() {
                   )}
                 </Button>
                 )}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setPaymentOrganization(organization)}
+                  title="Registrar pago del plan"
+                  aria-label={`Registrar pago del plan de ${organization.name}`}
+                >
+                  <ReceiptText className="h-4 w-4 shrink-0" />
+                </Button>
                 <Button
                   variant="outline"
                   size="icon"
@@ -200,6 +294,13 @@ export function OrganizationsPage() {
         open={!!editingOrganization}
         onOpenChange={(open) => !open && setEditingOrganization(null)}
       />
+      {paymentOrganization && (
+        <OrganizationPlanPaymentSheet
+          organization={paymentOrganization}
+          open={!!paymentOrganization}
+          onOpenChange={(open) => !open && setPaymentOrganization(null)}
+        />
+      )}
     </>
   )
 }

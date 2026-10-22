@@ -2,13 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useInfiniteClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { Users, Phone, Plus, LoaderCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { getClientFullName, getInitial } from '@/lib/utils'
+import { getOrganizationPlanAccess } from '@/lib/business-plan'
+import { BUSINESS_PLANS, PLAN_USAGE_WARNING_PERCENT } from '@/lib/constants'
+import { PlanUpgradeButton } from '@/components/plans/PlanUpgradeButton'
 
 export function ClientsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -17,6 +20,11 @@ export function ClientsListPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
+  const user = useAuthStore((state) => state.user)
+  const planOrganization = user?.role === 'admin' ? user.organization : undefined
+  const { isAtLimit, isReadOnly, clientCount, clientLimit, usagePercent } =
+    getOrganizationPlanAccess(planOrganization)
+  const cannotAddClients = !isSuperAdmin && (isAtLimit || isReadOnly)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const subscriptionStatus = searchParams.get('subscriptionStatus') as 'ACTIVE' | 'SUSPENDED' | 'MIXED' | 'NONE' | null
@@ -104,7 +112,7 @@ export function ClientsListPage() {
           </FilterPill>
         </>
       ) : undefined}
-      primaryAction={!showEmpty ? (
+      primaryAction={!showEmpty && !cannotAddClients ? (
         <Button
           onClick={() => navigate('/subscriptions/clients/new')}
           className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2"
@@ -122,8 +130,12 @@ export function ClientsListPage() {
       ) : undefined}
       emptyIcon={<Users className="h-16 w-16 text-subtle-foreground" />}
       emptyTitle="Sin clientes"
-      emptyDescription="No encontramos resultados. Modifica los filtros o añade uno nuevo."
-      emptyAction={!showEmpty && isEmpty ? (
+      emptyDescription={
+        cannotAddClients
+          ? 'No encontramos resultados. Puedes consultar tus datos o elegir un plan para añadir clientes.'
+          : 'No encontramos resultados. Modifica los filtros o añade uno nuevo.'
+      }
+      emptyAction={!showEmpty && !cannotAddClients && isEmpty ? (
         <Button onClick={() => navigate('/subscriptions/clients/new')}>
           <Plus className="h-4 w-4 mr-2 shrink-0" />
           Crear Cliente
@@ -131,6 +143,31 @@ export function ClientsListPage() {
       ) : undefined}
     >
       <>
+        {!showEmpty &&
+          !isSuperAdmin &&
+          planOrganization &&
+          usagePercent !== null &&
+          usagePercent >= PLAN_USAGE_WARNING_PERCENT &&
+          !isReadOnly && (
+          <div
+            role="status"
+            className="mb-3 flex flex-col gap-3 rounded-xl border border-warning/20 bg-warning/10 p-4 text-foreground sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p className="text-sm">
+              {isAtLimit
+                ? `Llegaste al límite de ${clientLimit} clientes de tu plan ${planOrganization.plan ? BUSINESS_PLANS[planOrganization.plan].label : ''}. Tus datos siguen disponibles; para añadir clientes, elige un plan con más espacio.`
+                : `Ya usaste el ${usagePercent}% del límite de clientes de tu plan. Puedes elegir un plan con más espacio cuando lo necesites.`}
+              {isAtLimit && clientCount !== null && clientLimit !== null && (
+                <span className="block font-medium">
+                  Uso actual: {clientCount} de {clientLimit} clientes.
+                </span>
+              )}
+            </p>
+            {isAtLimit && (
+              <PlanUpgradeButton organization={planOrganization} className="shrink-0" />
+            )}
+          </div>
+        )}
         {!showEmpty && clients.map((client) => {
           const initial = getInitial(client.firstName)
 

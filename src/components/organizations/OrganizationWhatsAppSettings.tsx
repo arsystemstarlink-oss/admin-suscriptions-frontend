@@ -287,6 +287,11 @@ export function OrganizationWhatsAppSettings({
             value={form.authToken}
             onChange={(event) => updateForm('authToken', event.target.value)}
           />
+          <p className="text-xs text-muted-foreground">
+            El token guardado nunca se muestra. Déjalo vacío para conservarlo o escribe uno nuevo
+            para reemplazarlo. Todos los administradores de esta organización pueden actualizar
+            estas credenciales.
+          </p>
         </div>
 
         <div className="space-y-2">

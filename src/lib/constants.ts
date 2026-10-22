@@ -9,15 +9,16 @@ export const CUSTOM_PLAN_MIN_CLIENTS = 301
 export const PLAN_USAGE_WARNING_PERCENT = 80
 
 export const BUSINESS_PLANS = {
-  basico: { label: 'Básico', clientLimit: 30, priceUsdMonthly: 15, trialDays: 14 },
-  pro: { label: 'Pro', clientLimit: 150, priceUsdMonthly: 25, trialDays: 0 },
-  negocio: { label: 'Negocio', clientLimit: 300, priceUsdMonthly: 40, trialDays: 0 },
-  'a-medida': { label: 'A medida', clientLimit: null, priceUsdMonthly: null, trialDays: 0 },
+  basico: { label: 'Básico', clientLimit: 30, adminLimit: 1, priceUsdMonthly: 15, trialDays: 14 },
+  pro: { label: 'Pro', clientLimit: 150, adminLimit: 3, priceUsdMonthly: 25, trialDays: 0 },
+  negocio: { label: 'Negocio', clientLimit: 300, adminLimit: 5, priceUsdMonthly: 40, trialDays: 0 },
+  'a-medida': { label: 'A medida', clientLimit: null, adminLimit: 5, priceUsdMonthly: null, trialDays: 0 },
 } as const satisfies Record<
   BusinessPlanKey,
   {
     label: string
     clientLimit: number | null
+    adminLimit: number
     priceUsdMonthly: number | null
     trialDays: number
   }

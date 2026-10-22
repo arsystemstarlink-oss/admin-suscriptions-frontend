@@ -80,13 +80,8 @@ function PlanCard({ planKey }: { planKey: BusinessPlanKey }) {
     plan.clientLimit === null
       ? `más de ${CUSTOM_PLAN_MIN_CLIENTS - 1} clientes`
       : `hasta ${plan.clientLimit} clientes`
-  const perClient =
-    plan.priceUsdMonthly === null || plan.clientLimit === null
-      ? 'según tu volumen'
-      : `unos ${new Intl.NumberFormat('es-ES', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(plan.priceUsdMonthly / plan.clientLimit)} USD por cliente`
+  const adminCapacity =
+    plan.adminLimit === 1 ? '1 administrador incluido' : `Hasta ${plan.adminLimit} administradores`
 
   return (
     <Card
@@ -105,9 +100,13 @@ function PlanCard({ planKey }: { planKey: BusinessPlanKey }) {
             </span>
           )}
         </p>
-        <p className="mt-[6px] mb-5 text-[0.88rem] text-muted-foreground">{perClient}</p>
+        <p className="mt-[6px] mb-5 text-[0.88rem] text-muted-foreground">
+          {plan.priceUsdMonthly === null
+            ? 'Precio según tu organización'
+            : 'Por organización, no por administrador'}
+        </p>
         <ul className="mt-0 mb-6 text-[0.95rem]">
-          {content.features.map((feature) => (
+          {[...content.features, adminCapacity].map((feature) => (
             <li key={feature} className="relative py-[5px] pl-[22px]">
               <Check className="absolute left-0 top-[9px] h-4 w-4 text-success" aria-hidden="true" />
               <span>{feature}</span>
@@ -146,6 +145,11 @@ const FAQS = [
     question: '¿Puedo cambiar de plan?',
     answer:
       'Sí, cuando quieras. Si llegas al límite de clientes, la app te avisa para que subas de plan.',
+  },
+  {
+    question: '¿El plan se paga por cada administrador?',
+    answer:
+      'No. El plan es para tu organización y el límite de administradores depende del plan: 1 en Básico, 3 en Pro y 5 en Negocio o A medida. El límite incluye al administrador inicial. El precio depende del plan y sus límites, no se cobra por usuario.',
   },
   {
     question: '¿Quién paga los mensajes de WhatsApp?',
@@ -357,6 +361,16 @@ export function PlansPage() {
               {PLAN_KEYS.map((planKey) => (
                 <PlanCard key={planKey} planKey={planKey} />
               ))}
+            </div>
+            <div className="mt-6 rounded-xl border border-border bg-surface-muted p-5 text-surface-muted-foreground">
+              <h3 className="font-semibold text-foreground">
+                Un plan para toda tu organización
+              </h3>
+              <p className="mt-1 text-sm">
+                Pagas por llevar la gestión de tu organización y sus clientes, no por cada usuario.
+                Puedes dar acceso a varios administradores; todos trabajan con la información de
+                esa misma organización.
+              </p>
             </div>
             <div className="mt-6 flex flex-col gap-2 rounded-xl bg-header p-5 text-header-foreground sm:flex-row sm:items-center sm:justify-between">
               <p>

@@ -94,6 +94,16 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     field: 'email',
     message: 'Este correo ya está en uso.',
   },
+  ADMIN_LIMIT_REACHED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'La organización alcanzó el máximo de administradores de su plan.',
+  },
+  ADMIN_LIMIT_BELOW_USAGE: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'No se puede cambiar a ese plan porque supera su límite de administradores.',
+  },
   INVALID_EMAIL: {
     type: 'field-error',
     field: 'email',

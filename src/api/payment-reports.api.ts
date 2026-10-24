@@ -29,8 +29,16 @@ export const paymentReportsApi = {
     return response.data
   },
 
-  review: async (id: string, data: ReviewPaymentReportRequest): Promise<ReviewPaymentReportResponse> => {
-    const response = await api.post<ReviewPaymentReportResponse>(`/payment-reports/${id}/review`, data)
+  review: async (
+    id: string,
+    data: ReviewPaymentReportRequest,
+    organizationId: string,
+  ): Promise<ReviewPaymentReportResponse> => {
+    const response = await api.post<ReviewPaymentReportResponse>(
+      `/payment-reports/${id}/review`,
+      data,
+      { params: { organizationId } },
+    )
     return response.data
   },
 }

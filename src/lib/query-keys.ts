@@ -7,6 +7,7 @@ export const qk = {
     alerts: ['dashboard', 'alerts'] as const,
   },
   clients: {
+    all: ['clients'] as const,
     lists: ['clients', 'list'] as const,
     detail: (id: string, organizationId?: string) =>
       organizationId ? ['clients', id, 'detail', organizationId] as const : ['clients', id, 'detail'] as const,
@@ -16,10 +17,12 @@ export const qk = {
     detail: (id: string) => ['plans', id] as const,
   },
   subscriptions: {
+    all: ['subscriptions'] as const,
     lists: ['subscriptions', 'list'] as const,
     detail: (id: string) => ['subscriptions', id, 'detail'] as const,
   },
   billing: {
+    all: ['billing-periods'] as const,
     lists: ['billing-periods', 'list'] as const,
     detail: (id: string) => ['billing-periods', id] as const,
   },

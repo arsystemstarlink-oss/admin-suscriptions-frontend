@@ -153,7 +153,11 @@ export function PaymentReportsPage() {
   const handleApprove = async () => {
     if (!selected) return
     try {
-      await reviewMutation.mutateAsync({ id: selected.id, data: { action: 'approve' } })
+      await reviewMutation.mutateAsync({
+        id: selected.id,
+        data: { action: 'approve' },
+        organizationId: selected.organizationId,
+      })
       closeSheet()
     } catch {
       // toast handled in hook
@@ -163,7 +167,11 @@ export function PaymentReportsPage() {
   const handleReject = async (form: RejectForm) => {
     if (!selected) return
     try {
-      await reviewMutation.mutateAsync({ id: selected.id, data: { action: 'reject', notes: form.notes } })
+      await reviewMutation.mutateAsync({
+        id: selected.id,
+        data: { action: 'reject', notes: form.notes },
+        organizationId: selected.organizationId,
+      })
       closeSheet()
     } catch {
       // toast handled in hook

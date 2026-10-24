@@ -44,14 +44,22 @@ export function useReviewPaymentReport() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ReviewPaymentReportRequest }) =>
-      paymentReportsApi.review(id, data),
+    mutationFn: ({
+      id,
+      data,
+      organizationId,
+    }: {
+      id: string
+      data: ReviewPaymentReportRequest
+      organizationId: string
+    }) => paymentReportsApi.review(id, data, organizationId),
     onSuccess: (response, variables) => {
       qc.invalidateQueries({ queryKey: qk.paymentReports.lists })
       qc.invalidateQueries({ queryKey: qk.badges })
       qc.invalidateQueries({ queryKey: qk.paymentReports.detail(variables.id) })
-      qc.invalidateQueries({ queryKey: qk.billing.lists })
-      qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
+      qc.invalidateQueries({ queryKey: qk.billing.all })
+      qc.invalidateQueries({ queryKey: qk.subscriptions.all })
+      qc.invalidateQueries({ queryKey: qk.clients.all })
       qc.invalidateQueries({ queryKey: qk.dashboard.summary })
       qc.invalidateQueries({ queryKey: qk.dashboard.alerts })
 

@@ -100,6 +100,7 @@ export interface OrganizationPlanPayment {
   amount: number
   method: OrganizationPlanPaymentMethod
   plan: BusinessPlanKey
+  months?: number
   newPlanExpiresAt: string
   notes?: string
   createdBy: string

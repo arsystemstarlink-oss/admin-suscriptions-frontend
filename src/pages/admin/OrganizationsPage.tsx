@@ -5,13 +5,20 @@ import { useOrganizations, useDeleteOrganization } from '@/hooks/useOrganization
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check, ReceiptText } from 'lucide-react'
-import { ListPageLayout, ListCard } from '@/components/design-system'
+import { ListPageLayout, ListCard, ConfirmDialog } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
 import { EditOrganizationSheet } from '@/components/organizations/EditOrganizationSheet'
 import { OrganizationPlanPaymentSheet } from '@/components/organizations/OrganizationPlanPaymentSheet'
 import { OrganizationAdminsSection } from '@/components/organizations/OrganizationAdminsSection'
-import { BUSINESS_PLANS, ORGANIZATION_PLAN_STATUS_LABELS, formatDate } from '@/lib/constants'
+import {
+  BUSINESS_PLANS,
+  ORGANIZATION_PLAN_STATUS_LABELS,
+  PLAN_USAGE_WARNING_PERCENT,
+  formatDate,
+  getExpiringLabel,
+  isExpiringSoon,
+} from '@/lib/constants'
 import type { Organization, OrganizationListFilter } from '@/types/api'
 
 export function OrganizationsPage() {
@@ -20,6 +27,7 @@ export function OrganizationsPage() {
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null)
   const [paymentOrganization, setPaymentOrganization] = useState<Organization | null>(null)
+  const [deletingOrganization, setDeletingOrganization] = useState<Organization | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const requestedFilter = searchParams.get('filter')
   const planFilter = (['trial-expiring', 'expired', 'near-limit'] as const).find(
@@ -137,7 +145,62 @@ export function OrganizationsPage() {
         }
       >
         <div className="space-y-3">
-        {organizations.map((organization) => (
+        {organizations.map((organization) => {
+          const plan = organization.plan ?? 'basico'
+          const planLimit = BUSINESS_PLANS[plan].clientLimit
+          const clientLimit = organization.clientLimit ?? planLimit
+          const clientCount = organization.clientCount
+          const hasClientCount = typeof clientCount === 'number'
+          const usagePercent =
+            hasClientCount && clientLimit
+              ? Math.min(100, Math.round((clientCount / clientLimit) * 100))
+              : null
+          const isAtLimit = usagePercent !== null && usagePercent >= 100
+          const isNearLimit =
+            usagePercent !== null && usagePercent >= PLAN_USAGE_WARNING_PERCENT
+          const usageClassName = isAtLimit
+            ? 'text-xs font-medium text-destructive'
+            : isNearLimit
+              ? 'text-xs font-medium text-warning'
+              : 'text-xs font-medium'
+          const planExpiryLabel = organization.planExpiresAt
+            ? getExpiringLabel(organization.planExpiresAt)
+            : null
+          const trialExpiryLabel = organization.trialEndsAt
+            ? getExpiringLabel(organization.trialEndsAt)
+            : null
+          const planExpired =
+            organization.planStatus === 'vencido' ||
+            organization.planStatus === 'suspendido' ||
+            planExpiryLabel === 'Vencido'
+          const expiryClassName = planExpired
+            ? 'text-xs font-medium text-destructive'
+            : organization.planExpiresAt && isExpiringSoon(organization.planExpiresAt, 7)
+              ? 'text-xs font-medium text-warning'
+              : 'text-xs'
+          const trialClassName =
+            trialExpiryLabel === 'Vencido'
+              ? 'text-xs font-medium text-destructive'
+              : organization.trialEndsAt && isExpiringSoon(organization.trialEndsAt, 7)
+                ? 'text-xs font-medium text-warning'
+                : 'text-xs'
+          const adminLimit = BUSINESS_PLANS[plan].adminLimit
+          const planStatusLabel = organization.planStatus
+            ? ORGANIZATION_PLAN_STATUS_LABELS[organization.planStatus]
+            : 'Pendiente'
+          const planBadgeLabel = organization.plan
+            ? `Plan ${BUSINESS_PLANS[organization.plan].label} · ${planStatusLabel}`
+            : 'Plan pendiente'
+          const planBadgeClassName =
+            organization.planStatus === 'activo'
+              ? 'text-success bg-success/10 border-success/20'
+              : organization.planStatus === 'prueba'
+                ? 'text-info bg-info/10 border-info/20'
+                : organization.planStatus === 'vencido'
+                  ? 'text-destructive bg-destructive/10 border-destructive/20'
+                  : 'text-warning bg-warning/10 border-warning/20'
+
+          return (
           <ListCard
             key={organization.id}
             className="flex-col"
@@ -149,52 +212,40 @@ export function OrganizationsPage() {
                   {organization.active ? (
                     <Badge
                       variant="outline"
+                      title="Estado de la organización: activa"
                       className="text-success bg-success/10 border-success/20"
                     >
-                      Activa
+                      Organización activa
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
+                      title="Estado de la organización: inactiva"
                       className="text-destructive bg-destructive/10 border-destructive/20"
                     >
-                      Inactiva
+                      Organización inactiva
                     </Badge>
                   )}
-                  {organization.plan && (
-                    <Badge variant="outline" className="text-info bg-info/10 border-info/20">
-                      {BUSINESS_PLANS[organization.plan].label}
-                    </Badge>
-                  )}
-                  {organization.planStatus ? (
-                    <Badge
-                      variant="outline"
-                      className={
-                        organization.planStatus === 'activo'
-                          ? 'text-success bg-success/10 border-success/20'
-                          : organization.planStatus === 'prueba'
-                            ? 'text-info bg-info/10 border-info/20'
-                            : 'text-warning bg-warning/10 border-warning/20'
-                      }
-                    >
-                      {ORGANIZATION_PLAN_STATUS_LABELS[organization.planStatus]}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-warning bg-warning/10 border-warning/20">
-                      Plan pendiente
-                    </Badge>
-                  )}
+                  <Badge
+                    variant="outline"
+                    title="Plan contratado y estado de la suscripción"
+                    className={planBadgeClassName}
+                  >
+                    {planBadgeLabel}
+                  </Badge>
                   {organization.twilioConfigured ? (
                     <Badge
                       variant="outline"
+                      title="WhatsApp conectado"
                       className="text-info bg-info/10 border-info/20"
                     >
                       <MessageCircle className="h-3 w-3 mr-1 shrink-0" />
-                      WhatsApp
+                      WhatsApp conectado
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
+                      title="WhatsApp sin configurar"
                       className="text-warning bg-warning/10 border-warning/20"
                     >
                       <MessageCircleOff className="h-3 w-3 mr-1 shrink-0" />
@@ -204,24 +255,30 @@ export function OrganizationsPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
                   {organization.slug && <span className="font-medium">{organization.slug}</span>}
-                  <span className="text-xs">
-                    Creada: {new Date(organization.createdAt).toLocaleDateString('es-ES')}
-                  </span>
-                  {organization.clientCount !== undefined && organization.clientLimit !== undefined ? (
-                    <span className="text-xs font-medium">
-                      Uso: {organization.clientCount} de {organization.clientLimit} clientes
+                  <span className="text-xs">Creada: {formatDate(organization.createdAt)}</span>
+                  {clientLimit !== null && (
+                    <span
+                      className={usageClassName}
+                      title={
+                        hasClientCount
+                          ? `${usagePercent}% del límite del plan`
+                          : 'El listado no incluye el conteo de clientes'
+                      }
+                    >
+                      {hasClientCount
+                        ? `Uso: ${clientCount} de ${clientLimit} clientes`
+                        : `Límite del plan: ${clientLimit} clientes`}
                     </span>
-                  ) : (
-                    <span className="text-xs">Uso no disponible</span>
                   )}
                   {organization.planStatus === 'prueba' && organization.trialEndsAt && (
-                    <span className="text-xs">
-                      Fin de prueba: {formatDate(organization.trialEndsAt)}
+                    <span className={trialClassName}>
+                      Fin de prueba: {formatDate(organization.trialEndsAt)} · {trialExpiryLabel}
                     </span>
                   )}
-                  {organization.planExpiresAt && organization.planStatus === 'activo' && (
-                    <span className="text-xs">
+                  {organization.planExpiresAt && (
+                    <span className={expiryClassName}>
                       Vencimiento: {formatDate(organization.planExpiresAt)}
+                      {organization.planStatus !== 'suspendido' && <> · {planExpiryLabel}</>}
                     </span>
                   )}
                 </div>
@@ -255,6 +312,7 @@ export function OrganizationsPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => setEditingOrganization(organization)}
+                  title="Editar organización"
                   aria-label={`Editar organización ${organization.name}`}
                 >
                   <Edit className="h-4 w-4 shrink-0" />
@@ -262,16 +320,8 @@ export function OrganizationsPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `¿Eliminar la organización ${organization.name}? Se eliminarán todos sus datos: usuarios, clientes, planes, suscripciones, períodos y mensajes de WhatsApp. Esta acción es irreversible.`,
-                      )
-                    ) {
-                      deleteMutation.mutate(organization.id)
-                    }
-                  }}
-                  disabled={deleteMutation.isPending}
+                  onClick={() => setDeletingOrganization(organization)}
+                  title="Eliminar organización"
                   aria-label={`Eliminar organización ${organization.name}`}
                 >
                   <Trash2 className="h-4 w-4 text-destructive shrink-0" />
@@ -281,9 +331,12 @@ export function OrganizationsPage() {
             <OrganizationAdminsSection
               organizationId={organization.id}
               organizationName={organization.name}
+              organizationActive={organization.active}
+              adminLimit={adminLimit}
             />
           </ListCard>
-        ))}
+          )
+        })}
       </div>
       </ListPageLayout>
 
@@ -301,6 +354,27 @@ export function OrganizationsPage() {
           onOpenChange={(open) => !open && setPaymentOrganization(null)}
         />
       )}
+      <ConfirmDialog
+        open={!!deletingOrganization}
+        onOpenChange={(open) => !open && setDeletingOrganization(null)}
+        title="Eliminar organización"
+        description={
+          deletingOrganization
+            ? `Se eliminará ${deletingOrganization.name} y todos sus datos: usuarios, clientes, planes, suscripciones, períodos y mensajes de WhatsApp. Esta acción es irreversible.`
+            : ''
+        }
+        confirmLabel="Eliminar organización"
+        pendingLabel="Eliminando..."
+        isPending={deleteMutation.isPending}
+        destructive
+        onConfirm={() => {
+          if (!deletingOrganization) return
+          deleteMutation.mutate(deletingOrganization.id, {
+            onSuccess: () => setDeletingOrganization(null),
+            onError: () => setDeletingOrganization(null),
+          })
+        }}
+      />
     </>
   )
 }

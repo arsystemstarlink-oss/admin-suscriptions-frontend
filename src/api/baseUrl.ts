@@ -13,6 +13,7 @@ export function getApiBaseUrl(): string {
 }
 
 export function switchToFallback(): boolean {
+  if (import.meta.env.DEV) return false
   if (activeBaseUrl === REMOTE_API_URL) return false
   activeBaseUrl = REMOTE_API_URL
   return true
@@ -24,7 +25,12 @@ export async function requestWithFallback<T = unknown>(
   try {
     return await axios.request<T>({ ...config, baseURL: getApiBaseUrl() })
   } catch (error) {
-    if (axios.isAxiosError(error) && !error.response && switchToFallback()) {
+    if (
+      axios.isAxiosError(error) &&
+      !error.response &&
+      !import.meta.env.DEV &&
+      switchToFallback()
+    ) {
       return await axios.request<T>({ ...config, baseURL: getApiBaseUrl() })
     }
     throw error

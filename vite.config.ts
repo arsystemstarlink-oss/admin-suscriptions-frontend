@@ -67,6 +67,18 @@ function apiFailoverProxy(localApiUrl: string, fallbackApiUrl: string): Plugin {
         try {
           upstreamResponse = await forwardRequest(localApiUrl)
         } catch (localError) {
+          if (!fallbackApiUrl) {
+            console.error('[api-proxy] Local API unavailable and no fallback is configured.', localError)
+            res.statusCode = 502
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({
+              error: {
+                code: 'API_UNAVAILABLE',
+                message: 'No se pudo conectar con la API local. Inicia el backend o configura VITE_API_FALLBACK_URL.',
+              },
+            }))
+            return
+          }
           console.warn('[api-proxy] Local API unavailable; retrying the fallback API.', localError)
           try {
             upstreamResponse = await forwardRequest(fallbackApiUrl)
@@ -126,9 +138,7 @@ function spaFallback() {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const localApiUrl = env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-  const fallbackApiUrl =
-    env.VITE_API_FALLBACK_URL ||
-    'https://admin-suscriptions-backend-production.up.railway.app/api'
+  const fallbackApiUrl = env.VITE_API_FALLBACK_URL || ''
 
   return {
     base: process.env.VITE_BASE_PATH ?? '/',

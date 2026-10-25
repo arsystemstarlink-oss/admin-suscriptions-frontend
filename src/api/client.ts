@@ -70,7 +70,7 @@ api.interceptors.response.use(
     const status = error.response?.status
     const errorCode = error.response?.data?.error?.code as string | undefined
 
-    if (!error.response && switchToFallback()) {
+    if (!import.meta.env.DEV && !error.response && switchToFallback()) {
       api.defaults.baseURL = getApiBaseUrl()
       originalRequest.baseURL = getApiBaseUrl()
       return api(originalRequest)

@@ -1,14 +1,18 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import {
+  useOrganizationDetail,
   useRegisterOrganizationPlanPayment,
 } from '@/hooks/useOrganizations'
 import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
-import { BUSINESS_PLANS, CUSTOM_PLAN_MIN_CLIENTS, formatDate } from '@/lib/constants'
+import { BUSINESS_PLANS, CUSTOM_PLAN_MIN_CLIENTS, formatCurrency, formatDate } from '@/lib/constants'
 import {
+  MAX_PREPAID_MONTHS,
+  getMaxPrepaidPlanExpiration,
   getOrganizationBillingDay,
+  isOrganizationPlanChange,
   isOrganizationPlanLocked,
   resolveOrganizationPlanExpiration,
 } from '@/lib/business-plan'
@@ -73,15 +77,17 @@ export function OrganizationPlanPaymentSheet({
   onOpenChange,
 }: OrganizationPlanPaymentSheetProps) {
   const paymentMutation = useRegisterOrganizationPlanPayment()
+  const { data: detailData, isFetching: detailFetching } = useOrganizationDetail(organization.id)
+  const liveOrganization = detailData?.organization ?? organization
   const { data: catalogData } = useBusinessPlans()
   const catalog = catalogData?.plans
   const priceForPlan = (key: BusinessPlanKey) =>
     catalog?.find((item) => item.key === key)?.priceUsdMonthly ?? null
-  const priceInitialized = useRef(false)
-  const clientCount = organization.clientCount ?? 0
-  const currentCapacity = organization.clientLimit ?? 0
-  const billingDay = getOrganizationBillingDay(organization)
-  const planLocked = isOrganizationPlanLocked(organization)
+  const hasClientCount = typeof liveOrganization.clientCount === 'number'
+  const clientCount = liveOrganization.clientCount ?? 0
+  const currentCapacity = liveOrganization.clientLimit ?? 0
+  const billingDay = getOrganizationBillingDay(liveOrganization)
+  const planLocked = isOrganizationPlanLocked(liveOrganization)
 
   const allowedPlanKeys = (Object.keys(BUSINESS_PLANS) as BusinessPlanKey[]).filter((key) => {
     const fixedLimit = BUSINESS_PLANS[key].clientLimit
@@ -89,8 +95,8 @@ export function OrganizationPlanPaymentSheet({
     if (planLocked && fixedLimit !== null && fixedLimit < currentCapacity) return false
     return true
   })
-  const initialPlan = allowedPlanKeys.includes(organization.plan ?? 'basico')
-    ? organization.plan ?? 'basico'
+  const initialPlan = allowedPlanKeys.includes(liveOrganization.plan ?? 'basico')
+    ? liveOrganization.plan ?? 'basico'
     : allowedPlanKeys[0] ?? 'basico'
 
   const {
@@ -117,24 +123,50 @@ export function OrganizationPlanPaymentSheet({
   const clientLimit = watch('clientLimit')
   const paidAt = watch('paidAt')
   const months = watch('months')
+  const amount = watch('amount')
+  const isCustomPlan = plan === 'a-medida'
+  const monthlyPrice = priceForPlan(plan)
+  const renewalMonths = Number.isInteger(months) && months > 0 ? months : 1
+  const totalAmount = monthlyPrice !== null ? monthlyPrice * renewalMonths : null
+  const currentExpiry =
+    liveOrganization.planStatus === 'prueba'
+      ? liveOrganization.trialEndsAt
+      : liveOrganization.planExpiresAt
+  const planChanged = isOrganizationPlanChange({
+    currentPlan: liveOrganization.plan,
+    targetPlan: plan,
+    planStatus: liveOrganization.planStatus,
+  })
+  const extendsCurrent = planLocked && !planChanged && Boolean(currentExpiry)
+  const paidAtDate = new Date(
+    `${paidAt || new Date().toISOString().slice(0, 10)}T12:00:00.000Z`,
+  )
+  const expiryForMonths = (value: number) =>
+    resolveOrganizationPlanExpiration({
+      organization: liveOrganization,
+      paidAt: paidAtDate,
+      months: value,
+      currentPlan: liveOrganization.plan,
+      targetPlan: plan,
+    })
+  const maxExpiry = getMaxPrepaidPlanExpiration(billingDay)
+  const computedExpiry = expiryForMonths(renewalMonths)
+  const prepaidLimitExceeded = computedExpiry.getTime() > maxExpiry.getTime()
+  const summaryAmount =
+    totalAmount !== null
+      ? formatCurrency(totalAmount)
+      : isCustomPlan && Number.isFinite(amount) && amount > 0
+        ? formatCurrency(amount)
+        : '—'
   const planClientLimit = BUSINESS_PLANS[plan].clientLimit
   const effectiveLimit = planClientLimit ?? clientLimit ?? clientCount
   const planExceedsUsage = effectiveLimit < clientCount
   const downgradeBlocked = planLocked && effectiveLimit < currentCapacity
-  const computedExpiry = resolveOrganizationPlanExpiration({
-    organization,
-    paidAt: new Date(`${paidAt || new Date().toISOString().slice(0, 10)}T12:00:00.000Z`),
-    months: Number.isInteger(months) && months > 0 ? months : 1,
-  })
 
   useEffect(() => {
-    if (!catalog || priceInitialized.current) return
-    const price = catalog.find((item) => item.key === plan)?.priceUsdMonthly
-    if (price !== null && price !== undefined) {
-      setValue('amount', price)
-    }
-    priceInitialized.current = true
-  }, [catalog, plan, setValue])
+    if (totalAmount === null) return
+    setValue('amount', totalAmount, { shouldValidate: true })
+  }, [totalAmount, setValue])
 
   const onSubmit = async (form: PaymentForm) => {
     const limit = BUSINESS_PLANS[form.plan].clientLimit ?? form.clientLimit ?? clientCount
@@ -177,12 +209,12 @@ export function OrganizationPlanPaymentSheet({
   }
 
   const lockMessage =
-    organization.planStatus === 'prueba'
-      ? organization.trialEndsAt
-        ? `La prueba está vigente hasta ${formatDate(organization.trialEndsAt)}. Solo puedes renovar o subir de plan.`
+    liveOrganization.planStatus === 'prueba'
+      ? liveOrganization.trialEndsAt
+        ? `La prueba está vigente hasta ${formatDate(liveOrganization.trialEndsAt)}. Solo puedes renovar o subir de plan.`
         : 'La prueba está vigente. Solo puedes renovar o subir de plan.'
-      : organization.planExpiresAt
-        ? `El plan está vigente hasta ${formatDate(organization.planExpiresAt)}. Solo puedes renovarlo o subir de plan.`
+      : liveOrganization.planExpiresAt
+        ? `El plan está vigente hasta ${formatDate(liveOrganization.planExpiresAt)}. Solo puedes renovarlo o subir de plan.`
         : 'La suscripción está vigente. Solo puedes renovarla o subir de plan.'
 
   return (
@@ -198,10 +230,25 @@ export function OrganizationPlanPaymentSheet({
           <div className="flex-1 space-y-4 overflow-y-auto p-6 pt-4">
             <div className="text-sm text-muted-foreground">
               Plan actual: <span className="font-medium text-foreground">
-                {BUSINESS_PLANS[organization.plan ?? 'basico'].label}
+                {BUSINESS_PLANS[liveOrganization.plan ?? 'basico'].label}
               </span>{' '}
-              · {clientCount} clientes en uso · corte día {billingDay}
+              ·{' '}
+              {hasClientCount
+                ? `${clientCount} ${clientCount === 1 ? 'cliente' : 'clientes'} en uso`
+                : 'uso de clientes no disponible'}{' '}
+              · corte día {billingDay}
             </div>
+            {!hasClientCount && (
+              <p
+                className={
+                  detailFetching ? 'text-xs text-muted-foreground' : 'text-xs text-warning'
+                }
+              >
+                {detailFetching
+                  ? 'Consultando el uso de clientes...'
+                  : 'No se pudo leer el conteo de clientes de esta organización. El servidor validará el límite al registrar el pago.'}
+              </p>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="plan-payment-plan">Plan a pagar</Label>
@@ -214,7 +261,9 @@ export function OrganizationPlanPaymentSheet({
                     defaultClientLimit(value, clientCount),
                     { shouldValidate: true },
                   )
-                  setValue('amount', priceForPlan(value) ?? 0)
+                  if (value === 'a-medida') {
+                    setValue('amount', 0)
+                  }
                 }}
               >
                 <SelectTrigger id="plan-payment-plan">
@@ -229,6 +278,7 @@ export function OrganizationPlanPaymentSheet({
                         {item.clientLimit !== null
                           ? ` · hasta ${item.clientLimit} clientes`
                           : ' · tope personalizado'}
+                        {key === liveOrganization.plan ? ' · actual' : ''}
                       </SelectItem>
                     )
                   })}
@@ -241,7 +291,9 @@ export function OrganizationPlanPaymentSheet({
                 <p className="text-xs text-muted-foreground">{lockMessage}</p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Puedes elegir cualquier plan que cubra tus {clientCount} clientes actuales.
+                  {hasClientCount
+                    ? `Puedes elegir cualquier plan que cubra tus ${clientCount} clientes actuales.`
+                    : 'El servidor validará que el plan cubra los clientes actuales.'}
                 </p>
               )}
             </div>
@@ -258,7 +310,8 @@ export function OrganizationPlanPaymentSheet({
                   {...register('clientLimit', { valueAsNumber: true })}
                 />
                 <p id="plan-payment-client-limit-help" className="text-xs text-muted-foreground">
-                  Mínimo {CUSTOM_PLAN_MIN_CLIENTS} clientes. Uso actual: {clientCount}.
+                  Mínimo {CUSTOM_PLAN_MIN_CLIENTS} clientes. Uso actual:{' '}
+                  {hasClientCount ? clientCount : 'no disponible'}.
                 </p>
                 {downgradeBlocked && (
                   <p className="text-sm text-destructive">
@@ -286,13 +339,31 @@ export function OrganizationPlanPaymentSheet({
                   <SelectValue placeholder="Selecciona los meses" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[1, 3, 6, 12].map((value) => (
-                    <SelectItem key={value} value={String(value)}>
-                      {value} {value === 1 ? 'mes' : 'meses'}
-                    </SelectItem>
-                  ))}
+                  {[1, 3, 6, 12].map((value) => {
+                    const exceedsPrepaidLimit =
+                      expiryForMonths(value).getTime() > maxExpiry.getTime()
+                    return (
+                      <SelectItem
+                        key={value}
+                        value={String(value)}
+                        disabled={exceedsPrepaidLimit}
+                      >
+                        {value} {value === 1 ? 'mes' : 'meses'}
+                        {exceedsPrepaidLimit ? ' · supera el tope' : ''}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Máximo {MAX_PREPAID_MONTHS} meses prepagados por organización.
+              </p>
+              {prepaidLimitExceeded && (
+                <p className="text-xs text-warning">
+                  Este pago supera el tope. El vencimiento máximo permitido es{' '}
+                  {formatDate(maxExpiry.toISOString())}.
+                </p>
+              )}
               {errors.months && (
                 <p className="text-sm text-destructive">{errors.months.message}</p>
               )}
@@ -302,7 +373,11 @@ export function OrganizationPlanPaymentSheet({
               <p className="text-sm font-medium">Nuevo vencimiento</p>
               <p className="text-base font-semibold">{formatDate(computedExpiry.toISOString())}</p>
               <p className="text-xs text-muted-foreground">
-                Se calcula automáticamente con el día de corte {billingDay} de cada mes.
+                {planChanged
+                  ? 'El cambio de plan inicia en la fecha de pago; no se suma el tiempo del plan anterior.'
+                  : extendsCurrent && currentExpiry
+                    ? `Se suman ${renewalMonths} ${renewalMonths === 1 ? 'mes' : 'meses'} al vencimiento actual del ${formatDate(currentExpiry)}.`
+                    : `Se calcula desde la fecha de pago con el día de corte ${billingDay} de cada mes.`}
               </p>
             </div>
 
@@ -315,19 +390,31 @@ export function OrganizationPlanPaymentSheet({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="plan-payment-amount">Monto en USD</Label>
+              <Label htmlFor="plan-payment-amount">Monto total en USD</Label>
               <Input
                 id="plan-payment-amount"
                 type="number"
                 min="0.01"
                 step="0.01"
-                readOnly={priceForPlan(plan) !== null}
+                readOnly={!isCustomPlan}
+                aria-describedby="plan-payment-amount-help"
                 {...register('amount', { valueAsNumber: true })}
               />
-              <p className="text-xs text-muted-foreground">
-                {priceForPlan(plan) !== null
-                  ? `Precio fijo del plan: ${priceForPlan(plan)} USD.`
-                  : 'Ingresa el monto acordado para este plan.'}
+              <p id="plan-payment-amount-help" className="text-xs text-muted-foreground">
+                {isCustomPlan ? (
+                  'Ingresa el monto total acordado por los meses seleccionados.'
+                ) : monthlyPrice !== null && totalAmount !== null ? (
+                  <>
+                    Precio fijo: {formatCurrency(monthlyPrice)}/mes × {renewalMonths}{' '}
+                    {renewalMonths === 1 ? 'mes' : 'meses'} ={' '}
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(totalAmount)}
+                    </span>
+                    .
+                  </>
+                ) : (
+                  'Cargando precio del plan...'
+                )}
               </p>
               {errors.amount && (
                 <p className="text-sm text-destructive">{errors.amount.message}</p>
@@ -350,6 +437,35 @@ export function OrganizationPlanPaymentSheet({
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="rounded-lg border border-border-subtle bg-surface-muted p-3 text-sm">
+              <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Resumen del pago
+              </p>
+              <dl className="space-y-1">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Plan</dt>
+                  <dd className="font-medium">
+                    {BUSINESS_PLANS[plan].label}
+                    {plan === liveOrganization.plan ? ' · renovación' : ' · cambio'}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Meses</dt>
+                  <dd className="font-medium">
+                    {renewalMonths} {renewalMonths === 1 ? 'mes' : 'meses'}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Total</dt>
+                  <dd className="font-semibold">{summaryAmount}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Nuevo vencimiento</dt>
+                  <dd className="font-medium">{formatDate(computedExpiry.toISOString())}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
           <SheetFooter>
             <Button
@@ -358,7 +474,9 @@ export function OrganizationPlanPaymentSheet({
                 isSubmitting ||
                 paymentMutation.isPending ||
                 planExceedsUsage ||
-                downgradeBlocked
+                downgradeBlocked ||
+                prepaidLimitExceeded ||
+                (!isCustomPlan && totalAmount === null)
               }
             >
               {isSubmitting || paymentMutation.isPending ? 'Guardando...' : 'Registrar pago'}

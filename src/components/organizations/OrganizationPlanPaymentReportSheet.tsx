@@ -2,7 +2,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreateOrganizationPlanPaymentReport, useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
-import { BUSINESS_PLANS } from '@/lib/constants'
+import { BUSINESS_PLANS, formatCurrency, formatDate } from '@/lib/constants'
+import {
+  MAX_PREPAID_MONTHS,
+  getMaxPrepaidPlanExpiration,
+  getOrganizationBillingDay,
+  resolveOrganizationPlanExpiration,
+} from '@/lib/business-plan'
 import { handleApiError } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -82,6 +88,23 @@ export function OrganizationPlanPaymentReportSheet({
   })
   const method = watch('method')
   const months = watch('months')
+  const paidAt = watch('paidAt')
+  const totalAmount = fixedPrice !== null ? fixedPrice * months : null
+  const billingDay = getOrganizationBillingDay(organization)
+  const paidAtDate = new Date(
+    `${paidAt || new Date().toISOString().slice(0, 10)}T12:00:00.000Z`,
+  )
+  const expiryForMonths = (value: number) =>
+    resolveOrganizationPlanExpiration({
+      organization,
+      paidAt: paidAtDate,
+      months: value,
+      currentPlan: organization.plan,
+      targetPlan: organization.plan,
+    })
+  const maxExpiry = getMaxPrepaidPlanExpiration(billingDay)
+  const computedExpiry = expiryForMonths(months)
+  const prepaidLimitExceeded = computedExpiry.getTime() > maxExpiry.getTime()
 
   const onSubmit = async (form: ReportForm) => {
     if (isCustomPlan && !form.amount) {
@@ -134,9 +157,25 @@ export function OrganizationPlanPaymentReportSheet({
                   {catalogLoading
                     ? 'Cargando...'
                     : fixedPrice !== null
-                      ? `${fixedPrice} USD`
+                      ? `${formatCurrency(fixedPrice)}`
                       : 'Monto acordado'}
                 </span>
+              </div>
+              {fixedPrice !== null && (
+                <div className="mt-1 flex items-center justify-between gap-3 border-t border-border-subtle pt-2 text-sm">
+                  <span className="text-muted-foreground">
+                    Total ({months} {months === 1 ? 'mes' : 'meses'})
+                  </span>
+                  <span className="font-semibold">
+                    {catalogLoading || totalAmount === null
+                      ? 'Cargando...'
+                      : formatCurrency(totalAmount)}
+                  </span>
+                </div>
+              )}
+              <div className="mt-1 flex items-center justify-between gap-3 border-t border-border-subtle pt-2 text-sm">
+                <span className="text-muted-foreground">Nuevo vencimiento</span>
+                <span className="font-semibold">{formatDate(computedExpiry.toISOString())}</span>
               </div>
             </div>
 
@@ -150,13 +189,31 @@ export function OrganizationPlanPaymentReportSheet({
                   <SelectValue placeholder="Selecciona los meses" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[1, 3, 6, 12].map((value) => (
-                    <SelectItem key={value} value={String(value)}>
-                      {value} {value === 1 ? 'mes' : 'meses'}
-                    </SelectItem>
-                  ))}
+                  {[1, 3, 6, 12].map((value) => {
+                    const exceedsPrepaidLimit =
+                      expiryForMonths(value).getTime() > maxExpiry.getTime()
+                    return (
+                      <SelectItem
+                        key={value}
+                        value={String(value)}
+                        disabled={exceedsPrepaidLimit}
+                      >
+                        {value} {value === 1 ? 'mes' : 'meses'}
+                        {exceedsPrepaidLimit ? ' · supera el tope' : ''}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Máximo {MAX_PREPAID_MONTHS} meses prepagados por organización.
+              </p>
+              {prepaidLimitExceeded && (
+                <p className="text-xs text-warning">
+                  Este pago supera el tope. El vencimiento máximo permitido es{' '}
+                  {formatDate(maxExpiry.toISOString())}.
+                </p>
+              )}
               {errors.months && (
                 <p className="text-sm text-destructive">{errors.months.message}</p>
               )}
@@ -164,7 +221,7 @@ export function OrganizationPlanPaymentReportSheet({
 
             {isCustomPlan && (
               <div className="space-y-2">
-                <Label htmlFor="plan-report-amount">Monto acordado en USD</Label>
+                <Label htmlFor="plan-report-amount">Monto total acordado en USD</Label>
                 <Input
                   id="plan-report-amount"
                   type="number"
@@ -172,6 +229,9 @@ export function OrganizationPlanPaymentReportSheet({
                   step="0.01"
                   {...register('amount', { valueAsNumber: true })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Monto total por los {months} {months === 1 ? 'mes' : 'meses'} seleccionados.
+                </p>
                 {errors.amount && (
                   <p className="text-sm text-destructive">{errors.amount.message}</p>
                 )}
@@ -232,7 +292,7 @@ export function OrganizationPlanPaymentReportSheet({
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting || createMutation.isPending}
+              disabled={isSubmitting || createMutation.isPending || prepaidLimitExceeded}
             >
               {isSubmitting || createMutation.isPending ? 'Enviando...' : 'Enviar reporte'}
             </Button>

@@ -32,6 +32,8 @@ export function useOrganizationDetail(id: string) {
     queryKey: qk.organizations.detail(id),
     queryFn: () => organizationsApi.getById(id),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 

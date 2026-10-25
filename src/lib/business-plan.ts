@@ -75,6 +75,19 @@ export function getOrganizationBillingDay(
   return Math.min(Math.max(date.getUTCDate(), 1), 28)
 }
 
+export const MAX_PREPAID_MONTHS = 12
+
+export function isOrganizationPlanChange(input: {
+  currentPlan?: Organization['plan']
+  targetPlan?: Organization['plan']
+  planStatus?: Organization['planStatus']
+}): boolean {
+  return (
+    input.planStatus === 'activo' &&
+    Boolean(input.currentPlan && input.targetPlan && input.currentPlan !== input.targetPlan)
+  )
+}
+
 export function addOrganizationBillingMonths(
   base: Date,
   months: number,
@@ -99,6 +112,8 @@ export function resolveOrganizationPlanExpiration(input: {
   organization: Organization
   paidAt: Date
   months: number
+  currentPlan?: Organization['plan']
+  targetPlan?: Organization['plan']
   now?: Date
 }): Date {
   const now = input.now ?? new Date()
@@ -107,7 +122,13 @@ export function resolveOrganizationPlanExpiration(input: {
     ? Date.parse(organization.planExpiresAt)
     : Number.NaN
   const trialEndsAt = organization.trialEndsAt ? Date.parse(organization.trialEndsAt) : Number.NaN
+  const planChanged = isOrganizationPlanChange({
+    currentPlan: input.currentPlan,
+    targetPlan: input.targetPlan,
+    planStatus: organization.planStatus,
+  })
   const paidActive =
+    !planChanged &&
     organization.planStatus === 'activo' &&
     Number.isFinite(planExpiresAt) &&
     planExpiresAt > now.getTime()
@@ -127,6 +148,13 @@ export function resolveOrganizationPlanExpiration(input: {
     input.months,
     getOrganizationBillingDay(organization),
   )
+}
+
+export function getMaxPrepaidPlanExpiration(
+  billingDay: number,
+  now = new Date(),
+): Date {
+  return addOrganizationBillingMonths(now, MAX_PREPAID_MONTHS, billingDay)
 }
 
 export function getWhatsAppUrl(message: string): string | null {

@@ -28,7 +28,7 @@ const persister = createSyncStoragePersister({
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: PERSIST_MAX_AGE,
-  buster: 'v1',
+  buster: 'v2',
   dehydrateOptions: {
     shouldDehydrateQuery: (query) => query.state.status === 'success',
   },

@@ -47,5 +47,10 @@ export const qk = {
     lists: ['payment-reports', 'list'] as const,
     detail: (id: string) => ['payment-reports', id, 'detail'] as const,
   },
+  businessPlans: ['business-plans'] as const,
+  organizationPlanPaymentReports: {
+    mine: ['organization-plan-payment-reports', 'mine'] as const,
+    lists: ['organization-plan-payment-reports', 'list'] as const,
+  },
   badges: ['badges'] as const,
 } as const

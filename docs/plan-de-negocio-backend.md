@@ -14,6 +14,7 @@ Agregar al documento/DTO `Organization`:
 | `plan` | `'basico' \| 'pro' \| 'negocio' \| 'a-medida'` | Plan contratado. |
 | `clientLimit` | `number` | Límite efectivo de clientes. Básico 30, Pro 150, Negocio 300. Para A medida, asignación manual mayor de 300. |
 | `planStatus` | `'prueba' \| 'activo' \| 'vencido' \| 'suspendido'` | Estado de acceso a escritura de la organización. |
+| `billingDay` | `number` | Día de corte mensual (1-28). Se establece al crear la organización a partir de la fecha de alta y se mantiene en las renovaciones. |
 | `trialEndsAt` | `string \| null` | Fin de prueba en ISO 8601 UTC; solo se usa con Básico en prueba. |
 | `planExpiresAt` | `string \| null` | Vencimiento del período pagado, ISO 8601 UTC. |
 | `clientCount` | `number` | Número actual de documentos de cliente de la organización. Entero no negativo. |
@@ -100,6 +101,7 @@ admin a esa organización y establecer en servidor:
   "plan": "basico",
   "clientLimit": 30,
   "planStatus": "prueba",
+  "billingDay": "<día UTC del alta, 1-28>",
   "trialEndsAt": "<creación + 14 días en UTC>",
   "planExpiresAt": null,
   "clientCount": 0
@@ -133,11 +135,29 @@ interface OrganizationPlanPayment {
 ```
 
 Agregar `POST /organizations/:id/plan-payments`, solo para super-admin. Aceptar `paidAt`, `amount`,
-`method`, `plan`, `newPlanExpiresAt` y `notes`; validar fecha, monto positivo y método permitido.
-En una transacción guardar el registro, actualizar el plan/fecha de vencimiento y activar la
+`method`, `plan`, `months` y `notes`; validar fecha, monto positivo, método permitido y meses entre 1
+y 12. Calcular `newPlanExpiresAt` en el servidor sumando los meses al fin de prueba o al vencimiento
+vigente y anclando el resultado al `billingDay` de la organización; no aceptar fechas libres del
+frontend. En una transacción guardar el registro, actualizar el plan/fecha de vencimiento y activar la
 organización (`planStatus: 'activo'`, limpiar `trialEndsAt`). Devolver el pago y la organización
 actualizada. Esta operación registra un pago externo; no intenta cobrar ni validar una transferencia
 con un proveedor.
+
+### Catálogo de precios y reporte del admin
+
+- Mantener los precios fijos en el backend (`BUSINESS_PLAN_PRICES`: Básico 15, Pro 25, Negocio
+  40, A medida null) y exponerlos en `GET /public/business-plans` junto con límites y días de
+  prueba. El frontend no debe duplicar precios.
+- Agregar `OrganizationPlanPaymentReport` para que un admin reporte el pago de su organización.
+  Guardar plan, meses, método, fecha, monto, referencia y estado (`PENDING`, `APPROVED`,
+  `REJECTED`). Para planes fijos el monto se toma del catálogo; A medida acepta monto acordado.
+- `POST /organization-plan-payment-reports` (admin) valida que no exista otro reporte pendiente y
+  que el plan no baje mientras la suscripción esté vigente. `POST
+  /organization-plan-payment-reports/:id/review` (super-admin) aprueba aplicando el mismo flujo de
+  `registerPlanPayment` y calculando el vencimiento con `months` y `billingDay`, o rechaza con
+  motivo.
+- El reporte del admin debe funcionar aunque la organización esté vencida o suspendida: es la vía
+  para regularizar el pago. No aplicar `requireWritablePlan` a esa ruta.
 
 ## 4. Contador y límites de clientes
 

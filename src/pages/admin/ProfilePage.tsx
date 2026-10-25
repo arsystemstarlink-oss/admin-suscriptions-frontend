@@ -10,9 +10,17 @@ import {
   formatDate,
   ORGANIZATION_PLAN_STATUS_LABELS,
   PLAN_USAGE_WARNING_PERCENT,
+  STATUS_ERROR,
+  STATUS_SUCCESS,
+  STATUS_WARNING,
 } from '@/lib/constants'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanUpgradeButton } from '@/components/plans/PlanUpgradeButton'
+import { OrganizationPlanPaymentReportSheet } from '@/components/organizations/OrganizationPlanPaymentReportSheet'
+import {
+  useBusinessPlans,
+  useOrganizationPlanPaymentReports,
+} from '@/hooks/useOrganizationPlanPaymentReports'
 import { getInitial } from '@/lib/utils'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +42,7 @@ import {
 import { toast } from 'sonner'
 import { FormGroup } from '@/components/design-system'
 import { NotificationSettings } from '@/pages/admin/NotificationsPage'
-import type { ApiError } from '@/types/api'
+import type { ApiError, OrganizationPlanPaymentReportStatus } from '@/types/api'
 
 const profileSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -66,6 +74,15 @@ const passwordSchema = z
 
 type PasswordForm = z.infer<typeof passwordSchema>
 
+const PLAN_REPORT_STATUS: Record<
+  OrganizationPlanPaymentReportStatus,
+  { label: string; className: string }
+> = {
+  PENDING: { label: 'En verificación', className: STATUS_WARNING },
+  APPROVED: { label: 'Aprobado', className: STATUS_SUCCESS },
+  REJECTED: { label: 'Rechazado', className: STATUS_ERROR },
+}
+
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const setTokens = useAuthStore((s) => s.setTokens)
@@ -75,6 +92,9 @@ export function ProfilePage() {
   const [showDetails, setShowDetails] = useState(false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [isEditingSecurity, setIsEditingSecurity] = useState(false)
+  const [showPlanReport, setShowPlanReport] = useState(false)
+  const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
+  const { data: planReportsData } = useOrganizationPlanPaymentReports(user?.role === 'admin')
 
   const {
     register: registerProfile,
@@ -143,6 +163,9 @@ export function ProfilePage() {
   const initials = getInitial(user.name, 'U')
   const organization = user.role === 'admin' ? user.organization : undefined
   const planAccess = getOrganizationPlanAccess(organization)
+  const planCatalogItem = plansData?.plans.find((plan) => plan.key === organization?.plan)
+  const planPrice = planCatalogItem?.priceUsdMonthly ?? null
+  const recentPlanReports = planReportsData?.reports.slice(0, 3) ?? []
 
   const onProfileSubmit = async (data: ProfileForm) => {
     const emailChanged = data.email.toLowerCase() !== user.email.toLowerCase()
@@ -285,9 +308,11 @@ export function ProfilePage() {
                 <div>
                   <p className="text-xl font-semibold">{BUSINESS_PLANS[organization.plan].label}</p>
                   <p className="text-sm text-muted-foreground">
-                    {BUSINESS_PLANS[organization.plan].priceUsdMonthly === null
-                      ? 'Precio acordado según tus necesidades'
-                      : `${BUSINESS_PLANS[organization.plan].priceUsdMonthly} USD al mes`}
+                    {plansLoading
+                      ? 'Cargando precio...'
+                      : planPrice === null
+                        ? 'Precio acordado según tus necesidades'
+                        : `${planPrice} USD al mes`}
                   </p>
                 </div>
                 {planAccess.clientCount !== null && planAccess.clientLimit !== null && (
@@ -341,7 +366,41 @@ export function ProfilePage() {
                     Vence el {formatDate(organization.planExpiresAt)}.
                   </p>
                 )}
-                <PlanUpgradeButton organization={organization} />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    className="flex-1"
+                    onClick={() => setShowPlanReport(true)}
+                  >
+                    Reportar pago
+                  </Button>
+                  <PlanUpgradeButton organization={organization} className="flex-1" />
+                </div>
+
+                {recentPlanReports.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Pagos de plan reportados</p>
+                    <div className="space-y-1.5">
+                      {recentPlanReports.map((report) => {
+                        const status = PLAN_REPORT_STATUS[report.status]
+                        return (
+                          <div
+                            key={report.id}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm"
+                          >
+                            <span className="min-w-0 truncate text-muted-foreground">
+                              {report.months} {report.months === 1 ? 'mes' : 'meses'} ·{' '}
+                              {formatDate(report.createdAt)}
+                            </span>
+                            <Badge variant="outline" className={status.className}>
+                              {status.label}
+                            </Badge>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -596,6 +655,14 @@ export function ProfilePage() {
       </Card>
 
       <NotificationSettings />
+
+      {organization && (
+        <OrganizationPlanPaymentReportSheet
+          organization={organization}
+          open={showPlanReport}
+          onOpenChange={setShowPlanReport}
+        />
+      )}
     </div>
   )
 }

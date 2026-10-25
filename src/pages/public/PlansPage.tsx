@@ -4,13 +4,11 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
-  BUSINESS_PLANS,
   CUSTOM_PLAN_MIN_CLIENTS,
 } from '@/lib/constants'
 import { getWhatsAppUrl } from '@/lib/business-plan'
-import type { BusinessPlanKey } from '@/types/api'
-
-const PLAN_KEYS: BusinessPlanKey[] = ['basico', 'pro', 'negocio', 'a-medida']
+import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
+import type { BusinessPlanCatalogItem, BusinessPlanKey } from '@/types/api'
 
 const PLAN_CONTENT: Record<
   BusinessPlanKey,
@@ -73,9 +71,8 @@ function WhatsAppButton({
   )
 }
 
-function PlanCard({ planKey }: { planKey: BusinessPlanKey }) {
-  const plan = BUSINESS_PLANS[planKey]
-  const content = PLAN_CONTENT[planKey]
+function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
+  const content = PLAN_CONTENT[plan.key]
   const capacity =
     plan.clientLimit === null
       ? `más de ${CUSTOM_PLAN_MIN_CLIENTS - 1} clientes`
@@ -86,7 +83,7 @@ function PlanCard({ planKey }: { planKey: BusinessPlanKey }) {
   return (
     <Card
       className={`flex h-full flex-col rounded-2xl border-[1.5px] bg-surface shadow-none ${
-        planKey === 'pro' ? 'border-primary ring-2 ring-secondary' : ''
+        plan.key === 'pro' ? 'border-primary ring-2 ring-secondary' : ''
       }`}
     >
       <CardContent className="flex h-full flex-col px-[22px] py-[26px]">
@@ -115,7 +112,7 @@ function PlanCard({ planKey }: { planKey: BusinessPlanKey }) {
         </ul>
         <WhatsAppButton
           message={content.message}
-          variant={planKey === 'pro' ? 'secondary' : 'default'}
+          variant={plan.key === 'pro' ? 'secondary' : 'default'}
           className="mt-auto h-auto w-full rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold disabled:opacity-100 disabled:cursor-not-allowed"
         >
           {content.action}
@@ -165,7 +162,9 @@ const FAQS = [
 
 export function PlansPage() {
   const hasWhatsAppNumber = Boolean(getWhatsAppUrl(''))
-  const trialDays = BUSINESS_PLANS.basico.trialDays
+  const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
+  const plans = plansData?.plans ?? []
+  const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? 14
 
   useEffect(() => {
     const preconnect = document.createElement('link')
@@ -358,9 +357,13 @@ export function PlansPage() {
               clientes.
             </p>
             <div className="mt-9 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {PLAN_KEYS.map((planKey) => (
-                <PlanCard key={planKey} planKey={planKey} />
-              ))}
+              {plansLoading ? (
+                <p className="text-sm text-muted-foreground sm:col-span-2 xl:col-span-4">
+                  Cargando planes...
+                </p>
+              ) : (
+                plans.map((plan) => <PlanCard key={plan.key} plan={plan} />)
+              )}
             </div>
             <div className="mt-6 rounded-xl border border-border bg-surface-muted p-5 text-surface-muted-foreground">
               <h3 className="font-semibold text-foreground">

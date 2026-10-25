@@ -359,6 +359,31 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'warning',
     message: 'Tu plan venció o está suspendido. Puedes consultar tus datos, pero no cambiarlos.',
   },
+  PLAN_DOWNGRADE_NOT_ALLOWED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'No puedes bajar de plan mientras la suscripción esté vigente. Renueva o espera al vencimiento.',
+  },
+  INVALID_PLAN_MONTHS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Los meses a renovar deben ser un entero entre 1 y 12.',
+  },
+  PLAN_PAYMENT_REPORT_ALREADY_EXISTS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Ya tienes un pago de plan en verificación.',
+  },
+  PLAN_PAYMENT_REPORT_NOT_FOUND: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'No encontramos el reporte de plan.',
+  },
+  PLAN_PAYMENT_REPORT_ALREADY_REVIEWED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Ese reporte de plan ya fue revisado.',
+  },
   CLIENT_LIMIT_REACHED: {
     type: 'toast',
     variant: 'warning',

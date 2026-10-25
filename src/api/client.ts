@@ -30,8 +30,14 @@ api.interceptors.request.use((config) => {
   const isWriteRequest =
     method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
   const isAccountRequest = /\/auth\/(?:logout|refresh|me|change-password)$/.test(url)
+  const isPlanPaymentReportRequest = /\/organization-plan-payment-reports(?:\/|$)/.test(url)
 
-  if (user?.role === 'admin' && isWriteRequest && !isAccountRequest) {
+  if (
+    user?.role === 'admin' &&
+    isWriteRequest &&
+    !isAccountRequest &&
+    !isPlanPaymentReportRequest
+  ) {
     const access = getOrganizationPlanAccess(user.organization)
     if (access.isReadOnly) {
       const error: ApiError = {

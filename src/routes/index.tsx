@@ -32,6 +32,7 @@ import {
   ConsultaPage,
   PlansPage,
   PaymentReportsPage,
+  OrganizationPlanReportsPage,
   PageLoader,
 } from '@/routes/lazy-pages'
 
@@ -255,6 +256,16 @@ export const router = createBrowserRouter(
           <Suspense fallback={<PageLoader />}>
             <PaymentReportsPage />
           </Suspense>
+        ),
+      },
+      {
+        path: 'payment-reports/plans',
+        element: (
+          <RoleGuard allowedRoles={['super-admin']}>
+            <Suspense fallback={<PageLoader />}>
+              <OrganizationPlanReportsPage />
+            </Suspense>
+          </RoleGuard>
         ),
       },
       {

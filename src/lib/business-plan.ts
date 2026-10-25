@@ -44,6 +44,91 @@ export function getOrganizationPlanAccess(
   }
 }
 
+export function isOrganizationPlanLocked(
+  organization: Organization | null | undefined,
+  now = new Date(),
+) {
+  if (organization?.planStatus === 'activo') {
+    if (!organization.planExpiresAt) return true
+    return Date.parse(organization.planExpiresAt) > now.getTime()
+  }
+  if (organization?.planStatus === 'prueba') {
+    return Boolean(
+      organization.trialEndsAt && Date.parse(organization.trialEndsAt) > now.getTime(),
+    )
+  }
+  return false
+}
+
+export function getOrganizationBillingDay(
+  organization: Organization | null | undefined,
+): number {
+  if (
+    typeof organization?.billingDay === 'number' &&
+    Number.isInteger(organization.billingDay)
+  ) {
+    return Math.min(Math.max(organization.billingDay, 1), 28)
+  }
+  const anchor =
+    organization?.createdAt ?? organization?.planExpiresAt ?? organization?.trialEndsAt
+  const date = anchor ? new Date(anchor) : new Date()
+  return Math.min(Math.max(date.getUTCDate(), 1), 28)
+}
+
+export function addOrganizationBillingMonths(
+  base: Date,
+  months: number,
+  billingDay: number,
+): Date {
+  const day = Math.min(Math.max(Math.trunc(billingDay), 1), 28)
+  const targetMonth = new Date(
+    Date.UTC(
+      base.getUTCFullYear(),
+      base.getUTCMonth() + (base.getUTCDate() >= day ? 1 : 0),
+      1,
+    ),
+  )
+  targetMonth.setUTCMonth(targetMonth.getUTCMonth() + Math.max(months - 1, 0))
+  const year = targetMonth.getUTCFullYear()
+  const month = targetMonth.getUTCMonth()
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+  return new Date(Date.UTC(year, month, Math.min(day, lastDay), 23, 59, 59, 999))
+}
+
+export function resolveOrganizationPlanExpiration(input: {
+  organization: Organization
+  paidAt: Date
+  months: number
+  now?: Date
+}): Date {
+  const now = input.now ?? new Date()
+  const { organization, paidAt } = input
+  const planExpiresAt = organization.planExpiresAt
+    ? Date.parse(organization.planExpiresAt)
+    : Number.NaN
+  const trialEndsAt = organization.trialEndsAt ? Date.parse(organization.trialEndsAt) : Number.NaN
+  const paidActive =
+    organization.planStatus === 'activo' &&
+    Number.isFinite(planExpiresAt) &&
+    planExpiresAt > now.getTime()
+  const trialActive =
+    organization.planStatus === 'prueba' &&
+    Number.isFinite(trialEndsAt) &&
+    trialEndsAt > now.getTime()
+
+  const base = paidActive
+    ? new Date(planExpiresAt)
+    : trialActive
+      ? new Date(trialEndsAt)
+      : new Date(Math.max(paidAt.getTime(), now.getTime()))
+
+  return addOrganizationBillingMonths(
+    base,
+    input.months,
+    getOrganizationBillingDay(organization),
+  )
+}
+
 export function getWhatsAppUrl(message: string): string | null {
   const phone = import.meta.env.VITE_WHATSAPP_NUMBER?.replace(/\D/g, '')
   return phone && /^\d{8,15}$/.test(phone)

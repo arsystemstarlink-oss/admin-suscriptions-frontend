@@ -80,6 +80,7 @@ export interface Organization {
   plan?: BusinessPlanKey
   clientLimit?: number
   planStatus?: OrganizationPlanStatus
+  billingDay?: number
   trialEndsAt?: string | null
   planExpiresAt?: string | null
   clientCount?: number
@@ -161,13 +162,80 @@ export interface RegisterOrganizationPlanPaymentRequest {
   amount: number
   method: OrganizationPlanPaymentMethod
   plan: BusinessPlanKey
-  newPlanExpiresAt: string
+  clientLimit?: number
+  months?: number
+  newPlanExpiresAt?: string
   notes?: string
 }
 
 export interface RegisterOrganizationPlanPaymentResponse {
   payment: OrganizationPlanPayment
   organization: Organization
+}
+
+export interface BusinessPlanCatalogItem {
+  key: BusinessPlanKey
+  label: string
+  priceUsdMonthly: number | null
+  clientLimit: number | null
+  adminLimit: number
+  trialDays: number
+}
+
+export interface BusinessPlansResponse {
+  plans: BusinessPlanCatalogItem[]
+}
+
+export type OrganizationPlanPaymentReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface OrganizationPlanPaymentReport {
+  id: string
+  organizationId: string
+  organizationName?: string
+  plan: BusinessPlanKey
+  amount: number
+  method: OrganizationPlanPaymentMethod
+  paidAt: string
+  months: number
+  clientLimit?: number
+  reference?: string
+  notes?: string
+  status: OrganizationPlanPaymentReportStatus
+  createdAt: string
+  createdByUserId: string
+  reviewedAt?: string
+  reviewedByUserId?: string
+  reviewNotes?: string
+  appliedPaymentId?: string
+}
+
+export interface CreateOrganizationPlanPaymentReportRequest {
+  plan: BusinessPlanKey
+  months: number
+  method: OrganizationPlanPaymentMethod
+  paidAt: string
+  amount?: number
+  clientLimit?: number
+  reference?: string
+  notes?: string
+  organizationId?: string
+}
+
+export interface OrganizationPlanPaymentReportsResponse {
+  reports: OrganizationPlanPaymentReport[]
+  pagination?: Pagination
+}
+
+export interface ReviewOrganizationPlanPaymentReportRequest {
+  action: 'approve' | 'reject'
+  notes?: string
+  clientLimit?: number
+}
+
+export interface ReviewOrganizationPlanPaymentReportResponse {
+  report: OrganizationPlanPaymentReport
+  organization?: Organization
+  payment?: OrganizationPlanPayment
 }
 
 export interface User {
@@ -858,6 +926,11 @@ export type ErrorCode =
   | 'PAYMENT_REPORT_ALREADY_REVIEWED'
   | 'PAYMENT_REPORT_INVALID_STATE'
   | 'PLAN_READ_ONLY'
+  | 'PLAN_DOWNGRADE_NOT_ALLOWED'
+  | 'INVALID_PLAN_MONTHS'
+  | 'PLAN_PAYMENT_REPORT_ALREADY_EXISTS'
+  | 'PLAN_PAYMENT_REPORT_NOT_FOUND'
+  | 'PLAN_PAYMENT_REPORT_ALREADY_REVIEWED'
   | 'CLIENT_LIMIT_REACHED'
   | 'TWILIO_ERROR'
   | 'HAS_UNPAID_PERIODS'

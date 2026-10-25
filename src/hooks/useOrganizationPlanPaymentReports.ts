@@ -15,7 +15,8 @@ export function useBusinessPlans() {
   return useQuery({
     queryKey: qk.businessPlans,
     queryFn: businessPlansApi.list,
-    staleTime: 60 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 

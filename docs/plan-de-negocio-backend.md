@@ -12,7 +12,7 @@ Agregar al documento/DTO `Organization`:
 | Campo | Tipo | Regla |
 |---|---|---|
 | `plan` | `'basico' \| 'pro' \| 'negocio' \| 'a-medida'` | Plan contratado. |
-| `clientLimit` | `number` | Límite efectivo de clientes. Básico 30, Pro 150, Negocio 300. Para A medida, asignación manual mayor de 300. |
+| `clientLimit` | `number` | Límite efectivo de clientes. Básico 30, Pro 75, Negocio 150. Para A medida, asignación manual mayor de 150. |
 | `planStatus` | `'prueba' \| 'activo' \| 'vencido' \| 'suspendido'` | Estado de acceso a escritura de la organización. |
 | `billingDay` | `number` | Día de corte mensual (1-28). Se establece al crear la organización a partir de la fecha de alta y se mantiene en las renovaciones. |
 | `trialEndsAt` | `string \| null` | Fin de prueba en ISO 8601 UTC; solo se usa con Básico en prueba. |
@@ -45,9 +45,9 @@ El catálogo comercial que debe reflejar el frontend es:
 | Clave | Nombre | Límite predeterminado | Precio mensual | Prueba |
 |---|---|---:|---:|---|
 | `basico` | Básico | 30 clientes | 15 USD | 14 días |
-| `pro` | Pro | 150 clientes | 25 USD | No |
-| `negocio` | Negocio | 300 clientes | 40 USD | No |
-| `a-medida` | A medida | Más de 300, asignado manualmente | Cotización | No |
+| `pro` | Pro | 75 clientes | 25 USD | No |
+| `negocio` | Negocio | 150 clientes | 40 USD | No |
+| `a-medida` | A medida | Más de 150, asignado manualmente | Cotización | No |
 
 Todos incluyen WhatsApp y las mismas funciones. Los importes son precios de referencia; Twilio,
 mensajes, plantillas y los servicios opcionales de configuración o carga se pagan por separado y
@@ -60,7 +60,7 @@ no son suscripciones de la aplicación.
 - El super-admin puede asignar `plan`, `clientLimit`, `planStatus`, `trialEndsAt` y `planExpiresAt`
   mediante `PUT /organizations/:id`.
 - Validar en servidor que `clientLimit` sea entero positivo, que A medida tenga límite mayor de
-  300 y que los planes fijos respeten su límite comercial. No aceptar un límite efectivo
+  150 y que los planes fijos respeten su límite comercial. No aceptar un límite efectivo
   proporcionado por un admin.
 - Requerir `trialEndsAt` para estado `prueba` y permitirlo únicamente en Básico; requerir
   `planExpiresAt` para estado `activo`. Los estados `vencido` y `suspendido` pueden conservar sus

@@ -5,13 +5,13 @@ import {
   type BusinessPlanKey,
 } from '@/types/api'
 
-export const CUSTOM_PLAN_MIN_CLIENTS = 301
+export const CUSTOM_PLAN_MIN_CLIENTS = 151
 export const PLAN_USAGE_WARNING_PERCENT = 80
 
 export const BUSINESS_PLANS = {
   basico: { label: 'Básico', clientLimit: 30, adminLimit: 1, trialDays: 14 },
-  pro: { label: 'Pro', clientLimit: 150, adminLimit: 3, trialDays: 0 },
-  negocio: { label: 'Negocio', clientLimit: 300, adminLimit: 5, trialDays: 0 },
+  pro: { label: 'Pro', clientLimit: 75, adminLimit: 3, trialDays: 0 },
+  negocio: { label: 'Negocio', clientLimit: 150, adminLimit: 5, trialDays: 0 },
   'a-medida': { label: 'A medida', clientLimit: null, adminLimit: 5, trialDays: 0 },
 } as const satisfies Record<
   BusinessPlanKey,

@@ -7,6 +7,7 @@ import {
 } from '@/hooks/useOrganizationPlanPaymentReports'
 import {
   BUSINESS_PLANS,
+  CUSTOM_PLAN_MIN_CLIENTS,
   STATUS_ERROR,
   STATUS_SUCCESS,
   STATUS_WARNING,
@@ -262,11 +263,13 @@ export function OrganizationPlanReportsPage() {
                     <Input
                       id="plan-report-review-limit"
                       type="number"
-                      min={301}
+                      min={CUSTOM_PLAN_MIN_CLIENTS}
                       value={clientLimit}
                       onChange={(event) => setClientLimit(event.target.value)}
                       placeholder={
-                        selected.clientLimit ? String(selected.clientLimit) : 'Mínimo 301'
+                        selected.clientLimit
+                          ? String(selected.clientLimit)
+                          : `Mínimo ${CUSTOM_PLAN_MIN_CLIENTS}`
                       }
                     />
                   </div>

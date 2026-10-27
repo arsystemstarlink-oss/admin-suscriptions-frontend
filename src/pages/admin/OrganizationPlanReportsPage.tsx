@@ -1,6 +1,5 @@
 ﻿import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, Clock, Inbox, XCircle } from 'lucide-react'
+import { CheckCircle, Clock, Inbox, XCircle } from 'lucide-react'
 import {
   useAllOrganizationPlanPaymentReports,
   useBusinessPlans,
@@ -144,7 +143,7 @@ export function OrganizationPlanReportsPage() {
   return (
     <>
       <ListPageLayout
-        title="Reportes de plan"
+        title="Pagos de plan"
         description="Aprueba o rechaza los pagos de plan reportados por los administradores."
         searchProps={{
           value: search,
@@ -174,15 +173,6 @@ export function OrganizationPlanReportsPage() {
             : 'No encontramos reportes con ese estado.'
         }
       >
-        <div className="mb-3">
-          <Button asChild variant="ghost" size="sm" className="-ml-2">
-            <Link to="/payment-reports">
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              Reportes de clientes
-            </Link>
-          </Button>
-        </div>
-
         <div className="space-y-3">
           {filteredReports.map((report) => (
             <ListCard key={report.id} onClick={() => setSelected(report)}>

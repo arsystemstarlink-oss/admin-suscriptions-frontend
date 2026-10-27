@@ -188,7 +188,7 @@ export function PaymentReportsPage() {
         primaryAction={
           isSuperAdmin ? (
             <Button asChild variant="outline">
-              <Link to="/payment-reports/plans">Reportes de plan</Link>
+              <Link to="/config/plan-payments">Pagos de plan</Link>
             </Button>
           ) : undefined
         }

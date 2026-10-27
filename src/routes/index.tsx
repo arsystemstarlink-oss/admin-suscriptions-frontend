@@ -5,6 +5,7 @@ import { RoleGuard } from '@/guards/RoleGuard'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { RootRedirect } from '@/routes/RootRedirect'
 import {
   LegacyClientEditRedirect,
   LegacyClientRedirect,
@@ -91,16 +92,15 @@ export const router = createBrowserRouter(
   },
   {
     path: '/',
+    element: <RootRedirect />,
+  },
+  {
     element: (
       <AuthGuard>
         <AuthenticatedLayout />
       </AuthGuard>
     ),
     children: [
-      {
-        index: true,
-        element: <Navigate to="/dashboard" replace />,
-      },
       {
         path: 'dashboard',
         element: (
@@ -255,6 +255,16 @@ export const router = createBrowserRouter(
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
                   <OrganizationsPage />
+                </Suspense>
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'plan-payments',
+            element: (
+              <RoleGuard allowedRoles={['super-admin']}>
+                <Suspense fallback={<PageLoader />}>
+                  <OrganizationPlanReportsPage />
                 </Suspense>
               </RoleGuard>
             ),

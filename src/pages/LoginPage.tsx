@@ -41,7 +41,7 @@ export function LoginPage() {
   const location = useLocation()
   const { setTokens, setUser, user } = useAuthStore()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard'
 
   useEffect(() => {
     if (isAuthenticated) navigate(from, { replace: true })

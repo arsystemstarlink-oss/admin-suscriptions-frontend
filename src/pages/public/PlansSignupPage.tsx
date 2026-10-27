@@ -162,6 +162,71 @@ function PaymentInstructions({ instructions }: { instructions: PublicPaymentInst
   )
 }
 
+function PlanSelectionSummary({
+  planLabel,
+  price,
+  trialDays,
+  clientLimit,
+  adminLimit,
+  isPaid,
+}: {
+  planLabel: string
+  price: number | null
+  trialDays: number
+  clientLimit: number | null
+  adminLimit: number | null
+  isPaid: boolean
+}) {
+  const features = [
+    clientLimit === null ? 'Clientes a medida' : `Hasta ${clientLimit} clientes`,
+    adminLimit === null
+      ? 'Administradores a medida'
+      : adminLimit === 1
+        ? '1 administrador'
+        : `Hasta ${adminLimit} administradores`,
+    'WhatsApp incluido',
+    'Portal de consulta para tus clientes',
+  ]
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-surface to-surface-muted">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 p-5">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Tu selección
+          </p>
+          <p className="mt-1 text-2xl font-bold">{planLabel}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isPaid ? 'Plan mensual para tu organización' : 'Prueba gratis para tu organización'}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold">
+            {price === null ? '—' : formatCurrency(price)}
+            <span className="ml-1 text-sm font-medium text-muted-foreground">/mes</span>
+          </p>
+          <p className="mt-1 text-xs font-medium text-success">
+            {isPaid
+              ? `Básico de prueba por ${trialDays} días`
+              : `${trialDays} días gratis`}
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-2 p-5 sm:grid-cols-2">
+        {features.map((feature) => (
+          <div
+            key={feature}
+            className="flex items-start gap-2 rounded-lg border border-border/60 bg-surface/70 px-3 py-2 text-sm"
+          >
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            <span>{feature}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function PlansSignupPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -676,6 +741,14 @@ export function PlansSignupPage() {
 
                 {step === 2 && (
                   <div className="space-y-4">
+                    <PlanSelectionSummary
+                      planLabel={planLabel}
+                      price={total}
+                      trialDays={trialDays}
+                      clientLimit={planItem?.clientLimit ?? null}
+                      adminLimit={planItem?.adminLimit ?? null}
+                      isPaid={isPaid}
+                    />
                     {isPaid ? (
                       <>
                         <div className="rounded-xl border border-info/20 bg-info/10 p-4 text-sm">
@@ -767,11 +840,36 @@ export function PlansSignupPage() {
                         )}
                       </>
                     ) : (
-                      <div className="rounded-xl border border-success/30 bg-success/10 p-4 text-sm">
-                        <p className="font-semibold">No necesitas pagar ahora</p>
-                        <p className="mt-1 text-muted-foreground">
-                          Empiezas con el plan Básico y {trialDays} días de prueba gratis.
-                        </p>
+                      <div className="rounded-2xl border border-success/25 bg-gradient-to-br from-success/10 via-surface to-surface p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15">
+                            <Check className="h-5 w-5 text-success" />
+                          </div>
+                          <div>
+                            <p className="text-base font-semibold">Sin pago hoy</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Activas {trialDays} días de prueba con todas las funciones del plan
+                              Básico. No pedimos tarjeta ni pago por adelantado; al terminar eliges
+                              cómo continuar.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {[
+                            'No pedimos tarjeta',
+                            'Sin compromiso de permanencia',
+                            'Tus datos quedan guardados',
+                            'Puedes cambiar de plan después',
+                          ].map((item) => (
+                            <div
+                              key={item}
+                              className="flex items-start gap-2 rounded-lg border border-success/15 bg-surface/70 px-3 py-2 text-sm"
+                            >
+                              <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

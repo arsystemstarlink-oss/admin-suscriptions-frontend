@@ -86,7 +86,7 @@ export function useOnboardOrganization() {
     mutationFn: (data: OnboardOrganizationRequest) => organizationsApi.onboard(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.organizations.lists })
-      toast.success('Organización y administrador creados')
+      toast.success('Organización creada e invitación generada')
     },
   })
 }

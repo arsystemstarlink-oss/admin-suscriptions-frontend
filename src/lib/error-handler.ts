@@ -94,6 +94,31 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     field: 'email',
     message: 'Este correo ya está en uso.',
   },
+  SLUG_TAKEN: {
+    type: 'field-error',
+    field: 'slug',
+    message: 'Ya existe una organización con ese slug.',
+  },
+  PASSWORD_CHANGE_REQUIRED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Debes cambiar tu contraseña inicial antes de continuar.',
+  },
+  INVITE_NOT_FOUND: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La invitación no existe o ya no es válida.',
+  },
+  INVITE_EXPIRED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'La invitación expiró. Solicita una nueva al administrador.',
+  },
+  INVITE_ALREADY_USED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Esta invitación ya fue utilizada. Inicia sesión con tu contraseña.',
+  },
   ADMIN_LIMIT_REACHED: {
     type: 'toast',
     variant: 'warning',
@@ -450,6 +475,11 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     type: 'field-error',
     field: 'twilioPhoneNumber',
     message: 'Ese número coincide con más de una organización. Contacta al soporte.',
+  },
+  INVALID_TWILIO_CONFIG: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Completa Account SID, Auth Token y número de WhatsApp para habilitar WhatsApp.',
   },
   INVALID_PAYLOAD: {
     type: 'toast',

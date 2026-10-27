@@ -27,6 +27,7 @@ export function OrganizationsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null)
+  const [editFocusWhatsApp, setEditFocusWhatsApp] = useState(false)
   const [paymentOrganization, setPaymentOrganization] = useState<Organization | null>(null)
   const [deletingOrganization, setDeletingOrganization] = useState<Organization | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
@@ -346,12 +347,26 @@ export function OrganizationsPage() {
       </div>
       </ListPageLayout>
 
-      <CreateOrganizationSheet open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateOrganizationSheet
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onConfigureWhatsApp={(organization) => {
+          setCreateOpen(false)
+          setEditFocusWhatsApp(true)
+          setEditingOrganization(organization)
+        }}
+      />
 
       <EditOrganizationSheet
         organization={editingOrganization!}
         open={!!editingOrganization}
-        onOpenChange={(open) => !open && setEditingOrganization(null)}
+        focusWhatsApp={editFocusWhatsApp}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingOrganization(null)
+            setEditFocusWhatsApp(false)
+          }
+        }}
       />
       {paymentOrganization && (
         <OrganizationPlanPaymentSheet

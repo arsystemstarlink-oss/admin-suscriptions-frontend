@@ -1,9 +1,12 @@
 import { api } from './client'
 import type {
+  AcceptInviteRequest,
+  AcceptInviteResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
   CreateAdminRequest,
   CreateAdminResponse,
+  InvitePreviewResponse,
   LoginRequest,
   LoginResponse,
   MeResponse,
@@ -34,6 +37,16 @@ export const authApi = {
 
   changePassword: async (data: ChangePasswordRequest): Promise<ChangePasswordResponse> => {
     const response = await api.post<ChangePasswordResponse>('/auth/change-password', data)
+    return response.data
+  },
+
+  getInvite: async (token: string): Promise<InvitePreviewResponse> => {
+    const response = await api.get<InvitePreviewResponse>(`/auth/invite/${encodeURIComponent(token)}`)
+    return response.data
+  },
+
+  acceptInvite: async (data: AcceptInviteRequest): Promise<AcceptInviteResponse> => {
+    const response = await api.post<AcceptInviteResponse>('/auth/invite/accept', data)
     return response.data
   },
 

@@ -5,6 +5,7 @@ import type {
   OnboardOrganizationResponse,
   OrganizationWhatsAppConfig,
   OrganizationListFilter,
+  SlugAvailabilityResponse,
   RegisterOrganizationPlanPaymentRequest,
   RegisterOrganizationPlanPaymentResponse,
   Organization,
@@ -39,6 +40,13 @@ export const organizationsApi = {
 
   onboard: async (data: OnboardOrganizationRequest): Promise<OnboardOrganizationResponse> => {
     const response = await api.post<OnboardOrganizationResponse>('/organizations/onboard', data)
+    return response.data
+  },
+
+  checkSlug: async (slug: string): Promise<SlugAvailabilityResponse> => {
+    const response = await api.get<SlugAvailabilityResponse>('/organizations/check-slug', {
+      params: { slug },
+    })
     return response.data
   },
 

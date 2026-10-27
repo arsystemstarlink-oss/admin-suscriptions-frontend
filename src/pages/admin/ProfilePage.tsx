@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -86,7 +87,9 @@ const PLAN_REPORT_STATUS: Record<
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const setTokens = useAuthStore((s) => s.setTokens)
+  const setUser = useAuthStore((s) => s.setUser)
   const logout = useAuthStore((s) => s.logout)
+  const navigate = useNavigate()
   const updateMutation = useUpdateMe()
   const passwordMutation = useChangePassword()
   const [showDetails, setShowDetails] = useState(false)
@@ -94,7 +97,14 @@ export function ProfilePage() {
   const [isEditingSecurity, setIsEditingSecurity] = useState(false)
   const [showPlanReport, setShowPlanReport] = useState(false)
   const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
-  const { data: planReportsData } = useOrganizationPlanPaymentReports(user?.role === 'admin')
+  const mustChangePassword = user?.mustChangePassword === true
+  const { data: planReportsData } = useOrganizationPlanPaymentReports(
+    user?.role === 'admin' && !mustChangePassword,
+  )
+
+  useEffect(() => {
+    if (mustChangePassword) setIsEditingSecurity(true)
+  }, [mustChangePassword])
 
   const {
     register: registerProfile,
@@ -199,8 +209,14 @@ export function ProfilePage() {
         newPassword: data.newPassword,
       })
       setTokens(response.accessToken, response.refreshToken)
+      setUser(response.user)
       resetPassword()
-      toast.success('Contraseña actualizada correctamente')
+      if (mustChangePassword) {
+        toast.success('Contraseña actualizada. Ya puedes usar la aplicación.')
+        navigate('/dashboard', { replace: true })
+      } else {
+        toast.success('Contraseña actualizada correctamente')
+      }
     } catch (err) {
       const handled = applyFieldError(err, (field, message) =>
         setPasswordError(field as 'currentPassword' | 'newPassword' | 'confirmPassword', {
@@ -214,6 +230,20 @@ export function ProfilePage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {mustChangePassword && (
+        <div className="rounded-xl border border-warning/30 bg-warning/10 p-4">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+            <div>
+              <p className="font-semibold text-foreground">Cambia tu contraseña inicial</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Usaste una contraseña temporal para entrar. Define una nueva para desbloquear el
+                resto de la aplicación.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

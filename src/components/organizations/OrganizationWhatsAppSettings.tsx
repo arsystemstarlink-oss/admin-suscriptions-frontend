@@ -200,7 +200,11 @@ export function OrganizationWhatsAppSettings({
   const readiness = configQuery.data?.readiness
 
   return (
-    <section className="space-y-5" aria-labelledby="organization-whatsapp-title">
+    <section
+      id="organization-whatsapp-settings"
+      className="space-y-5"
+      aria-labelledby="organization-whatsapp-title"
+    >
       <div className="flex items-center gap-2">
         <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
         <div>

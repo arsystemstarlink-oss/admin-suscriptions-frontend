@@ -103,8 +103,9 @@ export function LoginPage() {
       setUser(response.user)
 
       setShowSuccess(true)
+      const target = response.user.mustChangePassword ? '/config/profile' : from
       setTimeout(() => {
-        navigate(from, { replace: true })
+        navigate(target, { replace: true })
       }, 900)
     } catch (err) {
       const apiError = err as ApiError

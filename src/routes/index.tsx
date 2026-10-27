@@ -12,6 +12,7 @@ import {
 } from '@/routes/LegacyRedirects'
 import {
   LoginPage,
+  InvitePage,
   DashboardPage,
   ClientsListPage,
   ClientDetailPage,
@@ -43,6 +44,14 @@ export const router = createBrowserRouter(
     element: (
       <Suspense fallback={<PageLoader />}>
         <LoginPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/invite/:token',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <InvitePage />
       </Suspense>
     ),
   },

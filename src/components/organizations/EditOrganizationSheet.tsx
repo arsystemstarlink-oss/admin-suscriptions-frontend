@@ -70,9 +70,15 @@ interface EditOrganizationSheetProps {
   organization: Organization
   open: boolean
   onOpenChange: (open: boolean) => void
+  focusWhatsApp?: boolean
 }
 
-export function EditOrganizationSheet({ organization, open, onOpenChange }: EditOrganizationSheetProps) {
+export function EditOrganizationSheet({
+  organization,
+  open,
+  onOpenChange,
+  focusWhatsApp = false,
+}: EditOrganizationSheetProps) {
   const updateMutation = useUpdateOrganization()
   const deleteMutation = useDeleteOrganization()
   const { data: catalogData } = useBusinessPlans()
@@ -116,6 +122,16 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
       setShowDeleteConfirm(false)
     }
   }, [open, organization, reset])
+
+  useEffect(() => {
+    if (!open || !focusWhatsApp) return
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById('organization-whatsapp-settings')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [open, focusWhatsApp])
 
   const onSubmit = async (data: EditOrganizationForm) => {
     setError(null)

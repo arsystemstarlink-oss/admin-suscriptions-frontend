@@ -137,13 +137,46 @@ export interface OnboardOrganizationRequest {
   admin: {
     name: string
     email: string
-    password: string
+    invite?: boolean
+    password?: string
   }
 }
 
 export interface OnboardOrganizationResponse {
   organization: Organization
   admin: User
+  invite?: {
+    token: string
+    expiresAt: string
+  }
+}
+
+export interface SlugAvailabilityResponse {
+  slug: string | null
+  available: boolean
+  suggestion: string | null
+  message?: string
+}
+
+export interface InvitePreviewResponse {
+  invite: {
+    email: string
+    organizationName: string
+    expiresAt: string
+  }
+}
+
+export interface AcceptInviteRequest {
+  token: string
+  password: string
+  name?: string
+}
+
+export interface AcceptInviteResponse {
+  message: string
+  accessToken: string
+  refreshToken: string
+  user: User
 }
 
 export interface UpdateOrganizationRequest {
@@ -277,6 +310,7 @@ export interface User {
   organizationId: string | null
   organization?: Organization
   phone?: string
+  mustChangePassword?: boolean
   createdAt: string
   lastLoginAt?: string
 }
@@ -555,6 +589,7 @@ export interface ChangePasswordResponse {
   message: string
   accessToken: string
   refreshToken: string
+  user: User
 }
 
 export interface CreateAdminResponse {
@@ -899,6 +934,7 @@ export type ErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'USER_NOT_FOUND'
   | 'EMAIL_TAKEN'
+  | 'SLUG_TAKEN'
   | 'ADMIN_LIMIT_REACHED'
   | 'ADMIN_LIMIT_BELOW_USAGE'
   | 'INVALID_EMAIL'
@@ -974,6 +1010,11 @@ export type ErrorCode =
   | 'INVALID_FILTER'
   | 'TWILIO_NUMBER_IN_USE'
   | 'TWILIO_NUMBER_AMBIGUOUS'
+  | 'INVALID_TWILIO_CONFIG'
+  | 'PASSWORD_CHANGE_REQUIRED'
+  | 'INVITE_NOT_FOUND'
+  | 'INVITE_EXPIRED'
+  | 'INVITE_ALREADY_USED'
   | 'INVALID_PAYLOAD'
   | 'INVALID_SUBSCRIPTION_CLIENT'
   | 'INVALID_SUBSCRIPTION_PLAN'

@@ -28,5 +28,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  if (user?.mustChangePassword && location.pathname !== '/config/profile') {
+    return <Navigate to="/config/profile" replace />
+  }
+
   return <>{children}</>
 }

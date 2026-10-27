@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { ClipboardList, User, UserPlus, Building2 } from 'lucide-react'
+import { ClipboardList, Inbox, User, UserPlus, Building2 } from 'lucide-react'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 
 export function SettingsLayout() {
@@ -34,6 +34,14 @@ export function SettingsLayout() {
         label: 'Organizaciones',
         title: 'Organizaciones',
         subtitle: 'Gestiona las organizaciones del sistema',
+        end: false,
+      })
+      base.push({
+        to: '/config/plan-quote-requests',
+        icon: Inbox,
+        label: 'Cotizaciones',
+        title: 'Cotizaciones',
+        subtitle: 'Solicitudes del plan A medida',
         end: false,
       })
     } else {

@@ -317,7 +317,13 @@ interface DebtorItem {
 ```typescript
 // Público. Rate limit 30 / 15 min por IP.
 // Response 200
-{ invite: { email: string; organizationName: string; expiresAt: string } }
+{
+  invite: {
+    email: string;
+    organizationName: string;
+    expiresAt: string;
+  };
+}
 // Errors: 404 INVITE_NOT_FOUND | 409 INVITE_ALREADY_USED | 410 INVITE_EXPIRED
 ```
 
@@ -326,6 +332,7 @@ interface DebtorItem {
 // Público. Un solo uso.
 // Request
 { token: string; password: string; name?: string }
+// password: mínimo 8 caracteres, letras y números
 // Response 200
 { message: string; accessToken: string; refreshToken: string; user: User }
 // Configura la contraseña, marca la invitación como usada, revoca sesiones
@@ -441,7 +448,12 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
 ```typescript
 // Query: { slug: string }
 // Response 200
-{ slug: string | null; available: boolean; suggestion: string | null; message?: string }
+{
+  slug: string | null;        // slug normalizado
+  available: boolean;
+  suggestion: string | null;  // alternativa libre cuando no está disponible
+  message?: string;
+}
 ```
 
 **POST /organizations/onboard**
@@ -556,9 +568,9 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
 {
   id: string; name: string; slug?: string; active: boolean;
   plan: 'basico' | 'pro' | 'negocio' | 'a-medida';
-  clientLimit: number; // tope efectivo: en planes fijos el servidor lo deriva del plan y manda sobre el valor almacenado
+  clientLimit: number;
   planStatus: 'prueba' | 'activo' | 'vencido' | 'suspendido';
-  billingDay: number; // dÃ­a de corte mensual (1-28)
+  billingDay: number; // día de corte mensual (1-28)
   trialEndsAt: string | null; planExpiresAt: string | null; clientCount: number;
   createdAt: string; createdBy?: string;
   twilioConfigured: boolean; // true si accountSid+authToken+phoneNumber presentes y enabled !== false
@@ -569,8 +581,6 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
     authTokenSet: boolean; // el authToken NUNCA se retorna
   }
 }
-// El bloqueo de bajadas compara siempre contra ese tope efectivo, no contra un clientLimit
-// almacenado que haya quedado desactualizado respecto al catálogo.
 ```
 
 **DELETE /organizations/:id**
@@ -864,6 +874,91 @@ interface BusinessPlanCatalogItem {
 
 ---
 
+### Alta autoservicio y cotizaciones (`/public` y `/plan-quote-requests`)
+
+Permiten contratar desde `/planes` sin intervencion del super-admin. El alta crea la
+organizacion en plan Basico de prueba; si el plan es Pro o Negocio deja ademas un
+`OrganizationPlanPaymentReport` PENDING con el precio fijado por el servidor. A medida solo
+crea una solicitud de cotizacion.
+
+**Protecciones**
+- `POST /public/signup`: 5 intentos / 15 min por IP, CAPTCHA accion `public_signup`.
+- `POST /public/plan-quote-requests`: 10 intentos / 15 min por IP, CAPTCHA accion `public_quote`.
+- El CAPTCHA se omite si `TURNSTILE_SECRET_KEY` no esta configurado.
+
+**GET /public/payment-instructions** (sin auth)
+```typescript
+// Response 200
+{
+  bankTransfer: { bankName: string; accountHolder: string; accountNumber: string; accountType: string; rif: string; notes?: string } | null;
+  usdt: { network: string; address: string; notes?: string } | null;
+}
+// Cada bloque es null si falta configuracion en PAYMENT_* del backend.
+```
+
+**POST /public/signup**
+```typescript
+{
+  plan: 'basico' | 'pro' | 'negocio';
+  organization: { name: string };
+  admin: { name: string; email: string; password: string; phone?: string };
+  payment?: { method: 'transferencia' | 'usdt'; reference: string; notes?: string }; // obligatorio en pro/negocio
+  turnstileToken?: string;
+}
+// Response 201
+{
+  accessToken: string; refreshToken: string;
+  user: User & { organization: Organization };
+  organization: Organization;
+  paymentReport?: OrganizationPlanPaymentReport;
+}
+// La organizacion nace en Basico/prueba con trialEndsAt = alta + dias de prueba.
+// Pro/negocio calculan amount = precio mensual x 1 y clientLimit del plan.
+// Errors: 400 INVALID_DATA | 400 INVALID_EMAIL | 400 WEAK_PASSWORD | 409 EMAIL_TAKEN
+//         400 INVALID_PAYMENT_METHOD | 409 PREPAID_LIMIT_REACHED | 429 RATE_LIMITED
+//         403 CAPTCHA_REQUIRED | 403 CAPTCHA_FAILED | 503 CAPTCHA_UNAVAILABLE
+```
+
+**POST /public/plan-quote-requests**
+```typescript
+{ name: string; email: string; phone?: string; organizationName?: string; estimatedClients: number; message?: string; turnstileToken?: string }
+// Response 201 → { request: { id: string; createdAt: string } }
+// Errors: 400 INVALID_DATA | 400 INVALID_EMAIL | 400 INVALID_PHONE | 429 RATE_LIMITED
+//         403 CAPTCHA_REQUIRED | 403 CAPTCHA_FAILED | 503 CAPTCHA_UNAVAILABLE
+```
+
+```typescript
+interface PlanQuoteRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  organizationName?: string;
+  estimatedClients: number;
+  message?: string;
+  status: 'NEW' | 'CONTACTED' | 'CLOSED';
+  reviewNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  handledBy?: string;
+  handledAt?: string;
+}
+```
+
+| Metodo | Path | Descripcion |
+|--------|------|-------------|
+| GET | /plan-quote-requests?status=NEW\|CONTACTED\|CLOSED\|ALL&limit=&offset= | Super-admin lista solicitudes (orden `createdAt` desc) |
+| PATCH | /plan-quote-requests/:id | Super-admin marca `CONTACTED`/`CLOSED`, guarda `reviewNotes` y `handledBy` |
+
+```typescript
+// PATCH /plan-quote-requests/:id
+{ status: 'CONTACTED' | 'CLOSED'; reviewNotes?: string }
+// Response 200 → { request: PlanQuoteRequest }
+// Errors: 404 NOT_FOUND | 400 INVALID_DATA
+```
+
+---
+
 ### Reportes de pago de plan de organizacion (`/organization-plan-payment-reports`, auth)
 
 El admin reporta el pago de su propia organizacion; el super-admin lo revisa. El monto de
@@ -891,9 +986,6 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
     billingDay: number;
     planLocked: boolean;       // plan/trial vigente: no permite bajar de plan ni de tope
     planChanged: boolean;
-    clientLimit: number | null; // tope efectivo del plan cotizado (null en A medida sin tope)
-    clientCount: number | null; // clientes actuales; null si el uso no esta disponible
-    adminLimit: number;         // administradores que concede el plan cotizado
     extendsCurrent: boolean;
     currentExpiry: string | null;
     paidAt: string;
@@ -909,9 +1001,6 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
 // Errors: 400 TENANT_REQUIRED | 404 ORGANIZATION_NOT_FOUND | 400 INVALID_DATA
 //         400 INVALID_PAYMENT_DATE
 // El frontend no debe recalcular vencimientos ni bloqueo de plan por su cuenta.
-// `clientLimit`, `adminLimit` y el `amount` de cada opcion son la fuente unica del tope,
-// los administradores permitidos y el monto; el catalogo publico solo orienta mientras la
-// cotizacion no ha llegado.
 ```
 
 ```typescript
@@ -926,11 +1015,8 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
   reference?: string; notes?: string;
 }
 // Response 201 → { report: OrganizationPlanPaymentReport }
-// El servidor revalida el bloqueo de bajadas contra el tope efectivo del plan vigente y,
-// si el reporte cambia de plan, que la organización no supere el límite de administradores.
 // Errors: 409 PLAN_PAYMENT_REPORT_ALREADY_EXISTS | 409 CLIENT_LIMIT_BELOW_USAGE
 //         409 PLAN_DOWNGRADE_NOT_ALLOWED | 409 PREPAID_LIMIT_REACHED
-//         409 ADMIN_LIMIT_BELOW_USAGE
 //         400 INVALID_PAYMENT_DATE | INVALID_PLAN_MONTHS
 ```
 
@@ -938,13 +1024,8 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
 // POST /organization-plan-payment-reports/:id/review
 { action: 'approve' | 'reject'; notes?: string; clientLimit?: number }
 // approve → registra OrganizationPlanPayment y actualiza la organización
-// Sin `clientLimit` enviado, A medida se aprueba con el tope del reporte; en planes fijos
-// el servidor ignora el valor enviado y deriva el tope del plan. Al cambiar de plan se
-// valida el límite de administradores.
 // Response 200 → { report, organization, payment }
 // Errors: 404 PLAN_PAYMENT_REPORT_NOT_FOUND | 409 PLAN_PAYMENT_REPORT_ALREADY_REVIEWED
-//         409 CLIENT_LIMIT_BELOW_USAGE | PLAN_DOWNGRADE_NOT_ALLOWED | ADMIN_LIMIT_BELOW_USAGE
-//         409 PREPAID_LIMIT_REACHED | 400 INVALID_CLIENT_LIMIT
 ```
 
 ### Bandeja de Reportes de Pago (admin, con auth)
@@ -1284,7 +1365,7 @@ POST /subscriptions
 POST /subscriptions
 { clientId, planId, kitNumber, billingDay: 6, maxOverduePeriods: 2, activationDate: "2026-01-05" }
 ```
-- Genera periodos desde activationDate hasta hoy, anclados al billingDay: el primer periodo termina en el siguiente dia de corte (puede acortarse dentro del mismo mes) y los siguientes encadenan mes a mes con ese dia
+- Genera periodos desde activationDate hasta hoy
 - El primer mes de activacion siempre nace `PENDING` (el cliente pago para activar, aunque el pago no este registrado aun)
 - Periodos siguientes pasados → `OVERDUE`, periodo actual → `PENDING` (maximo `maxOverduePeriods` vencidos)
 - Si overdueCount >= maxOverduePeriods → suscripcion `SUSPENDED` y NO se genera el periodo actual (los meses durante la suspension no generan deuda)
@@ -1305,11 +1386,9 @@ POST /subscriptions
   ]
 }
 ```
-- Genera periodos anclados al `billingDay`: el primero va desde `activationDate` hasta el siguiente dia de corte (puede ser el mismo mes) y los demas encadenan mes a mes con ese dia de corte
-- Marca como `PAID` el periodo cuyo rango coincide exactamente con cada pago historico (`startDate`, `endDate` y `periodLabel`)
-- Un pago historico debe solapar con un unico periodo generado; si no coincide, es ambiguo o se solapa con otro pago → `400 INVALID_HISTORICAL_PAYMENT_PERIOD`
-- El primer periodo de activacion sin pago historico queda `PENDING` (regla de activacion)
-- Resto: `OVERDUE` o `PENDING` segun fecha; `maxOverduePeriods` debe ser entero entre 1 y 3
+- Genera periodos, marca como `PAID` los que coinciden con pagos historicos
+- El primer mes de activacion sin pago historico queda `PENDING` (regla de activacion)
+- Resto: `OVERDUE` o `PENDING` segun fecha
 - amount debe ser igual al precio del plan
 
 ### 4. Registrar pago en periodo pendiente/vencido
@@ -1419,18 +1498,9 @@ Authorization: Bearer {accessToken}
 | accountNumber | Formato libre (ej: "ACC-8381534-78084-24") |
 | activationDate | Formato YYYY-MM-DD, no futura |
 | paidAt | Formato YYYY-MM-DD (solo fecha, sin hora) |
-| historicalPayments | Requiere activationDate; cada pago debe coincidir con un unico periodo del ciclo |
-| amount (pagos historicos) | Igual al precio del plan (bloqueado en la UI) |
-| paymentMethod (pagos historicos) | No INITIAL_PAYMENT (lista unica: CASH, TRANSFER, USDT, CARD, OTHER) |
-| maxOverduePeriods | Entero 1-3 al crear y editar |
-| PUT /subscriptions/:id planId/billingDay | Solo si no hay periodos PENDING/OVERDUE (`409 SUBSCRIPTION_HAS_OPEN_PERIODS`) |
-| PUT /subscriptions/:id status ACTIVE | Requiere overdueCount < maxOverduePeriods (`409 SUBSCRIPTION_HAS_OVERDUE_PERIODS`) |
-| phone de cliente | Se normaliza a E.164 (`+58...`) al crear/editar |
-| PUT /organizations/:id planStatus activo/prueba | Exige fecha de vencimiento/prueba futura (`400 INVALID_PLAN_DATE`) |
-| POST /organizations/:id/plan-payments paidAt | No futura (`400 INVALID_PAYMENT_DATE`) |
-| Plan bloqueado (solo lectura) | `vencido`/`suspendido`, o `prueba`/`activo` cuya fecha ya paso; es la misma regla en middleware, DTO y frontend |
-| Tope efectivo del plan | En planes fijos el servidor siempre deriva `clientLimit` del plan; manda sobre el valor almacenado |
-| Bloqueo de bajadas | Se compara contra el tope efectivo del plan vigente, no contra un limite desactualizado |
+| historicalPayments | Requiere activationDate |
+| amount (pagos historicos) | Igual al precio del plan |
+| paymentMethod (pagos historicos) | No INITIAL_PAYMENT |
 | POST /pay (amount) | Debe coincidir con amount del periodo |
 | PUT /billing-periods/:id | Solo periodos PAID |
 | DELETE /subscriptions/:id | Elimina suscripcion y sus periodos de facturacion |

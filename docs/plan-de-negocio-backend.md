@@ -196,13 +196,25 @@ con un proveedor.
 - Mantener aislamiento por organización en cada lectura, escritura, contador y pago.
 - Registrar quién asignó/cambió un plan y quién registró cada pago para auditoría, sin registrar
   contraseñas iniciales, tokens ni secretos.
-- No añadir cobro automático, registro autoservicio, procesamiento de pagos, ni servicios de
-  Twilio al cobro de la suscripción de esta aplicación.
+- No añadir cobro automático, procesamiento de pagos con pasarela, ni servicios de Twilio al cobro
+  de la suscripción de esta aplicación. El autoservicio actual usa pago reportado y revisión manual.
 
-## 7. Preparación para autoservicio futuro
+## 7. Autoservicio implementado
 
-No se implementa ahora. Para incorporarlo después hará falta un flujo público de alta con verificación
-de correo y protección contra abuso, creación segura del usuario y organización, aceptación de
-términos/privacidad, y un proveedor de pagos con webhooks firmados, idempotencia, conciliación,
-renovaciones, cancelaciones y tratamiento de reembolsos. La autorización y los límites del plan
-seguirán siendo decisiones del backend.
+El alta autoservicio ya está disponible desde `/planes/solicitar`:
+
+- **Básico**: crea organización + admin y empieza la prueba gratis. Sin reporte de pago.
+- **Pro / Negocio**: crea organización + admin en Básico de prueba y deja un
+  `OrganizationPlanPaymentReport` PENDING por 1 mes con el monto calculado por el backend. El
+  super-admin lo revisa en `/payment-reports/plans`; al aprobar se activa el plan y se envía push.
+- **A medida**: solo registra una solicitud (`PlanQuoteRequest`) que el super-admin ve en
+  `/config/plan-quote-requests`. No crea organización ni usuario.
+
+Rutas backend: `GET /public/payment-instructions`, `POST /public/signup`,
+`POST /public/plan-quote-requests`, `GET/PATCH /plan-quote-requests`. El alta usa rate limit
+estricto y CAPTCHA Turnstile (`public_signup`, `public_quote`), y crea la organización, el admin y
+el reporte pendiente en una sola transacción, revirtiendo el usuario de Firebase Auth si falla.
+
+**Queda fuera de alcance**: pasarela de cobro automático y webhooks, verificación de correo,
+recuperación de contraseña por correo, carga de comprobantes y conciliación/reembolsos. Las
+renovaciones y prepagos de 3/6/12 meses siguen desde Perfil con el flujo existente.

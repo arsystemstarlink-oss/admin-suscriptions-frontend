@@ -31,7 +31,7 @@ const PLAN_CONTENT: Record<
   },
   'a-medida': {
     features: ['Para ISP y equipos grandes', 'Hablamos y lo armamos contigo'],
-    action: 'Escribirnos',
+    action: 'Solicitar cotización',
     message: 'Quiero cotizar un plan a medida de A|R SYSTEM',
   },
 }
@@ -41,41 +41,6 @@ const DEFAULT_ADMIN_LIMITS: Record<BusinessPlanKey, number> = {
   pro: 3,
   negocio: 5,
   'a-medida': 5,
-}
-
-function WhatsAppButton({
-  message,
-  children,
-  variant = 'default',
-  className,
-}: {
-  message: string
-  children: React.ReactNode
-  variant?: 'default' | 'secondary' | 'outline'
-  className?: string
-}) {
-  const url = getWhatsAppUrl(message)
-
-  if (!url) {
-    return (
-      <Button
-        type="button"
-        variant={variant}
-        className={`disabled:opacity-100 disabled:cursor-not-allowed ${className ?? ''}`}
-        disabled
-      >
-        {children}
-      </Button>
-    )
-  }
-
-  return (
-    <Button asChild variant={variant} className={className}>
-      <a href={url} target="_blank" rel="noopener noreferrer">
-        {children}
-      </a>
-    </Button>
-  )
 }
 
 function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
@@ -118,13 +83,13 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
             </li>
           ))}
         </ul>
-        <WhatsAppButton
-          message={content.message}
+        <Button
+          asChild
           variant={plan.key === 'pro' ? 'secondary' : 'default'}
-          className="mt-auto h-auto w-full rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold disabled:opacity-100 disabled:cursor-not-allowed"
+          className="mt-auto h-auto w-full rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold"
         >
-          {content.action}
-        </WhatsAppButton>
+          <Link to={`/planes/solicitar?plan=${plan.key}`}>{content.action}</Link>
+        </Button>
       </CardContent>
     </Card>
   )
@@ -164,12 +129,12 @@ const FAQS = [
   {
     question: '¿Qué recibo al registrarme?',
     answer:
-      'Un correo y una contraseña de administrador para entrar a la app y empezar a registrar suscripciones.',
+      'Tu organización con acceso de administrador inmediato. En Básico empiezas la prueba gratis; en Pro o Negocio usas Básico de prueba mientras verificamos el pago.',
   },
 ]
 
 export function PlansPage() {
-  const hasWhatsAppNumber = Boolean(getWhatsAppUrl(''))
+  const whatsappUrl = getWhatsAppUrl('Hola, tengo una duda sobre A|R SYSTEM')
   const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
   const plans = plansData?.plans ?? []
   const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? DEFAULT_TRIAL_DAYS
@@ -250,13 +215,13 @@ export function PlansPage() {
                 cualquier proveedor de internet.
               </p>
               <div className="flex flex-wrap gap-3">
-                <WhatsAppButton
-                  message="Hola, quiero la prueba gratis de A|R SYSTEM"
+                <Button
+                  asChild
                   variant="secondary"
                   className="h-auto rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold"
                 >
-                  Pedir prueba gratis
-                </WhatsAppButton>
+                  <Link to="/planes/solicitar?plan=basico">Pedir prueba gratis</Link>
+                </Button>
                 <Button
                   asChild
                   variant="outline"
@@ -268,10 +233,15 @@ export function PlansPage() {
               <p className="mt-4 text-sm text-header-foreground/75">
                 {trialDays} días gratis con el plan Básico.
               </p>
-              {!hasWhatsAppNumber && (
-                <p role="status" className="mt-2 text-sm text-header-foreground/75">
-                  El contacto para pedir una prueba todavía no está disponible.
-                </p>
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-sm text-header-foreground/75 underline underline-offset-4 hover:text-header-foreground"
+                >
+                  ¿Tienes dudas? Escríbenos por WhatsApp
+                </a>
               )}
             </div>
 
@@ -315,8 +285,8 @@ export function PlansPage() {
             </p>
             <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                ['Pide tu prueba', 'Escríbenos por WhatsApp y te registramos.'],
-                ['Recibe tu acceso', 'Te enviamos un correo y una contraseña de administrador.'],
+                ['Elige tu plan', 'Básico empieza gratis; Pro y Negocio se activan al verificar el pago.'],
+                ['Crea tu cuenta', 'Defines tu correo y contraseña y entras de inmediato.'],
                 ['Registra una suscripción', 'Entra a la app y agrega a tu primer cliente con su número.'],
                 ['Recibe la notificación', 'La ves en tu celular y sabes que todo funciona.'],
               ].map(([title, description], index) => (
@@ -461,16 +431,16 @@ export function PlansPage() {
               Prueba el plan Básico {trialDays} días gratis
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-header-foreground/80">
-              Escríbenos y te damos tu acceso. Si quieres, te ayudamos con la primera carga de
-              clientes.
+              Crea tu cuenta en minutos y empieza con tus clientes reales. Si quieres, te ayudamos
+              con la primera carga de clientes.
             </p>
-            <WhatsAppButton
-              message="Hola, quiero la prueba gratis de A|R SYSTEM"
+            <Button
+              asChild
               variant="secondary"
-              className="mt-7"
+              className="mt-7 h-auto rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold"
             >
-              Pedir prueba gratis
-            </WhatsAppButton>
+              <Link to="/planes/solicitar?plan=basico">Pedir prueba gratis</Link>
+            </Button>
           </div>
         </section>
       </main>

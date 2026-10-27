@@ -12,6 +12,7 @@ import { useOrganizationStore } from '@/stores/organization.store'
 import { cn } from '@/lib/utils'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanStatusBanner } from '@/components/plans/PlanStatusBanner'
+import { PendingPlanPaymentBanner } from '@/components/plans/PendingPlanPaymentBanner'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -120,6 +121,7 @@ export function AuthenticatedLayout() {
           onOrganizationChange={setOrganization}
         >
           <PlanStatusBanner />
+          <PendingPlanPaymentBanner />
           <Outlet />
         </MobileAppShell>
         <QuickPayModal />
@@ -151,6 +153,7 @@ export function AuthenticatedLayout() {
           )}
         >
           {planAccess.isReadOnly && <PlanStatusBanner />}
+          <PendingPlanPaymentBanner />
           <Outlet />
         </main>
       </div>

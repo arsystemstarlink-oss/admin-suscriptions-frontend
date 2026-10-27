@@ -32,8 +32,10 @@ import {
   ChatsPage,
   ConsultaPage,
   PlansPage,
+  PlansSignupPage,
   PaymentReportsPage,
   OrganizationPlanReportsPage,
+  PlanQuoteRequestsPage,
   PageLoader,
 } from '@/routes/lazy-pages'
 
@@ -68,6 +70,14 @@ export const router = createBrowserRouter(
     element: (
       <Suspense fallback={<PageLoader />}>
         <PlansPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/planes/solicitar',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PlansSignupPage />
       </Suspense>
     ),
   },
@@ -245,6 +255,16 @@ export const router = createBrowserRouter(
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
                   <OrganizationsPage />
+                </Suspense>
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'plan-quote-requests',
+            element: (
+              <RoleGuard allowedRoles={['super-admin']}>
+                <Suspense fallback={<PageLoader />}>
+                  <PlanQuoteRequestsPage />
                 </Suspense>
               </RoleGuard>
             ),

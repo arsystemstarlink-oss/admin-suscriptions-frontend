@@ -416,15 +416,22 @@ export function ProfilePage() {
                         return (
                           <div
                             key={report.id}
-                            className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm"
+                            className="rounded-lg border border-border-subtle bg-surface-muted px-3 py-2 text-sm"
                           >
-                            <span className="min-w-0 truncate text-muted-foreground">
-                              {report.months} {report.months === 1 ? 'mes' : 'meses'} ·{' '}
-                              {formatDate(report.createdAt)}
-                            </span>
-                            <Badge variant="outline" className={status.className}>
-                              {status.label}
-                            </Badge>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="min-w-0 truncate text-muted-foreground">
+                                {report.months} {report.months === 1 ? 'mes' : 'meses'} ·{' '}
+                                {formatDate(report.createdAt)}
+                              </span>
+                              <Badge variant="outline" className={status.className}>
+                                {status.label}
+                              </Badge>
+                            </div>
+                            {report.status === 'REJECTED' && report.reviewNotes && (
+                              <p className="mt-1 text-xs text-destructive">
+                                Motivo: {report.reviewNotes}
+                              </p>
+                            )}
                           </div>
                         )
                       })}

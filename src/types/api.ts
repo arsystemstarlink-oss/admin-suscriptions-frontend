@@ -302,6 +302,100 @@ export interface ReviewOrganizationPlanPaymentReportResponse {
   payment?: OrganizationPlanPayment
 }
 
+export type PlanQuoteRequestStatus = 'NEW' | 'CONTACTED' | 'CLOSED'
+
+export interface PlanQuoteRequest {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  organizationName?: string
+  estimatedClients: number
+  message?: string
+  status: PlanQuoteRequestStatus
+  reviewNotes?: string
+  createdAt: string
+  updatedAt: string
+  handledBy?: string
+  handledAt?: string
+}
+
+export interface PlanQuoteRequestsResponse {
+  requests: PlanQuoteRequest[]
+  pagination: Pagination
+}
+
+export interface CreatePlanQuoteRequest {
+  name: string
+  email: string
+  phone?: string
+  organizationName?: string
+  estimatedClients: number
+  message?: string
+  turnstileToken?: string
+}
+
+export interface CreatePlanQuoteRequestResponse {
+  request: { id: string; createdAt: string }
+}
+
+export interface UpdatePlanQuoteRequestRequest {
+  status: 'CONTACTED' | 'CLOSED'
+  reviewNotes?: string
+}
+
+export interface UpdatePlanQuoteRequestResponse {
+  request: PlanQuoteRequest
+}
+
+export interface PublicBankTransferInstructions {
+  bankName: string
+  accountHolder: string
+  accountNumber: string
+  accountType: string
+  rif: string
+  notes?: string
+}
+
+export interface PublicUsdtInstructions {
+  network: string
+  address: string
+  notes?: string
+}
+
+export interface PublicPaymentInstructions {
+  bankTransfer: PublicBankTransferInstructions | null
+  usdt: PublicUsdtInstructions | null
+}
+
+export type PublicSignupPlan = 'basico' | 'pro' | 'negocio'
+export type PublicSignupPaymentMethod = 'transferencia' | 'usdt'
+
+export interface PublicSignupRequest {
+  plan: PublicSignupPlan
+  organization: { name: string }
+  admin: {
+    name: string
+    email: string
+    password: string
+    phone?: string
+  }
+  payment?: {
+    method: PublicSignupPaymentMethod
+    reference: string
+    notes?: string
+  }
+  turnstileToken?: string
+}
+
+export interface PublicSignupResponse {
+  accessToken: string
+  refreshToken: string
+  user: User
+  organization: Organization
+  paymentReport?: OrganizationPlanPaymentReport
+}
+
 export interface User {
   id: string
   name: string

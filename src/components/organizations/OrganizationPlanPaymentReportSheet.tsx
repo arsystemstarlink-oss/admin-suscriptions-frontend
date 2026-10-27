@@ -1,14 +1,18 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useEffect } from 'react'
 import {
   useCreateOrganizationPlanPaymentReport,
   useBusinessPlans,
   useOrganizationPlanQuote,
 } from '@/hooks/useOrganizationPlanPaymentReports'
 import { formatCurrency, formatDate } from '@/lib/constants'
-import { getPlanLabel } from '@/lib/business-plan-catalog'
-import { MAX_PREPAID_MONTHS } from '@/lib/business-plan'
+import {
+  ORGANIZATION_PLAN_PAYMENT_METHODS,
+  getPlanLabel,
+} from '@/lib/business-plan-catalog'
+import { MAX_PREPAID_MONTHS, PREPAID_MONTH_OPTIONS } from '@/lib/business-plan'
 import { handleApiError } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,8 +36,12 @@ import type { Organization, OrganizationPlanPaymentMethod } from '@/types/api'
 
 const reportSchema = z.object({
   paidAt: z.string().min(1, 'Indica la fecha del pago'),
-  method: z.enum(['transferencia', 'usdt', 'efectivo']),
-  months: z.number().int().min(1).max(12),
+  method: z.enum(ORGANIZATION_PLAN_PAYMENT_METHODS),
+  months: z
+    .number()
+    .int('Indica un número entero de meses')
+    .min(1, 'Indica al menos un mes')
+    .max(MAX_PREPAID_MONTHS, `Máximo ${MAX_PREPAID_MONTHS} meses`),
   amount: z.number().positive('El monto debe ser mayor que cero').optional(),
   reference: z.string().max(120, 'Máximo 120 caracteres').optional(),
   notes: z.string().max(500, 'Máximo 500 caracteres').optional(),
@@ -62,8 +70,6 @@ export function OrganizationPlanPaymentReportSheet({
 }: OrganizationPlanPaymentReportSheetProps) {
   const createMutation = useCreateOrganizationPlanPaymentReport()
   const { data: catalogData, isLoading: catalogLoading } = useBusinessPlans()
-  const catalogItem = catalogData?.plans.find((plan) => plan.key === organization.plan)
-  const fixedPrice = catalogItem?.priceUsdMonthly ?? null
   const isCustomPlan = organization.plan === 'a-medida'
   const planLabel = getPlanLabel(catalogData?.plans, organization.plan)
 
@@ -81,7 +87,6 @@ export function OrganizationPlanPaymentReportSheet({
       paidAt: new Date().toISOString().slice(0, 10),
       method: 'transferencia',
       months: 1,
-      amount: fixedPrice ?? undefined,
       reference: '',
       notes: '',
     },
@@ -89,7 +94,6 @@ export function OrganizationPlanPaymentReportSheet({
   const method = watch('method')
   const months = watch('months')
   const paidAt = watch('paidAt')
-  const totalAmount = fixedPrice !== null ? fixedPrice * months : null
   const quoteQuery = useOrganizationPlanQuote(
     {
       organizationId: organization.id,
@@ -101,16 +105,37 @@ export function OrganizationPlanPaymentReportSheet({
   const quote = quoteQuery.data?.quote
   const quoteReady =
     Boolean(quote) && !quoteQuery.isFetching && !quoteQuery.isPlaceholderData
+  // Un plan bloqueado no admite bajadas: el reporte se limita al plan vigente o superior.
+  const currentCapacity = organization.clientLimit ?? 0
+  const reportAllowed =
+    !quote?.planLocked || (quote.clientLimit ?? 0) >= currentCapacity
   const quoteExpiration = (value: number) =>
     quote?.expirations.find((expiration) => expiration.months === value)
-  const computedExpiration = quoteExpiration(months)
+  const renewalMonths = PREPAID_MONTH_OPTIONS.includes(months) ? months : 1
+  const computedExpiration = quoteExpiration(renewalMonths)
   const computedExpiry = computedExpiration
     ? new Date(computedExpiration.newPlanExpiresAt)
     : null
   const maxExpiry = quote ? new Date(quote.maxPlanExpiresAt) : null
   const prepaidLimitExceeded = computedExpiration?.exceedsPrepaidLimit ?? false
+  // El monto fijo lo define el backend en la cotización; el catálogo solo orienta
+  // mientras la cotización no ha llegado.
+  const totalAmount = computedExpiration?.amount ?? null
+  const monthlyPrice = totalAmount !== null ? totalAmount / renewalMonths : null
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const paidInFuture = Boolean(paidAt) && paidAt > todayIso
+
+  useEffect(() => {
+    if (totalAmount === null || isCustomPlan) return
+    setValue('amount', totalAmount)
+  }, [totalAmount, isCustomPlan, setValue])
 
   const onSubmit = async (form: ReportForm) => {
+    if (!quoteReady) return
+    if (form.paidAt > todayIso) {
+      setError('paidAt', { type: 'manual', message: 'La fecha de pago no puede ser futura.' })
+      return
+    }
     if (isCustomPlan && !form.amount) {
       setError('amount', {
         type: 'manual',
@@ -158,22 +183,22 @@ export function OrganizationPlanPaymentReportSheet({
               <div className="mt-1 flex items-center justify-between gap-3 text-sm">
                 <span className="text-muted-foreground">Precio mensual</span>
                 <span className="font-semibold">
-                  {catalogLoading
-                    ? 'Cargando...'
-                    : fixedPrice !== null
-                      ? `${formatCurrency(fixedPrice)}`
-                      : 'Monto acordado'}
+                  {isCustomPlan
+                    ? 'Monto acordado'
+                    : monthlyPrice === null
+                      ? catalogLoading
+                        ? 'Cargando...'
+                        : 'Calculando...'
+                      : formatCurrency(monthlyPrice)}
                 </span>
               </div>
-              {fixedPrice !== null && (
+              {!isCustomPlan && (
                 <div className="mt-1 flex items-center justify-between gap-3 border-t border-border-subtle pt-2 text-sm">
                   <span className="text-muted-foreground">
-                    Total ({months} {months === 1 ? 'mes' : 'meses'})
+                    Total ({renewalMonths} {renewalMonths === 1 ? 'mes' : 'meses'})
                   </span>
                   <span className="font-semibold">
-                    {catalogLoading || totalAmount === null
-                      ? 'Cargando...'
-                      : formatCurrency(totalAmount)}
+                    {totalAmount === null ? 'Cargando...' : formatCurrency(totalAmount)}
                   </span>
                 </div>
               )}
@@ -200,7 +225,7 @@ export function OrganizationPlanPaymentReportSheet({
                   <SelectValue placeholder="Selecciona los meses" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[1, 3, 6, 12].map((value) => {
+                  {PREPAID_MONTH_OPTIONS.map((value) => {
                     const exceedsPrepaidLimit =
                       quoteExpiration(value)?.exceedsPrepaidLimit ?? false
                     return (
@@ -241,7 +266,7 @@ export function OrganizationPlanPaymentReportSheet({
                   {...register('amount', { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Monto total por los {months} {months === 1 ? 'mes' : 'meses'} seleccionados.
+                  Monto total por los {renewalMonths} {renewalMonths === 1 ? 'mes' : 'meses'} seleccionados.
                 </p>
                 {errors.amount && (
                   <p className="text-sm text-destructive">{errors.amount.message}</p>
@@ -254,6 +279,11 @@ export function OrganizationPlanPaymentReportSheet({
               <Input id="plan-report-date" type="date" {...register('paidAt')} />
               {errors.paidAt && (
                 <p className="text-sm text-destructive">{errors.paidAt.message}</p>
+              )}
+              {!errors.paidAt && paidInFuture && (
+                <p className="text-sm text-destructive">
+                  La fecha de pago no puede ser futura.
+                </p>
               )}
             </div>
 
@@ -298,6 +328,12 @@ export function OrganizationPlanPaymentReportSheet({
               El pago queda en verificación. Cuando se apruebe, el vencimiento se calcula
               automáticamente según el día de corte de tu organización.
             </p>
+            {!reportAllowed && (
+              <p className="text-sm text-destructive">
+                Tu suscripción está vigente y este reporte bajaría el tope de clientes. Registra un
+                pago del plan actual o superior.
+              </p>
+            )}
           </div>
           <SheetFooter>
             <Button
@@ -307,6 +343,8 @@ export function OrganizationPlanPaymentReportSheet({
                 isSubmitting ||
                 createMutation.isPending ||
                 prepaidLimitExceeded ||
+                paidInFuture ||
+                !reportAllowed ||
                 !quoteReady ||
                 !computedExpiry
               }

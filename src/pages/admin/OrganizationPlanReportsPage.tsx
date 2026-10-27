@@ -83,6 +83,7 @@ export function OrganizationPlanReportsPage() {
   const [rejectMode, setRejectMode] = useState(false)
   const [notes, setNotes] = useState('')
   const [clientLimit, setClientLimit] = useState('')
+  const [clientLimitError, setClientLimitError] = useState<string | null>(null)
   const { data, isLoading } = useAllOrganizationPlanPaymentReports(status)
   const { data: catalogData } = useBusinessPlans()
   const catalog = catalogData?.plans
@@ -100,18 +101,26 @@ export function OrganizationPlanReportsPage() {
     setRejectMode(false)
     setNotes('')
     setClientLimit('')
+    setClientLimitError(null)
   }
 
   const handleApprove = async () => {
     if (!selected) return
+    let parsedLimit: number | undefined
+    if (selected.plan === 'a-medida' && clientLimit.trim()) {
+      const value = Number(clientLimit)
+      if (!Number.isInteger(value) || value < CUSTOM_PLAN_MIN_CLIENTS) {
+        setClientLimitError(
+          `El tope debe ser un entero de al menos ${CUSTOM_PLAN_MIN_CLIENTS} clientes.`,
+        )
+        return
+      }
+      parsedLimit = value
+    }
     try {
       await reviewMutation.mutateAsync({
         id: selected.id,
-        data: {
-          action: 'approve',
-          clientLimit:
-            selected.plan === 'a-medida' && clientLimit ? Number(clientLimit) : undefined,
-        },
+        data: { action: 'approve', clientLimit: parsedLimit },
       })
       closeSheet()
     } catch {
@@ -267,14 +276,24 @@ export function OrganizationPlanReportsPage() {
                       id="plan-report-review-limit"
                       type="number"
                       min={CUSTOM_PLAN_MIN_CLIENTS}
+                      step={1}
                       value={clientLimit}
-                      onChange={(event) => setClientLimit(event.target.value)}
+                      onChange={(event) => {
+                        setClientLimit(event.target.value)
+                        setClientLimitError(null)
+                      }}
                       placeholder={
                         selected.clientLimit
                           ? String(selected.clientLimit)
                           : `Mínimo ${CUSTOM_PLAN_MIN_CLIENTS}`
                       }
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Si lo dejas vacío se aprueba con el tope reportado por la organización.
+                    </p>
+                    {clientLimitError && (
+                      <p className="text-sm text-destructive">{clientLimitError}</p>
+                    )}
                   </div>
                 )}
 

@@ -505,9 +505,9 @@ Endpoints adicionales (solo super-admin): `POST /organizations/onboard` y
 {
   id: string; name: string; slug?: string; active: boolean;
   plan: 'basico' | 'pro' | 'negocio' | 'a-medida';
-  clientLimit: number;
+  clientLimit: number; // tope efectivo: en planes fijos el servidor lo deriva del plan y manda sobre el valor almacenado
   planStatus: 'prueba' | 'activo' | 'vencido' | 'suspendido';
-  billingDay: number; // día de corte mensual (1-28)
+  billingDay: number; // dÃ­a de corte mensual (1-28)
   trialEndsAt: string | null; planExpiresAt: string | null; clientCount: number;
   createdAt: string; createdBy?: string;
   twilioConfigured: boolean; // true si accountSid+authToken+phoneNumber presentes y enabled !== false
@@ -518,6 +518,8 @@ Endpoints adicionales (solo super-admin): `POST /organizations/onboard` y
     authTokenSet: boolean; // el authToken NUNCA se retorna
   }
 }
+// El bloqueo de bajadas compara siempre contra ese tope efectivo, no contra un clientLimit
+// almacenado que haya quedado desactualizado respecto al catálogo.
 ```
 
 **DELETE /organizations/:id**
@@ -838,6 +840,9 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
     billingDay: number;
     planLocked: boolean;       // plan/trial vigente: no permite bajar de plan ni de tope
     planChanged: boolean;
+    clientLimit: number | null; // tope efectivo del plan cotizado (null en A medida sin tope)
+    clientCount: number | null; // clientes actuales; null si el uso no esta disponible
+    adminLimit: number;         // administradores que concede el plan cotizado
     extendsCurrent: boolean;
     currentExpiry: string | null;
     paidAt: string;
@@ -853,6 +858,9 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
 // Errors: 400 TENANT_REQUIRED | 404 ORGANIZATION_NOT_FOUND | 400 INVALID_DATA
 //         400 INVALID_PAYMENT_DATE
 // El frontend no debe recalcular vencimientos ni bloqueo de plan por su cuenta.
+// `clientLimit`, `adminLimit` y el `amount` de cada opcion son la fuente unica del tope,
+// los administradores permitidos y el monto; el catalogo publico solo orienta mientras la
+// cotizacion no ha llegado.
 ```
 
 ```typescript
@@ -867,8 +875,11 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
   reference?: string; notes?: string;
 }
 // Response 201 → { report: OrganizationPlanPaymentReport }
+// El servidor revalida el bloqueo de bajadas contra el tope efectivo del plan vigente y,
+// si el reporte cambia de plan, que la organización no supere el límite de administradores.
 // Errors: 409 PLAN_PAYMENT_REPORT_ALREADY_EXISTS | 409 CLIENT_LIMIT_BELOW_USAGE
 //         409 PLAN_DOWNGRADE_NOT_ALLOWED | 409 PREPAID_LIMIT_REACHED
+//         409 ADMIN_LIMIT_BELOW_USAGE
 //         400 INVALID_PAYMENT_DATE | INVALID_PLAN_MONTHS
 ```
 
@@ -876,8 +887,13 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
 // POST /organization-plan-payment-reports/:id/review
 { action: 'approve' | 'reject'; notes?: string; clientLimit?: number }
 // approve → registra OrganizationPlanPayment y actualiza la organización
+// Sin `clientLimit` enviado, A medida se aprueba con el tope del reporte; en planes fijos
+// el servidor ignora el valor enviado y deriva el tope del plan. Al cambiar de plan se
+// valida el límite de administradores.
 // Response 200 → { report, organization, payment }
 // Errors: 404 PLAN_PAYMENT_REPORT_NOT_FOUND | 409 PLAN_PAYMENT_REPORT_ALREADY_REVIEWED
+//         409 CLIENT_LIMIT_BELOW_USAGE | PLAN_DOWNGRADE_NOT_ALLOWED | ADMIN_LIMIT_BELOW_USAGE
+//         409 PREPAID_LIMIT_REACHED | 400 INVALID_CLIENT_LIMIT
 ```
 
 ### Bandeja de Reportes de Pago (admin, con auth)
@@ -1361,6 +1377,9 @@ Authorization: Bearer {accessToken}
 | phone de cliente | Se normaliza a E.164 (`+58...`) al crear/editar |
 | PUT /organizations/:id planStatus activo/prueba | Exige fecha de vencimiento/prueba futura (`400 INVALID_PLAN_DATE`) |
 | POST /organizations/:id/plan-payments paidAt | No futura (`400 INVALID_PAYMENT_DATE`) |
+| Plan bloqueado (solo lectura) | `vencido`/`suspendido`, o `prueba`/`activo` cuya fecha ya paso; es la misma regla en middleware, DTO y frontend |
+| Tope efectivo del plan | En planes fijos el servidor siempre deriva `clientLimit` del plan; manda sobre el valor almacenado |
+| Bloqueo de bajadas | Se compara contra el tope efectivo del plan vigente, no contra un limite desactualizado |
 | POST /pay (amount) | Debe coincidir con amount del periodo |
 | PUT /billing-periods/:id | Solo periodos PAID |
 | DELETE /subscriptions/:id | Elimina suscripcion y sus periodos de facturacion |

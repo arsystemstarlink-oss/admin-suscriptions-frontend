@@ -6,7 +6,12 @@ import {
   ORGANIZATION_PLAN_STATUS_LABELS,
   formatDate,
 } from '@/lib/constants'
-import { getPlanClientLimit, getPlanLabel } from '@/lib/business-plan-catalog'
+import {
+  BUSINESS_PLAN_KEYS_TUPLE,
+  ORGANIZATION_PLAN_STATUSES,
+  getPlanClientLimit,
+  getPlanLabel,
+} from '@/lib/business-plan-catalog'
 import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import { getOrganizationBillingDay } from '@/lib/business-plan'
 import { useUpdateOrganization, useDeleteOrganization } from '@/hooks/useOrganizations'
@@ -47,8 +52,8 @@ const editOrganizationSchema = z.object({
     .optional()
     .or(z.literal('')),
   active: z.enum(['true', 'false']),
-  plan: z.enum(['basico', 'pro', 'negocio', 'a-medida']),
-  planStatus: z.enum(['prueba', 'activo', 'vencido', 'suspendido']),
+  plan: z.enum(BUSINESS_PLAN_KEYS_TUPLE),
+  planStatus: z.enum(ORGANIZATION_PLAN_STATUSES),
 }).superRefine((data, context) => {
   if (data.planStatus === 'prueba' && data.plan !== 'basico') {
     context.addIssue({
@@ -94,7 +99,8 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
   })
   const clientCount = organization?.clientCount ?? 0
   const currentPlan = organization?.plan ?? 'basico'
-  const currentPlanLimit = getPlanClientLimit(catalog, currentPlan)
+  // El tope efectivo lo define el backend en el DTO; el catálogo solo respalda datos previos.
+  const currentPlanLimit = organization?.clientLimit ?? getPlanClientLimit(catalog, currentPlan)
   const billingDay = getOrganizationBillingDay(organization)
 
   useEffect(() => {
@@ -248,7 +254,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
                   ·{' '}
                   {currentPlanLimit !== null
                     ? `hasta ${currentPlanLimit} clientes`
-                    : `tope personalizado: ${organization.clientLimit ?? 'sin definir'}`}
+                    : 'tope personalizado sin definir'}
                   {' · '}
                   {clientCount} en uso
                 </span>

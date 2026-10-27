@@ -200,6 +200,12 @@ export interface OrganizationPlanQuote {
   billingDay: number
   planLocked: boolean
   planChanged: boolean
+  /** Tope de clientes efectivo del plan cotizado; `null` para A medida sin tope asignado. */
+  clientLimit?: number | null
+  /** Clientes actuales de la organización, o `null` si el uso no está disponible. */
+  clientCount?: number | null
+  /** Límite de administradores que concede el plan cotizado. */
+  adminLimit?: number
   extendsCurrent: boolean
   currentExpiry: string | null
   paidAt: string

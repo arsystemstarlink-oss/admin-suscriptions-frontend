@@ -150,8 +150,9 @@ export function OrganizationsPage() {
         <div className="space-y-3">
         {organizations.map((organization) => {
           const plan = organization.plan ?? 'basico'
-          const planLimit = getPlanClientLimit(catalog, plan)
-          const clientLimit = organization.clientLimit ?? planLimit
+          // El backend ya deriva el tope del plan en el DTO; se conserva el respaldo al
+          // catálogo solo para organizaciones creadas antes de esa convención.
+          const clientLimit = organization.clientLimit ?? getPlanClientLimit(catalog, plan)
           const clientCount = organization.clientCount
           const hasClientCount = typeof clientCount === 'number'
           const usagePercent =

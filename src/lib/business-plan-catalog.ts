@@ -7,6 +7,22 @@ export const BUSINESS_PLAN_KEYS: BusinessPlanKey[] = [
   'a-medida',
 ]
 
+/** Tupla literal para `z.enum`, derivada de la misma lista de claves del catálogo. */
+export const BUSINESS_PLAN_KEYS_TUPLE = BUSINESS_PLAN_KEYS as [
+  BusinessPlanKey,
+  BusinessPlanKey,
+  BusinessPlanKey,
+  BusinessPlanKey,
+]
+
+export const ORGANIZATION_PLAN_STATUSES = ['prueba', 'activo', 'vencido', 'suspendido'] as const
+
+export const ORGANIZATION_PLAN_PAYMENT_METHODS = [
+  'transferencia',
+  'usdt',
+  'efectivo',
+] as const
+
 /**
  * Etiquetas de presentación usadas solo mientras el catálogo del backend está
  * cargando o no está disponible. El catálogo siempre tiene prioridad.
@@ -46,4 +62,16 @@ export function getPlanAdminLimit(
   key: BusinessPlanKey | undefined,
 ): number | null {
   return getCatalogItem(plans, key)?.adminLimit ?? null
+}
+
+/** Claves del catálogo del backend en su orden; cae a las claves conocidas si aún no carga. */
+export function getCatalogPlanKeys(
+  plans: BusinessPlanCatalogItem[] | undefined,
+): BusinessPlanKey[] {
+  const keys = plans?.map((plan) => plan.key).filter((key) => isBusinessPlanKey(key)) ?? []
+  return keys.length > 0 ? keys : BUSINESS_PLAN_KEYS
+}
+
+export function isBusinessPlanKey(value: unknown): value is BusinessPlanKey {
+  return typeof value === 'string' && (BUSINESS_PLAN_KEYS as string[]).includes(value)
 }

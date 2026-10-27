@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import {
   CUSTOM_PLAN_MIN_CLIENTS,
 } from '@/lib/constants'
-import { getWhatsAppUrl } from '@/lib/business-plan'
+import { getWhatsAppUrl, DEFAULT_TRIAL_DAYS } from '@/lib/business-plan'
 import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import type { BusinessPlanCatalogItem, BusinessPlanKey } from '@/types/api'
 
@@ -34,6 +34,13 @@ const PLAN_CONTENT: Record<
     action: 'Escribirnos',
     message: 'Quiero cotizar un plan a medida de A|R SYSTEM',
   },
+}
+
+const DEFAULT_ADMIN_LIMITS: Record<BusinessPlanKey, number> = {
+  basico: 1,
+  pro: 3,
+  negocio: 5,
+  'a-medida': 5,
 }
 
 function WhatsAppButton({
@@ -77,8 +84,9 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
     plan.clientLimit === null
       ? `más de ${CUSTOM_PLAN_MIN_CLIENTS - 1} clientes`
       : `hasta ${plan.clientLimit} clientes`
+  const adminLimit = plan.adminLimit ?? DEFAULT_ADMIN_LIMITS[plan.key]
   const adminCapacity =
-    plan.adminLimit === 1 ? '1 administrador incluido' : `Hasta ${plan.adminLimit} administradores`
+    adminLimit === 1 ? '1 administrador incluido' : `Hasta ${adminLimit} administradores`
 
   return (
     <Card
@@ -164,7 +172,7 @@ export function PlansPage() {
   const hasWhatsAppNumber = Boolean(getWhatsAppUrl(''))
   const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
   const plans = plansData?.plans ?? []
-  const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? 14
+  const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? DEFAULT_TRIAL_DAYS
 
   useEffect(() => {
     const preconnect = document.createElement('link')

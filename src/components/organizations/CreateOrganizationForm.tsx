@@ -3,8 +3,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useOnboardOrganization } from '@/hooks/useOrganizations'
+import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import { getErrorHandler } from '@/lib/error-handler'
-import { BUSINESS_PLANS } from '@/lib/constants'
+import { getCatalogItem } from '@/lib/business-plan-catalog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -87,6 +88,8 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
     password: string
   } | null>(null)
   const createMutation = useOnboardOrganization()
+  const { data: catalogData } = useBusinessPlans()
+  const basicPlan = getCatalogItem(catalogData?.plans, 'basico')
 
   const {
     register,
@@ -182,7 +185,7 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
             Organización y administrador creados
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            La organización quedó con el plan Básico y {BUSINESS_PLANS.basico.trialDays} días de prueba.
+            La organización quedó con el plan Básico y {basicPlan?.trialDays ?? '—'} días de prueba.
           </p>
         </div>
         <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
@@ -311,8 +314,8 @@ export function CreateOrganizationForm({ onSuccess }: CreateOrganizationFormProp
       </div>
 
       <div className="rounded-xl border border-info/20 bg-info/10 p-3 text-sm">
-        La organización empezará con el plan Básico, hasta {BUSINESS_PLANS.basico.clientLimit}{' '}
-        clientes y {BUSINESS_PLANS.basico.trialDays} días de prueba gratis.
+        La organización empezará con el plan Básico, hasta {basicPlan?.clientLimit ?? '—'}{' '}
+        clientes y {basicPlan?.trialDays ?? '—'} días de prueba gratis.
       </div>
 
       <Separator />

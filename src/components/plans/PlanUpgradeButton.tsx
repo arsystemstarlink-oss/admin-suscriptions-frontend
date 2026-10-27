@@ -1,5 +1,6 @@
-import { BUSINESS_PLANS } from '@/lib/constants'
 import { getWhatsAppUrl } from '@/lib/business-plan'
+import { getPlanLabel } from '@/lib/business-plan-catalog'
+import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import { Button } from '@/components/ui/button'
 import type { Organization } from '@/types/api'
 
@@ -14,7 +15,10 @@ export function PlanUpgradeButton({
   className,
   label = 'Subir de plan',
 }: PlanUpgradeButtonProps) {
-  const planName = organization?.plan ? BUSINESS_PLANS[organization.plan].label : 'actual'
+  const { data: catalogData } = useBusinessPlans()
+  const planName = organization?.plan
+    ? getPlanLabel(catalogData?.plans, organization.plan)
+    : 'actual'
   const url = getWhatsAppUrl(
     `Hola, tengo el plan ${planName} de A|R SYSTEM y quiero conocer las opciones para subir de plan.`,
   )

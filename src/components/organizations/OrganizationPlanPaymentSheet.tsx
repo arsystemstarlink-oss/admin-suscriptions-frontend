@@ -6,16 +6,15 @@ import {
   useOrganizationDetail,
   useRegisterOrganizationPlanPayment,
 } from '@/hooks/useOrganizations'
-import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
-import { BUSINESS_PLANS, CUSTOM_PLAN_MIN_CLIENTS, formatCurrency, formatDate } from '@/lib/constants'
+import { useBusinessPlans, useOrganizationPlanQuote } from '@/hooks/useOrganizationPlanPaymentReports'
+import { CUSTOM_PLAN_MIN_CLIENTS, formatCurrency, formatDate } from '@/lib/constants'
 import {
-  MAX_PREPAID_MONTHS,
-  getMaxPrepaidPlanExpiration,
-  getOrganizationBillingDay,
-  isOrganizationPlanChange,
-  isOrganizationPlanLocked,
-  resolveOrganizationPlanExpiration,
-} from '@/lib/business-plan'
+  BUSINESS_PLAN_KEYS,
+  getCatalogItem,
+  getPlanClientLimit,
+  getPlanLabel,
+} from '@/lib/business-plan-catalog'
+import { MAX_PREPAID_MONTHS } from '@/lib/business-plan'
 import { handleApiError } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -65,8 +64,12 @@ interface OrganizationPlanPaymentSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-function defaultClientLimit(plan: BusinessPlanKey, clientCount: number): number {
-  const planLimit = BUSINESS_PLANS[plan].clientLimit
+function defaultClientLimit(
+  plan: BusinessPlanKey,
+  clientCount: number,
+  plans: Parameters<typeof getPlanClientLimit>[0],
+): number {
+  const planLimit = getPlanClientLimit(plans, plan)
   if (planLimit !== null) return planLimit
   return Math.max(CUSTOM_PLAN_MIN_CLIENTS, clientCount)
 }
@@ -86,18 +89,7 @@ export function OrganizationPlanPaymentSheet({
   const hasClientCount = typeof liveOrganization.clientCount === 'number'
   const clientCount = liveOrganization.clientCount ?? 0
   const currentCapacity = liveOrganization.clientLimit ?? 0
-  const billingDay = getOrganizationBillingDay(liveOrganization)
-  const planLocked = isOrganizationPlanLocked(liveOrganization)
-
-  const allowedPlanKeys = (Object.keys(BUSINESS_PLANS) as BusinessPlanKey[]).filter((key) => {
-    const fixedLimit = BUSINESS_PLANS[key].clientLimit
-    if (fixedLimit !== null && clientCount > fixedLimit) return false
-    if (planLocked && fixedLimit !== null && fixedLimit < currentCapacity) return false
-    return true
-  })
-  const initialPlan = allowedPlanKeys.includes(liveOrganization.plan ?? 'basico')
-    ? liveOrganization.plan ?? 'basico'
-    : allowedPlanKeys[0] ?? 'basico'
+  const initialPlan = liveOrganization.plan ?? 'basico'
 
   const {
     register,
@@ -114,7 +106,7 @@ export function OrganizationPlanPaymentSheet({
       amount: 0,
       method: 'transferencia',
       plan: initialPlan,
-      clientLimit: defaultClientLimit(initialPlan, clientCount),
+      clientLimit: defaultClientLimit(initialPlan, clientCount, catalog),
       months: 1,
     },
   })
@@ -128,37 +120,44 @@ export function OrganizationPlanPaymentSheet({
   const monthlyPrice = priceForPlan(plan)
   const renewalMonths = Number.isInteger(months) && months > 0 ? months : 1
   const totalAmount = monthlyPrice !== null ? monthlyPrice * renewalMonths : null
-  const currentExpiry =
-    liveOrganization.planStatus === 'prueba'
-      ? liveOrganization.trialEndsAt
-      : liveOrganization.planExpiresAt
-  const planChanged = isOrganizationPlanChange({
-    currentPlan: liveOrganization.plan,
-    targetPlan: plan,
-    planStatus: liveOrganization.planStatus,
-  })
-  const extendsCurrent = planLocked && !planChanged && Boolean(currentExpiry)
-  const paidAtDate = new Date(
-    `${paidAt || new Date().toISOString().slice(0, 10)}T12:00:00.000Z`,
+  const quoteQuery = useOrganizationPlanQuote(
+    {
+      organizationId: liveOrganization.id,
+      plan,
+      paidAt: paidAt || new Date().toISOString().slice(0, 10),
+    },
+    open,
   )
-  const expiryForMonths = (value: number) =>
-    resolveOrganizationPlanExpiration({
-      organization: liveOrganization,
-      paidAt: paidAtDate,
-      months: value,
-      currentPlan: liveOrganization.plan,
-      targetPlan: plan,
-    })
-  const maxExpiry = getMaxPrepaidPlanExpiration(billingDay)
-  const computedExpiry = expiryForMonths(renewalMonths)
-  const prepaidLimitExceeded = computedExpiry.getTime() > maxExpiry.getTime()
+  const quote = quoteQuery.data?.quote
+  const quoteReady =
+    Boolean(quote) && !quoteQuery.isFetching && !quoteQuery.isPlaceholderData
+  const planLocked = quote?.planLocked ?? false
+  const billingDay = quote?.billingDay ?? null
+  const allowedPlanKeys = BUSINESS_PLAN_KEYS.filter((key) => {
+    if (key === liveOrganization.plan) return true
+    const fixedLimit = getPlanClientLimit(catalog, key)
+    if (fixedLimit !== null && clientCount > fixedLimit) return false
+    if (planLocked && fixedLimit !== null && fixedLimit < currentCapacity) return false
+    return true
+  })
+  const planChanged = quote?.planChanged ?? false
+  const currentExpiry = quote?.currentExpiry ?? null
+  const extendsCurrent = quote?.extendsCurrent ?? false
+  const quoteExpiration = (value: number) =>
+    quote?.expirations.find((expiration) => expiration.months === value)
+  const computedExpiration = quoteExpiration(renewalMonths)
+  const computedExpiry = computedExpiration
+    ? new Date(computedExpiration.newPlanExpiresAt)
+    : null
+  const maxExpiry = quote ? new Date(quote.maxPlanExpiresAt) : null
+  const prepaidLimitExceeded = computedExpiration?.exceedsPrepaidLimit ?? false
   const summaryAmount =
     totalAmount !== null
       ? formatCurrency(totalAmount)
       : isCustomPlan && Number.isFinite(amount) && amount > 0
         ? formatCurrency(amount)
         : '—'
-  const planClientLimit = BUSINESS_PLANS[plan].clientLimit
+  const planClientLimit = getPlanClientLimit(catalog, plan)
   const effectiveLimit = planClientLimit ?? clientLimit ?? clientCount
   const planExceedsUsage = effectiveLimit < clientCount
   const downgradeBlocked = planLocked && effectiveLimit < currentCapacity
@@ -169,7 +168,7 @@ export function OrganizationPlanPaymentSheet({
   }, [totalAmount, setValue])
 
   const onSubmit = async (form: PaymentForm) => {
-    const limit = BUSINESS_PLANS[form.plan].clientLimit ?? form.clientLimit ?? clientCount
+    const limit = getPlanClientLimit(catalog, form.plan) ?? form.clientLimit ?? clientCount
     if (planLocked && limit < currentCapacity) {
       setError('plan', {
         type: 'manual',
@@ -210,11 +209,11 @@ export function OrganizationPlanPaymentSheet({
 
   const lockMessage =
     liveOrganization.planStatus === 'prueba'
-      ? liveOrganization.trialEndsAt
-        ? `La prueba está vigente hasta ${formatDate(liveOrganization.trialEndsAt)}. Solo puedes renovar o subir de plan.`
+      ? currentExpiry
+        ? `La prueba está vigente hasta ${formatDate(currentExpiry)}. Solo puedes renovar o subir de plan.`
         : 'La prueba está vigente. Solo puedes renovar o subir de plan.'
-      : liveOrganization.planExpiresAt
-        ? `El plan está vigente hasta ${formatDate(liveOrganization.planExpiresAt)}. Solo puedes renovarlo o subir de plan.`
+      : currentExpiry
+        ? `El plan está vigente hasta ${formatDate(currentExpiry)}. Solo puedes renovarlo o subir de plan.`
         : 'La suscripción está vigente. Solo puedes renovarla o subir de plan.'
 
   return (
@@ -230,13 +229,13 @@ export function OrganizationPlanPaymentSheet({
           <div className="flex-1 space-y-4 overflow-y-auto p-6 pt-4">
             <div className="text-sm text-muted-foreground">
               Plan actual: <span className="font-medium text-foreground">
-                {BUSINESS_PLANS[liveOrganization.plan ?? 'basico'].label}
+                {getPlanLabel(catalog, liveOrganization.plan)}
               </span>{' '}
               ·{' '}
               {hasClientCount
                 ? `${clientCount} ${clientCount === 1 ? 'cliente' : 'clientes'} en uso`
                 : 'uso de clientes no disponible'}{' '}
-              · corte día {billingDay}
+              · corte día {billingDay ?? '…'}
             </div>
             {!hasClientCount && (
               <p
@@ -258,7 +257,7 @@ export function OrganizationPlanPaymentSheet({
                   setValue('plan', value)
                   setValue(
                     'clientLimit',
-                    defaultClientLimit(value, clientCount),
+                    defaultClientLimit(value, clientCount, catalog),
                     { shouldValidate: true },
                   )
                   if (value === 'a-medida') {
@@ -271,11 +270,11 @@ export function OrganizationPlanPaymentSheet({
                 </SelectTrigger>
                 <SelectContent>
                   {allowedPlanKeys.map((key) => {
-                    const item = BUSINESS_PLANS[key]
+                    const item = getCatalogItem(catalog, key)
                     return (
                       <SelectItem key={key} value={key}>
-                        {item.label}
-                        {item.clientLimit !== null
+                        {getPlanLabel(catalog, key)}
+                        {item?.clientLimit !== null && item?.clientLimit !== undefined
                           ? ` · hasta ${item.clientLimit} clientes`
                           : ' · tope personalizado'}
                         {key === liveOrganization.plan ? ' · actual' : ''}
@@ -341,7 +340,7 @@ export function OrganizationPlanPaymentSheet({
                 <SelectContent>
                   {[1, 3, 6, 12].map((value) => {
                     const exceedsPrepaidLimit =
-                      expiryForMonths(value).getTime() > maxExpiry.getTime()
+                      quoteExpiration(value)?.exceedsPrepaidLimit ?? false
                     return (
                       <SelectItem
                         key={value}
@@ -358,7 +357,7 @@ export function OrganizationPlanPaymentSheet({
               <p className="text-xs text-muted-foreground">
                 Máximo {MAX_PREPAID_MONTHS} meses prepagados por organización.
               </p>
-              {prepaidLimitExceeded && (
+              {prepaidLimitExceeded && maxExpiry && (
                 <p className="text-xs text-warning">
                   Este pago supera el tope. El vencimiento máximo permitido es{' '}
                   {formatDate(maxExpiry.toISOString())}.
@@ -371,14 +370,21 @@ export function OrganizationPlanPaymentSheet({
 
             <div className="space-y-1">
               <p className="text-sm font-medium">Nuevo vencimiento</p>
-              <p className="text-base font-semibold">{formatDate(computedExpiry.toISOString())}</p>
+              <p className="text-base font-semibold">
+                {computedExpiry ? formatDate(computedExpiry.toISOString()) : 'Calculando...'}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {planChanged
                   ? 'El cambio de plan inicia en la fecha de pago; no se suma el tiempo del plan anterior.'
                   : extendsCurrent && currentExpiry
                     ? `Se suman ${renewalMonths} ${renewalMonths === 1 ? 'mes' : 'meses'} al vencimiento actual del ${formatDate(currentExpiry)}.`
-                    : `Se calcula desde la fecha de pago con el día de corte ${billingDay} de cada mes.`}
+                    : `Se calcula desde la fecha de pago con el día de corte ${billingDay ?? '…'} de cada mes.`}
               </p>
+              {quoteQuery.isError && (
+                <p className="text-xs text-destructive">
+                  No pudimos calcular la cotización. Revisa la fecha e intenta de nuevo.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -446,7 +452,7 @@ export function OrganizationPlanPaymentSheet({
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted-foreground">Plan</dt>
                   <dd className="font-medium">
-                    {BUSINESS_PLANS[plan].label}
+                    {getPlanLabel(catalog, plan)}
                     {plan === liveOrganization.plan ? ' · renovación' : ' · cambio'}
                   </dd>
                 </div>
@@ -462,7 +468,9 @@ export function OrganizationPlanPaymentSheet({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted-foreground">Nuevo vencimiento</dt>
-                  <dd className="font-medium">{formatDate(computedExpiry.toISOString())}</dd>
+                  <dd className="font-medium">
+                    {computedExpiry ? formatDate(computedExpiry.toISOString()) : 'Calculando...'}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -476,6 +484,8 @@ export function OrganizationPlanPaymentSheet({
                 planExceedsUsage ||
                 downgradeBlocked ||
                 prepaidLimitExceeded ||
+                !quoteReady ||
+                !computedExpiry ||
                 (!isCustomPlan && totalAmount === null)
               }
             >

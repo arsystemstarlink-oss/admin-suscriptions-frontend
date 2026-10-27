@@ -6,7 +6,6 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUpdateMe, useChangePassword } from '@/hooks/useAuth'
 import { getErrorHandler } from '@/lib/error-handler'
 import {
-  BUSINESS_PLANS,
   formatDate,
   ORGANIZATION_PLAN_STATUS_LABELS,
   PLAN_USAGE_WARNING_PERCENT,
@@ -14,6 +13,7 @@ import {
   STATUS_SUCCESS,
   STATUS_WARNING,
 } from '@/lib/constants'
+import { getPlanLabel } from '@/lib/business-plan-catalog'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanUpgradeButton } from '@/components/plans/PlanUpgradeButton'
 import { OrganizationPlanPaymentReportSheet } from '@/components/organizations/OrganizationPlanPaymentReportSheet'
@@ -306,7 +306,7 @@ export function ProfilePage() {
             {organization?.plan ? (
               <>
                 <div>
-                  <p className="text-xl font-semibold">{BUSINESS_PLANS[organization.plan].label}</p>
+                  <p className="text-xl font-semibold">{getPlanLabel(plansData?.plans, organization.plan)}</p>
                   <p className="text-sm text-muted-foreground">
                     {plansLoading
                       ? 'Cargando precio...'

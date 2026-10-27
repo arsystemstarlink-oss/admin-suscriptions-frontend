@@ -1,9 +1,11 @@
 import { api } from '@/api/client'
 import type {
+  BusinessPlanKey,
   BusinessPlansResponse,
   CreateOrganizationPlanPaymentReportRequest,
   OrganizationPlanPaymentReport,
   OrganizationPlanPaymentReportsResponse,
+  OrganizationPlanQuoteResponse,
   ReviewOrganizationPlanPaymentReportRequest,
   ReviewOrganizationPlanPaymentReportResponse,
 } from '@/types/api'
@@ -21,7 +23,20 @@ interface OrganizationPlanReportsListParams {
   offset?: number
 }
 
+export interface OrganizationPlanQuoteParams {
+  organizationId: string
+  plan: BusinessPlanKey
+  paidAt: string
+}
+
 export const organizationPlanPaymentReportsApi = {
+  quote: async (params: OrganizationPlanQuoteParams): Promise<OrganizationPlanQuoteResponse> => {
+    const response = await api.get<OrganizationPlanQuoteResponse>(
+      '/organization-plan-payment-reports/quote',
+      { params },
+    )
+    return response.data
+  },
   create: async (
     data: CreateOrganizationPlanPaymentReportRequest,
   ): Promise<{ report: OrganizationPlanPaymentReport }> => {

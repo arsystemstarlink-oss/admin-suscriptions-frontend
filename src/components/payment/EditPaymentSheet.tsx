@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { formatCurrency, formatDate, PAYMENT_METHOD_LABELS, BILLING_PERIOD_STATUS_COLORS } from '@/lib/constants'
+import { formatCurrency, formatDate, PAYMENT_METHOD_OPTIONS, BILLING_PERIOD_STATUS_COLORS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod, type BillingPeriodWithDetails } from '@/types/api'
 import { Edit, CheckCircle } from 'lucide-react'
@@ -167,8 +167,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                       <SelectValue placeholder="Seleccione método" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(PAYMENT_METHOD_LABELS)
-                        .filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
+                      {PAYMENT_METHOD_OPTIONS
                         .map(([key, label]) => (
                           <SelectItem key={key} value={key}>
                             {label}

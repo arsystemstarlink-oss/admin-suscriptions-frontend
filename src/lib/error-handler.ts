@@ -369,6 +369,128 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'warning',
     message: 'Los meses a renovar deben ser un entero entre 1 y 12.',
   },
+  INVALID_CLIENT_LIMIT: {
+    type: 'field-error',
+    field: 'clientLimit',
+    message: 'El límite de clientes no es válido para el plan seleccionado.',
+  },
+  INVALID_PLAN_STATUS: {
+    type: 'field-error',
+    field: 'planStatus',
+    message: 'El estado del plan no es válido para la configuración indicada.',
+  },
+  INVALID_PLAN_DATE: {
+    type: 'field-error',
+    field: 'planExpiresAt',
+    message: 'La fecha del plan no es válida o no es futura.',
+  },
+  PLAN_NOT_CONFIGURED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'El plan de la organización aún no está configurado. Contacta al super-admin.',
+  },
+  CLIENT_LIMIT_BELOW_USAGE: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'El límite del plan no puede ser menor que la cantidad actual de clientes.',
+  },
+  SUBSCRIPTION_HAS_OVERDUE_PERIODS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'No puedes activar la suscripción mientras tenga períodos vencidos suficientes para suspenderla.',
+    sideEffect: 'invalidate-subscriptions',
+  },
+  SUBSCRIPTION_HAS_OPEN_PERIODS: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'No puedes cambiar el plan o el día de corte mientras existan períodos pendientes o vencidos.',
+    sideEffect: 'invalidate-subscriptions',
+  },
+  INVALID_HISTORICAL_PAYMENT_PERIOD: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Uno de los pagos históricos no coincide con un período del ciclo de facturación.',
+  },
+  INVALID_MAX_OVERDUE_PERIODS: {
+    type: 'field-error',
+    field: 'maxOverduePeriods',
+    message: 'El máximo de períodos vencidos debe ser un entero entre 1 y 3.',
+  },
+  INVALID_QUERY: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La consulta no es válida.',
+  },
+  INVALID_WEBHOOK: {
+    type: 'toast',
+    variant: 'error',
+    message: 'La firma del webhook no es válida.',
+  },
+  PLAN_CONCURRENT_UPDATE: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Otra persona actualizó el plan al mismo tiempo. Recarga e inténtalo de nuevo.',
+  },
+  PREPAID_LIMIT_REACHED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'El pago supera el máximo de meses prepagados permitido.',
+  },
+  INVALID_FILTER: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El filtro solicitado no es válido.',
+  },
+  TWILIO_NUMBER_IN_USE: {
+    type: 'field-error',
+    field: 'twilioPhoneNumber',
+    message: 'Ese número de WhatsApp ya está en uso por otra organización.',
+  },
+  TWILIO_NUMBER_AMBIGUOUS: {
+    type: 'field-error',
+    field: 'twilioPhoneNumber',
+    message: 'Ese número coincide con más de una organización. Contacta al soporte.',
+  },
+  INVALID_PAYLOAD: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Los datos enviados no son válidos.',
+  },
+  INVALID_SUBSCRIPTION_CLIENT: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El cliente de la suscripción no es válido.',
+  },
+  INVALID_SUBSCRIPTION_PLAN: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El plan de la suscripción no es válido.',
+  },
+  INVALID_SUBSCRIPTION_BILLING_DAY: {
+    type: 'field-error',
+    field: 'billingDay',
+    message: 'El día de corte debe ser un número entre 1 y 28.',
+  },
+  INVALID_SUBSCRIPTION_STATUS: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El estado de la suscripción no es válido.',
+  },
+  INVALID_BILLING_PERIOD_SUBSCRIPTION: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El período no pertenece a una suscripción válida.',
+  },
+  INVALID_BILLING_PERIOD_STATUS: {
+    type: 'toast',
+    variant: 'error',
+    message: 'El estado del período no es válido.',
+  },
+  INVALID_BILLING_PERIOD_AMOUNT: {
+    type: 'field-error',
+    field: 'amount',
+    message: 'El monto del período no es válido.',
+  },
   PLAN_PAYMENT_REPORT_ALREADY_EXISTS: {
     type: 'toast',
     variant: 'warning',

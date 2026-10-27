@@ -2,26 +2,10 @@ import {
   PaymentMethod,
   SubscriptionStatus,
   BillingPeriodStatus,
-  type BusinessPlanKey,
 } from '@/types/api'
 
 export const CUSTOM_PLAN_MIN_CLIENTS = 151
 export const PLAN_USAGE_WARNING_PERCENT = 80
-
-export const BUSINESS_PLANS = {
-  basico: { label: 'Básico', clientLimit: 30, adminLimit: 1, trialDays: 14 },
-  pro: { label: 'Pro', clientLimit: 75, adminLimit: 3, trialDays: 0 },
-  negocio: { label: 'Negocio', clientLimit: 150, adminLimit: 5, trialDays: 0 },
-  'a-medida': { label: 'A medida', clientLimit: null, adminLimit: 5, trialDays: 0 },
-} as const satisfies Record<
-  BusinessPlanKey,
-  {
-    label: string
-    clientLimit: number | null
-    adminLimit: number
-    trialDays: number
-  }
->
 
 export const ORGANIZATION_PLAN_STATUS_LABELS = {
   prueba: 'Prueba',
@@ -38,6 +22,11 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   [PaymentMethod.INITIAL_PAYMENT]: 'Pago Inicial',
   [PaymentMethod.OTHER]: 'Otro',
 }
+
+/** Opciones válidas para escrituras; INITIAL_PAYMENT solo se conserva para datos legacy. */
+export const PAYMENT_METHOD_OPTIONS = (
+  Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]
+).filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
 
 export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
   [SubscriptionStatus.ACTIVE]: 'Activa',

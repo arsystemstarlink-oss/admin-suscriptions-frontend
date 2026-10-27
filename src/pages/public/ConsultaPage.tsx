@@ -43,7 +43,7 @@ import {
   SUBSCRIPTION_STATUS_LABELS,
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS,
   STATUS_INFO,
   STATUS_SUCCESS,
   formatCurrency,
@@ -963,8 +963,7 @@ export function ConsultaPage() {
                           </div>
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(PAYMENT_METHOD_LABELS)
-                            .filter(([key]) => key !== 'INITIAL_PAYMENT')
+                          {PAYMENT_METHOD_OPTIONS
                             .map(([key, label]) => (
                               <SelectItem key={key} value={key} className="py-3">
                                 {label}

@@ -21,12 +21,13 @@ import { AlertTriangle, Plus, Minus, Trash2, Box, CalendarDays, DollarSign, Cloc
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
-import { PAYMENT_METHOD_LABELS } from '@/lib/constants'
+import { PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
+import { findAlignedBillingPeriod } from '@/lib/billing-cycle'
 
 const subscriptionSchema = z.object({
   clientId: z.string().min(1, 'Seleccione un cliente'),
@@ -37,7 +38,7 @@ const subscriptionSchema = z.object({
   maxOverduePeriods: z.coerce.number().min(1).max(3).optional(),
   activationDate: z.string().optional(),
   historicalPayments: z.array(z.object({
-    periodLabel: z.string().min(1, 'Etiqueta requerida'),
+    periodLabel: z.string().optional(),
     startDate: z.string().min(1, 'Fecha de inicio requerida'),
     endDate: z.string().min(1, 'Fecha de fin requerida'),
     amount: z.coerce.number().min(0.01, 'Monto requerido'),
@@ -90,7 +91,17 @@ export function SubscriptionFormPage() {
 
   const planId = watch('planId')
   const activationDate = watch('activationDate')
+  const billingDayValue = watch('billingDay')
   const selectedPlan = plansData?.plans.find(p => p.id === planId)
+  const selectedPlanPrice = selectedPlan?.price
+  const historicalPaymentCount = fields.length
+
+  useEffect(() => {
+    if (selectedPlanPrice === undefined) return
+    for (let index = 0; index < historicalPaymentCount; index++) {
+      setValue(`historicalPayments.${index}.amount`, selectedPlanPrice, { shouldValidate: true })
+    }
+  }, [selectedPlanPrice, historicalPaymentCount, setValue])
 
   const kitNumberValue = watch('kitNumber')
   const accountNumberValue = watch('accountNumber')
@@ -130,6 +141,28 @@ export function SubscriptionFormPage() {
     }
 
     try {
+      let historicalPayments = formData.historicalPayments
+      if (isRetroactive && formData.activationDate && historicalPayments?.length) {
+        historicalPayments = historicalPayments.map((payment, index) => {
+          const aligned = findAlignedBillingPeriod(
+            payment.startDate,
+            payment.endDate,
+            formData.activationDate!,
+            formData.billingDay,
+          )
+          if (!aligned) {
+            throw new Error(
+              `El pago #${index + 1} no coincide con un período del ciclo de facturación (día de corte ${formData.billingDay}).`,
+            )
+          }
+          return {
+            ...payment,
+            periodLabel: aligned.label,
+            amount: selectedPlan?.price ?? payment.amount,
+          }
+        })
+      }
+
       const request = {
         organizationId: selectedOrganizationId,
         clientId: formData.clientId,
@@ -140,8 +173,8 @@ export function SubscriptionFormPage() {
         maxOverduePeriods: formData.maxOverduePeriods || 2,
         ...(isRetroactive && formData.activationDate ? {
           activationDate: formData.activationDate,
-          historicalPayments: formData.historicalPayments?.map(p => ({
-            periodLabel: p.periodLabel,
+          historicalPayments: historicalPayments?.map(p => ({
+            periodLabel: p.periodLabel || '',
             startDate: p.startDate,
             endDate: p.endDate,
             amount: p.amount,
@@ -155,6 +188,10 @@ export function SubscriptionFormPage() {
       toast.success('Suscripción creada correctamente')
       navigate('/subscriptions')
     } catch (err: unknown) {
+      if (err instanceof Error && !('code' in err)) {
+        setError(err.message)
+        return
+      }
       handleApiError(err, { setFieldError: setError })
     }
   }
@@ -488,9 +525,15 @@ export function SubscriptionFormPage() {
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-muted-foreground">PERÍODO</Label>
                       <Input
-                        {...register(`historicalPayments.${index}.periodLabel`)}
-                        placeholder="Ej: Enero 2026"
-                        className="h-10 text-sm"
+                        value={findAlignedBillingPeriod(
+                          watch(`historicalPayments.${index}.startDate`) ?? '',
+                          watch(`historicalPayments.${index}.endDate`) ?? '',
+                          activationDate || '',
+                          billingDayValue,
+                        )?.label ?? ''}
+                        readOnly
+                        placeholder="Se calcula según el ciclo"
+                        className="h-10 text-sm bg-surface-muted"
                       />
                     </div>
 
@@ -514,8 +557,9 @@ export function SubscriptionFormPage() {
                             type="number"
                             step="0.01"
                             inputMode="decimal"
+                            readOnly
                             {...register(`historicalPayments.${index}.amount`)}
-                            className="pl-8 h-10 text-sm font-semibold"
+                            className="pl-8 h-10 text-sm font-semibold bg-surface-muted"
                           />
                         </div>
                       </div>
@@ -532,8 +576,7 @@ export function SubscriptionFormPage() {
                           <SelectValue placeholder="Seleccione..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(PAYMENT_METHOD_LABELS)
-                            .filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
+                          {PAYMENT_METHOD_OPTIONS
                             .map(([key, label]) => (
                               <SelectItem key={key} value={key}>{label}</SelectItem>
                             ))}

@@ -187,6 +187,30 @@ export interface BusinessPlansResponse {
   plans: BusinessPlanCatalogItem[]
 }
 
+export interface OrganizationPlanQuoteExpiration {
+  months: number
+  newPlanExpiresAt: string
+  exceedsPrepaidLimit: boolean
+  amount: number | null
+}
+
+export interface OrganizationPlanQuote {
+  organizationId: string
+  plan: BusinessPlanKey
+  billingDay: number
+  planLocked: boolean
+  planChanged: boolean
+  extendsCurrent: boolean
+  currentExpiry: string | null
+  paidAt: string
+  maxPlanExpiresAt: string
+  expirations: OrganizationPlanQuoteExpiration[]
+}
+
+export interface OrganizationPlanQuoteResponse {
+  quote: OrganizationPlanQuote
+}
+
 export type OrganizationPlanPaymentReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export interface OrganizationPlanPaymentReport {
@@ -929,6 +953,30 @@ export type ErrorCode =
   | 'PLAN_READ_ONLY'
   | 'PLAN_DOWNGRADE_NOT_ALLOWED'
   | 'INVALID_PLAN_MONTHS'
+  | 'INVALID_CLIENT_LIMIT'
+  | 'INVALID_PLAN_STATUS'
+  | 'INVALID_PLAN_DATE'
+  | 'PLAN_NOT_CONFIGURED'
+  | 'CLIENT_LIMIT_BELOW_USAGE'
+  | 'SUBSCRIPTION_HAS_OVERDUE_PERIODS'
+  | 'SUBSCRIPTION_HAS_OPEN_PERIODS'
+  | 'INVALID_HISTORICAL_PAYMENT_PERIOD'
+  | 'INVALID_MAX_OVERDUE_PERIODS'
+  | 'INVALID_WEBHOOK'
+  | 'PLAN_CONCURRENT_UPDATE'
+  | 'PREPAID_LIMIT_REACHED'
+  | 'INVALID_FILTER'
+  | 'TWILIO_NUMBER_IN_USE'
+  | 'TWILIO_NUMBER_AMBIGUOUS'
+  | 'INVALID_PAYLOAD'
+  | 'INVALID_SUBSCRIPTION_CLIENT'
+  | 'INVALID_SUBSCRIPTION_PLAN'
+  | 'INVALID_SUBSCRIPTION_BILLING_DAY'
+  | 'INVALID_SUBSCRIPTION_STATUS'
+  | 'INVALID_BILLING_PERIOD_SUBSCRIPTION'
+  | 'INVALID_BILLING_PERIOD_STATUS'
+  | 'INVALID_BILLING_PERIOD_AMOUNT'
+  | 'INVALID_QUERY'
   | 'PLAN_PAYMENT_REPORT_ALREADY_EXISTS'
   | 'PLAN_PAYMENT_REPORT_NOT_FOUND'
   | 'PLAN_PAYMENT_REPORT_ALREADY_REVIEWED'

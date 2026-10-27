@@ -29,7 +29,7 @@ import {
   formatDate,
   SUBSCRIPTION_STATUS_COLORS,
   SUBSCRIPTION_STATUS_LABELS,
-  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHOD_OPTIONS,
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
 } from '@/lib/constants'
@@ -209,8 +209,7 @@ export function QuickPayModal() {
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(PAYMENT_METHOD_LABELS)
-                          .filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
+                        {PAYMENT_METHOD_OPTIONS
                           .map(([key, label]) => (
                             <SelectItem key={key} value={key} className="py-3">
                               {label}

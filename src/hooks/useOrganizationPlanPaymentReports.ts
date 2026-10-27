@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   businessPlansApi,
   organizationPlanPaymentReportsApi,
+  type OrganizationPlanQuoteParams,
 } from '@/api/organization-plan-payment-reports.api'
 import { qk } from '@/lib/query-keys'
 import { handleApiError } from '@/lib/error-handler'
@@ -17,6 +18,19 @@ export function useBusinessPlans() {
     queryFn: businessPlansApi.list,
     staleTime: 0,
     refetchOnMount: 'always',
+  })
+}
+
+export function useOrganizationPlanQuote(params: OrganizationPlanQuoteParams, enabled = true) {
+  return useQuery({
+    queryKey: qk.organizationPlanPaymentReports.quote(
+      params.organizationId,
+      params.plan,
+      params.paidAt,
+    ),
+    queryFn: () => organizationPlanPaymentReportsApi.quote(params),
+    enabled: enabled && Boolean(params.organizationId && params.plan && params.paidAt),
+    placeholderData: keepPreviousData,
   })
 }
 

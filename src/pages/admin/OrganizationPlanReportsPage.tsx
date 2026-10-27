@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, Clock, Inbox, XCircle } from 'lucide-react'
 import {
   useAllOrganizationPlanPaymentReports,
+  useBusinessPlans,
   useReviewOrganizationPlanPaymentReport,
 } from '@/hooks/useOrganizationPlanPaymentReports'
 import {
-  BUSINESS_PLANS,
   CUSTOM_PLAN_MIN_CLIENTS,
   STATUS_ERROR,
   STATUS_SUCCESS,
@@ -14,6 +14,7 @@ import {
   formatCurrency,
   formatDate,
 } from '@/lib/constants'
+import { getPlanLabel } from '@/lib/business-plan-catalog'
 import { ListCard, ListPageLayout } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { Badge } from '@/components/ui/badge'
@@ -83,6 +84,8 @@ export function OrganizationPlanReportsPage() {
   const [notes, setNotes] = useState('')
   const [clientLimit, setClientLimit] = useState('')
   const { data, isLoading } = useAllOrganizationPlanPaymentReports(status)
+  const { data: catalogData } = useBusinessPlans()
+  const catalog = catalogData?.plans
   const reviewMutation = useReviewOrganizationPlanPaymentReport()
   const reports = data?.reports ?? []
   const searchLower = search.trim().toLowerCase()
@@ -180,7 +183,7 @@ export function OrganizationPlanReportsPage() {
                     {report.organizationName || report.organizationId}
                   </p>
                   <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-                    Plan {BUSINESS_PLANS[report.plan].label} · {report.months}{' '}
+                    Plan {getPlanLabel(catalog, report.plan)} · {report.months}{' '}
                     {report.months === 1 ? 'mes' : 'meses'}
                   </p>
                 </div>
@@ -219,7 +222,7 @@ export function OrganizationPlanReportsPage() {
                 <div className="space-y-3 rounded-xl border border-border-subtle bg-surface-muted p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Plan</span>
-                    <span className="font-semibold">{BUSINESS_PLANS[selected.plan].label}</span>
+                    <span className="font-semibold">{getPlanLabel(catalog, selected.plan)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Meses</span>

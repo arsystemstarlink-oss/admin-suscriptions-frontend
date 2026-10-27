@@ -3,10 +3,11 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  BUSINESS_PLANS,
   ORGANIZATION_PLAN_STATUS_LABELS,
   formatDate,
 } from '@/lib/constants'
+import { getPlanClientLimit, getPlanLabel } from '@/lib/business-plan-catalog'
+import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import { getOrganizationBillingDay } from '@/lib/business-plan'
 import { useUpdateOrganization, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { OrganizationWhatsAppSettings } from '@/components/organizations/OrganizationWhatsAppSettings'
@@ -69,6 +70,8 @@ interface EditOrganizationSheetProps {
 export function EditOrganizationSheet({ organization, open, onOpenChange }: EditOrganizationSheetProps) {
   const updateMutation = useUpdateOrganization()
   const deleteMutation = useDeleteOrganization()
+  const { data: catalogData } = useBusinessPlans()
+  const catalog = catalogData?.plans
   const [error, setError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -91,7 +94,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
   })
   const clientCount = organization?.clientCount ?? 0
   const currentPlan = organization?.plan ?? 'basico'
-  const currentPlanLimit = BUSINESS_PLANS[currentPlan].clientLimit
+  const currentPlanLimit = getPlanClientLimit(catalog, currentPlan)
   const billingDay = getOrganizationBillingDay(organization)
 
   useEffect(() => {
@@ -239,7 +242,7 @@ export function EditOrganizationSheet({ organization, open, onOpenChange }: Edit
 
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                 <span className="font-semibold text-foreground">
-                  Plan {BUSINESS_PLANS[currentPlan].label}
+                  Plan {getPlanLabel(catalog, currentPlan)}
                 </span>
                 <span className="text-muted-foreground">
                   ·{' '}

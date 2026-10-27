@@ -10,7 +10,9 @@ import { OrganizationSelectionEmptyState } from '@/components/organizations/Orga
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { getClientFullName, getInitial } from '@/lib/utils'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
-import { BUSINESS_PLANS, PLAN_USAGE_WARNING_PERCENT } from '@/lib/constants'
+import { PLAN_USAGE_WARNING_PERCENT } from '@/lib/constants'
+import { getPlanLabel } from '@/lib/business-plan-catalog'
+import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import { PlanUpgradeButton } from '@/components/plans/PlanUpgradeButton'
 
 export function ClientsListPage() {
@@ -24,6 +26,7 @@ export function ClientsListPage() {
   const planOrganization = user?.role === 'admin' ? user.organization : undefined
   const { isAtLimit, isReadOnly, clientCount, clientLimit, usagePercent } =
     getOrganizationPlanAccess(planOrganization)
+  const { data: catalogData } = useBusinessPlans()
   const cannotAddClients = !isSuperAdmin && (isAtLimit || isReadOnly)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
@@ -155,7 +158,7 @@ export function ClientsListPage() {
           >
             <p className="text-sm">
               {isAtLimit
-                ? `Llegaste al límite de ${clientLimit} clientes de tu plan ${planOrganization.plan ? BUSINESS_PLANS[planOrganization.plan].label : ''}. Tus datos siguen disponibles; para añadir clientes, elige un plan con más espacio.`
+                ? `Llegaste al límite de ${clientLimit} clientes de tu plan ${getPlanLabel(catalogData?.plans, planOrganization.plan)}. Tus datos siguen disponibles; para añadir clientes, elige un plan con más espacio.`
                 : `Ya usaste el ${usagePercent}% del límite de clientes de tu plan. Puedes elegir un plan con más espacio cuando lo necesites.`}
               {isAtLimit && clientCount !== null && clientLimit !== null && (
                 <span className="block font-medium">

@@ -12,13 +12,14 @@ import { EditOrganizationSheet } from '@/components/organizations/EditOrganizati
 import { OrganizationPlanPaymentSheet } from '@/components/organizations/OrganizationPlanPaymentSheet'
 import { OrganizationAdminsSection } from '@/components/organizations/OrganizationAdminsSection'
 import {
-  BUSINESS_PLANS,
   ORGANIZATION_PLAN_STATUS_LABELS,
   PLAN_USAGE_WARNING_PERCENT,
   formatDate,
   getExpiringLabel,
   isExpiringSoon,
 } from '@/lib/constants'
+import { getPlanAdminLimit, getPlanClientLimit, getPlanLabel } from '@/lib/business-plan-catalog'
+import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
 import type { Organization, OrganizationListFilter } from '@/types/api'
 
 export function OrganizationsPage() {
@@ -45,6 +46,8 @@ export function OrganizationsPage() {
   )
 
   const deleteMutation = useDeleteOrganization()
+  const { data: catalogData } = useBusinessPlans()
+  const catalog = catalogData?.plans
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
 
   const handleCopyConsultaLink = async (organization: Organization) => {
@@ -147,7 +150,7 @@ export function OrganizationsPage() {
         <div className="space-y-3">
         {organizations.map((organization) => {
           const plan = organization.plan ?? 'basico'
-          const planLimit = BUSINESS_PLANS[plan].clientLimit
+          const planLimit = getPlanClientLimit(catalog, plan)
           const clientLimit = organization.clientLimit ?? planLimit
           const clientCount = organization.clientCount
           const hasClientCount = typeof clientCount === 'number'
@@ -184,12 +187,12 @@ export function OrganizationsPage() {
               : organization.trialEndsAt && isExpiringSoon(organization.trialEndsAt, 7)
                 ? 'text-xs font-medium text-warning'
                 : 'text-xs'
-          const adminLimit = BUSINESS_PLANS[plan].adminLimit
+          const adminLimit = getPlanAdminLimit(catalog, plan)
           const planStatusLabel = organization.planStatus
             ? ORGANIZATION_PLAN_STATUS_LABELS[organization.planStatus]
             : 'Pendiente'
           const planBadgeLabel = organization.plan
-            ? `Plan ${BUSINESS_PLANS[organization.plan].label} · ${planStatusLabel}`
+            ? `Plan ${getPlanLabel(catalog, organization.plan)} · ${planStatusLabel}`
             : 'Plan pendiente'
           const planBadgeClassName =
             organization.planStatus === 'activo'
@@ -328,12 +331,14 @@ export function OrganizationsPage() {
                 </Button>
               </div>
             </div>
-            <OrganizationAdminsSection
-              organizationId={organization.id}
-              organizationName={organization.name}
-              organizationActive={organization.active}
-              adminLimit={adminLimit}
-            />
+            {adminLimit !== null && (
+              <OrganizationAdminsSection
+                organizationId={organization.id}
+                organizationName={organization.name}
+                organizationActive={organization.active}
+                adminLimit={adminLimit}
+              />
+            )}
           </ListCard>
           )
         })}

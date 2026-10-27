@@ -821,10 +821,39 @@ la fecha de pago. El vencimiento resultante no puede superar 12 meses desde hoy
 
 | Metodo | Path | Descripcion |
 |--------|------|-------------|
+| GET | /organization-plan-payment-reports/quote | Cotiza bloqueo de plan, vencimientos y monto (fuente unica del backend) |
 | POST | /organization-plan-payment-reports | Admin reporta pago (plan actual o superior, meses 1-12) |
 | GET | /organization-plan-payment-reports/mine | Admin lista sus reportes |
 | GET | /organization-plan-payment-reports?status=PENDING | Super-admin lista reportes y los enriquece con `organizationName` |
 | POST | /organization-plan-payment-reports/:id/review | Super-admin aprueba (aplica el pago del plan) o rechaza |
+
+```typescript
+// GET /organization-plan-payment-reports/quote?organizationId=&plan=pro&paidAt=2026-10-27
+// organizationId solo lo usa el super-admin; el admin cotiza su propia organizacion.
+// Respuesta 200
+{
+  quote: {
+    organizationId: string;
+    plan: 'basico' | 'pro' | 'negocio' | 'a-medida';
+    billingDay: number;
+    planLocked: boolean;       // plan/trial vigente: no permite bajar de plan ni de tope
+    planChanged: boolean;
+    extendsCurrent: boolean;
+    currentExpiry: string | null;
+    paidAt: string;
+    maxPlanExpiresAt: string;  // tope de prepago (12 meses)
+    expirations: Array<{
+      months: number;          // 1-12
+      newPlanExpiresAt: string;
+      exceedsPrepaidLimit: boolean;
+      amount: number | null;   // null para A medida
+    }>;
+  };
+}
+// Errors: 400 TENANT_REQUIRED | 404 ORGANIZATION_NOT_FOUND | 400 INVALID_DATA
+//         400 INVALID_PAYMENT_DATE
+// El frontend no debe recalcular vencimientos ni bloqueo de plan por su cuenta.
+```
 
 ```typescript
 // POST /organization-plan-payment-reports
@@ -1188,7 +1217,7 @@ POST /subscriptions
 POST /subscriptions
 { clientId, planId, kitNumber, billingDay: 6, maxOverduePeriods: 2, activationDate: "2026-01-05" }
 ```
-- Genera periodos desde activationDate hasta hoy
+- Genera periodos desde activationDate hasta hoy, anclados al billingDay: el primer periodo termina en el siguiente dia de corte (puede acortarse dentro del mismo mes) y los siguientes encadenan mes a mes con ese dia
 - El primer mes de activacion siempre nace `PENDING` (el cliente pago para activar, aunque el pago no este registrado aun)
 - Periodos siguientes pasados → `OVERDUE`, periodo actual → `PENDING` (maximo `maxOverduePeriods` vencidos)
 - Si overdueCount >= maxOverduePeriods → suscripcion `SUSPENDED` y NO se genera el periodo actual (los meses durante la suspension no generan deuda)
@@ -1209,9 +1238,11 @@ POST /subscriptions
   ]
 }
 ```
-- Genera periodos, marca como `PAID` los que coinciden con pagos historicos
-- El primer mes de activacion sin pago historico queda `PENDING` (regla de activacion)
-- Resto: `OVERDUE` o `PENDING` segun fecha
+- Genera periodos anclados al `billingDay`: el primero va desde `activationDate` hasta el siguiente dia de corte (puede ser el mismo mes) y los demas encadenan mes a mes con ese dia de corte
+- Marca como `PAID` el periodo cuyo rango coincide exactamente con cada pago historico (`startDate`, `endDate` y `periodLabel`)
+- Un pago historico debe solapar con un unico periodo generado; si no coincide, es ambiguo o se solapa con otro pago → `400 INVALID_HISTORICAL_PAYMENT_PERIOD`
+- El primer periodo de activacion sin pago historico queda `PENDING` (regla de activacion)
+- Resto: `OVERDUE` o `PENDING` segun fecha; `maxOverduePeriods` debe ser entero entre 1 y 3
 - amount debe ser igual al precio del plan
 
 ### 4. Registrar pago en periodo pendiente/vencido
@@ -1321,9 +1352,15 @@ Authorization: Bearer {accessToken}
 | accountNumber | Formato libre (ej: "ACC-8381534-78084-24") |
 | activationDate | Formato YYYY-MM-DD, no futura |
 | paidAt | Formato YYYY-MM-DD (solo fecha, sin hora) |
-| historicalPayments | Requiere activationDate |
-| amount (pagos historicos) | Igual al precio del plan |
-| paymentMethod (pagos historicos) | No INITIAL_PAYMENT |
+| historicalPayments | Requiere activationDate; cada pago debe coincidir con un unico periodo del ciclo |
+| amount (pagos historicos) | Igual al precio del plan (bloqueado en la UI) |
+| paymentMethod (pagos historicos) | No INITIAL_PAYMENT (lista unica: CASH, TRANSFER, USDT, CARD, OTHER) |
+| maxOverduePeriods | Entero 1-3 al crear y editar |
+| PUT /subscriptions/:id planId/billingDay | Solo si no hay periodos PENDING/OVERDUE (`409 SUBSCRIPTION_HAS_OPEN_PERIODS`) |
+| PUT /subscriptions/:id status ACTIVE | Requiere overdueCount < maxOverduePeriods (`409 SUBSCRIPTION_HAS_OVERDUE_PERIODS`) |
+| phone de cliente | Se normaliza a E.164 (`+58...`) al crear/editar |
+| PUT /organizations/:id planStatus activo/prueba | Exige fecha de vencimiento/prueba futura (`400 INVALID_PLAN_DATE`) |
+| POST /organizations/:id/plan-payments paidAt | No futura (`400 INVALID_PAYMENT_DATE`) |
 | POST /pay (amount) | Debe coincidir con amount del periodo |
 | PUT /billing-periods/:id | Solo periodos PAID |
 | DELETE /subscriptions/:id | Elimina suscripcion y sus periodos de facturacion |
@@ -1360,7 +1397,7 @@ Codigos de planes: `PLAN_READ_ONLY` (403) | `PLAN_NOT_CONFIGURED` (409) | `CLIEN
 
 Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
 
-Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`).
+Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`). `TWILIO_NUMBER_IN_USE` (409) — el número de WhatsApp ya pertenece a otra organización. `TWILIO_NUMBER_AMBIGUOUS` (409) — el número resuelve a varias organizaciones en el webhook.
 
 Codigos portal/reportes: `PAYMENT_REPORT_NOT_FOUND` (404) | `PAYMENT_REPORT_ALREADY_EXISTS` (409) | `PAYMENT_REPORT_ALREADY_REVIEWED` (409) | `PAYMENT_REPORT_INVALID_STATE` (400)
 
@@ -1372,6 +1409,8 @@ Codigos adelanto: `HAS_UNPAID_PERIODS` (409) | `PERIOD_ALREADY_EXISTS` (409) | `
 - Defaults: recordatorio a 3 días, aviso de vencimiento habilitado y aviso de suspensión habilitado. Los Content SID de entorno antiguos se usan solo como fallback hasta que la organización guarde su configuración.
 - `readiness.ready` y `readiness.missing` describen los requisitos activos pendientes. La falta de configuración WhatsApp no detiene el cron ni el ciclo de negocio.
 - Cada organización debe tener sus propias credenciales Twilio en `organizations/{id}.twilio`: `accountSid`, `authToken`, `phoneNumber` (número de WhatsApp Business, E.164), `enabled`. No existe configuración Twilio global de servidor.
+- Unicidad del número: un `phoneNumber` pertenece a una sola organización. Al crear o cambiar el número (`POST /organizations`, `POST /organizations/onboard`, `PUT /organizations/:id`, `PUT /api/whatsapp/config`) el backend reserva `twilioPhoneNumbers/{phoneNumber}` dentro de una transacción y rechaza con `409 TWILIO_NUMBER_IN_USE` si otra organización lo usa. Al cambiar o eliminar el número se libera la reserva. Las reservas no son accesibles desde clientes (`firestore.rules`).
+- Si un número resuelve a más de una organización (datos previos a la reserva), el webhook rechaza el mensaje con `409 TWILIO_NUMBER_AMBIGUOUS`. Ejecutar `npm run backfill:twilio-phone-claims` (dry-run por defecto, `--apply` para escribir) crea las reservas de los números sin conflicto y reporta los duplicados.
 - Resolución de credenciales: solo se usan las credenciales de la organización; si la config está incompleta o `enabled === false`, no hay credenciales (`WHATSAPP_NOT_CONFIGURED`).
 - `POST /whatsapp/send` usa las credenciales de la organización efectiva. Requiere contexto de organización (`TENANT_REQUIRED` si un super-admin no indica `?organizationId=`).
 - Webhook inbound (`POST /communications/webhook`): resuelve la organización por el número destino (`To` del mensaje = `twilio.phoneNumber` de la org), valida la firma con el `authToken` de esa org, y asigna el mensaje a la organización. Si la org no se resuelve, no hay credenciales para validar y el webhook se rechaza. Fallback histórico: match por teléfono del cliente (solo con validación desactivada en development).

@@ -2,14 +2,17 @@ export const VE_COUNTRY_CODE = '+58'
 export const VE_MAX_NATIONAL_DIGITS = 11
 
 export function normalizeVenezuelanDigits(value: string): string {
-  const digits = value.replace(/\D/g, '')
-  let national = digits
-  if (national.startsWith('58') && national.length > 2) {
-    national = national.slice(2)
-  } else if (national.startsWith('0')) {
-    national = national.slice(1)
+  let digits = value.replace(/\D/g, '')
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2)
   }
-  return national.slice(0, VE_MAX_NATIONAL_DIGITS)
+  if (digits.startsWith('58')) {
+    digits = digits.slice(2)
+  }
+  if (digits.startsWith('0')) {
+    digits = digits.slice(1)
+  }
+  return digits.slice(0, VE_MAX_NATIONAL_DIGITS)
 }
 
 export function formatVenezuelanPhone(nationalDigits: string): string {

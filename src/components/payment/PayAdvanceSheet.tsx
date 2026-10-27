@@ -25,7 +25,7 @@ import {
 import {
   formatCurrency,
   formatDate,
-  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHOD_OPTIONS,
 } from '@/lib/constants'
 import { getClientFullName, getLocalDateInputValue } from '@/lib/utils'
 import { useDolarRates } from '@/hooks/useExchange'
@@ -166,8 +166,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(PAYMENT_METHOD_LABELS)
-                          .filter(([key]) => key !== PaymentMethod.INITIAL_PAYMENT)
+                        {PAYMENT_METHOD_OPTIONS
                           .map(([key, label]) => (
                             <SelectItem key={key} value={key} className="py-3">
                               {label}

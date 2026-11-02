@@ -122,7 +122,10 @@ export function SubscriptionsListPage() {
   const isOverdueSub = (sub: SubscriptionWithDetails) => sub.hasDebt
 
   const isExpiringSub = (sub: SubscriptionWithDetails) =>
-    sub.currentPeriod != null && isExpiringSoon(sub.currentPeriod.endDate)
+    sub.status === 'ACTIVE' &&
+    sub.currentPeriod != null &&
+    sub.currentPeriod.status !== 'PAID' &&
+    isExpiringSoon(sub.currentPeriod.endDate)
 
   const isPendingSub = (sub: SubscriptionWithDetails) =>
     sub.status === 'ACTIVE' && sub.pendingPeriods > 0

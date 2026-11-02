@@ -664,7 +664,10 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
   const exchangeSource = useExchangeStore((s) => s.source)
   const { data: exchangeRates } = useDolarRates()
   const activeRate = getRateForSource(exchangeRates, exchangeSource)
-  const items = data?.expiringSoon.items ?? []
+  const items = useMemo(
+    () => (data?.expiringSoon.items ?? []).filter((item) => item.status !== 'PAID'),
+    [data],
+  )
   const visibleItems = items.slice(0, WIDGET_EXPANDED_COUNT)
   const displayedItems = expanded ? visibleItems : visibleItems.slice(0, WIDGET_COLLAPSED_COUNT)
   useEffect(() => {
@@ -689,9 +692,9 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
           <h2 className="text-base font-bold text-foreground group-hover:text-primary transition-colors truncate">Vencimientos Próximos</h2>
         </span>
         <span className="flex items-center gap-2 shrink-0">
-          {data && data.expiringSoon.count > 0 && (
+          {items.length > 0 && (
             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-warning/10 text-warning">
-              {data.expiringSoon.count}
+              {items.length}
             </span>
           )}
           <ChevronRight className="h-5 w-5 text-subtle-foreground hidden sm:block group-hover:translate-x-0.5 transition-transform" />
@@ -762,7 +765,7 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
       {!isLoading && visibleItems.length > 0 && (
         <WidgetExpandFooter
           expanded={expanded}
-          total={data?.expiringSoon.count ?? items.length}
+          total={items.length}
           onToggle={() => setExpanded((v) => !v)}
           onViewAll={() => navigate('/subscriptions?expiring=true')}
           viewAllLabel={`Ver todos (${items.length})`}

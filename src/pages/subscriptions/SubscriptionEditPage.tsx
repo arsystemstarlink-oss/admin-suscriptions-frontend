@@ -28,7 +28,7 @@ import { getNavigationStatePath } from '@/lib/navigation'
 
 const subscriptionEditSchema = z.object({
   planId: z.string().min(1, 'Seleccione un plan'),
-  kitNumber: z.string().min(1, 'El número de kit es requerido'),
+  kitNumber: z.string().min(1, 'El código del servicio es requerido'),
   accountNumber: z.string().optional(),
   billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
   maxOverduePeriods: z.coerce.number().min(1).max(3).optional(),
@@ -186,7 +186,7 @@ export function SubscriptionEditPage() {
               </div>
 
               <div className="space-y-2">
-                <Label id="kitNumber-label">Número de Kit</Label>
+                <Label id="kitNumber-label">Código del Servicio</Label>
                 <div
                   role="textbox"
                   aria-labelledby="kitNumber-label"
@@ -201,9 +201,9 @@ export function SubscriptionEditPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="accountNumber">Número de Cuenta Starlink</Label>
+                <Label htmlFor="accountNumber">Número de Cuenta</Label>
                 <Input id="accountNumber" {...register('accountNumber')} placeholder="Ej: ACC-8381534-78084-24" />
-                <p className="text-xs text-muted-foreground">Opcional. Número de cuenta del servicio Starlink.</p>
+                <p className="text-xs text-muted-foreground">Opcional. Cuenta del servicio en tu proveedor, si aplica.</p>
               </div>
 
               <div className="space-y-2">

@@ -192,7 +192,7 @@ export function PaymentReportsPage() {
             </Button>
           ) : undefined
         }
-        searchProps={{ value: search, onChange: handleSearch, placeholder: 'Buscar por cliente, cédula, kit...' }}
+        searchProps={{ value: search, onChange: handleSearch, placeholder: 'Buscar por cliente, cédula, código...' }}
         filters={
           <>
             {STATUS_FILTERS.map((f) => (

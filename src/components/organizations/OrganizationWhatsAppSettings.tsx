@@ -29,7 +29,7 @@ interface WhatsAppFormState {
 }
 
 const DEFAULT_DUE_DATE_WARNING_DRAFT =
-  'Hola {{1}}, el servicio asociado al kit {{2}} tiene un período vencido desde el {{3}}. Por favor, comunícate con nosotros para regularizar el pago.'
+  'Hola {{1}}, el servicio {{2}} tiene un período vencido desde el {{3}}. Por favor, comunícate con nosotros para regularizar el pago.'
 
 function getFormState(config: OrganizationWhatsAppConfig): WhatsAppFormState {
   return {
@@ -389,7 +389,7 @@ export function OrganizationWhatsAppSettings({
             placeholder="Escribe aquí el texto que quieres enviar a revisión de WhatsApp."
           />
           <p className="text-xs text-muted-foreground">
-            Personaliza el texto y conserva {'{{1}}'} nombre, {'{{2}}'} kit y {'{{3}}'} fecha de vencimiento.
+            Personaliza el texto y conserva {'{{1}}'} nombre, {'{{2}}'} código del servicio y {'{{3}}'} fecha de vencimiento.
             Copia el borrador y solicita su aprobación en Twilio; este formulario no lo envía ni lo somete.
           </p>
           <Button
@@ -425,7 +425,7 @@ export function OrganizationWhatsAppSettings({
             onChange={(event) => updateForm('suspensionNoticeTemplate', event.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Variables: {'{1}'} nombre del cliente, {'{2}'} kit.
+            Variables: {'{1}'} nombre del cliente, {'{2}'} código del servicio.
           </p>
         </div>
       </div>

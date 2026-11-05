@@ -241,7 +241,7 @@ export function SubscriptionsListPage() {
         searchProps={{
           value: search,
           onChange: handleSearch,
-          placeholder: "Buscar kit, cliente, o teléfono..."
+          placeholder: "Buscar código, cliente o teléfono..."
         }}
         primaryAction={
           <Button asChild className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2" aria-label="Nueva suscripción" title="Nueva suscripción">
@@ -379,7 +379,7 @@ export function SubscriptionsListPage() {
                     </div>
                   </div>
 
-                  {/* Middle Row: Kit & Plan Details */}
+                  {/* Middle Row: Service & Plan Details */}
                   <div className="flex items-center gap-2 sm:gap-3 bg-surface-muted rounded-lg sm:rounded-xl p-2 sm:p-2.5 mb-2 sm:mb-3 border border-border-subtle">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/10 text-primary shrink-0">

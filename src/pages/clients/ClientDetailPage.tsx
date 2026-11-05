@@ -329,7 +329,7 @@ export function ClientDetailPage() {
                       </Button>
                     )}
                     <Button variant="outline" className="h-9 min-w-0 flex-1 px-2 text-xs font-semibold transition-colors active:bg-surface-active sm:h-11 sm:px-4 sm:text-sm" asChild>
-                      <Link to={`/subscriptions/${sub.id}`} state={{ from: `${location.pathname}${location.search}` }}>Ver Kit</Link>
+                      <Link to={`/subscriptions/${sub.id}`} state={{ from: `${location.pathname}${location.search}` }}>Ver servicio</Link>
                     </Button>
                   </div>
                 </div>

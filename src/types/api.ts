@@ -239,6 +239,8 @@ export interface OrganizationPlanQuote {
   clientCount?: number | null
   /** Límite de administradores que concede el plan cotizado. */
   adminLimit?: number
+  /** Diferencia por el tiempo restante al cambiar de plan; ya incluida en cada `amount`. */
+  planDifferenceAmount: number
   extendsCurrent: boolean
   currentExpiry: string | null
   paidAt: string

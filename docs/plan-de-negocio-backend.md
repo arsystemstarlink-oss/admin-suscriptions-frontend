@@ -138,7 +138,9 @@ Agregar `POST /organizations/:id/plan-payments`, solo para super-admin. Aceptar 
 `method`, `plan`, `months` y `notes`; validar fecha, monto positivo, método permitido y meses entre 1
 y 12. Calcular `newPlanExpiresAt` en el servidor sumando los meses al fin de prueba o al vencimiento
 vigente y anclando el resultado al `billingDay` de la organización; no aceptar fechas libres del
-frontend. En una transacción guardar el registro, actualizar el plan/fecha de vencimiento y activar la
+frontend. Al subir de plan con tiempo vigente se conserva ese tiempo: se cobra la diferencia de precio
+por los días restantes y `months` también admite `0` (solo la diferencia, sin sumar meses). En una
+transacción guardar el registro, actualizar el plan/fecha de vencimiento y activar la
 organización (`planStatus: 'activo'`, limpiar `trialEndsAt`). Devolver el pago y la organización
 actualizada. Esta operación registra un pago externo; no intenta cobrar ni validar una transferencia
 con un proveedor.

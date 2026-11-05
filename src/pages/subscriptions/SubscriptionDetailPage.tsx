@@ -74,7 +74,7 @@ export function SubscriptionDetailPage() {
           <AlertTriangle className="h-8 w-8" />
         </div>
         <h2 className="text-xl font-bold text-foreground">Error al cargar suscripción</h2>
-        <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del kit solicitado.</p>
+        <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del servicio solicitado.</p>
         <Button asChild>
           <Link to="/subscriptions">Volver a Suscripciones</Link>
         </Button>
@@ -202,7 +202,7 @@ export function SubscriptionDetailPage() {
         }
       />
 
-      {/* Perfil del Kit / Suscripción */}
+      {/* Perfil de la Suscripción */}
       <div className="bg-surface text-surface-foreground border border-border rounded-2xl p-3 shadow-sm space-y-3 sm:rounded-3xl sm:p-5 sm:space-y-4">
 
         <div className="flex items-start justify-between gap-2 sm:gap-3">
@@ -261,7 +261,7 @@ export function SubscriptionDetailPage() {
         {subscription.accountNumber && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
             <Hash className="h-4 w-4 shrink-0" />
-            <span>Cuenta Starlink: </span>
+            <span>Cuenta: </span>
             <span className="font-semibold text-foreground">{subscription.accountNumber}</span>
           </div>
         )}
@@ -444,7 +444,7 @@ export function SubscriptionDetailPage() {
         onOpenChange={setShowStatusDialog}
         title={`${newStatus === SubscriptionStatus.ACTIVE ? 'Reactivar' : 'Suspender'} Suscripción`}
         description={newStatus === SubscriptionStatus.ACTIVE
-          ? '¿Está seguro que desea reactivar el servicio para este kit?'
+          ? '¿Está seguro que desea reactivar este servicio?'
           : 'El cliente no podrá usar el servicio hasta que lo reactives. ¿Continuar?'}
         onConfirm={handleStatusChange}
         confirmText={newStatus === SubscriptionStatus.ACTIVE ? 'Reactivar' : 'Suspender'}
@@ -456,7 +456,7 @@ export function SubscriptionDetailPage() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Eliminar Suscripción"
-        description="Esta acción eliminará todos los períodos de facturación asociados al kit y no se puede deshacer. ¿Proceder?"
+        description="Esta acción eliminará todos los períodos de facturación de este servicio y no se puede deshacer. ¿Proceder?"
         onConfirm={handleDelete}
         confirmText="Eliminar permanentemente"
         isDestructive={true}

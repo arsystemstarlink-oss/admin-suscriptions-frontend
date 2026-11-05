@@ -32,7 +32,7 @@ import { findAlignedBillingPeriod } from '@/lib/billing-cycle'
 const subscriptionSchema = z.object({
   clientId: z.string().min(1, 'Seleccione un cliente'),
   planId: z.string().min(1, 'Seleccione un plan'),
-  kitNumber: z.string().min(5, 'Ingrese el número de kit (ej: KIT-001)'),
+  kitNumber: z.string().min(1, 'Ingrese el código del servicio'),
   accountNumber: z.string().optional(),
   billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
   maxOverduePeriods: z.coerce.number().min(1).max(3).optional(),
@@ -106,19 +106,18 @@ export function SubscriptionFormPage() {
   const kitNumberValue = watch('kitNumber')
   const accountNumberValue = watch('accountNumber')
 
-  const normalizePrefixedValue = (raw: string, prefix: string) =>
+  const normalizeServiceCode = (raw: string) =>
     raw
       .toUpperCase()
-      .replace(new RegExp(`^${prefix}-?`), '')
       .replace(/[^A-Z0-9-]/g, '')
       .replace(/^-+/, '')
 
   const handleKitNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setValue('kitNumber', `KIT-${normalizePrefixedValue(e.target.value, 'KIT')}`, { shouldValidate: true })
+    setValue('kitNumber', normalizeServiceCode(e.target.value), { shouldValidate: true })
   }
 
   const handleAccountNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setValue('accountNumber', `ACC-${normalizePrefixedValue(e.target.value, 'ACC')}`, { shouldValidate: true })
+    setValue('accountNumber', normalizeServiceCode(e.target.value), { shouldValidate: true })
   }
 
   const isRetroactive = useMemo(() => {
@@ -303,50 +302,44 @@ export function SubscriptionFormPage() {
           </div>
         </div>
 
-        {/* Bloque 2: Equipo y Cuenta */}
+        {/* Bloque 2: Servicio y Cuenta */}
         <div className="bg-surface text-surface-foreground rounded-2xl border border-border p-4 space-y-5 shadow-sm">
           <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Box className="h-5 w-5 text-muted-foreground" />
-            Datos del Equipo
+            Datos del Servicio
           </h2>
 
           <div className="space-y-2.5">
-            <Label htmlFor="kitNumber" className="text-foreground">Número de Kit *</Label>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary/10 text-primary px-2 py-1 text-sm font-semibold">
-                KIT-
-              </span>
-              <Input
-                id="kitNumber"
-                value={(kitNumberValue || '').replace(/^KIT-/, '')}
-                onChange={handleKitNumberChange}
-                placeholder="Ej: 001"
-                className="pl-16 h-12 uppercase font-semibold tracking-wide"
-                inputMode="text"
-                autoCapitalize="characters"
-              />
-            </div>
+            <Label htmlFor="kitNumber" className="text-foreground">Código del Servicio *</Label>
+            <Input
+              id="kitNumber"
+              value={kitNumberValue || ''}
+              onChange={handleKitNumberChange}
+              placeholder="Ej: KIT-001 o FIBRA-001"
+              className="h-12 uppercase font-semibold tracking-wide"
+              inputMode="text"
+              autoCapitalize="characters"
+            />
+            <p className="text-xs text-muted-foreground">
+              Con el que identificas este servicio: kit de Starlink, serial de la ONT o contrato. No se puede cambiar después.
+            </p>
             {errors.kitNumber && (
               <p className="text-sm text-destructive font-medium">{errors.kitNumber.message}</p>
             )}
           </div>
 
           <div className="space-y-2.5">
-            <Label htmlFor="accountNumber" className="text-foreground">Cuenta Starlink <span className="text-muted-foreground font-normal">(Opcional)</span></Label>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-primary/10 text-primary px-2 py-1 text-sm font-semibold">
-                ACC-
-              </span>
-              <Input
-                id="accountNumber"
-                value={(accountNumberValue || '').replace(/^ACC-/, '')}
-                onChange={handleAccountNumberChange}
-                placeholder="Ej: 8381534-78084-24"
-                className="pl-16 h-12 uppercase font-semibold tracking-wide"
-                inputMode="text"
-                autoCapitalize="characters"
-              />
-            </div>
+            <Label htmlFor="accountNumber" className="text-foreground">Número de Cuenta <span className="text-muted-foreground font-normal">(Opcional)</span></Label>
+            <Input
+              id="accountNumber"
+              value={accountNumberValue || ''}
+              onChange={handleAccountNumberChange}
+              placeholder="Ej: ACC-8381534-78084-24"
+              className="h-12 uppercase font-semibold tracking-wide"
+              inputMode="text"
+              autoCapitalize="characters"
+            />
+            <p className="text-xs text-muted-foreground">Cuenta del servicio en tu proveedor, si aplica.</p>
           </div>
         </div>
 

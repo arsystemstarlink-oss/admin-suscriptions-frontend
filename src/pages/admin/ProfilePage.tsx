@@ -15,7 +15,7 @@ import {
   STATUS_WARNING,
 } from '@/lib/constants'
 import { getPlanLabel } from '@/lib/business-plan-catalog'
-import { getOrganizationPlanAccess } from '@/lib/business-plan'
+import { formatPlanPaymentMonths, getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanUpgradeButton } from '@/components/plans/PlanUpgradeButton'
 import { OrganizationPlanPaymentReportSheet } from '@/components/organizations/OrganizationPlanPaymentReportSheet'
 import {
@@ -329,7 +329,7 @@ export function ProfilePage() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              El plan incluye todas las funciones y WhatsApp. Solo cambia el límite de clientes.
+              El plan incluye todas las funciones y WhatsApp. Solo cambian los límites de clientes y administradores.
             </p>
           </CardHeader>
           <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
@@ -420,7 +420,7 @@ export function ProfilePage() {
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="min-w-0 truncate text-muted-foreground">
-                                {report.months} {report.months === 1 ? 'mes' : 'meses'} ·{' '}
+                                {formatPlanPaymentMonths(report.months)} ·{' '}
                                 {formatDate(report.createdAt)}
                               </span>
                               <Badge variant="outline" className={status.className}>

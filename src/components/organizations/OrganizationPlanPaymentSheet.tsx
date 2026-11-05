@@ -15,7 +15,11 @@ import {
   getPlanClientLimit,
   getPlanLabel,
 } from '@/lib/business-plan-catalog'
-import { MAX_PREPAID_MONTHS, PREPAID_MONTH_OPTIONS } from '@/lib/business-plan'
+import {
+  MAX_PREPAID_MONTHS,
+  PREPAID_MONTH_OPTIONS,
+  formatPlanPaymentMonths,
+} from '@/lib/business-plan'
 import { handleApiError } from '@/lib/error-handler'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,7 +50,7 @@ const paymentSchema = z.object({
   months: z
     .number()
     .int('Indica un número entero de meses')
-    .min(1, 'Indica al menos un mes')
+    .min(0, 'Indica los meses a renovar')
     .max(MAX_PREPAID_MONTHS, `Máximo ${MAX_PREPAID_MONTHS} meses`),
 }).superRefine((data, context) => {
   if (
@@ -119,7 +123,7 @@ export function OrganizationPlanPaymentSheet({
   const months = watch('months')
   const amount = watch('amount')
   const isCustomPlan = plan === 'a-medida'
-  const renewalMonths = PREPAID_MONTH_OPTIONS.includes(months) ? months : 1
+  const renewalMonths = months === 0 || PREPAID_MONTH_OPTIONS.includes(months) ? months : 1
   const quoteQuery = useOrganizationPlanQuote(
     {
       organizationId: liveOrganization.id,
@@ -152,11 +156,15 @@ export function OrganizationPlanPaymentSheet({
     if (planLocked && fixedLimit !== null && fixedLimit < currentCapacity) return false
     return true
   })
-  const planChanged = quote?.planChanged ?? false
   const currentExpiry = quote?.currentExpiry ?? null
   const extendsCurrent = quote?.extendsCurrent ?? false
+  const planDifference = quote?.planDifferenceAmount ?? 0
   const quoteExpiration = (value: number) =>
     quote?.expirations.find((expiration) => expiration.months === value)
+  const differenceOnlyAvailable = Boolean(quoteExpiration(0))
+  const monthOptions = differenceOnlyAvailable
+    ? [0, ...PREPAID_MONTH_OPTIONS]
+    : PREPAID_MONTH_OPTIONS
   const computedExpiration = quoteExpiration(renewalMonths)
   const computedExpiry = computedExpiration
     ? new Date(computedExpiration.newPlanExpiresAt)
@@ -165,7 +173,10 @@ export function OrganizationPlanPaymentSheet({
   const prepaidLimitExceeded = computedExpiration?.exceedsPrepaidLimit ?? false
   // Fuente única del monto: el total lo devuelve el backend en la cotización.
   const quoteAmount = computedExpiration?.amount ?? null
-  const monthlyPrice = quoteAmount !== null ? quoteAmount / renewalMonths : null
+  const monthlyPrice =
+    quoteAmount !== null && renewalMonths > 0
+      ? (quoteAmount - planDifference) / renewalMonths
+      : null
   const totalAmount = quoteReady ? quoteAmount : null
   const summaryAmount =
     totalAmount !== null
@@ -183,6 +194,13 @@ export function OrganizationPlanPaymentSheet({
     if (totalAmount === null) return
     setValue('amount', totalAmount, { shouldValidate: true })
   }, [totalAmount, setValue])
+
+  // Al volver al plan actual o a otro sin tiempo que compensar deja de existir "solo la diferencia".
+  useEffect(() => {
+    if (quoteReady && months === 0 && !differenceOnlyAvailable) {
+      setValue('months', 1, { shouldValidate: true })
+    }
+  }, [quoteReady, months, differenceOnlyAvailable, setValue])
 
   const onSubmit = async (form: PaymentForm) => {
     if (!quoteReady) return
@@ -360,7 +378,7 @@ export function OrganizationPlanPaymentSheet({
                   <SelectValue placeholder="Selecciona los meses" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PREPAID_MONTH_OPTIONS.map((value) => {
+                  {monthOptions.map((value) => {
                     const exceedsPrepaidLimit =
                       quoteExpiration(value)?.exceedsPrepaidLimit ?? false
                     return (
@@ -369,7 +387,7 @@ export function OrganizationPlanPaymentSheet({
                         value={String(value)}
                         disabled={exceedsPrepaidLimit}
                       >
-                        {value} {value === 1 ? 'mes' : 'meses'}
+                        {formatPlanPaymentMonths(value)}
                         {exceedsPrepaidLimit ? ' · supera el tope' : ''}
                       </SelectItem>
                     )
@@ -396,8 +414,8 @@ export function OrganizationPlanPaymentSheet({
                 {computedExpiry ? formatDate(computedExpiry.toISOString()) : 'Calculando...'}
               </p>
               <p className="text-xs text-muted-foreground">
-                {planChanged
-                  ? 'El cambio de plan inicia en la fecha de pago; no se suma el tiempo del plan anterior.'
+                {renewalMonths === 0 && currentExpiry
+                  ? `Se conserva el vencimiento actual del ${formatDate(currentExpiry)}.`
                   : extendsCurrent && currentExpiry
                     ? `Se suman ${renewalMonths} ${renewalMonths === 1 ? 'mes' : 'meses'} al vencimiento actual del ${formatDate(currentExpiry)}.`
                     : `Se calcula desde la fecha de pago con el día de corte ${billingDay ?? '…'} de cada mes.`}
@@ -435,11 +453,25 @@ export function OrganizationPlanPaymentSheet({
               />
               <p id="plan-payment-amount-help" className="text-xs text-muted-foreground">
                 {isCustomPlan ? (
-                  'Ingresa el monto total acordado por los meses seleccionados.'
+                  renewalMonths === 0
+                    ? 'Ingresa el monto acordado por el cambio hasta el vencimiento actual.'
+                    : 'Ingresa el monto total acordado por los meses seleccionados.'
+                ) : renewalMonths === 0 && totalAmount !== null ? (
+                  <>
+                    Diferencia entre planes por el tiempo restante:{' '}
+                    <span className="font-medium text-foreground">
+                      {formatCurrency(totalAmount)}
+                    </span>
+                    .
+                  </>
                 ) : monthlyPrice !== null && totalAmount !== null ? (
                   <>
                     Precio fijo: {formatCurrency(monthlyPrice)}/mes × {renewalMonths}{' '}
-                    {renewalMonths === 1 ? 'mes' : 'meses'} ={' '}
+                    {renewalMonths === 1 ? 'mes' : 'meses'}
+                    {planDifference > 0 && (
+                      <> + diferencia por el tiempo restante {formatCurrency(planDifference)}</>
+                    )}{' '}
+                    ={' '}
                     <span className="font-medium text-foreground">
                       {formatCurrency(totalAmount)}
                     </span>
@@ -485,9 +517,7 @@ export function OrganizationPlanPaymentSheet({
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted-foreground">Meses</dt>
-                  <dd className="font-medium">
-                    {renewalMonths} {renewalMonths === 1 ? 'mes' : 'meses'}
-                  </dd>
+                  <dd className="font-medium">{formatPlanPaymentMonths(renewalMonths)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted-foreground">Total</dt>

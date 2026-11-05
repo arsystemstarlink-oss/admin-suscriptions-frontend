@@ -30,7 +30,7 @@ const PLAN_CONTENT: Record<
     message: 'Quiero el plan Negocio de A|R SYSTEM',
   },
   'a-medida': {
-    features: ['Para ISP y equipos grandes', 'Hablamos y lo armamos contigo'],
+    features: ['Para ISP con muchos clientes', 'Hablamos y lo armamos contigo'],
     action: 'Solicitar cotización',
     message: 'Quiero cotizar un plan a medida de A|R SYSTEM',
   },
@@ -114,7 +114,7 @@ const FAQS = [
   {
     question: '¿Puedo cambiar de plan?',
     answer:
-      'Sí, cuando quieras. Si llegas al límite de clientes, la app te avisa para que subas de plan.',
+      'Puedes subir cuando quieras: pagas solo la diferencia por el tiempo que te queda y conservas tu fecha de vencimiento. Para bajar, espera a que termine el período que ya pagaste y elige un plan que cubra tus clientes actuales. Si llegas al límite de clientes, la app te avisa para que subas de plan.',
   },
   {
     question: '¿El plan se paga por cada administrador?',
@@ -255,7 +255,7 @@ export function PlansPage() {
                     <span>A|R SYSTEM</span>
                     <span>ahora</span>
                   </div>
-                  <p className="font-semibold">Pago recibido</p>
+                  <p className="font-semibold">Nuevo reporte de pago</p>
                   <p><span className="font-medium text-success">25 USD</span> · Plan mensual</p>
                 </CardContent>
               </Card>
@@ -331,8 +331,8 @@ export function PlansPage() {
               Elige según cuántos clientes gestionas
             </h2>
             <p className="mt-3 max-w-2xl text-muted-foreground">
-              Todos los planes incluyen WhatsApp y todas las funciones. Solo cambia el número de
-              clientes.
+              Todos los planes incluyen WhatsApp y todas las funciones. Solo cambian los límites de
+              clientes y administradores.
             </p>
             <div className="mt-9 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {plansLoading ? (
@@ -359,7 +359,7 @@ export function PlansPage() {
                 Básico, con tus clientes reales.
               </p>
               <p className="text-sm text-header-foreground/80">
-                Si pasas el límite, te avisamos y subes de plan cuando quieras.
+                Al llegar al límite, te avisamos y subes de plan cuando quieras.
               </p>
             </div>
           </div>
@@ -402,7 +402,7 @@ export function PlansPage() {
                 </li>
                 <li className="border-t border-border py-4">
                   <strong className="text-foreground">Paquete de plantillas</strong>
-                  <span className="mt-1 block text-sm">Recordatorio, pago recibido y aviso de suspensión, ya redactadas.</span>
+                  <span className="mt-1 block text-sm">Recordatorio, aviso de vencimiento y aviso de suspensión, ya redactadas.</span>
                 </li>
               </ul>
             </div>

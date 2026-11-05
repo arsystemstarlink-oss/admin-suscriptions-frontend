@@ -125,7 +125,7 @@ function loadStoredCredentials(): StoredConsultaCredentials | null {
   }
 }
 
-/** Identificador de la suscripción: cuenta + kit si existe, si no el kit completo (sin duplicar "Kit KIT-"). */
+/** Identificador de la suscripción: cuenta + código si existe, si no el código completo. */
 function subscriptionDisplayCode(sub: { kitNumber: string; accountNumber?: string }): string {
   const account = sub.accountNumber?.trim()
   if (account) return `Cuenta ${account} · ${sub.kitNumber}`

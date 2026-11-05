@@ -14,7 +14,7 @@ Agregar al documento/DTO `Organization`:
 | `plan` | `'basico' \| 'pro' \| 'negocio' \| 'a-medida'` | Plan contratado. |
 | `clientLimit` | `number` | Límite efectivo de clientes. Básico 30, Pro 75, Negocio 150. Para A medida, asignación manual mayor de 150. |
 | `planStatus` | `'prueba' \| 'activo' \| 'vencido' \| 'suspendido'` | Estado de acceso a escritura de la organización. |
-| `billingDay` | `number` | Día de corte mensual (1-28). Se establece al crear la organización a partir de la fecha de alta y se mantiene en las renovaciones. |
+| `billingDay` | `number` | Día de corte mensual (1-28). Se establece al crear la organización a partir de la fecha de alta y se mantiene en las renovaciones; al pagar un plan sin tiempo vigente pasa a ser el día del pago, y al pagar durante la prueba, el día en que esta termina, para que el mes pagado sea completo. El pago hecho en el alta de Pro o Negocio conserva el corte del alta. |
 | `trialEndsAt` | `string \| null` | Fin de prueba en ISO 8601 UTC; solo se usa con Básico en prueba. |
 | `planExpiresAt` | `string \| null` | Vencimiento del período pagado, ISO 8601 UTC. |
 | `clientCount` | `number` | Número actual de documentos de cliente de la organización. Entero no negativo. |

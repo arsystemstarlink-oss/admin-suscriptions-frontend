@@ -114,7 +114,7 @@ const FAQS = [
   {
     question: '¿Puedo cambiar de plan?',
     answer:
-      'Puedes subir cuando quieras: pagas solo la diferencia por el tiempo que te queda y conservas tu fecha de vencimiento. Para bajar, espera a que termine el período que ya pagaste y elige un plan que cubra tus clientes actuales. Si llegas al límite de clientes, la app te avisa para que subas de plan.',
+      'Puedes subir cuando quieras y no pierdes lo que ya pagaste: el tiempo que te queda se convierte en días del plan nuevo, según su precio. Para bajar, espera a que termine el período que ya pagaste y elige un plan que cubra tus clientes actuales. Si llegas al límite de clientes, la app te avisa para que subas de plan.',
   },
   {
     question: '¿El plan se paga por cada administrador?',

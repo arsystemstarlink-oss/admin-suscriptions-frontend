@@ -68,12 +68,6 @@ export const MAX_PREPAID_MONTHS = 12
 /** Opciones de prepago que ofrece la interfaz; el backend valida `1..MAX_PREPAID_MONTHS`. */
 export const PREPAID_MONTH_OPTIONS: number[] = [1, 3, 6, 12]
 
-/** `0` meses es un cambio de plan que solo paga la diferencia y conserva el vencimiento. */
-export function formatPlanPaymentMonths(months: number): string {
-  if (months === 0) return 'Solo la diferencia'
-  return `${months} ${months === 1 ? 'mes' : 'meses'}`
-}
-
 export function getWhatsAppUrl(message: string): string | null {
   const phone = import.meta.env.VITE_WHATSAPP_NUMBER?.replace(/\D/g, '')
   return phone && /^\d{8,15}$/.test(phone)

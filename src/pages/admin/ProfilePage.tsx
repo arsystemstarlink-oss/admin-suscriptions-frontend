@@ -15,7 +15,7 @@ import {
   STATUS_WARNING,
 } from '@/lib/constants'
 import { getPlanLabel } from '@/lib/business-plan-catalog'
-import { formatPlanPaymentMonths, getOrganizationPlanAccess } from '@/lib/business-plan'
+import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanUpgradeButton } from '@/components/plans/PlanUpgradeButton'
 import { OrganizationPlanPaymentReportSheet } from '@/components/organizations/OrganizationPlanPaymentReportSheet'
 import {
@@ -420,7 +420,7 @@ export function ProfilePage() {
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="min-w-0 truncate text-muted-foreground">
-                                {formatPlanPaymentMonths(report.months)} ·{' '}
+                                {report.months} {report.months === 1 ? 'mes' : 'meses'} ·{' '}
                                 {formatDate(report.createdAt)}
                               </span>
                               <Badge variant="outline" className={status.className}>

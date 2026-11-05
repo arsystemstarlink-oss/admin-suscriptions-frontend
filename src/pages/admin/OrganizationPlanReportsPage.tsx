@@ -1,6 +1,5 @@
 ﻿import { useState } from 'react'
 import { CheckCircle, Clock, Inbox, XCircle } from 'lucide-react'
-import { formatPlanPaymentMonths } from '@/lib/business-plan'
 import {
   useAllOrganizationPlanPaymentReports,
   useBusinessPlans,
@@ -183,7 +182,8 @@ export function OrganizationPlanReportsPage() {
                     {report.organizationName || report.organizationId}
                   </p>
                   <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-                    Plan {getPlanLabel(catalog, report.plan)} · {formatPlanPaymentMonths(report.months)}
+                    Plan {getPlanLabel(catalog, report.plan)} · {report.months}{' '}
+                    {report.months === 1 ? 'mes' : 'meses'}
                   </p>
                 </div>
                 <StatusBadge status={report.status} />
@@ -225,7 +225,7 @@ export function OrganizationPlanReportsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Meses</span>
-                    <span className="font-medium">{formatPlanPaymentMonths(selected.months)}</span>
+                    <span className="font-medium">{selected.months}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Monto</span>

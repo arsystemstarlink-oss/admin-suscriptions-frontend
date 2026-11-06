@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
+import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText, Wallet } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
@@ -53,17 +53,36 @@ export default function MobileAppShell({
   const pendingReportsCount = pendingReports?.pending ?? 0;
 
   const isChatsPage = location.pathname.startsWith('/chats');
+  const isNavItemActive = (path: string, isActive: boolean) => {
+    if (path === '/config') {
+      return location.pathname === '/config' || (
+        location.pathname.startsWith('/config/') &&
+        location.pathname !== '/config/plan-payments'
+      );
+    }
+    return isActive;
+  };
 
   const navItems: Array<{
     id: string
     icon: typeof Home
     label: string
+    ariaLabel?: string
     path: string
     badge?: number
   }> = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/dashboard' },
-    { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
+    {
+      id: 'subs',
+      icon: CreditCard,
+      label: isSuperAdmin ? 'Suscrip.' : 'Suscripciones',
+      ariaLabel: 'Suscripciones',
+      path: '/subscriptions',
+    },
     { id: 'reports', icon: ReceiptText, label: 'Cobros', path: '/payment-reports', badge: pendingReportsCount },
+    ...(isSuperAdmin
+      ? [{ id: 'plan-payments', icon: Wallet, label: 'Pagos plan', ariaLabel: 'Pagos de planes', path: '/config/plan-payments' }]
+      : []),
     { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];
@@ -163,22 +182,24 @@ export default function MobileAppShell({
               <li key={item.id} className="flex-1 flex justify-center">
                 <NavLink
                   to={item.path}
-                  end={item.path === '/dashboard'}
+                  end={item.path === '/dashboard' || item.path === '/config/plan-payments'}
                   className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 rounded-lg active:scale-95 transition-transform touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={
                     badgeCount > 0
-                      ? `${item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`
-                      : item.label
+                      ? `${item.ariaLabel ?? item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`
+                      : item.ariaLabel ?? item.label
                   }
                 >
-                  {({ isActive }) => (
-                    <>
+                  {({ isActive }) => {
+                    const active = isNavItemActive(item.path, isActive);
+                    return (
+                      <>
                       <span className="relative">
                         <Icon
                           size={24}
-                          strokeWidth={isActive ? 2.5 : 2}
+                          strokeWidth={active ? 2.5 : 2}
                           className={`transition-colors ${
-                            isActive
+                            active
                               ? 'text-primary'
                               : 'text-muted-foreground'
                           }`}
@@ -191,15 +212,16 @@ export default function MobileAppShell({
                       </span>
                       <span
                         className={`text-[10px] font-medium tracking-wide transition-colors ${
-                          isActive
+                          active
                             ? 'text-foreground'
                             : 'text-muted-foreground'
                         }`}
                       >
                         {item.label}
                       </span>
-                    </>
-                  )}
+                      </>
+                    );
+                  }}
                 </NavLink>
               </li>
             );

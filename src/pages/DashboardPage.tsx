@@ -27,19 +27,40 @@ export function DashboardPage() {
     <div className="flex flex-col gap-6 pb-20">
       <PageHeader
         title="Panel"
-        description="Centro de operaciones del sistema"
+        description="Revisa lo urgente y continúa con la gestión de tu organización."
       />
 
-      <QuickActions />
+      <section aria-labelledby="dashboard-priorities-title" className="space-y-4">
+        <div>
+          <h2 id="dashboard-priorities-title" className="text-lg font-semibold tracking-tight text-foreground">
+            Requiere atención
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Atiende los cobros pendientes, prioriza a quienes tienen deuda y revisa los próximos vencimientos.
+          </p>
+        </div>
 
-      <KPICards />
+        <PendingPaymentsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
-      <PendingPaymentsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <TopDebtorsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
+          <ExpiringSoonWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ExpiringSoonWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
-        <TopDebtorsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
-      </div>
+      <section aria-labelledby="dashboard-quick-actions-title" className="space-y-3">
+        <h2 id="dashboard-quick-actions-title" className="text-lg font-semibold tracking-tight text-foreground">
+          Acciones rápidas
+        </h2>
+        <QuickActions />
+      </section>
+
+      <section aria-labelledby="dashboard-summary-title" className="space-y-3">
+        <h2 id="dashboard-summary-title" className="text-lg font-semibold tracking-tight text-foreground">
+          Resumen general
+        </h2>
+        <KPICards />
+      </section>
     </div>
   )
 }

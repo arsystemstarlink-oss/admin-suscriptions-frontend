@@ -3,6 +3,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-sans: 'Figtree Variable', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Figtree Variable', system-ui, sans-serif;
+
   --color-primary-50: #E0E7F9;
   --color-primary-100: #CAD6F5;
   --color-primary-200: #9DB3EC;
@@ -167,7 +170,8 @@
 
   .plans-page-theme {
     color-scheme: light;
-    font-family: 'Figtree', system-ui, sans-serif;
+    /* Página de marketing: sin tablas de montos, los números proporcionales lucen mejor. */
+    font-variant-numeric: normal;
     --background: 0 0% 100%;
     --foreground: 224 66% 12%;
     --surface: 0 0% 100%;
@@ -216,7 +220,7 @@
   .plans-page-theme h2,
   .plans-page-theme h3,
   .plans-page-theme .plans-logo {
-    font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
+    font-family: var(--font-display);
   }
 }
 
@@ -227,6 +231,8 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    /* Montos alineados en columnas y sin saltos al actualizarse. */
+    font-variant-numeric: tabular-nums;
   }
 }
 

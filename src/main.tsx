@@ -8,6 +8,7 @@ import { clearPersistedQueryCache, queryClient, persistOptions } from '@/lib/que
 import { useAuthStore } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useExchangeStore } from '@/stores/exchange.store'
+import '@fontsource-variable/figtree/wght.css'
 import './index.css'
 
 registerSW({ immediate: true })

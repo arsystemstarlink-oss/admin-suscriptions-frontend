@@ -128,7 +128,9 @@ export function ClientFormPage() {
       } else {
         const newClient = await createMutation.mutateAsync(payload as CreateClientRequest)
         toast.success('Cliente creado correctamente')
-        navigate(`/subscriptions/clients/${newClient.id}`)
+        navigate(`/subscriptions/clients/${newClient.id}`, {
+          state: { from: returnTo },
+        })
       }
     } catch (err) {
       handleApiError(err, {
@@ -156,6 +158,8 @@ export function ClientFormPage() {
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
         backTo={backTo}
+        backState={isEdit ? { from: returnTo } : undefined}
+        backLabel={isEdit ? 'Volver al cliente' : 'Volver a clientes'}
         className="mb-4"
         title={
           <div>

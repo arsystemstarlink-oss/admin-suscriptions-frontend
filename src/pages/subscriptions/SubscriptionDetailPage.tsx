@@ -166,6 +166,7 @@ export function SubscriptionDetailPage() {
     <div className="flex flex-col gap-3 pb-[calc(100px+env(safe-area-inset-bottom))] sm:gap-4">
       
       <DetailNav
+        backLabel="Volver a suscripciones"
         backTo="/subscriptions"
         actions={
           <>

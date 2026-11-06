@@ -30,6 +30,7 @@ export function PlanFormPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const isEdit = !!id
+  const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/plans'
   const { data, isLoading } = usePlanDetail(id!)
   const createMutation = useCreatePlan()
   const updateMutation = useUpdatePlan()
@@ -78,12 +79,11 @@ export function PlanFormPage() {
           organizationId: data?.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Plan actualizado correctamente')
-        const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/plans'
         navigate(returnTo, { replace: true })
       } else {
         await createMutation.mutateAsync(payload)
         toast.success('Plan creado correctamente')
-        navigate('/subscriptions/plans')
+        navigate(returnTo, { replace: true })
       }
     } catch {
       setError('Error al guardar el plan. Intente nuevamente.')
@@ -108,7 +108,8 @@ export function PlanFormPage() {
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
-        backTo="/subscriptions/plans"
+        backLabel="Volver a planes"
+        backTo={returnTo}
         className="mb-4"
         title={
           <div>

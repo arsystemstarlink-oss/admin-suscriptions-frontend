@@ -39,8 +39,8 @@ export function SettingsLayout() {
       base.push({
         to: '/config/plan-payments',
         icon: Wallet,
-        label: 'Pagos de plan',
-        title: 'Pagos de plan',
+        label: 'Pagos de planes',
+        title: 'Pagos de planes',
         subtitle: 'Aprueba o rechaza los pagos reportados por las organizaciones',
         end: false,
       })

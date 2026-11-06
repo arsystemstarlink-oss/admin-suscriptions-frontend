@@ -89,7 +89,9 @@ export function PlansListPage() {
       ) : undefined}
       primaryAction={!showEmpty ? (
         <Button
-          onClick={() => navigate('/subscriptions/plans/new')}
+          onClick={() => navigate('/subscriptions/plans/new', {
+            state: { returnTo: `${location.pathname}${location.search}` },
+          })}
           className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2"
           aria-label="Nuevo plan"
           title="Nuevo plan"
@@ -120,7 +122,9 @@ export function PlansListPage() {
             Limpiar filtros
           </Button>
         ) : !showEmpty && isEmpty ? (
-          <Button onClick={() => navigate('/subscriptions/plans/new')}>
+          <Button onClick={() => navigate('/subscriptions/plans/new', {
+            state: { returnTo: `${location.pathname}${location.search}` },
+          })}>
             <Plus className="h-4 w-4 mr-2 shrink-0" />
             Crear Plan
           </Button>

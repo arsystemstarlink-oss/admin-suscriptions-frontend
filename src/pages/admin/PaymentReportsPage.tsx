@@ -183,12 +183,12 @@ export function PaymentReportsPage() {
   return (
     <>
       <ListPageLayout
-        title="Reportes de pago"
+        title="Cobros de clientes"
         description="Aprueba o rechaza los pagos reportados por los clientes desde el portal público."
         primaryAction={
           isSuperAdmin ? (
             <Button asChild variant="outline">
-              <Link to="/config/plan-payments">Pagos de plan</Link>
+              <Link to="/config/plan-payments">Pagos de planes</Link>
             </Button>
           ) : undefined
         }

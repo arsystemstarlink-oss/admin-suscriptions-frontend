@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, type ChangeEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -28,6 +28,7 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { findAlignedBillingPeriod } from '@/lib/billing-cycle'
+import { getNavigationStatePath } from '@/lib/navigation'
 
 const subscriptionSchema = z.object({
   clientId: z.string().min(1, 'Seleccione un cliente'),
@@ -51,7 +52,9 @@ type SubscriptionForm = z.infer<typeof subscriptionSchema>
 
 export function SubscriptionFormPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
+  const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions'
   const preselectedClientId = searchParams.get('clientId')
   const isSuperAdmin = useIsSuperAdmin()
   const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
@@ -185,7 +188,7 @@ export function SubscriptionFormPage() {
 
       await createMutation.mutateAsync(request)
       toast.success('Suscripción creada correctamente')
-      navigate('/subscriptions')
+      navigate(returnTo, { replace: true })
     } catch (err: unknown) {
       if (err instanceof Error && !('code' in err)) {
         setError(err.message)
@@ -232,7 +235,8 @@ export function SubscriptionFormPage() {
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
       <DetailNav
-        backTo="/subscriptions"
+        backLabel="Volver a suscripciones"
+        backTo={returnTo}
         className="mb-4"
         title={
           <div>

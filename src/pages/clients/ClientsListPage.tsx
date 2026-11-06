@@ -126,7 +126,9 @@ export function ClientsListPage() {
       ) : undefined}
       primaryAction={!showEmpty && !cannotAddClients ? (
         <Button
-          onClick={() => navigate('/subscriptions/clients/new')}
+          onClick={() => navigate('/subscriptions/clients/new', {
+            state: { returnTo: `${location.pathname}${location.search}` },
+          })}
           className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2"
           aria-label="Nuevo cliente"
           title="Nuevo cliente"
@@ -159,7 +161,9 @@ export function ClientsListPage() {
             Limpiar filtros
           </Button>
         ) : !showEmpty && !cannotAddClients && isEmpty ? (
-          <Button onClick={() => navigate('/subscriptions/clients/new')}>
+          <Button onClick={() => navigate('/subscriptions/clients/new', {
+            state: { returnTo: `${location.pathname}${location.search}` },
+          })}>
             <Plus className="h-4 w-4 mr-2 shrink-0" />
             Crear Cliente
           </Button>

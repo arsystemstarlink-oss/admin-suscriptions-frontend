@@ -63,7 +63,7 @@ export default function MobileAppShell({
   }> = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/dashboard' },
     { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
-    { id: 'reports', icon: ReceiptText, label: 'Reportes', path: '/payment-reports', badge: pendingReportsCount },
+    { id: 'reports', icon: ReceiptText, label: 'Cobros', path: '/payment-reports', badge: pendingReportsCount },
     { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];

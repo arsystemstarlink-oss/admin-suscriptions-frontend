@@ -143,7 +143,7 @@ export function OrganizationPlanReportsPage() {
   return (
     <>
       <ListPageLayout
-        title="Pagos de plan"
+        title="Pagos de planes"
         description="Aprueba o rechaza los pagos de plan reportados por los administradores."
         searchProps={{
           value: search,

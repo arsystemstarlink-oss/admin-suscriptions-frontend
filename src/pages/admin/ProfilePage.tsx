@@ -409,7 +409,7 @@ export function ProfilePage() {
 
                 {recentPlanReports.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Pagos de plan reportados</p>
+                    <p className="text-sm font-medium">Pagos de planes reportados</p>
                     <div className="space-y-1.5">
                       {recentPlanReports.map((report) => {
                         const status = PLAN_REPORT_STATUS[report.status]

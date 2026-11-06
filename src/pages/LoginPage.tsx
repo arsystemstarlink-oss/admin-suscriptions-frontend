@@ -40,11 +40,18 @@ export function LoginPage() {
   const location = useLocation()
   const { setTokens, setUser, user } = useAuthStore()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard'
+  const from = (location.state as {
+    from?: { pathname?: string; search?: string; hash?: string }
+  } | null)?.from
+  const fromPath = from?.pathname
+  const returnTo =
+    fromPath?.startsWith('/') && !fromPath.startsWith('//')
+      ? `${fromPath}${from?.search ?? ''}${from?.hash ?? ''}`
+      : '/dashboard'
 
   useEffect(() => {
-    if (isAuthenticated) navigate(from, { replace: true })
-  }, [isAuthenticated, from, navigate])
+    if (isAuthenticated) navigate(returnTo, { replace: true })
+  }, [isAuthenticated, returnTo, navigate])
 
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -96,7 +103,7 @@ export function LoginPage() {
       setUser(response.user)
 
       setShowSuccess(true)
-      const target = response.user.mustChangePassword ? '/config/profile' : from
+      const target = response.user.mustChangePassword ? '/config/profile' : returnTo
       setTimeout(() => {
         navigate(target, { replace: true })
       }, 900)

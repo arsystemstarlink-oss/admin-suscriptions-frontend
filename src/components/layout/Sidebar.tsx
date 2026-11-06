@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { to: '/subscriptions', icon: Link2, label: 'Suscripciones' },
-  { to: '/payment-reports', icon: ReceiptText, label: 'Reportes', badgeKey: 'reports' as const },
+  { to: '/payment-reports', icon: ReceiptText, label: 'Cobros', badgeKey: 'reports' as const },
   { to: '/chats', icon: MessageSquare, label: 'Chats' },
   { to: '/config', icon: Settings, label: 'Ajustes' },
 ]
@@ -118,7 +118,7 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
         {
           to: '/config/plan-payments',
           icon: Wallet,
-          label: 'Pagos de plan',
+          label: 'Pagos de planes',
           badgeKey: 'planPayments' as const,
         },
         ...navItems.slice(3),

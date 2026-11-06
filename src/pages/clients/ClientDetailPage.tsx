@@ -123,6 +123,7 @@ export function ClientDetailPage() {
       
       <DetailNav
         className="mb-2"
+        backLabel="Volver a clientes"
         backTo="/subscriptions/clients"
         actions={
           <>
@@ -132,7 +133,10 @@ export function ClientDetailPage() {
               aria-label="Nueva suscripción"
               title="Nueva suscripción"
             >
-              <Link to={`/subscriptions/new?clientId=${id}`}>
+              <Link
+                to={`/subscriptions/new?clientId=${id}`}
+                state={{ returnTo: `${location.pathname}${location.search}` }}
+              >
                 <Plus className="h-5 w-5 shrink-0 sm:mr-1.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Nueva Suscripción</span>
               </Link>

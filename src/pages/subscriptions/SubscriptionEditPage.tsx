@@ -136,7 +136,9 @@ export function SubscriptionEditPage() {
   return (
     <div className="space-y-6">
       <DetailNav
+        backLabel="Volver a la suscripción"
         backTo={`/subscriptions/${id}`}
+        backState={{ from: returnTo }}
         title={
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">Editar Suscripción</h1>

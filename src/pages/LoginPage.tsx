@@ -141,13 +141,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/10 selection:text-primary-text">
-      {/* Branding Area — centrado, generoso espacio negativo */}
-      <header className="flex flex-col items-center pt-12 pb-2 px-6">
-        <div className="inline-flex items-center justify-center px-5 py-3">
-          <BrandMark size="xl" hideSystemOnMobile={false} />
-        </div>
-        <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground leading-tight text-center">
+    <div className="min-h-dvh bg-background text-foreground flex flex-col justify-center gap-6 py-8 selection:bg-primary/10 selection:text-primary-text">
+      <header className="flex flex-col items-center px-6">
+        <BrandMark size="xl" hideSystemOnMobile={false} />
+        <h1 className="mt-5 text-2xl font-bold tracking-tight text-foreground leading-tight text-center">
           Iniciar sesión
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground text-center leading-relaxed">
@@ -155,8 +152,7 @@ export function LoginPage() {
         </p>
       </header>
 
-      {/* Main content — desplazado al centro-bajo para zona del pulgar */}
-      <main className="flex-1 flex items-center px-5 pb-6 sm:px-8">
+      <main className="px-5 sm:px-8">
         <div
           className={cn(
             'w-full max-w-md mx-auto animate-fade-slide-up',

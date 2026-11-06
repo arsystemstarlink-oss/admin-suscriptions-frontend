@@ -282,7 +282,7 @@ export function PlansPage() {
             </h2>
             <div className="mt-8 grid gap-x-12 sm:grid-cols-2">
               {[
-                ['WhatsApp incluido en todos los planes', 'Envía recordatorios y mensajes a tus clientes desde su perfil, con tu propia cuenta.'],
+                ['WhatsApp incluido en todos los planes', 'Envía recordatorios y mensajes a tus clientes desde su perfil, con tu propia cuenta. Las plantillas ya vienen redactadas.'],
                 ['Quién pagó, quién debe, quién vence', 'Todo claro de un vistazo, sin abrir Excel ni buscar en chats.'],
                 ['Tus clientes consultan solos', 'Abren un enlace, ven su estado y reportan su pago. Tú solo apruebas.'],
                 ['Estado de cada cuenta', 'Define cuántos períodos vencidos permites y la app marca la cuenta como suspendida. El corte del servicio lo haces tú.'],
@@ -349,15 +349,11 @@ export function PlansPage() {
               <ul className="mt-5">
                 <li className="border-t border-border py-4">
                   <strong className="text-foreground">Tu cuenta de Twilio</strong>
-                  <span className="mt-1 block text-sm">Tú la creas y la conectas a la app. Te explicamos cómo, paso a paso.</span>
+                  <span className="mt-1 block text-sm">Tú la creas y la conectas a la app, que te guía paso a paso.</span>
                 </li>
                 <li className="border-t border-border py-4">
                   <strong className="text-foreground">Los mensajes que envíes</strong>
                   <span className="mt-1 block text-sm">Pagas solo por lo que uses.</span>
-                </li>
-                <li className="border-t border-border py-4">
-                  <strong className="text-foreground">Las plantillas de WhatsApp</strong>
-                  <span className="mt-1 block text-sm">Las aprueba WhatsApp. Te ayudamos a elegir las que necesitas.</span>
                 </li>
               </ul>
             </div>
@@ -367,15 +363,11 @@ export function PlansPage() {
               <ul className="mt-5">
                 <li className="border-t border-border py-4">
                   <strong className="text-foreground">Configuración completa</strong>
-                  <span className="mt-1 block text-sm">Conectamos tu Twilio y dejamos tus plantillas listas.</span>
+                  <span className="mt-1 block text-sm">Te acompañamos a crear tu cuenta de Twilio, conectarla y enviar tus plantillas a aprobación.</span>
                 </li>
                 <li className="border-t border-border py-4">
                   <strong className="text-foreground">Carga de tus clientes</strong>
                   <span className="mt-1 block text-sm">Pasamos tu lista de Excel a la app.</span>
-                </li>
-                <li className="border-t border-border py-4">
-                  <strong className="text-foreground">Paquete de plantillas</strong>
-                  <span className="mt-1 block text-sm">Recordatorio, aviso de vencimiento y aviso de suspensión, ya redactadas.</span>
                 </li>
               </ul>
             </div>

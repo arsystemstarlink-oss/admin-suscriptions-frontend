@@ -45,12 +45,17 @@ export function useMe(enabled = true) {
 export function useUpdateMe() {
   const queryClient = useQueryClient()
   const setUser = useAuthStore((s) => s.setUser)
+  const setTokens = useAuthStore((s) => s.setTokens)
 
   return useMutation({
     mutationFn: authApi.updateMe,
     onSuccess: (data) => {
+      // Cambiar el email revoca las sesiones: sin guardar los tokens nuevos se cerraría la sesión.
+      if (data.accessToken && data.refreshToken) {
+        setTokens(data.accessToken, data.refreshToken)
+      }
       setUser(data.user)
-      queryClient.setQueryData(qk.auth.me, data)
+      queryClient.setQueryData(qk.auth.me, { user: data.user })
     },
   })
 }

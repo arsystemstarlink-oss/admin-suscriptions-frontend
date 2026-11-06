@@ -52,6 +52,8 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
   const updateMutation = useUpdateAdmin()
   const deleteMutation = useDeleteAdmin()
   const setTokens = useAuthStore((s) => s.setTokens)
+  const currentUserId = useAuthStore((s) => s.user?.id)
+  const isSelf = admin?.id === currentUserId
   const [error, setError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -194,6 +196,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                     <EmailInput
                       id="edit-admin-email"
                       aria-invalid={!!errors.email}
+                      disabled={isSelf}
                       value={field.value}
                       onValueChange={field.onChange}
                       onBlur={field.onBlur}
@@ -202,6 +205,11 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+                {isSelf && (
+                  <p className="text-sm text-muted-foreground">
+                    Tu email y tu contraseña se cambian desde tu perfil.
+                  </p>
                 )}
               </div>
 
@@ -230,6 +238,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
                 <Input
                   id="edit-admin-password"
                   type="password"
+                  disabled={isSelf}
                   placeholder="Dejar vacío para mantener la actual"
                   {...register('newPassword')}
                 />

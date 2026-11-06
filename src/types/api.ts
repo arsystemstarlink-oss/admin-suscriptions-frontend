@@ -197,8 +197,7 @@ export interface RegisterOrganizationPlanPaymentRequest {
   method: OrganizationPlanPaymentMethod
   plan: BusinessPlanKey
   clientLimit?: number
-  months?: number
-  newPlanExpiresAt?: string
+  months: number
   notes?: string
 }
 
@@ -667,6 +666,8 @@ export interface LoginResponse {
 
 export interface MeResponse {
   user: User
+  accessToken?: string
+  refreshToken?: string
 }
 
 export interface UpdateMeRequest {

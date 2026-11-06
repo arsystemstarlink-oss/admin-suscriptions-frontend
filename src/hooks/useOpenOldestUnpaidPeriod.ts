@@ -16,8 +16,8 @@ export function useOpenOldestUnpaidPeriod(organizationId?: string) {
     setLoadingSubscriptionId(subscriptionId)
     try {
       const result = await queryClient.fetchQuery({
-        queryKey: [...qk.billing.lists, { subscriptionId, organizationId, limit: 50 }],
-        queryFn: () => billingApi.list({ subscriptionId, organizationId, limit: 50 }),
+        queryKey: [...qk.billing.lists, { subscriptionId, organizationId, limit: 200 }],
+        queryFn: () => billingApi.list({ subscriptionId, organizationId, limit: 200 }),
         staleTime: 0,
       })
       const unpaid = result.periods

@@ -33,6 +33,7 @@ import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
 import { BsReference } from '@/components/exchange/BsReference'
 import { PaymentMethod, type SubscriptionWithDetails } from '@/types/api'
+import { getLastPaymentMethod, saveLastPaymentMethod } from '@/lib/payment-method-preference'
 import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, CalendarClock } from 'lucide-react'
 
 const advanceSchema = z.object({
@@ -71,6 +72,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
   const {
     handleSubmit,
     setValue,
+    watch,
     register,
     formState: { errors, isSubmitting },
     reset,
@@ -84,7 +86,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
 
   // La PWA puede quedar abierta varios días: la fecha se calcula al abrir, no al montar.
   useEffect(() => {
-    if (open) reset({ paidAt: getLocalDateInputValue(), paymentMethod: '', notes: '' })
+    if (open) reset({ paidAt: getLocalDateInputValue(), paymentMethod: getLastPaymentMethod(), notes: '' })
   }, [open, subscription?.id, reset])
 
   const handleClose = () => {
@@ -103,6 +105,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
         notes: data.notes || undefined,
         anchorPeriodId: anchor?.id,
       })
+      saveLastPaymentMethod(data.paymentMethod)
       setShowSuccess(true)
       closeTimer.current = setTimeout(handleClose, 2500)
     } catch {
@@ -167,7 +170,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
 
                   <div className="space-y-1.5">
                     <Label htmlFor="pay-advance-method" className="text-foreground">Método de Pago *</Label>
-                    <Select onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
+                    <Select value={watch('paymentMethod')} onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
                       <SelectTrigger id="pay-advance-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />

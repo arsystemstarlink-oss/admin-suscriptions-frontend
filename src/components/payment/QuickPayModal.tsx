@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUIStore } from '@/stores/ui.store'
 import { useRegisterPayment, useBillingPeriods } from '@/hooks/useBilling'
+import { useOrganizationStore } from '@/stores/organization.store'
+import { getLastPaymentMethod, saveLastPaymentMethod } from '@/lib/payment-method-preference'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -38,8 +40,8 @@ import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
 import { BsReference } from '@/components/exchange/BsReference'
-import { BillingPeriodStatus, PaymentMethod } from '@/types/api'
-import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle, LoaderCircle } from 'lucide-react'
+import { BillingPeriodStatus, PaymentMethod, type BillingPeriodWithDetails } from '@/types/api'
+import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle, LoaderCircle, MessageSquare } from 'lucide-react'
 
 const createPaymentSchema = (minDate: string) =>
   z.object({
@@ -59,10 +61,10 @@ const createPaymentSchema = (minDate: string) =>
 type PaymentForm = z.infer<ReturnType<typeof createPaymentSchema>>
 
 export function QuickPayModal() {
-  const { quickPayOpen, quickPayContext, closeQuickPay } = useUIStore()
+  const { quickPayOpen, quickPayContext, openQuickPay, closeQuickPay } = useUIStore()
+  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const [showSuccess, setShowSuccess] = useState(false)
   const [reactivated, setReactivated] = useState(false)
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const period = quickPayContext?.period
   const registerPayment = useRegisterPayment(period?.id || '')
@@ -70,7 +72,7 @@ export function QuickPayModal() {
   const { data: exchangeRates } = useDolarRates()
   const activeRate = getRateForSource(exchangeRates, exchangeSource)
   const { data: subscriptionPeriods } = useBillingPeriods(
-    { subscriptionId: period?.subscriptionId },
+    { subscriptionId: period?.subscriptionId, organizationId: organizationId ?? undefined, limit: 200 },
     { enabled: !!period?.subscriptionId }
   )
 
@@ -78,12 +80,19 @@ export function QuickPayModal() {
     ? hasOlderUnpaidPeriod(period, subscriptionPeriods.periods)
     : false
 
+  // Sin pagar y distinto del actual, del más antiguo al más reciente: es el orden de cobro.
+  const otherUnpaidPeriods = (subscriptionPeriods?.periods ?? [])
+    .filter((p) => p.id !== period?.id && (p.status === 'PENDING' || p.status === 'OVERDUE'))
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+  const oldestOtherUnpaidPeriod = otherUnpaidPeriods[0]
+
   // Validar que la fecha de pago no sea anterior al inicio del período
   const minPaidAt = period?.startDate ? period.startDate.split('T')[0] : ''
 
   const {
     handleSubmit,
     setValue,
+    watch,
     register,
     formState: { errors, isSubmitting },
     reset,
@@ -97,14 +106,26 @@ export function QuickPayModal() {
 
   // La PWA puede quedar abierta varios días: la fecha se calcula al abrir, no al montar.
   useEffect(() => {
-    if (quickPayOpen) reset({ paidAt: getLocalDateInputValue(), paymentMethod: '', notes: '' })
+    if (quickPayOpen) reset({ paidAt: getLocalDateInputValue(), paymentMethod: getLastPaymentMethod(), notes: '' })
   }, [quickPayOpen, period?.id, reset])
 
   const handleClose = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current)
     closeQuickPay()
     setShowSuccess(false)
     setReactivated(false)
+  }
+
+  const openOtherPeriod = (target: BillingPeriodWithDetails) => {
+    setShowSuccess(false)
+    setReactivated(false)
+    openQuickPay({
+      period: {
+        ...target,
+        subscription: target.subscription ?? period!.subscription,
+        client: target.client ?? period!.client,
+        plan: target.plan ?? period!.plan,
+      },
+    })
   }
 
   const onSubmit = async (data: PaymentForm) => {
@@ -118,9 +139,9 @@ export function QuickPayModal() {
         notes: data.notes || undefined,
       })
 
+      saveLastPaymentMethod(data.paymentMethod)
       setReactivated(response.subscription.reactivated)
       setShowSuccess(true)
-      closeTimer.current = setTimeout(handleClose, 2500)
     } catch {
       // Error handled in useRegisterPayment
     }
@@ -130,6 +151,15 @@ export function QuickPayModal() {
 
   const isPastDue =
     period.status === BillingPeriodStatus.OVERDUE || new Date(period.endDate).getTime() < Date.now()
+
+  // wa.me abre el mensaje para revisarlo y enviarlo: la API solo admite texto libre
+  // dentro de la ventana de 24 h y no hay plantilla de confirmación de pago.
+  const clientPhone = period.client?.phone?.replace(/\D/g, '')
+  const paymentConfirmationUrl = clientPhone
+    ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(
+        `Hola ${getClientFullName(period.client)}, recibimos tu pago de ${formatCurrency(period.amount)} correspondiente a ${period.periodLabel}. ¡Gracias!`,
+      )}`
+    : null
 
   return (
     <Sheet open={quickPayOpen} onOpenChange={(open) => !open && !isSubmitting && handleClose()}>
@@ -145,11 +175,18 @@ export function QuickPayModal() {
               <form id="quick-pay-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
                 {blocked && (
-                  <div className="flex items-start gap-3 rounded-xl bg-warning/10 border border-warning/20 p-3 text-warning">
-                    <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-                    <p className="text-sm font-medium">
-                      Existen períodos anteriores pendientes o vencidos. Debes cobrarlos primero antes de registrar este pago.
-                    </p>
+                  <div className="space-y-3 rounded-xl bg-warning/10 border border-warning/20 p-3 text-warning">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <p className="text-sm font-medium">
+                        Existen períodos anteriores pendientes o vencidos. Debes cobrarlos primero antes de registrar este pago.
+                      </p>
+                    </div>
+                    {oldestOtherUnpaidPeriod && (
+                      <Button type="button" variant="outline" className="w-full" onClick={() => openOtherPeriod(oldestOtherUnpaidPeriod)}>
+                        Cobrar primero {oldestOtherUnpaidPeriod.periodLabel}
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -222,7 +259,7 @@ export function QuickPayModal() {
                   {/* Método */}
                   <div className="space-y-1.5">
                     <Label htmlFor="quick-pay-method" className="text-foreground">Método de Pago *</Label>
-                    <Select onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
+                    <Select value={watch('paymentMethod')} onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
                       <SelectTrigger id="quick-pay-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -294,8 +331,9 @@ export function QuickPayModal() {
             </SheetFooter>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="py-10 text-center space-y-4">
+          <>
+          <div className="flex-1 overflow-y-auto flex items-center justify-center p-6" role="status">
+            <div className="py-6 text-center space-y-4">
               <div className="mx-auto h-20 w-20 rounded-full bg-success/10 text-success flex items-center justify-center">
                 <CheckCircle className="h-10 w-10 shrink-0" />
               </div>
@@ -316,6 +354,26 @@ export function QuickPayModal() {
               )}
             </div>
           </div>
+          <SheetFooter className="border-t border-border pt-4">
+            {oldestOtherUnpaidPeriod && (
+              <Button type="button" className="h-12 w-full font-semibold" onClick={() => openOtherPeriod(oldestOtherUnpaidPeriod)}>
+                <DollarSign className="h-5 w-5 mr-1 shrink-0" />
+                Cobrar siguiente: {oldestOtherUnpaidPeriod.periodLabel}
+              </Button>
+            )}
+            {paymentConfirmationUrl && (
+              <Button asChild variant="outline" className="h-12 w-full">
+                <a href={paymentConfirmationUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageSquare className="h-4 w-4 mr-2 shrink-0" />
+                  Enviar confirmación por WhatsApp
+                </a>
+              </Button>
+            )}
+            <Button type="button" variant="ghost" className="h-12 w-full" onClick={handleClose}>
+              Listo
+            </Button>
+          </SheetFooter>
+          </>
         )}
       </SheetContent>
     </Sheet>

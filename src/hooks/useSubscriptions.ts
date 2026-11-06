@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueries, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { subscriptionsApi } from '@/api/subscriptions.api'
 import { qk } from '@/lib/query-keys'
 import type {
@@ -30,6 +30,25 @@ export function useSubscriptions(params?: UseSubscriptionsParams, options?: { en
     queryFn: () => subscriptionsApi.list(params),
     ...options,
   })
+}
+
+/**
+ * Cuántas suscripciones devuelve cada filtro de cobranza en toda la organización.
+ * Pide una sola fila: basta `pagination.total`, que el servidor calcula con el mismo
+ * filtro de la lista, así el número coincide con lo que se ve al aplicarlo.
+ */
+export function useSubscriptionFilterTotals(organizationId?: string, options?: { enabled?: boolean }) {
+  const filters = [{ hasOverduePeriods: true }, { expiring: true }, { pending: true }]
+  const [overdue, expiring, pending] = useQueries({
+    queries: filters.map((filter) => ({
+      queryKey: [...qk.subscriptions.lists, 'filter-total', { organizationId, ...filter }],
+      queryFn: async () =>
+        (await subscriptionsApi.list({ organizationId, ...filter, limit: 1 })).pagination.total,
+      enabled: options?.enabled,
+    })),
+  })
+
+  return { overdue: overdue.data, expiring: expiring.data, pending: pending.data }
 }
 
 export function useInfiniteSubscriptions(

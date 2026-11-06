@@ -1,3 +1,4 @@
+import { FinancialSummary } from '@/components/dashboard/FinancialSummary'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { PendingPaymentsWidget, TopDebtorsWidget, ExpiringSoonWidget } from '@/components/dashboard/Widgets'
 import { QuickActions } from '@/components/dashboard/QuickActions'
@@ -29,6 +30,8 @@ export function DashboardPage() {
         title="Panel"
         description="Revisa lo urgente y continúa con la gestión de tu organización."
       />
+
+      <FinancialSummary organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
       <section aria-labelledby="dashboard-priorities-title" className="space-y-4">
         <div>

@@ -133,7 +133,7 @@ export function OrganizationsPage() {
             title="Nueva organización"
           >
             <Plus className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
-            <span className="hidden sm:inline">Nueva Organización</span>
+            <span className="hidden sm:inline">Nueva organización</span>
           </Button>
         }
         isLoading={isLoading}
@@ -144,7 +144,7 @@ export function OrganizationsPage() {
         emptyAction={
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2 shrink-0" />
-            Crear Organización
+            Crear organización
           </Button>
         }
       >

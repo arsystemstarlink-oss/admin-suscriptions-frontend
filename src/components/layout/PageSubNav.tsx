@@ -29,16 +29,16 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
   const headerSubtitle = subtitle ?? activeTab?.subtitle
 
   return (
-    <div className="space-y-3 sm:space-y-4 md:space-y-6">
+    <div className="sm:space-y-4 md:space-y-6">
       {(headerTitle || headerSubtitle) && (
         <div>
           {headerTitle && (
-            <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="sr-only text-2xl font-bold tracking-tight text-foreground sm:not-sr-only">
               {headerTitle}
             </h1>
           )}
           {headerSubtitle && (
-            <p className="text-muted-foreground mt-0.5 sm:mt-1 text-xs sm:text-sm md:text-base">{headerSubtitle}</p>
+            <p className="hidden text-muted-foreground mt-1 text-sm sm:block md:text-base">{headerSubtitle}</p>
           )}
         </div>
       )}

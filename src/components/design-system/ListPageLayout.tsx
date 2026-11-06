@@ -52,7 +52,7 @@ export function ListPageLayout({
   className,
 }: ListPageLayoutProps) {
   return (
-    <div className={cn('flex flex-col gap-4 pb-[calc(100px+env(safe-area-inset-bottom))]', className)}>
+    <div className={cn('flex flex-col gap-4', className)}>
       {(title || description) && title && (
         <PageHeader
           title={title}

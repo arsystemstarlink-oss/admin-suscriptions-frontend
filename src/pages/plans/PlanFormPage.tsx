@@ -116,7 +116,7 @@ export function PlanFormPage() {
         title={
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {isEdit ? 'Editar Plan' : 'Nuevo Plan'}
+              {isEdit ? 'Editar plan' : 'Nuevo plan'}
             </h1>
             <p className="text-sm text-muted-foreground">
               {isEdit ? 'Modificar información del plan' : 'Registrar un nuevo plan'}
@@ -184,7 +184,7 @@ export function PlanFormPage() {
       <FormActionBar
         formId="plan-form"
         cancelTo={returnTo}
-        submitLabel={isEdit ? 'Actualizar Plan' : 'Crear Plan'}
+        submitLabel={isEdit ? 'Actualizar plan' : 'Crear plan'}
         submittingLabel={isEdit ? 'Actualizando Plan...' : 'Creando Plan...'}
         isSubmitting={isSubmitting}
       />

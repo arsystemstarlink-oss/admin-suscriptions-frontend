@@ -14,7 +14,7 @@ export function QuickActions() {
           <Plus className="h-5 w-5" />
         </div>
         <span className="text-xs font-bold text-foreground text-center leading-tight">
-          Nueva Suscripción
+          Nueva suscripción
         </span>
       </button>
 
@@ -34,7 +34,7 @@ export function QuickActions() {
         onClick={() => navigate('/subscriptions?hasOverdue=true')}
         className="flex flex-col items-center justify-center p-3 min-h-[90px] rounded-2xl bg-surface text-surface-foreground border border-border shadow-sm active:scale-[0.98] active:bg-surface-active transition-all touch-manipulation"
       >
-        <div className="h-10 w-10 rounded-full bg-success/10 text-success flex items-center justify-center mb-2">
+        <div className="h-10 w-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
           <CreditCard className="h-5 w-5" />
         </div>
         <span className="text-xs font-bold text-foreground text-center leading-tight">

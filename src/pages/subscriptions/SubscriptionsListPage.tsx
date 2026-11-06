@@ -6,7 +6,7 @@ import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { Button } from '@/components/ui/button'
-import { Plus, Link2, RotateCcw, Box, Phone, Calendar, Zap, AlertTriangle, Clock, LoaderCircle } from 'lucide-react'
+import { Plus, Link2, RotateCcw, Box, Phone, Calendar, DollarSign, AlertTriangle, Clock, LoaderCircle } from 'lucide-react'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -212,7 +212,7 @@ export function SubscriptionsListPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-20">
+    <div className="flex flex-col gap-2 sm:gap-4">
 
       <PageToolbar
         searchProps={{
@@ -239,15 +239,6 @@ export function SubscriptionsListPage() {
             <FilterPill active={statusFilter === 'SUSPENDED'} onClick={() => handleFilter('status', statusFilter === 'SUSPENDED' ? null : 'SUSPENDED')}>
               Suspendidas
             </FilterPill>
-            <FilterPill active={hasOverdue === true} variant="destructive" onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}>
-              Vencidos
-            </FilterPill>
-            <FilterPill active={expiringFilter} onClick={() => handleFilter('expiring', expiringFilter ? null : 'true')}>
-              Por Vencer
-            </FilterPill>
-            <FilterPill active={pendingFilter} onClick={() => handleFilter('pending', pendingFilter ? null : 'true')}>
-              Pendientes
-            </FilterPill>
             {hasActiveFilters && (
               <FilterPill variant="secondary" onClick={clearAllFilters}>
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -269,22 +260,22 @@ export function SubscriptionsListPage() {
       ) : (
         <>
           {/* Métricas de Cobranza (filtros rápidos) */}
-          <p className="text-xs text-muted-foreground">Totales de la organización</p>
-          <div className="grid grid-cols-3 gap-2">
+          <p className="text-xs text-muted-foreground">Totales de la organización. Toca uno para filtrar.</p>
+          <div className="-mt-1 grid grid-cols-3 gap-2 sm:-mt-2">
             <button
               type="button"
               onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}
               aria-pressed={hasOverdue === true}
               title={hasOverdue === true ? 'Quitar filtro de vencidos' : 'Ver solo vencidos'}
-              className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 data-[active=true]:ring-2 data-[active=true]:ring-destructive/50"
+              className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 data-[active=true]:ring-2 data-[active=true]:ring-destructive/50"
               data-active={hasOverdue === true}
             >
               <span className="flex items-center gap-1 text-xs font-bold">
                 <AlertTriangle className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Vencidos
               </span>
-              <span className="text-2xl font-bold mt-1 leading-none block">{filterTotals.overdue ?? '—'}</span>
-              <span className="text-xs font-medium mt-1.5 truncate block">{formatMetricAmount(summary?.financial.totalOverdue)}</span>
+              <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.overdue ?? '—'}</span>
+              <span className="text-xs font-medium mt-1 truncate block">{formatMetricAmount(summary?.financial.totalOverdue)}</span>
             </button>
 
             <button
@@ -292,15 +283,15 @@ export function SubscriptionsListPage() {
               onClick={() => handleFilter('expiring', expiringFilter ? null : 'true')}
               aria-pressed={expiringFilter}
               title={expiringFilter ? 'Quitar filtro de por vencer' : 'Ver solo por vencer'}
-              className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/50 data-[active=true]:ring-2 data-[active=true]:ring-warning/50"
+              className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/50 data-[active=true]:ring-2 data-[active=true]:ring-warning/50"
               data-active={expiringFilter}
             >
               <span className="flex items-center gap-1 text-xs font-bold">
                 <Clock className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
-                Por Vencer
+                Por vencer
               </span>
-              <span className="text-2xl font-bold mt-1 leading-none block">{filterTotals.expiring ?? '—'}</span>
-              <span className="text-xs font-medium mt-1.5 truncate block">{formatMetricAmount(expiringAmount, alerts?.expiringSoon.hasMore)}</span>
+              <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.expiring ?? '—'}</span>
+              <span className="text-xs font-medium mt-1 truncate block">{formatMetricAmount(expiringAmount, alerts?.expiringSoon.hasMore)}</span>
             </button>
 
             <button
@@ -308,15 +299,15 @@ export function SubscriptionsListPage() {
               onClick={() => handleFilter('pending', pendingFilter ? null : 'true')}
               aria-pressed={pendingFilter}
               title={pendingFilter ? 'Quitar filtro de pendientes' : 'Ver solo pendientes'}
-              className="rounded-2xl border border-info/20 bg-info/10 text-info p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/50 data-[active=true]:ring-2 data-[active=true]:ring-info/50"
+              className="rounded-2xl border border-info/20 bg-info/10 text-info p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/50 data-[active=true]:ring-2 data-[active=true]:ring-info/50"
               data-active={pendingFilter}
             >
               <span className="flex items-center gap-1 text-xs font-bold">
                 <Box className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Pendientes
               </span>
-              <span className="text-2xl font-bold mt-1 leading-none block">{filterTotals.pending ?? '—'}</span>
-              <span className="text-xs font-medium mt-1.5 truncate block">{formatMetricAmount(summary?.financial.totalPending)}</span>
+              <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.pending ?? '—'}</span>
+              <span className="text-xs font-medium mt-1 truncate block">{formatMetricAmount(summary?.financial.totalPending)}</span>
             </button>
           </div>
 
@@ -450,7 +441,7 @@ export function SubscriptionsListPage() {
                         >
                           {payingId === sub.id
                             ? <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
-                            : <Zap className="h-4 w-4 shrink-0" />}
+                            : <DollarSign className="h-4 w-4 shrink-0" />}
                           <span className="hidden min-[380px]:inline">Cobrar</span>
                         </button>
                       )}

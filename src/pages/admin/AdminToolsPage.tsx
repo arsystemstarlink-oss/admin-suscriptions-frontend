@@ -226,7 +226,7 @@ export function AdminToolsPage() {
                         <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-primary-text" />
                       </div>
                       <div className="min-w-0">
-                        <CardTitle className="text-lg sm:text-xl">Tarea Diaria</CardTitle>
+                        <CardTitle className="text-lg sm:text-xl">Tarea diaria</CardTitle>
                         <CardDescription className="text-xs sm:text-sm mt-0.5">
                           Evalúa vencimientos y suspende suscripciones automáticamente
                         </CardDescription>
@@ -376,7 +376,7 @@ export function AdminToolsPage() {
                     <div className="border-t border-border pt-5 space-y-3">
                       <div className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-muted-foreground shrink-0" />
-                        <h3 className="font-semibold text-base">Ejecución Manual</h3>
+                        <h3 className="font-semibold text-base">Ejecución manual</h3>
                       </div>
                     <Button
                       variant="outline"
@@ -384,10 +384,10 @@ export function AdminToolsPage() {
                       disabled={runSchedulerMutation.isPending || missingCron}
                       className="w-full sm:w-auto"
                     >
-                        {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar Ahora'}
+                        {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar ahora'}
                       </Button>
                       <p className="text-sm text-xs text-muted-foreground">
-                        Ejecuta la Tarea Diaria inmediatamente, sin importar el estado del scheduler
+                        Ejecuta la Tarea diaria inmediatamente, sin importar el estado del scheduler
                       </p>
                     </div>
                   </div>
@@ -405,7 +405,7 @@ export function AdminToolsPage() {
                       <CardDescription className="text-xs sm:text-sm mt-0.5">
                         {schedulerLogs?.total
                           ? `${schedulerLogs.total} ejecuciones registradas`
-                          : 'Ejecuciones registradas de la Tarea Diaria'}
+                          : 'Ejecuciones registradas de la Tarea diaria'}
                       </CardDescription>
                     </div>
                   </div>
@@ -518,7 +518,7 @@ export function AdminToolsPage() {
               Notificaciones con error
             </DialogTitle>
             <DialogDescription>
-              {runErrors?.length ?? 0} notificación(es) fallaron al ejecutar la Tarea Diaria.
+              {runErrors?.length ?? 0} notificación(es) fallaron al ejecutar la Tarea diaria.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 max-h-[55dvh] overflow-y-auto pr-1">

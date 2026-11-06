@@ -158,7 +158,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
               <UserCog className="h-5 w-5 text-primary-text shrink-0" />
             </div>
             <div>
-              <SheetTitle>Editar Administrador</SheetTitle>
+              <SheetTitle>Editar administrador</SheetTitle>
               <SheetDescription>
                 Modifica los datos de {admin.name}
               </SheetDescription>

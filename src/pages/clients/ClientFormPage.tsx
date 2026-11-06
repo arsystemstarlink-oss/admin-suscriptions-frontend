@@ -166,7 +166,7 @@ export function ClientFormPage() {
         title={
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
+              {isEdit ? 'Editar cliente' : 'Nuevo cliente'}
             </h1>
             <p className="text-sm text-muted-foreground">
               {isEdit ? 'Modificar información del cliente' : 'Registrar un nuevo cliente'}
@@ -346,7 +346,7 @@ export function ClientFormPage() {
         formId="client-form"
         cancelTo={backTo}
         cancelState={isEdit ? { from: returnTo } : undefined}
-        submitLabel={isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
+        submitLabel={isEdit ? 'Actualizar cliente' : 'Crear cliente'}
         submittingLabel={isEdit ? 'Actualizando Cliente...' : 'Creando Cliente...'}
         isSubmitting={isSubmitting}
       />

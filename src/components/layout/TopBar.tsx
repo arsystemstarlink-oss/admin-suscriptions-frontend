@@ -53,6 +53,7 @@ export function TopBar({
             onValueChange={(value) => onOrganizationChange?.(value === NO_ORGANIZATION_VALUE ? null : value)}
           >
             <SelectTrigger
+              aria-label="Organización activa"
               className="w-auto h-8 sm:w-48 border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground"
               title={
                 organizationsLoading

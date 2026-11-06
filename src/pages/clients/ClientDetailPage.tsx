@@ -13,6 +13,7 @@ import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, Me
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod, canPayAdvance } from '@/lib/utils'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
+import { ClientDebtSummary } from '@/components/clients/ClientDebtSummary'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -182,6 +183,12 @@ export function ClientDetailPage() {
             </div>
           </div>
         </div>
+
+        <ClientDebtSummary
+          clientId={client.id}
+          organizationId={organizationId || undefined}
+          enabled={!isSuperAdmin || !!organizationId}
+        />
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5">
           <button

@@ -150,6 +150,26 @@ export function PaymentReportsPage() {
     reset()
   }
 
+  // Tras revisar un reporte se abre el siguiente pendiente de la lista visible.
+  const otherPendingReports = filteredReports.filter(
+    (report) => report.status === 'PENDING' && report.id !== selected?.id,
+  )
+
+  const openNextPendingOrClose = () => {
+    const currentIndex = filteredReports.findIndex((report) => report.id === selected?.id)
+    const next =
+      filteredReports.slice(currentIndex + 1).find((report) => report.status === 'PENDING') ??
+      otherPendingReports[0]
+
+    if (!next) {
+      closeSheet()
+      return
+    }
+    setSelected(next)
+    setRejectMode(false)
+    reset()
+  }
+
   const handleApprove = async () => {
     if (!selected) return
     try {
@@ -158,7 +178,7 @@ export function PaymentReportsPage() {
         data: { action: 'approve' },
         organizationId: selected.organizationId,
       })
-      closeSheet()
+      openNextPendingOrClose()
     } catch {
       // toast handled in hook
     }
@@ -172,7 +192,7 @@ export function PaymentReportsPage() {
         data: { action: 'reject', notes: form.notes },
         organizationId: selected.organizationId,
       })
-      closeSheet()
+      openNextPendingOrClose()
     } catch {
       // toast handled in hook
     }
@@ -251,10 +271,13 @@ export function PaymentReportsPage() {
                 <SheetDescription>
                   {selected.client ? getClientFullName(selected.client) : 'Sin cliente'}
                   {selected.client?.dni ? ` · C.I. ${selected.client.dni}` : ''}
+                  {selected.status === 'PENDING' && otherPendingReports.length > 0
+                    ? ` · ${otherPendingReports.length} más por revisar`
+                    : ''}
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="flex-1 space-y-4 overflow-y-auto p-6 pt-4">
+              <div key={selected.id} className="flex-1 space-y-4 overflow-y-auto p-6 pt-4">
                 <div className="space-y-3 rounded-xl border border-border-subtle bg-surface-muted p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Período</span>

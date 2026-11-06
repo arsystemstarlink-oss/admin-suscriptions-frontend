@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
-import { useInfiniteSubscriptions } from '@/hooks/useSubscriptions'
+import { useInfiniteSubscriptions, useSubscriptionFilterTotals } from '@/hooks/useSubscriptions'
+import { useDashboardAlerts, useDashboardSummary } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
@@ -120,34 +121,24 @@ export function SubscriptionsListPage() {
     setSearchParams({})
   }
 
-  const isOverdueSub = (sub: SubscriptionWithDetails) => sub.hasDebt
-
   const isExpiringSub = (sub: SubscriptionWithDetails) =>
     sub.status === 'ACTIVE' &&
     sub.currentPeriod != null &&
     sub.currentPeriod.status !== 'PAID' &&
     isExpiringSoon(sub.currentPeriod.endDate)
 
-  const isPendingSub = (sub: SubscriptionWithDetails) =>
-    sub.status === 'ACTIVE' && sub.pendingPeriods > 0
+  // Totales de toda la organización: no dependen de la página ni de los filtros activos.
+  const totalsEnabled = !isSuperAdmin || !!organizationId
+  const totalsParams = { organizationId: organizationId ?? undefined }
+  const filterTotals = useSubscriptionFilterTotals(organizationId ?? undefined, { enabled: totalsEnabled })
+  const { data: summary } = useDashboardSummary(totalsParams, { enabled: totalsEnabled })
+  const { data: alerts } = useDashboardAlerts(totalsParams, { enabled: totalsEnabled })
 
-  const getSubPrice = (sub: SubscriptionWithDetails) =>
-    sub.plan?.price ?? sub.currentPeriod?.amount ?? 0
-
-  const metrics = useMemo(() => {
-    const subs = pageData?.subscriptions ?? []
-    const overdueSubs = subs.filter(isOverdueSub)
-    const expiringSubs = subs.filter(isExpiringSub)
-    const pendingSubs = subs.filter(isPendingSub)
-    return {
-      debtCount: overdueSubs.length,
-      debtTotal: overdueSubs.reduce((sum, s) => sum + s.overduePeriods * getSubPrice(s), 0),
-      expiringCount: expiringSubs.length,
-      expiringTotal: expiringSubs.reduce((sum, s) => sum + (s.currentPeriod?.amount ?? getSubPrice(s)), 0),
-      pendingCount: pendingSubs.length,
-      pendingTotal: pendingSubs.reduce((sum, s) => sum + s.pendingPeriods * getSubPrice(s), 0),
-    }
-  }, [pageData])
+  const expiringAmount = alerts
+    ? alerts.expiringSoon.items.filter((item) => item.status !== 'PAID').reduce((sum, item) => sum + item.amount, 0)
+    : undefined
+  const formatMetricAmount = (amount: number | undefined, isPartial = false) =>
+    amount === undefined ? '—' : `${isPartial ? 'Más de ' : ''}${formatCurrency(amount)}`
 
   const visibleSubscriptions = useMemo(
     () => (pageData?.subscriptions ?? []).filter((sub) => sub.client != null),
@@ -278,7 +269,7 @@ export function SubscriptionsListPage() {
       ) : (
         <>
           {/* Métricas de Cobranza (filtros rápidos) */}
-          <p className="text-xs text-muted-foreground">Resumen de la página actual</p>
+          <p className="text-xs text-muted-foreground">Totales de la organización</p>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
@@ -292,8 +283,8 @@ export function SubscriptionsListPage() {
                 <AlertTriangle className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Vencidos
               </span>
-              <span className="text-2xl font-bold mt-1 leading-none block">{metrics.debtCount}</span>
-              <span className="text-xs font-medium mt-1.5 truncate block">{formatCurrency(metrics.debtTotal)}</span>
+              <span className="text-2xl font-bold mt-1 leading-none block">{filterTotals.overdue ?? '—'}</span>
+              <span className="text-xs font-medium mt-1.5 truncate block">{formatMetricAmount(summary?.financial.totalOverdue)}</span>
             </button>
 
             <button
@@ -308,8 +299,8 @@ export function SubscriptionsListPage() {
                 <Clock className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Por Vencer
               </span>
-              <span className="text-2xl font-bold mt-1 leading-none block">{metrics.expiringCount}</span>
-              <span className="text-xs font-medium mt-1.5 truncate block">{formatCurrency(metrics.expiringTotal)}</span>
+              <span className="text-2xl font-bold mt-1 leading-none block">{filterTotals.expiring ?? '—'}</span>
+              <span className="text-xs font-medium mt-1.5 truncate block">{formatMetricAmount(expiringAmount, alerts?.expiringSoon.hasMore)}</span>
             </button>
 
             <button
@@ -324,8 +315,8 @@ export function SubscriptionsListPage() {
                 <Box className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Pendientes
               </span>
-              <span className="text-2xl font-bold mt-1 leading-none block">{metrics.pendingCount}</span>
-              <span className="text-xs font-medium mt-1.5 truncate block">{formatCurrency(metrics.pendingTotal)}</span>
+              <span className="text-2xl font-bold mt-1 leading-none block">{filterTotals.pending ?? '—'}</span>
+              <span className="text-xs font-medium mt-1.5 truncate block">{formatMetricAmount(summary?.financial.totalPending)}</span>
             </button>
           </div>
 

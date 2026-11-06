@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-do
 import { useInfiniteClients } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
-import { Users, Phone, Plus, LoaderCircle } from 'lucide-react'
+import { Users, Phone, Plus, LoaderCircle, IdCard, Link2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
@@ -41,6 +41,9 @@ export function ClientsListPage() {
   const {
     data,
     isLoading,
+    isError,
+    isFetching,
+    refetch,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -86,8 +89,14 @@ export function ClientsListPage() {
     setSearchParams(params)
   }
 
+  const clearFilters = () => {
+    setSearch('')
+    setSearchParams({})
+  }
+
   const isEmpty = !data || clients.length === 0
   const showEmpty = isSuperAdmin && !organizationId
+  const hasActiveFilters = Boolean(search || subscriptionStatus || hasOverdue !== undefined)
 
   return (
     <ListPageLayout
@@ -127,23 +136,35 @@ export function ClientsListPage() {
         </Button>
       ) : undefined}
       isLoading={isLoading && !showEmpty}
+      isError={isError && !data && !showEmpty}
+      onRetry={() => void refetch()}
+      isRetrying={isFetching}
       isEmpty={showEmpty || isEmpty}
       emptyStateContent={showEmpty ? (
         <OrganizationSelectionEmptyState description="Elige una organización para consultar sus clientes." />
       ) : undefined}
       emptyIcon={<Users className="h-16 w-16 text-subtle-foreground" />}
-      emptyTitle="Sin clientes"
+      emptyTitle={hasActiveFilters ? 'Sin resultados' : 'Sin clientes'}
       emptyDescription={
-        cannotAddClients
-          ? 'No encontramos resultados. Puedes consultar tus datos o elegir un plan para añadir clientes.'
-          : 'No encontramos resultados. Modifica los filtros o añade uno nuevo.'
+        hasActiveFilters
+          ? 'Ningún cliente coincide con tu búsqueda o filtros.'
+          : cannotAddClients
+            ? 'Elige un plan con más espacio para añadir clientes.'
+            : 'Registra tu primer cliente para empezar.'
       }
-      emptyAction={!showEmpty && !cannotAddClients && isEmpty ? (
-        <Button onClick={() => navigate('/subscriptions/clients/new')}>
-          <Plus className="h-4 w-4 mr-2 shrink-0" />
-          Crear Cliente
-        </Button>
-      ) : undefined}
+      emptyAction={
+        hasActiveFilters ? (
+          <Button variant="outline" onClick={clearFilters}>
+            <RotateCcw className="h-4 w-4 mr-2 shrink-0" />
+            Limpiar filtros
+          </Button>
+        ) : !showEmpty && !cannotAddClients && isEmpty ? (
+          <Button onClick={() => navigate('/subscriptions/clients/new')}>
+            <Plus className="h-4 w-4 mr-2 shrink-0" />
+            Crear Cliente
+          </Button>
+        ) : undefined
+      }
     >
       <>
         {!showEmpty &&
@@ -188,10 +209,17 @@ export function ClientsListPage() {
                     <div className="flex items-center justify-center h-12 w-12 rounded-full bg-surface-muted text-surface-muted-foreground font-bold text-lg">
                       {initial}
                     </div>
-                    <div className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface ${
-                      client.subscriptionStatus === 'ACTIVE' ? 'bg-success' :
-                      client.subscriptionStatus === 'SUSPENDED' ? 'bg-destructive' : 'bg-muted-foreground'
-                    }`} />
+                    <div
+                      role="img"
+                      aria-label={
+                        client.subscriptionStatus === 'ACTIVE' ? 'Activo' :
+                        client.subscriptionStatus === 'SUSPENDED' ? 'Suspendido' : 'Sin estado activo'
+                      }
+                      className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface ${
+                        client.subscriptionStatus === 'ACTIVE' ? 'bg-success' :
+                        client.subscriptionStatus === 'SUSPENDED' ? 'bg-info' : 'bg-muted-foreground'
+                      }`}
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -206,23 +234,23 @@ export function ClientsListPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-muted-foreground">
                       {client.phone && (
-                        <span className="flex items-center gap-1 truncate">
-                          <Phone size={14} />
+                        <span className="flex items-center gap-1 min-w-0">
+                          <Phone size={14} className="shrink-0" aria-hidden="true" />
                           {client.phone}
                         </span>
                       )}
                       {client.dni && (
-                        <span className="flex items-center gap-1 shrink-0">
-                          <CreditCardIcon size={14} />
+                        <span className="flex items-center gap-1">
+                          <IdCard size={14} className="shrink-0" aria-hidden="true" />
                           C.I. {client.dni}
                         </span>
                       )}
                       {client.totalSubscriptions > 0 && (
-                        <span className="flex items-center gap-1 shrink-0">
-                          <CreditCardIcon size={14} />
-                          {client.totalSubscriptions}
+                        <span className="flex items-center gap-1">
+                          <Link2 size={14} className="shrink-0" aria-hidden="true" />
+                          {client.totalSubscriptions} {client.totalSubscriptions === 1 ? 'suscripción' : 'suscripciones'}
                         </span>
                       )}
                     </div>
@@ -247,14 +275,5 @@ export function ClientsListPage() {
         )}
       </>
     </ListPageLayout>
-  )
-}
-
-function CreditCardIcon({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-      <line x1="1" y1="10" x2="23" y2="10"></line>
-    </svg>
   )
 }

@@ -533,11 +533,11 @@ export function SubscriptionFormPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-muted-foreground">DESDE</Label>
-                        <Input type="date" {...register(`historicalPayments.${index}.startDate`)} className="h-10 text-sm" />
+                        <Input type="date" {...register(`historicalPayments.${index}.startDate`)} className="h-10" />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-muted-foreground">HASTA</Label>
-                        <Input type="date" {...register(`historicalPayments.${index}.endDate`)} className="h-10 text-sm" />
+                        <Input type="date" {...register(`historicalPayments.${index}.endDate`)} className="h-10" />
                       </div>
                     </div>
 
@@ -558,7 +558,7 @@ export function SubscriptionFormPage() {
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-muted-foreground">PAGADO EL</Label>
-                        <Input type="date" {...register(`historicalPayments.${index}.paidAt`)} className="h-10 text-sm" />
+                        <Input type="date" {...register(`historicalPayments.${index}.paidAt`)} className="h-10" />
                       </div>
                     </div>
 

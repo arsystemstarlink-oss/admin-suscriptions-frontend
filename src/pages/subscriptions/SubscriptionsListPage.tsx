@@ -3,7 +3,8 @@ import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInfiniteSubscriptions } from '@/hooks/useSubscriptions'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
+import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import { Plus, Link2, RotateCcw, Box, Phone, Calendar, Zap, AlertTriangle, Clock
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { EmptyState } from '@/components/design-system/EmptyState'
+import { ErrorState } from '@/components/design-system/ErrorState'
 import { formatCurrency, SUBSCRIPTION_STATUS_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, canPayAdvance } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui.store'
@@ -30,6 +32,8 @@ export function SubscriptionsListPage() {
   const [payingId, setPayingId] = useState<string | null>(null)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
+  const user = useAuthStore((state) => state.user)
+  const { isReadOnly } = getOrganizationPlanAccess(user?.role === 'admin' ? user.organization : undefined)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const statusFilter = searchParams.get('status') as 'ACTIVE' | 'SUSPENDED' | null
@@ -45,6 +49,9 @@ export function SubscriptionsListPage() {
   const {
     data,
     isLoading,
+    isError,
+    isFetching,
+    refetch,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -75,7 +82,7 @@ export function SubscriptionsListPage() {
     const params = new URLSearchParams(searchParams)
     if (value) params.set('search', value)
     else params.delete('search')
-    setSearchParams(params)
+    setSearchParams(params, { replace: true })
   }
 
   const handleFilter = (key: string, value: string | null) => {
@@ -241,16 +248,16 @@ export function SubscriptionsListPage() {
         searchProps={{
           value: search,
           onChange: handleSearch,
-          placeholder: "Buscar código, cliente o teléfono..."
+          placeholder: "Buscar cliente, código o teléfono"
         }}
-        primaryAction={
+        primaryAction={!isReadOnly ? (
           <Button asChild className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2" aria-label="Nueva suscripción" title="Nueva suscripción">
             <Link to="/subscriptions/new">
               <Plus className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 sm:mr-1.5" />
               <span className="hidden sm:inline">Nuevo</span>
             </Link>
           </Button>
-        }
+        ) : undefined}
         filters={!showEmpty ? (
           <>
             <FilterPill active={statusFilter === 'ACTIVE'} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
@@ -280,6 +287,12 @@ export function SubscriptionsListPage() {
 
       {showEmpty ? (
         <OrganizationSelectionEmptyState description="Elige una organización para consultar sus suscripciones." />
+      ) : isError && !data ? (
+        <ErrorState
+          title="No se pudieron cargar las suscripciones"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
       ) : (
         <>
           {/* Métricas de Cobranza (filtros rápidos) */}
@@ -338,8 +351,29 @@ export function SubscriptionsListPage() {
           {!data || visibleSubscriptions.length === 0 ? (
             <EmptyState
               icon={<Link2 className="h-16 w-16 text-subtle-foreground" />}
-              title="Sin suscripciones"
-              description="No encontramos resultados. Modifica los filtros o añade una nueva."
+              title={hasActiveFilters ? 'Sin resultados' : 'Sin suscripciones'}
+              description={
+                !hasActiveFilters
+                  ? 'Registra la primera suscripción para empezar a cobrar.'
+                  : (expiringFilter || pendingFilter) && canGoNext
+                    ? 'No hay coincidencias en esta página. Revisa la siguiente o limpia los filtros.'
+                    : 'Ninguna suscripción coincide con tu búsqueda o filtros.'
+              }
+              action={
+                hasActiveFilters ? (
+                  <Button variant="outline" onClick={clearAllFilters}>
+                    <RotateCcw className="h-4 w-4 mr-2 shrink-0" />
+                    Limpiar filtros
+                  </Button>
+                ) : !isReadOnly ? (
+                  <Button asChild>
+                    <Link to="/subscriptions/new">
+                      <Plus className="h-4 w-4 mr-2 shrink-0" />
+                      Crear suscripción
+                    </Link>
+                  </Button>
+                ) : undefined
+              }
             />
           ) : (
             <div className="space-y-2 sm:space-y-3">
@@ -404,13 +438,13 @@ export function SubscriptionsListPage() {
                   </Link>
 
                   {/* Bottom Row: Price, Alerts & Charge */}
-                  <div className="flex items-center justify-between gap-2 px-3 pb-3 text-[13px] sm:px-4 sm:pb-4 sm:text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-3 text-[13px] sm:px-4 sm:pb-4 sm:text-sm">
                     <span className="font-semibold text-foreground truncate">
                       {formatCurrency(sub.plan.price)}<span className="text-subtle-foreground font-normal">/mes</span>
                     </span>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                      <div className="flex gap-1 sm:gap-1.5">
+                    <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 ml-auto">
+                      <div className="flex flex-wrap justify-end gap-1 sm:gap-1.5">
                         {sub.currentPeriod && isExpiringSoon(sub.currentPeriod.endDate) && (
                           <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-warning/10 text-warning">
                             <Calendar className="h-3 w-3" />
@@ -436,12 +470,14 @@ export function SubscriptionsListPage() {
                             handleQuickPay(sub)
                           }}
                           disabled={payingId === sub.id}
-                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50"
+                          className="flex items-center justify-center gap-1 h-10 min-w-10 px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           aria-label={`Cobrar a ${getClientFullName(sub.client)}`}
                           title={`Cobrar a ${getClientFullName(sub.client)}`}
                         >
-                          <Zap className="h-4 w-4 shrink-0" />
-                          <span className="hidden min-[380px]:inline">{payingId === sub.id ? '...' : 'Cobrar'}</span>
+                          {payingId === sub.id
+                            ? <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
+                            : <Zap className="h-4 w-4 shrink-0" />}
+                          <span className="hidden min-[380px]:inline">Cobrar</span>
                         </button>
                       )}
                       {canPayAdvance(sub) && (
@@ -450,7 +486,7 @@ export function SubscriptionsListPage() {
                           onClick={() => {
                             setAdvanceSub(sub)
                           }}
-                          className="flex items-center justify-center gap-1 h-8 min-w-8 px-2 sm:px-3 sm:h-9 rounded-full sm:rounded-lg bg-surface-muted text-surface-muted-foreground border border-border-subtle text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-surface-hover active:bg-surface-active active:scale-95 touch-manipulation"
+                          className="flex items-center justify-center gap-1 h-10 min-w-10 px-3 sm:h-9 rounded-full sm:rounded-lg bg-surface-muted text-surface-muted-foreground border border-border-subtle text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-surface-hover active:bg-surface-active active:scale-95 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           aria-label="Pagar por adelantado"
                           title="Pagar por adelantado"
                         >

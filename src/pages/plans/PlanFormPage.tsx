@@ -171,7 +171,7 @@ export function PlanFormPage() {
               id="description"
               rows={3}
               placeholder="Detalles del plan..."
-              className="flex w-full min-h-[6rem] rounded-md border border-input bg-surface-muted px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full min-h-[6rem] rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               {...register('description')}
             />
           </div>

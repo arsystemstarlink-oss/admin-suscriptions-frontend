@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -38,8 +38,8 @@ import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
 import { BsReference } from '@/components/exchange/BsReference'
-import { PaymentMethod } from '@/types/api'
-import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle } from 'lucide-react'
+import { BillingPeriodStatus, PaymentMethod } from '@/types/api'
+import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle, LoaderCircle } from 'lucide-react'
 
 const createPaymentSchema = (minDate: string) =>
   z.object({
@@ -49,6 +49,9 @@ const createPaymentSchema = (minDate: string) =>
       .min(1, 'Fecha de pago requerida')
       .refine((date) => !minDate || date >= minDate, {
         message: minDate ? `La fecha no puede ser anterior a ${formatDate(minDate)}` : 'Fecha inválida',
+      })
+      .refine((date) => date <= getLocalDateInputValue(), {
+        message: 'La fecha de pago no puede ser futura',
       }),
     notes: z.string().optional(),
   })
@@ -59,6 +62,7 @@ export function QuickPayModal() {
   const { quickPayOpen, quickPayContext, closeQuickPay } = useUIStore()
   const [showSuccess, setShowSuccess] = useState(false)
   const [reactivated, setReactivated] = useState(false)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const period = quickPayContext?.period
   const registerPayment = useRegisterPayment(period?.id || '')
@@ -87,14 +91,20 @@ export function QuickPayModal() {
     resolver: zodResolver(createPaymentSchema(minPaidAt)),
     defaultValues: {
       paidAt: getLocalDateInputValue(),
+      paymentMethod: '',
     },
   })
 
+  // La PWA puede quedar abierta varios días: la fecha se calcula al abrir, no al montar.
+  useEffect(() => {
+    if (quickPayOpen) reset({ paidAt: getLocalDateInputValue(), paymentMethod: '', notes: '' })
+  }, [quickPayOpen, period?.id, reset])
+
   const handleClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
     closeQuickPay()
     setShowSuccess(false)
     setReactivated(false)
-    reset()
   }
 
   const onSubmit = async (data: PaymentForm) => {
@@ -110,7 +120,7 @@ export function QuickPayModal() {
 
       setReactivated(response.subscription.reactivated)
       setShowSuccess(true)
-      setTimeout(handleClose, 2500)
+      closeTimer.current = setTimeout(handleClose, 2500)
     } catch {
       // Error handled in useRegisterPayment
     }
@@ -118,8 +128,11 @@ export function QuickPayModal() {
 
   if (!period) return null
 
+  const isPastDue =
+    period.status === BillingPeriodStatus.OVERDUE || new Date(period.endDate).getTime() < Date.now()
+
   return (
-    <Sheet open={quickPayOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Sheet open={quickPayOpen} onOpenChange={(open) => !open && !isSubmitting && handleClose()}>
       <SheetContent className="sm:max-w-md">
         {!showSuccess ? (
           <>
@@ -164,7 +177,12 @@ export function QuickPayModal() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span>{period.periodLabel}</span>
-                      <span>Venció: <span className="font-medium text-destructive">{formatDate(period.endDate)}</span></span>
+                      <span>
+                        {isPastDue ? 'Venció' : 'Vence'}:{' '}
+                        <span className={isPastDue ? 'font-medium text-destructive' : 'font-medium text-foreground'}>
+                          {formatDate(period.endDate)}
+                        </span>
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 pt-1">
@@ -183,13 +201,16 @@ export function QuickPayModal() {
 
                   {/* Fecha */}
                   <div className="space-y-1.5">
-                    <Label className="text-foreground">Fecha de Pago *</Label>
+                    <Label htmlFor="quick-pay-date" className="text-foreground">Fecha de Pago *</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                       <Input
+                        id="quick-pay-date"
                         type="date"
                         {...register('paidAt')}
                         min={minPaidAt}
+                        max={getLocalDateInputValue()}
+                        aria-invalid={!!errors.paidAt}
                         className="pl-9 h-12"
                       />
                     </div>
@@ -200,9 +221,9 @@ export function QuickPayModal() {
 
                   {/* Método */}
                   <div className="space-y-1.5">
-                    <Label className="text-foreground">Método de Pago *</Label>
-                    <Select onValueChange={(value) => setValue('paymentMethod', value)}>
-                      <SelectTrigger className="h-12">
+                    <Label htmlFor="quick-pay-method" className="text-foreground">Método de Pago *</Label>
+                    <Select onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
+                      <SelectTrigger id="quick-pay-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
                           <SelectValue placeholder="Seleccione método" />
@@ -224,10 +245,11 @@ export function QuickPayModal() {
 
                   {/* Notas */}
                   <div className="space-y-1.5">
-                    <Label className="text-foreground">Notas (opcional)</Label>
+                    <Label htmlFor="quick-pay-notes" className="text-foreground">Notas (opcional)</Label>
                     <div className="relative">
                       <AlignLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                       <Input
+                        id="quick-pay-notes"
                         placeholder="Referencia, observación..."
                         {...register('notes')}
                         className="pl-9 h-12"
@@ -246,7 +268,10 @@ export function QuickPayModal() {
                 disabled={isSubmitting || blocked}
               >
                 {isSubmitting ? (
-                  'Procesando...'
+                  <>
+                    <LoaderCircle className="h-5 w-5 mr-2 shrink-0 animate-spin" />
+                    Procesando...
+                  </>
                 ) : (
                   <>
                     <DollarSign className="h-5 w-5 mr-2 shrink-0" />
@@ -262,6 +287,7 @@ export function QuickPayModal() {
                 variant="ghost"
                 className="w-full h-12 mt-2 text-muted-foreground"
                 onClick={handleClose}
+                disabled={isSubmitting}
               >
                 Cancelar
               </Button>

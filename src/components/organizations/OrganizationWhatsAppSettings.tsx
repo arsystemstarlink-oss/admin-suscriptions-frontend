@@ -385,7 +385,7 @@ export function OrganizationWhatsAppSettings({
             value={dueDateWarningDraft}
             onChange={(event) => setDueDateWarningDraft(event.target.value)}
             rows={4}
-            className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder="Escribe aquí el texto que quieres enviar a revisión de WhatsApp."
           />
           <p className="text-xs text-muted-foreground">

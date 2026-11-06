@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
@@ -40,7 +40,13 @@ export default function MobileAppShell({
   onOrganizationChange,
 }: MobileAppShellProps) {
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
   const orgId = selectedOrganizationId ?? undefined
+
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [location.pathname]);
+
   const badgesEnabled = !isSuperAdmin || !!selectedOrganizationId
   const unreadChatsCount = useUnreadChatsCount(orgId, { enabled: badgesEnabled });
   const { data: pendingReports } = usePendingReportsCount({ organizationId: orgId }, { enabled: badgesEnabled });
@@ -69,9 +75,9 @@ export default function MobileAppShell({
       : NO_ORGANIZATION_VALUE
 
   return (
-    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-background text-foreground select-none antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
+    <div className="flex flex-col h-dvh w-full overflow-x-hidden bg-background text-foreground antialiased [-webkit-tap-highlight-color:transparent] [--mobile-header-h:calc(max(env(safe-area-inset-top),0.75rem)+2.75rem)] [--mobile-nav-h:calc(4.25rem+env(safe-area-inset-bottom))]">
       {/* Header móvil en una sola fila: logo a la izquierda, acciones a la derecha */}
-      <header className="sticky top-0 z-50 flex min-h-14 items-center gap-3 border-b border-border-subtle bg-header px-3 pb-2 pt-[max(env(safe-area-inset-top),12px)] text-header-foreground transition-colors">
+      <header className="sticky top-0 z-50 select-none flex min-h-14 items-center gap-3 border-b border-border-subtle bg-header px-3 pb-2 pt-[max(env(safe-area-inset-top),12px)] text-header-foreground transition-colors">
         <BrandMark size="sm" variant="light" className="min-w-0 flex-1 [&_span]:truncate" />
         <div className="flex shrink-0 items-center gap-1.5">
           {isSuperAdmin && (
@@ -130,6 +136,7 @@ export default function MobileAppShell({
 
       {/* Contenedor Principal (Scroll) */}
       <main
+        ref={mainRef}
         className={cn(
           'flex-1 min-h-0 touch-pan-y overscroll-y-contain pb-[calc(80px+env(safe-area-inset-bottom))]',
           isChatsPage ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'
@@ -146,7 +153,7 @@ export default function MobileAppShell({
       </main>
 
       {/* Bottom Navigation */}
-      <nav aria-label="Navegación principal móvil" className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 border-t border-border backdrop-blur-xl pb-[env(safe-area-inset-bottom)] transition-colors">
+      <nav aria-label="Navegación principal móvil" className="fixed bottom-0 left-0 right-0 z-50 select-none bg-surface/95 border-t border-border backdrop-blur-xl pb-[env(safe-area-inset-bottom)] transition-colors">
         <ul className="flex items-center justify-around px-2 py-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -157,7 +164,7 @@ export default function MobileAppShell({
                 <NavLink
                   to={item.path}
                   end={item.path === '/dashboard'}
-                  className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 active:scale-95 transition-transform touch-manipulation focus:outline-none"
+                  className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 rounded-lg active:scale-95 transition-transform touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={
                     badgeCount > 0
                       ? `${item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`

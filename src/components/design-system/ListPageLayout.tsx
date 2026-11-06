@@ -2,6 +2,7 @@ import { type ReactNode } from 'react'
 import { PageHeader } from '@/components/design-system/PageHeader'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { EmptyState } from '@/components/design-system/EmptyState'
+import { ErrorState } from '@/components/design-system/ErrorState'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +18,9 @@ interface ListPageLayoutProps {
   primaryAction?: ReactNode
   fabHref?: string
   isLoading?: boolean
+  isError?: boolean
+  onRetry?: () => void
+  isRetrying?: boolean
   isEmpty?: boolean
   emptyIcon?: ReactNode
   emptyTitle?: string
@@ -35,6 +39,9 @@ export function ListPageLayout({
   primaryAction,
   fabHref,
   isLoading,
+  isError,
+  onRetry,
+  isRetrying,
   isEmpty,
   emptyIcon,
   emptyTitle,
@@ -65,6 +72,8 @@ export function ListPageLayout({
             <div key={i} className="h-20 bg-muted animate-pulse rounded-2xl" />
           ))}
         </div>
+      ) : isError ? (
+        <ErrorState onRetry={onRetry} isRetrying={isRetrying} />
       ) : isEmpty ? (
         emptyStateContent ?? (
           <EmptyState

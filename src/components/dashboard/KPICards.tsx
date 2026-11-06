@@ -3,12 +3,13 @@ import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Users, Link2, Package } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import type { LucideIcon } from 'lucide-react'
 
 export function KPICards() {
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
-  const { data, isLoading, error } = useDashboardSummary(
+  const { data, isLoading, error, isFetching, refetch } = useDashboardSummary(
     { organizationId: organizationId ?? undefined },
     { enabled: !isSuperAdmin || !!organizationId }
   )
@@ -36,8 +37,11 @@ export function KPICards() {
 
     if (error || !data) {
       return (
-        <div className="p-4 bg-destructive/10 text-destructive rounded-xl border border-destructive/20">
+        <div role="alert" className="flex items-center justify-between gap-3 p-4 bg-destructive/10 text-destructive rounded-xl border border-destructive/20">
           <p className="font-semibold text-sm">No se pudieron cargar las métricas</p>
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => void refetch()} disabled={isFetching}>
+            {isFetching ? 'Reintentando...' : 'Reintentar'}
+          </Button>
         </div>
       )
     }

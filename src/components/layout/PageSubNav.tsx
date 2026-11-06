@@ -56,7 +56,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
             aria-label={tab.label}
             className={({ isActive }) =>
               cn(
-                'inline-flex min-w-[72px] flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all min-h-10 touch-manipulation sm:min-w-0 sm:flex-col sm:gap-2 sm:rounded-xl sm:px-3 sm:py-3 sm:min-h-0',
+                'inline-flex min-w-[72px] flex-auto shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all min-h-10 touch-manipulation sm:min-w-0 sm:flex-1 sm:shrink sm:flex-col sm:gap-2 sm:rounded-xl sm:px-3 sm:py-3 sm:min-h-0',
                 'hover:shadow-sm',
                 isActive
                   ? 'bg-surface-active shadow-sm ring-1 ring-border-strong border border-transparent'

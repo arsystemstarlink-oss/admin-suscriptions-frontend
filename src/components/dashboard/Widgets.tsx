@@ -20,6 +20,7 @@ import { useOrganizationWhatsAppConfig } from '@/hooks/useOrganizations'
 import { useAuthStore } from '@/stores/auth.store'
 import { whatsappApi } from '@/api/whatsapp.api'
 import { Button } from '@/components/ui/button'
+import { ErrorState } from '@/components/design-system/ErrorState'
 import type { BillingPeriodWithDetails } from '@/types/api'
 import {
   Dialog,
@@ -85,7 +86,7 @@ function WidgetExpandFooter({
 type PendingAlertItem = AlertItem & { isOverdue: boolean }
 
 export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidgetProps) {
-  const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
+  const { data, isLoading, isError, isFetching, refetch } = useDashboardAlerts({ organizationId }, { enabled })
   const { openQuickPay } = useUIStore()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -156,6 +157,8 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
               <div key={i} className="flex justify-between items-center h-18 bg-muted animate-pulse rounded-xl" />
             ))}
           </div>
+        ) : isError && !data ? (
+          <ErrorState title="No se pudieron cargar los cobros" onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !data || displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center mb-3">
@@ -280,7 +283,7 @@ function isFromToday(dateString: string): boolean {
 }
 
 export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetProps) {
-  const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
+  const { data, isLoading, isError, isFetching, refetch } = useDashboardAlerts({ organizationId }, { enabled })
   const { openQuickPay } = useUIStore()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -481,6 +484,8 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
               <div key={i} className="flex justify-between items-center h-18 bg-muted animate-pulse rounded-xl" />
             ))}
           </div>
+        ) : isError && !data ? (
+          <ErrorState title="No se pudieron cargar los deudores" onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !data || displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center mb-3">
@@ -658,7 +663,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
 }
 
 export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetProps) {
-  const { data, isLoading } = useDashboardAlerts({ organizationId }, { enabled })
+  const { data, isLoading, isError, isFetching, refetch } = useDashboardAlerts({ organizationId }, { enabled })
   const navigate = useNavigate()
   const [expanded, setExpanded] = useState(false)
   const exchangeSource = useExchangeStore((s) => s.source)
@@ -708,6 +713,8 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
               <div key={i} className="flex justify-between items-center h-18 bg-muted animate-pulse rounded-xl" />
             ))}
           </div>
+        ) : isError && !data ? (
+          <ErrorState title="No se pudieron cargar los vencimientos" onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !data || displayedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center px-4">
             <div className="h-12 w-12 rounded-full bg-surface-muted flex items-center justify-center mb-3">

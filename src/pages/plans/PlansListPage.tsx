@@ -5,7 +5,7 @@ import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Package, Edit, Trash2, Plus } from 'lucide-react'
+import { Package, Edit, Trash2, Plus, RotateCcw } from 'lucide-react'
 import { formatCurrency } from '@/lib/constants'
 import { toast } from 'sonner'
 import { DeletePlanSheet } from '@/components/modals/DeletePlanSheet'
@@ -23,7 +23,7 @@ export function PlansListPage() {
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const activeFilter = searchParams.get('active')
-  const { data, isLoading } = usePlans({
+  const { data, isLoading, isError, isFetching, refetch } = usePlans({
     search: searchParams.get('search') || undefined,
     active: activeFilter === 'true' ? true : activeFilter === 'false' ? false : undefined,
     organizationId: organizationId ?? undefined,
@@ -39,7 +39,7 @@ export function PlansListPage() {
     } else {
       params.delete('search')
     }
-    setSearchParams(params)
+    setSearchParams(params, { replace: true })
   }
 
   const handleFilter = (value: string | null) => {
@@ -63,6 +63,12 @@ export function PlansListPage() {
 
   const isEmpty = !data || data.plans.length === 0
   const showEmpty = isSuperAdmin && !organizationId
+  const hasActiveFilters = Boolean(search || activeFilter)
+
+  const clearFilters = () => {
+    setSearch('')
+    setSearchParams({})
+  }
 
   return (
     <ListPageLayout
@@ -93,19 +99,33 @@ export function PlansListPage() {
         </Button>
       ) : undefined}
       isLoading={isLoading && !showEmpty}
+      isError={isError && !data && !showEmpty}
+      onRetry={() => void refetch()}
+      isRetrying={isFetching}
       isEmpty={showEmpty || isEmpty}
       emptyStateContent={showEmpty ? (
         <OrganizationSelectionEmptyState description="Elige una organización para consultar sus planes." />
       ) : undefined}
       emptyIcon={<Package className="h-16 w-16 text-subtle-foreground" />}
-      emptyTitle="No se encontraron planes"
-      emptyDescription="Modifica los filtros o crea un nuevo plan."
-      emptyAction={!showEmpty && isEmpty ? (
-        <Button onClick={() => navigate('/subscriptions/plans/new')}>
-          <Plus className="h-4 w-4 mr-2 shrink-0" />
-          Crear Plan
-        </Button>
-      ) : undefined}
+      emptyTitle={hasActiveFilters ? 'Sin resultados' : 'Sin planes'}
+      emptyDescription={
+        hasActiveFilters
+          ? 'Ningún plan coincide con tu búsqueda o filtros.'
+          : 'Crea tu primer plan para empezar a registrar suscripciones.'
+      }
+      emptyAction={
+        hasActiveFilters ? (
+          <Button variant="outline" onClick={clearFilters}>
+            <RotateCcw className="h-4 w-4 mr-2 shrink-0" />
+            Limpiar filtros
+          </Button>
+        ) : !showEmpty && isEmpty ? (
+          <Button onClick={() => navigate('/subscriptions/plans/new')}>
+            <Plus className="h-4 w-4 mr-2 shrink-0" />
+            Crear Plan
+          </Button>
+        ) : undefined
+      }
     >
       {!showEmpty && data?.plans.map((plan) => (
         <ListCard

@@ -30,8 +30,7 @@ const loginSchema = z.object({
     .email('Correo electrónico inválido'),
   password: z
     .string()
-    .min(1, 'La contraseña es requerida')
-    .min(8, 'Mínimo 8 caracteres'),
+    .min(1, 'La contraseña es requerida'),
 })
 
 type LoginForm = z.infer<typeof loginSchema>
@@ -67,19 +66,13 @@ export function LoginPage() {
   })
 
   const emailValue = watch('email', '')
-  const passwordValue = watch('password', '')
 
   const emailHasValue = emailValue.length > 0
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)
   const emailShowError =
     emailHasValue && !emailIsValid && (touchedFields.email || isSubmitted)
   const emailShowValid = emailHasValue && emailIsValid
-
-  const passwordHasValue = passwordValue.length > 0
-  const passwordIsValid = passwordValue.length >= 8
-  const passwordShowError =
-    passwordHasValue && !passwordIsValid && (touchedFields.password || isSubmitted)
-  const passwordShowValid = passwordHasValue && passwordIsValid
+  const passwordShowError = !!errors.password
 
   const triggerShake = () => {
     setShakeError(true)
@@ -111,6 +104,8 @@ export function LoginPage() {
       const apiError = err as ApiError
       if (apiError.code === 'INVALID_CREDENTIALS') {
         setError('Correo o contraseña incorrectos')
+      } else if (!navigator.onLine) {
+        setError('Sin conexión a internet. Revisa tu red e inténtalo de nuevo.')
       } else {
         setError('Error al iniciar sesión. Intente nuevamente.')
       }
@@ -142,20 +137,15 @@ export function LoginPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/10 selection:text-primary">
       {/* Branding Area — centrado, generoso espacio negativo */}
       <header className="flex flex-col items-center pt-12 pb-2 px-6">
-        <a
-          href="#"
-          className="inline-flex items-center justify-center px-5 py-3 transition-transform hover:scale-[1.03] duration-300"
-          aria-label={APP_NAME}
-        >
+        <div className="inline-flex items-center justify-center px-5 py-3">
           <BrandMark size="xl" hideSystemOnMobile={false} />
-        </a>
+        </div>
         <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground leading-tight text-center">
-          Bienvenido de Nuevo
+          Iniciar sesión
         </h1>
-        <p className="mt-1.5 text-xs text-muted-foreground max-w-56 text-center leading-relaxed">
-          Accede con tus credenciales existentes
+        <p className="mt-1.5 text-sm text-muted-foreground text-center leading-relaxed">
+          Accede a tu panel de administración
         </p>
-        
       </header>
 
       {/* Main content — desplazado al centro-bajo para zona del pulgar */}
@@ -168,15 +158,6 @@ export function LoginPage() {
         >
           {/* Card de superficie estándar */}
           <div className="rounded-[1.1rem] border border-border bg-surface text-surface-foreground p-5 shadow-[0_6px_20px_rgb(0,0,0,0.04)] dark:shadow-[0_6px_20px_rgb(0,0,0,0.1)]">
-            <div className="text-center mb-5">
-              <h2 className="text-base font-bold text-foreground tracking-tight">
-                Iniciar sesión
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Sistema restringido para administradores
-              </p>
-            </div>
-
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-3.5"
@@ -224,7 +205,7 @@ export function LoginPage() {
                       }
                     }}
                     className={cn(
-                      'h-13 pl-11 pr-10 text-[0.9375rem] rounded-xl border-input bg-surface-muted text-foreground shadow-[inset_0_1px_2px_rgb(0,0,0,0.03)] transition-all duration-200 ease-out',
+                      'h-13 pl-11 pr-10 text-base rounded-xl border-input bg-surface-muted text-foreground shadow-[inset_0_1px_2px_rgb(0,0,0,0.03)] transition-all duration-200 ease-out',
                       'placeholder:text-muted-foreground/70',
                       emailShowValid &&
                         'border-success/40 focus-visible:ring-success/20',
@@ -280,10 +261,8 @@ export function LoginPage() {
                       passwordShowError ? 'password-error' : undefined
                     }
                     className={cn(
-                      'h-13 pl-11 pr-12 text-[0.9375rem] rounded-xl border-input bg-surface-muted text-foreground shadow-[inset_0_1px_2px_rgb(0,0,0,0.03)] transition-all duration-200 ease-out',
+                      'h-13 pl-11 pr-12 text-base rounded-xl border-input bg-surface-muted text-foreground shadow-[inset_0_1px_2px_rgb(0,0,0,0.03)] transition-all duration-200 ease-out',
                       'placeholder:text-muted-foreground/70',
-                      passwordShowValid &&
-                        'border-success/40 focus-visible:ring-success/20',
                       passwordShowError &&
                         'border-destructive/40 focus-visible:ring-destructive/20',
                       isLoading && 'opacity-60'
@@ -297,7 +276,6 @@ export function LoginPage() {
                     size="icon"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-1 top-1/2 -translate-y-1/2 h-[2.6rem] w-[2.6rem] rounded-xl text-muted-foreground hover:text-foreground hover:bg-surface-hover active:bg-surface-active"
-                    tabIndex={-1}
                     aria-label={
                       showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
                     }
@@ -310,7 +288,7 @@ export function LoginPage() {
                     )}
                   </Button>
                 </div>
-                {passwordShowError && errors.password && (
+                {errors.password && (
                   <p
                     id="password-error"
                     className="text-xs text-destructive animate-fade-in leading-snug"
@@ -318,28 +296,25 @@ export function LoginPage() {
                     {errors.password.message}
                   </p>
                 )}
-                {passwordHasValue && !passwordIsValid && !passwordShowError && (
-                  <p className="text-xs text-muted-foreground leading-snug">
-                    Debe tener al menos 8 caracteres
-                  </p>
-                )}
               </div>
 
-              {/* Recuperación alineada derecha */}
-              <div className="flex items-center justify-end pt-0.5">
-                <Button
-                  type="button"
-                  variant="link"
-                  className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground hover:no-underline transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
-                  disabled={isLoading}
-                  onClick={() => {
-                    // Flujo de recuperación opcional — no crea cuenta
-                    navigate('/recovery')
+              {/* Recordarme */}
+              <label className="flex items-center gap-2.5 cursor-pointer select-none group pt-0.5">
+                <Input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                    setRememberMe(next)
+                    localStorage.setItem('auth.rememberMe', String(next))
                   }}
-                >
-                  ¿Olvidaste tu contraseña?
-                </Button>
-              </div>
+                  className="h-[1.15rem] w-[1.15rem] rounded-md border-border-subtle bg-surface-muted text-primary shadow-none focus-visible:ring-ring focus-visible:ring-offset-1 transition-colors"
+                  disabled={isLoading}
+                />
+                <span className="text-[0.8125rem] text-muted-foreground group-hover:text-foreground transition-colors">
+                  Mantener sesión iniciada
+                </span>
+              </label>
 
               {/* CTA Primario */}
               <Button
@@ -363,26 +338,9 @@ export function LoginPage() {
               </Button>
             </form>
 
-            {/* Recordarme */}
-            <div className="mt-3 flex items-center gap-2.5">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-                <Input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                    setRememberMe(next)
-                    localStorage.setItem('auth.rememberMe', String(next))
-                  }}
-                  className="h-[1.15rem] w-[1.15rem] rounded-md border-border-subtle bg-surface-muted text-primary shadow-none focus-visible:ring-ring focus-visible:ring-offset-1 transition-colors"
-                  disabled={isLoading}
-                  aria-label="Mantener sesión iniciada"
-                />
-                <span className="text-[0.8125rem] text-muted-foreground group-hover:text-foreground transition-colors">
-                  Mantener sesión iniciada
-                </span>
-              </label>
-            </div>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              ¿Olvidaste tu contraseña? Pídele a tu administrador que la restablezca.
+            </p>
           </div>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">

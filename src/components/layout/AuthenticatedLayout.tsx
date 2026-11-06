@@ -26,7 +26,7 @@ export function AuthenticatedLayout() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)

@@ -8,6 +8,9 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60_000,
       gcTime: 10 * 60_000,
       retry: 1,
+      // Sin esto, una consulta sin conexión queda pausada sin datos ni error y la
+      // UI la confunde con una lista vacía. Los datos en caché se conservan.
+      networkMode: 'always',
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     },

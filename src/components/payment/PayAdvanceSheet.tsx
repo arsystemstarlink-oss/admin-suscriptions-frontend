@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -57,6 +57,7 @@ interface PayAdvanceSheetProps {
 
 export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvanceSheetProps) {
   const [showSuccess, setShowSuccess] = useState(false)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const payAdvance = usePayAdvance(subscription?.id || '')
   const exchangeSource = useExchangeStore((s) => s.source)
   const { data: exchangeRates } = useDolarRates()
@@ -77,13 +78,19 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
     resolver: zodResolver(advanceSchema),
     defaultValues: {
       paidAt: getLocalDateInputValue(),
+      paymentMethod: '',
     },
   })
 
+  // La PWA puede quedar abierta varios días: la fecha se calcula al abrir, no al montar.
+  useEffect(() => {
+    if (open) reset({ paidAt: getLocalDateInputValue(), paymentMethod: '', notes: '' })
+  }, [open, subscription?.id, reset])
+
   const handleClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
     onOpenChange(false)
     setShowSuccess(false)
-    reset()
   }
 
   const onSubmit = async (data: AdvanceForm) => {
@@ -97,7 +104,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
         anchorPeriodId: anchor?.id,
       })
       setShowSuccess(true)
-      setTimeout(handleClose, 2500)
+      closeTimer.current = setTimeout(handleClose, 2500)
     } catch {
       // Error handled in usePayAdvance
     }
@@ -106,7 +113,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
   if (!subscription || !anchor) return null
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+    <Sheet open={open} onOpenChange={(isOpen) => !isOpen && !isSubmitting && handleClose()}>
       <SheetContent className="sm:max-w-md">
         {!showSuccess ? (
           <>
@@ -142,10 +149,11 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-foreground">Fecha de Pago *</Label>
+                    <Label htmlFor="pay-advance-date" className="text-foreground">Fecha de Pago *</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                       <Input
+                        id="pay-advance-date"
                         type="date"
                         {...register('paidAt')}
                         max={getLocalDateInputValue()}
@@ -158,9 +166,9 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-foreground">Método de Pago *</Label>
-                    <Select onValueChange={(value) => setValue('paymentMethod', value)}>
-                      <SelectTrigger className="h-12">
+                    <Label htmlFor="pay-advance-method" className="text-foreground">Método de Pago *</Label>
+                    <Select onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
+                      <SelectTrigger id="pay-advance-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
                           <SelectValue placeholder="Seleccione método" />
@@ -181,10 +189,11 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-foreground">Notas (opcional)</Label>
+                    <Label htmlFor="pay-advance-notes" className="text-foreground">Notas (opcional)</Label>
                     <div className="relative">
                       <AlignLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                       <Input
+                        id="pay-advance-notes"
                         placeholder="Referencia, observación..."
                         {...register('notes')}
                         className="pl-9 h-12"

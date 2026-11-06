@@ -5,6 +5,7 @@ import { RoleGuard } from '@/guards/RoleGuard'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { RouteErrorPage } from '@/pages/RouteErrorPage'
 import { RootRedirect } from '@/routes/RootRedirect'
 import {
   LegacyClientEditRedirect,
@@ -42,6 +43,9 @@ import {
 
 export const router = createBrowserRouter(
   [
+  {
+  errorElement: <RouteErrorPage />,
+  children: [
   {
     path: '/login',
     element: (
@@ -368,6 +372,8 @@ export const router = createBrowserRouter(
   {
     path: '*',
     element: <NotFoundPage />,
+  },
+  ],
   },
   ],
   {

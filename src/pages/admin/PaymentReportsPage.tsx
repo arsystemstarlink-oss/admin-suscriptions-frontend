@@ -100,7 +100,7 @@ export function PaymentReportsPage() {
     } else {
       params.delete('search')
     }
-    setSearchParams(params)
+    setSearchParams(params, { replace: true })
   }
 
   const handleStatusChange = (value: StatusFilter) => {
@@ -114,7 +114,7 @@ export function PaymentReportsPage() {
     setSearchParams(params)
   }
 
-  const { data, isLoading } = usePaymentReports({
+  const { data, isLoading, isError, isFetching, refetch } = usePaymentReports({
     status,
     organizationId: organizationId || undefined,
     limit: 50,
@@ -203,6 +203,9 @@ export function PaymentReportsPage() {
           </>
         }
         isLoading={isLoading}
+        isError={isError && !data}
+        onRetry={() => void refetch()}
+        isRetrying={isFetching}
         isEmpty={isEmpty}
         emptyIcon={<Inbox className="h-16 w-16 text-subtle-foreground" />}
         emptyTitle="Sin reportes"

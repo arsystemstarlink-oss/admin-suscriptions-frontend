@@ -35,7 +35,9 @@ export function DeleteClientSheet({ clientId, clientName, open, onOpenChange }: 
       navigate('/subscriptions/clients')
     } catch (err: any) {
       if (err.code === 'CLIENT_HAS_ACTIVE_SUBSCRIPTIONS') {
-        setError('No puede eliminar un cliente con suscripciones activas. Suspéndalas o elimínelas primero.')
+        setError('No puede eliminar un cliente con suscripciones activas. Elimínelas primero.')
+      } else if (err.code === 'CLIENT_HAS_SUBSCRIPTIONS') {
+        setError('No puede eliminar un cliente con suscripciones suspendidas. Elimínelas primero.')
       } else {
         setError('Error al eliminar el cliente. Intente nuevamente.')
       }

@@ -29,6 +29,15 @@ export type ErrorHandler = {
 }
 
 export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
+  CLIENT_HAS_SUBSCRIPTIONS: {
+    type: 'modal',
+    title: 'No se puede eliminar este cliente',
+    message: 'Tiene suscripciones suspendidas que deben eliminarse primero.',
+    actions: [
+      { label: 'Ver suscripciones del cliente', variant: 'primary', action: 'navigate', payload: '/clients' },
+      { label: 'Cancelar', variant: 'ghost', action: 'close' },
+    ],
+  },
   CLIENT_HAS_ACTIVE_SUBSCRIPTIONS: {
     type: 'modal',
     title: 'No se puede eliminar este cliente',

@@ -108,6 +108,26 @@ export function useSubmitWhatsAppTemplate() {
   })
 }
 
+export function useSubmitMissingWhatsAppTemplates() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => organizationsApi.submitMissingWhatsAppTemplates(id),
+    onSuccess: ({ templates, submitted, failed }, id) => {
+      qc.setQueryData(qk.organizations.whatsappTemplates(id), { templates })
+      if (submitted.length > 0) {
+        toast.success(
+          submitted.length === 1
+            ? '1 plantilla enviada a revisión de WhatsApp'
+            : `${submitted.length} plantillas enviadas a revisión de WhatsApp`,
+        )
+      }
+      failed.forEach(({ label, message }) => toast.error(`${label}: ${message}`))
+    },
+    onError: (err) => handleApiError(err),
+  })
+}
+
 export function useSendWhatsAppTestMessage() {
   const qc = useQueryClient()
 

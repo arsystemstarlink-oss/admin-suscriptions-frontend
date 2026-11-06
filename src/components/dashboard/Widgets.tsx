@@ -412,11 +412,11 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
         const overduePeriod = debtor.overduePeriod
         await sendMessage.mutateAsync({
           to: debtor.clientPhone,
-          templateName: reminderTemplateName,
-          variables: {
-            '1': debtor.clientName,
-            '2': overduePeriod.subscription.kitNumber,
-            '3': overduePeriod.endDate.split('T')[0],
+          templateKey: 'dueDateWarning',
+          context: {
+            clientName: debtor.clientName,
+            serviceCode: overduePeriod.subscription.kitNumber,
+            dueDate: overduePeriod.endDate.split('T')[0],
           },
         })
         sent += 1

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import {
   useOrganizationWhatsAppConfig,
   useUpdateOrganizationWhatsAppConfig,
+  useWhatsAppTemplates,
 } from '@/hooks/useOrganizations'
 import {
   StepHeading,
@@ -237,12 +238,6 @@ function ConnectionStep({
   )
 }
 
-const MANUAL_TEMPLATE_FIELDS = [
-  { key: 'reminder', label: 'Recordatorio de pago' },
-  { key: 'dueDateWarning', label: 'Aviso de vencimiento' },
-  { key: 'suspensionNotice', label: 'Aviso de suspensión' },
-] as const
-
 function RulesSection({
   organizationId,
   config,
@@ -251,6 +246,7 @@ function RulesSection({
   config: OrganizationWhatsAppConfig
 }) {
   const updateMutation = useUpdateOrganizationWhatsAppConfig()
+  const manualTemplateFields = useWhatsAppTemplates(organizationId).data?.templates ?? []
   const [reminderDays, setReminderDays] = useState(config.rules.reminderDaysBefore.join(', '))
   const [dueDateWarningEnabled, setDueDateWarningEnabled] = useState(config.rules.dueDateWarningEnabled)
   const [suspensionNoticeEnabled, setSuspensionNoticeEnabled] = useState(config.rules.suspensionNoticeEnabled)
@@ -287,11 +283,9 @@ function RulesSection({
       id: organizationId,
       data: {
         rules: { reminderDaysBefore, dueDateWarningEnabled, suspensionNoticeEnabled },
-        templates: {
-          reminder: templates.reminder?.trim() || null,
-          dueDateWarning: templates.dueDateWarning?.trim() || null,
-          suspensionNotice: templates.suspensionNotice?.trim() || null,
-        },
+        templates: Object.fromEntries(
+          manualTemplateFields.map(({ key }) => [key, templates[key]?.trim() || null]),
+        ),
       },
     })
   }
@@ -340,7 +334,7 @@ function RulesSection({
           <p className="text-xs text-muted-foreground">
             Solo si ya tienes plantillas propias. Deben usar las mismas variables que las de esta página.
           </p>
-          {MANUAL_TEMPLATE_FIELDS.map(({ key, label }) => (
+          {manualTemplateFields.map(({ key, label }) => (
             <div key={key} className="space-y-2">
               <Label htmlFor={`org-whatsapp-template-${key}-${organizationId}`}>{label} (Content SID)</Label>
               <Input

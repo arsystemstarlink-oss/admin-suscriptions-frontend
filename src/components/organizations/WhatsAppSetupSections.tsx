@@ -18,6 +18,7 @@ import { qk } from '@/lib/query-keys'
 import { cn } from '@/lib/utils'
 import {
   useSendWhatsAppTestMessage,
+  useSubmitMissingWhatsAppTemplates,
   useSubmitWhatsAppTemplate,
   useWhatsAppConnectionCheck,
   useWhatsAppFailures,
@@ -222,6 +223,9 @@ export function WhatsAppTemplatesStep({
 }) {
   const queryClient = useQueryClient()
   const templates = useWhatsAppTemplates(organizationId)
+  const submitMissing = useSubmitMissingWhatsAppTemplates()
+  const missingCount =
+    templates.data?.templates.filter((template) => getTemplateDisplayStatus(template) === 'none').length ?? 0
 
   // Una plantilla aprobada cambia los requisitos que muestra el resumen de arriba.
   const activeSignature = templates.data?.templates.map((template) => template.activeContentSid).join('|')
@@ -256,6 +260,18 @@ export function WhatsAppTemplatesStep({
             Reintentar
           </Button>
         </div>
+      )}
+      {twilioReady && missingCount > 1 && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={submitMissing.isPending}
+          onClick={() => submitMissing.mutate(organizationId)}
+        >
+          {submitMissing.isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+          Solicitar las {missingCount} con el texto sugerido
+        </Button>
       )}
       {templates.data?.templates.map((template) => (
         <TemplateCard

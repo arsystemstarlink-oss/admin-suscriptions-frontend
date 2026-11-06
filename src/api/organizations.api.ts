@@ -4,6 +4,7 @@ import type {
   OnboardOrganizationRequest,
   OnboardOrganizationResponse,
   OrganizationWhatsAppConfig,
+  SubmitMissingWhatsAppTemplatesResponse,
   WhatsAppConnectionCheck,
   WhatsAppFailureGroup,
   WhatsAppTemplateKey,
@@ -109,6 +110,17 @@ export const organizationsApi = {
     const response = await api.post<WhatsAppTemplatesResponse>(
       `/whatsapp/config/templates/${key}/submit`,
       { body },
+      { params: { organizationId } },
+    )
+    return response.data
+  },
+
+  submitMissingWhatsAppTemplates: async (
+    organizationId: string,
+  ): Promise<SubmitMissingWhatsAppTemplatesResponse> => {
+    const response = await api.post<SubmitMissingWhatsAppTemplatesResponse>(
+      '/whatsapp/config/templates/submit-missing',
+      undefined,
       { params: { organizationId } },
     )
     return response.data

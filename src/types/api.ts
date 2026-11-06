@@ -44,11 +44,9 @@ export interface OrganizationWhatsAppRules {
   suspensionNoticeEnabled: boolean
 }
 
-export interface OrganizationWhatsAppTemplates {
-  reminder?: string
-  dueDateWarning?: string
-  suspensionNotice?: string
-}
+export type WhatsAppTemplateKey = 'reminder' | 'dueDateWarning' | 'suspensionNotice'
+
+export type OrganizationWhatsAppTemplates = Partial<Record<WhatsAppTemplateKey, string>>
 
 export interface OrganizationWhatsAppConfig {
   organizationId: string
@@ -63,8 +61,6 @@ export interface OrganizationWhatsAppConfig {
   /** `null` si el servidor no tiene una dirección pública https. */
   webhooks: { inbound: string; status: string } | null
 }
-
-export type WhatsAppTemplateKey = keyof OrganizationWhatsAppTemplates
 
 export interface WhatsAppTemplateState {
   key: WhatsAppTemplateKey
@@ -84,6 +80,11 @@ export interface WhatsAppTemplateState {
 
 export interface WhatsAppTemplatesResponse {
   templates: WhatsAppTemplateState[]
+}
+
+export interface SubmitMissingWhatsAppTemplatesResponse extends WhatsAppTemplatesResponse {
+  submitted: WhatsAppTemplateKey[]
+  failed: { key: WhatsAppTemplateKey; label: string; message: string }[]
 }
 
 export interface WhatsAppConnectionCheck {
@@ -109,11 +110,7 @@ export interface WhatsAppFailureGroup {
 export interface UpdateOrganizationWhatsAppConfigRequest {
   twilio?: OrganizationTwilioConfigRequest
   rules?: Partial<OrganizationWhatsAppRules>
-  templates?: {
-    reminder?: string | null
-    dueDateWarning?: string | null
-    suspensionNotice?: string | null
-  }
+  templates?: Partial<Record<WhatsAppTemplateKey, string | null>>
 }
 
 export interface Organization {
@@ -1213,6 +1210,9 @@ export interface SendMessageRequest {
   body?: string
   templateName?: string
   variables?: Record<string, string>
+  /** Alternativa a `templateName` + `variables`: el servidor resuelve el SID y el orden. */
+  templateKey?: WhatsAppTemplateKey
+  context?: { clientName?: string; serviceCode?: string; dueDate?: string }
 }
 
 export interface SendMessageResponse {

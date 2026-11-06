@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText, Wallet } from 'lucide-react';
+import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
-import { usePendingReportsCount } from '@/hooks/usePaymentReports';
+import { usePendingCollectionsCount } from '@/hooks/usePendingCollectionsCount';
 import { ExchangeTicker } from '@/components/exchange/ExchangeTicker';
 import { HeaderActions } from './HeaderActions';
 import { cn } from '@/lib/utils';
@@ -49,40 +49,20 @@ export default function MobileAppShell({
 
   const badgesEnabled = !isSuperAdmin || !!selectedOrganizationId
   const unreadChatsCount = useUnreadChatsCount(orgId, { enabled: badgesEnabled });
-  const { data: pendingReports } = usePendingReportsCount({ organizationId: orgId }, { enabled: badgesEnabled });
-  const pendingReportsCount = pendingReports?.pending ?? 0;
+  const { total: pendingCollectionsCount } = usePendingCollectionsCount();
 
   const isChatsPage = location.pathname.startsWith('/chats');
-  const isNavItemActive = (path: string, isActive: boolean) => {
-    if (path === '/config') {
-      return location.pathname === '/config' || (
-        location.pathname.startsWith('/config/') &&
-        location.pathname !== '/config/plan-payments'
-      );
-    }
-    return isActive;
-  };
 
   const navItems: Array<{
     id: string
     icon: typeof Home
     label: string
-    ariaLabel?: string
     path: string
     badge?: number
   }> = [
     { id: 'home', icon: Home, label: 'Inicio', path: '/dashboard' },
-    {
-      id: 'subs',
-      icon: CreditCard,
-      label: isSuperAdmin ? 'Suscrip.' : 'Suscripciones',
-      ariaLabel: 'Suscripciones',
-      path: '/subscriptions',
-    },
-    { id: 'reports', icon: ReceiptText, label: 'Cobros', path: '/payment-reports', badge: pendingReportsCount },
-    ...(isSuperAdmin
-      ? [{ id: 'plan-payments', icon: Wallet, label: 'Pagos plan', ariaLabel: 'Pagos de planes', path: '/config/plan-payments' }]
-      : []),
+    { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
+    { id: 'reports', icon: ReceiptText, label: 'Cobros', path: '/payment-reports', badge: pendingCollectionsCount },
     { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
     { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
   ];
@@ -182,16 +162,15 @@ export default function MobileAppShell({
               <li key={item.id} className="flex-1 flex justify-center">
                 <NavLink
                   to={item.path}
-                  end={item.path === '/dashboard' || item.path === '/config/plan-payments'}
+                  end={item.path === '/dashboard'}
                   className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 rounded-lg active:scale-95 transition-transform touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={
                     badgeCount > 0
-                      ? `${item.ariaLabel ?? item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`
-                      : item.ariaLabel ?? item.label
+                      ? `${item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`
+                      : item.label
                   }
                 >
-                  {({ isActive }) => {
-                    const active = isNavItemActive(item.path, isActive);
+                  {({ isActive: active }) => {
                     return (
                       <>
                       <span className="relative">

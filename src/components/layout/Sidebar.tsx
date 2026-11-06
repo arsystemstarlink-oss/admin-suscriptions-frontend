@@ -1,18 +1,16 @@
-import { NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User, ReceiptText, Wallet } from 'lucide-react'
-import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
-import { useOrganizationStore } from '@/stores/organization.store'
-import { usePendingReportsCount } from '@/hooks/usePaymentReports'
-import { useAllOrganizationPlanPaymentReports } from '@/hooks/useOrganizationPlanPaymentReports'
+import { NavLink } from 'react-router-dom'
+import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User, ReceiptText, type LucideIcon } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth.store'
+import { usePendingCollectionsCount } from '@/hooks/usePendingCollectionsCount'
 import { cn, getInitial } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
-const navItems = [
+const navItems: Array<{ to: string; icon: LucideIcon; label: string; badgeKey?: 'reports' }> = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
   { to: '/subscriptions', icon: Link2, label: 'Suscripciones' },
-  { to: '/payment-reports', icon: ReceiptText, label: 'Cobros', badgeKey: 'reports' as const },
+  { to: '/payment-reports', icon: ReceiptText, label: 'Cobros', badgeKey: 'reports' },
   { to: '/chats', icon: MessageSquare, label: 'Chats' },
   { to: '/config', icon: Settings, label: 'Ajustes' },
 ]
@@ -100,45 +98,12 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
   const { user, logout } = useAuthStore()
-  const location = useLocation()
-  const isSuperAdmin = useIsSuperAdmin()
-  const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
-  const { data: pendingReports } = usePendingReportsCount(
-    { organizationId: organizationId ?? undefined },
-    { enabled: !isSuperAdmin || !!organizationId },
-  )
-  const { data: pendingPlanReports } = useAllOrganizationPlanPaymentReports(
-    'PENDING',
-    isSuperAdmin,
-  )
-  const pendingPlanReportsCount = pendingPlanReports?.reports.length ?? 0
-  const items = isSuperAdmin
-    ? [
-        ...navItems.slice(0, 3),
-        {
-          to: '/config/plan-payments',
-          icon: Wallet,
-          label: 'Pagos de planes',
-          badgeKey: 'planPayments' as const,
-        },
-        ...navItems.slice(3),
-      ]
-    : navItems
-  const isNavItemActive = (to: string, isActive: boolean) => {
-    if (to === '/config') {
-      return (
-        location.pathname === '/config' ||
-        (location.pathname.startsWith('/config/') &&
-          !location.pathname.startsWith('/config/plan-payments'))
-      )
-    }
-    return isActive
-  }
+  const { total: pendingCollectionsCount } = usePendingCollectionsCount()
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
       <nav className="flex-1 space-y-1 p-3">
-        {items.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -147,7 +112,7 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
               cn(
                 'flex items-center rounded-md text-sm font-medium transition-all',
                 collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5',
-                isNavItemActive(item.to, isActive)
+                isActive
                   ? 'bg-secondary text-secondary-foreground border border-secondary/40 shadow-sm hover:bg-secondary/90'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )
@@ -156,28 +121,18 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
           >
             <span className="relative shrink-0">
               <item.icon className="h-5 w-5 shrink-0" />
-              {'badgeKey' in item && item.badgeKey === 'reports' && (pendingReports?.pending ?? 0) > 0 && (
+              {item.badgeKey === 'reports' && pendingCollectionsCount > 0 && (
                 <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
-                  {(pendingReports?.pending ?? 0) > 99 ? '99+' : pendingReports?.pending}
-                </span>
-              )}
-              {'badgeKey' in item && item.badgeKey === 'planPayments' && pendingPlanReportsCount > 0 && (
-                <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
-                  {pendingPlanReportsCount > 99 ? '99+' : pendingPlanReportsCount}
+                  {pendingCollectionsCount > 99 ? '99+' : pendingCollectionsCount}
                 </span>
               )}
             </span>
             {!collapsed && (
               <span className="flex flex-1 items-center gap-2">
                 {item.label}
-                {'badgeKey' in item && item.badgeKey === 'reports' && (pendingReports?.pending ?? 0) > 0 && (
+                {item.badgeKey === 'reports' && pendingCollectionsCount > 0 && (
                   <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1.5 text-[11px]">
-                    {(pendingReports?.pending ?? 0) > 99 ? '99+' : pendingReports?.pending}
-                  </Badge>
-                )}
-                {'badgeKey' in item && item.badgeKey === 'planPayments' && pendingPlanReportsCount > 0 && (
-                  <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1.5 text-[11px]">
-                    {pendingPlanReportsCount > 99 ? '99+' : pendingPlanReportsCount}
+                    {pendingCollectionsCount > 99 ? '99+' : pendingCollectionsCount}
                   </Badge>
                 )}
               </span>

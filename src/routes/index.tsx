@@ -27,6 +27,7 @@ import {
   SubscriptionEditPage,
   AdminToolsPage,
   SubscriptionsLayout,
+  PaymentsLayout,
   ProfilePage,
   AdminsPage,
   OrganizationsPage,
@@ -265,13 +266,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plan-payments',
-            element: (
-              <RoleGuard allowedRoles={['super-admin']}>
-                <Suspense fallback={<PageLoader />}>
-                  <OrganizationPlanReportsPage />
-                </Suspense>
-              </RoleGuard>
-            ),
+            element: <Navigate to="/payment-reports/plans" replace />,
           },
           {
             path: 'plan-quote-requests',
@@ -297,19 +292,29 @@ export const router = createBrowserRouter(
         path: 'payment-reports',
         element: (
           <Suspense fallback={<PageLoader />}>
-            <PaymentReportsPage />
+            <PaymentsLayout />
           </Suspense>
         ),
-      },
-      {
-        path: 'payment-reports/plans',
-        element: (
-          <RoleGuard allowedRoles={['super-admin']}>
-            <Suspense fallback={<PageLoader />}>
-              <OrganizationPlanReportsPage />
-            </Suspense>
-          </RoleGuard>
-        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <PaymentReportsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'plans',
+            element: (
+              <RoleGuard allowedRoles={['super-admin']}>
+                <Suspense fallback={<PageLoader />}>
+                  <OrganizationPlanReportsPage />
+                </Suspense>
+              </RoleGuard>
+            ),
+          },
+        ],
       },
       {
         path: 'clients',

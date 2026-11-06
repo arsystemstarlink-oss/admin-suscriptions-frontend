@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { ClipboardList, Inbox, User, UserPlus, Building2, Wallet } from 'lucide-react'
+import { ClipboardList, Inbox, User, UserPlus, Building2 } from 'lucide-react'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 
 export function SettingsLayout() {
@@ -34,14 +34,6 @@ export function SettingsLayout() {
         label: 'Organizaciones',
         title: 'Organizaciones',
         subtitle: 'Gestiona las organizaciones del sistema',
-        end: false,
-      })
-      base.push({
-        to: '/config/plan-payments',
-        icon: Wallet,
-        label: 'Pagos de planes',
-        title: 'Pagos de planes',
-        subtitle: 'Aprueba o rechaza los pagos reportados por las organizaciones',
         end: false,
       })
       base.push({

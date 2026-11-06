@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
 import { usePaymentReports, useReviewPaymentReport } from '@/hooks/usePaymentReports'
 import type { PaymentReportWithDetails } from '@/types/api'
 import { Button } from '@/components/ui/button'
@@ -80,7 +79,6 @@ function ReportStatusBadge({ status }: { status: string }) {
 
 export function PaymentReportsPage() {
   const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
-  const isSuperAdmin = useIsSuperAdmin()
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [status, setStatus] = useState<StatusFilter>(
@@ -183,15 +181,6 @@ export function PaymentReportsPage() {
   return (
     <>
       <ListPageLayout
-        title="Cobros de clientes"
-        description="Aprueba o rechaza los pagos reportados por los clientes desde el portal público."
-        primaryAction={
-          isSuperAdmin ? (
-            <Button asChild variant="outline">
-              <Link to="/config/plan-payments">Pagos de planes</Link>
-            </Button>
-          ) : undefined
-        }
         searchProps={{ value: search, onChange: handleSearch, placeholder: 'Buscar por cliente, cédula, código...' }}
         filters={
           <>

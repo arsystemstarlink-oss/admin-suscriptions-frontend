@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import '@fontsource-variable/bricolage-grotesque/wght.css'
 import { Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -62,10 +62,10 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
       <CardContent className="flex h-full flex-col px-[22px] py-[26px]">
         <h3 className="text-xl font-extrabold leading-[1.1] tracking-[-0.02em]">{plan.label}</h3>
         <p className="mt-0.5 mb-[18px] text-sm text-muted-foreground">{capacity}</p>
-        <p className="font-[Bricolage_Grotesque] text-[2.4rem] leading-none font-extrabold tracking-[-0.02em]">
+        <p className="font-display text-[2.4rem] leading-none font-extrabold tracking-[-0.02em]">
           {plan.priceUsdMonthly === null ? 'Cotiza' : plan.priceUsdMonthly}
           {plan.priceUsdMonthly !== null && (
-            <span className="ml-2 font-[Figtree] text-[0.95rem] font-medium text-muted-foreground">
+            <span className="ml-2 font-sans text-[0.95rem] font-medium text-muted-foreground">
               USD/mes
             </span>
           )}
@@ -139,33 +139,6 @@ export function PlansPage() {
   const plans = plansData?.plans ?? []
   const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? DEFAULT_TRIAL_DAYS
 
-  useEffect(() => {
-    const preconnect = document.createElement('link')
-    preconnect.rel = 'preconnect'
-    preconnect.href = 'https://fonts.googleapis.com'
-    preconnect.dataset.plansFont = 'preconnect'
-
-    const crossOrigin = document.createElement('link')
-    crossOrigin.rel = 'preconnect'
-    crossOrigin.href = 'https://fonts.gstatic.com'
-    crossOrigin.crossOrigin = 'anonymous'
-    crossOrigin.dataset.plansFont = 'crossorigin'
-
-    const stylesheet = document.createElement('link')
-    stylesheet.rel = 'stylesheet'
-    stylesheet.href =
-      'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&display=swap'
-    stylesheet.dataset.plansFont = 'stylesheet'
-
-    document.head.append(preconnect, crossOrigin, stylesheet)
-
-    return () => {
-      preconnect.remove()
-      crossOrigin.remove()
-      stylesheet.remove()
-    }
-  }, [])
-
   return (
     <div className="plans-page-theme min-h-screen bg-background text-foreground">
       <a
@@ -183,7 +156,7 @@ export function PlansPage() {
           >
             <Link
               to="/planes"
-              className="font-[Bricolage_Grotesque] text-lg font-extrabold tracking-[0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-header"
+              className="font-display text-lg font-extrabold tracking-[0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-header"
             >
               A<span className="text-secondary">|</span>R SYSTEM
             </Link>
@@ -206,7 +179,7 @@ export function PlansPage() {
 
           <div className="grid items-center gap-12 min-[901px]:grid-cols-[1.15fr_0.85fr]">
             <div>
-              <h1 className="max-w-3xl font-[Bricolage_Grotesque] text-[clamp(2.2rem,5.4vw,3.7rem)] font-extrabold leading-[1.1] tracking-[-0.02em]">
+              <h1 className="max-w-3xl font-display text-[clamp(2.2rem,5.4vw,3.7rem)] font-extrabold leading-[1.1] tracking-[-0.02em]">
                 Lleva en orden tus clientes de internet y tus cobros.
               </h1>
               <p className="mt-[22px] mb-[30px] max-w-2xl text-[1.15rem] text-header-foreground/80">

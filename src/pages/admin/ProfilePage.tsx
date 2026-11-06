@@ -249,7 +249,7 @@ export function ProfilePage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
-                <span className="text-lg sm:text-xl font-bold text-primary">{initials}</span>
+                <span className="text-lg sm:text-xl font-bold text-primary-text">{initials}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-lg sm:text-xl truncate">{user.name}</h3>
@@ -677,7 +677,7 @@ export function ProfilePage() {
           <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
             <div className="flex items-center gap-3 p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <ShieldCheck className="h-5 w-5 text-primary" />
+                <ShieldCheck className="h-5 w-5 text-primary-text" />
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-muted-foreground">Contraseña</p>

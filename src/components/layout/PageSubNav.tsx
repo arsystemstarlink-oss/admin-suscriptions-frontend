@@ -85,7 +85,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
                 </div>
                 <span
                   className={cn(
-                    'text-[11px] leading-tight font-medium truncate sm:text-sm sm:whitespace-normal',
+                    'text-xs leading-tight font-medium truncate sm:text-sm sm:whitespace-normal',
                     isActive ? 'text-foreground' : 'text-muted-foreground'
                   )}
                 >

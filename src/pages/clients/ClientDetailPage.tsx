@@ -1,6 +1,7 @@
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useClientDetail } from '@/hooks/useClients'
+import { useOpenOldestUnpaidPeriod } from '@/hooks/useOpenOldestUnpaidPeriod'
 import { useOrganizationDetail } from '@/hooks/useOrganizations'
 import { useUIStore } from '@/stores/ui.store'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -8,7 +9,7 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check, LoaderCircle } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod, canPayAdvance } from '@/lib/utils'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
@@ -33,6 +34,7 @@ export function ClientDetailPage() {
     isError: organizationError,
   } = useOrganizationDetail(data?.client.organizationId ?? '')
   const { openQuickPay } = useUIStore()
+  const { openOldestUnpaidPeriod, loadingSubscriptionId } = useOpenOldestUnpaidPeriod(organizationId || undefined)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const [consultaLinkCopied, setConsultaLinkCopied] = useState(false)
@@ -231,15 +233,15 @@ export function ClientDetailPage() {
       {/* Mini KPIs Horizontales */}
       <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 no-scrollbar touch-pan-x -mx-4 sm:gap-3">
         <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Activas</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Activas</p>
           <p className="text-xl font-bold leading-tight text-success sm:text-2xl">{summary.activeSubscriptions}</p>
         </div>
         <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Vencidos</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Vencidos</p>
           <p className="text-xl font-bold leading-tight text-destructive sm:text-2xl">{summary.totalOverdue}</p>
         </div>
         <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Total Subs</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Total Subs</p>
           <p className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{summary.totalSubscriptions}</p>
         </div>
       </div>
@@ -258,11 +260,15 @@ export function ClientDetailPage() {
             />
           ) : (
             <div className="space-y-2 sm:space-y-3">
-              {subscriptions.map((sub) => (
+              {subscriptions.map((sub) => {
+                const hasUnpaidPeriods = sub.hasDebt || sub.pendingPeriods > 0 || (!!sub.currentPeriod && sub.currentPeriod.status !== 'PAID')
+                const isBlockedByOlderPeriod = hasUnpaidPeriods && !canPayCurrentPeriod(sub)
+
+                return (
                 <div key={sub.id} className="relative overflow-hidden rounded-xl border border-border bg-surface p-3 text-surface-foreground shadow-sm sm:rounded-2xl sm:p-4">
 
                   <div className="mb-2 flex items-center gap-2.5 sm:mb-3 sm:gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:h-10 sm:w-10 sm:rounded-xl">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-text sm:h-10 sm:w-10 sm:rounded-xl">
                       <Box className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -274,21 +280,21 @@ export function ClientDetailPage() {
                       </p>
                     </div>
                     {sub.hasDebt && (
-                      <Badge variant="destructive" className="shrink-0 gap-1 px-2 py-0.5 text-[10px]">
+                      <Badge variant="destructive" className="shrink-0 gap-1 px-2 py-0.5 text-xs">
                         <ShieldAlert className="h-3 w-3" /> Vencidos
                       </Badge>
                     )}
                   </div>
 
                   <div className="mb-2 flex flex-wrap gap-1.5 sm:mb-3 sm:gap-2">
-                    <Badge className={`px-2 py-0.5 text-[10px] sm:text-xs ${SUBSCRIPTION_STATUS_COLORS[sub.status]}`}>
+                    <Badge className={`px-2 py-0.5 text-xs ${SUBSCRIPTION_STATUS_COLORS[sub.status]}`}>
                       {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                     </Badge>
-                    <Badge variant="outline" className="border-border bg-surface-muted px-2 py-0.5 text-[10px] text-muted-foreground sm:text-xs">
+                    <Badge variant="outline" className="border-border bg-surface-muted px-2 py-0.5 text-xs text-muted-foreground sm:text-xs">
                       Corte: día {sub.billingDay}
                     </Badge>
                     {sub.currentPeriod && sub.currentPeriod.status === 'PENDING' && isExpiringSoon(sub.currentPeriod.endDate) && (
-                      <Badge className="border-warning/20 bg-warning/10 px-2 py-0.5 text-[10px] text-warning sm:text-xs">
+                      <Badge className="border-warning/20 bg-warning/10 px-2 py-0.5 text-xs text-warning sm:text-xs">
                         {getExpiringLabel(sub.currentPeriod.endDate)}
                       </Badge>
                     )}
@@ -296,29 +302,37 @@ export function ClientDetailPage() {
 
                   <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-lg border border-border-subtle bg-surface-muted p-1.5 sm:mb-3 sm:gap-2 sm:rounded-xl sm:p-2.5">
                     <div className="border-r border-border text-center">
-                      <p className="text-[10px] font-bold uppercase text-subtle-foreground">Vencidos</p>
+                      <p className="text-xs font-bold uppercase text-subtle-foreground">Vencidos</p>
                       <p className={`mt-0.5 text-base font-bold leading-none sm:mt-1 sm:text-lg ${sub.overduePeriods > 0 ? 'text-destructive' : 'text-foreground'}`}>
                         {sub.overduePeriods}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] font-bold uppercase text-subtle-foreground">Totales</p>
+                      <p className="text-xs font-bold uppercase text-subtle-foreground">Totales</p>
                       <p className="mt-0.5 text-base font-bold leading-none text-foreground sm:mt-1 sm:text-lg">
                         {sub.totalPeriods}
                       </p>
                     </div>
                   </div>
 
+                  {isBlockedByOlderPeriod && (
+                    <p className="mb-2 flex items-start gap-1.5 rounded-lg border border-warning/20 bg-warning/10 p-2 text-xs font-medium text-warning sm:mb-3">
+                      <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      Hay períodos anteriores sin pagar. Cobra primero el más antiguo.
+                    </p>
+                  )}
+
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    {sub.currentPeriod && sub.currentPeriod.status !== 'PAID' && (
+                    {hasUnpaidPeriods && (
                       <Button
                         className="h-9 min-w-0 flex-1 gap-1 px-2 text-xs font-semibold sm:h-11 sm:gap-2 sm:px-4 sm:text-sm"
-                        onClick={() => handlePaySubscription(sub)}
-                        disabled={!canPayCurrentPeriod(sub)}
-                        title={!canPayCurrentPeriod(sub) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
+                        onClick={() => isBlockedByOlderPeriod ? void openOldestUnpaidPeriod(sub.id) : handlePaySubscription(sub)}
+                        disabled={loadingSubscriptionId === sub.id}
                       >
-                        <DollarSign className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
-                        Cobrar
+                        {loadingSubscriptionId === sub.id
+                          ? <LoaderCircle className="h-3.5 w-3.5 shrink-0 animate-spin sm:h-4 sm:w-4" />
+                          : <DollarSign className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />}
+                        {isBlockedByOlderPeriod ? 'Cobrar el más antiguo' : 'Cobrar'}
                       </Button>
                     )}
                     {canPayAdvance(sub) && (
@@ -337,7 +351,8 @@ export function ClientDetailPage() {
                     </Button>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </TabsContent>

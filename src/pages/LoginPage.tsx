@@ -141,7 +141,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/10 selection:text-primary">
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/10 selection:text-primary-text">
       {/* Branding Area — centrado, generoso espacio negativo */}
       <header className="flex flex-col items-center pt-12 pb-2 px-6">
         <div className="inline-flex items-center justify-center px-5 py-3">
@@ -315,7 +315,7 @@ export function LoginPage() {
                     setRememberMe(next)
                     localStorage.setItem('auth.rememberMe', String(next))
                   }}
-                  className="h-[1.15rem] w-[1.15rem] rounded-md border-border-subtle bg-surface-muted text-primary shadow-none focus-visible:ring-ring focus-visible:ring-offset-1 transition-colors"
+                  className="h-[1.15rem] w-[1.15rem] rounded-md border-border-subtle bg-surface-muted text-primary-text shadow-none focus-visible:ring-ring focus-visible:ring-offset-1 transition-colors"
                   disabled={isLoading}
                 />
                 <span className="text-[0.8125rem] text-muted-foreground group-hover:text-foreground transition-colors">
@@ -354,7 +354,7 @@ export function LoginPage() {
             ¿Quieres conocer la aplicación?{' '}
             <Link
               to="/planes"
-              className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="font-semibold text-primary-text underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Ver planes
             </Link>

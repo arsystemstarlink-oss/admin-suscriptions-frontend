@@ -111,6 +111,18 @@ export function formatRate(rate: number): string {
   }).format(rate);
 }
 
+/** Versión corta para espacios reducidos: la hora si es de hoy; si no, el día. */
+export function formatRateUpdatedAtShort(isoDate: string | null | undefined): string | null {
+  if (!isoDate) return null;
+  const date = new Date(isoDate);
+  if (isNaN(date.getTime())) return null;
+  const isToday = date.toDateString() === new Date().toDateString();
+  return new Intl.DateTimeFormat(
+    'es-VE',
+    isToday ? { hour: 'numeric', minute: '2-digit' } : { day: 'numeric', month: 'short' },
+  ).format(date);
+}
+
 export function formatRateUpdatedAt(isoDate: string | null | undefined): string | null {
   if (!isoDate) return null;
   const date = new Date(isoDate);

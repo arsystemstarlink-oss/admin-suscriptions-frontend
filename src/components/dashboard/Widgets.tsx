@@ -1,7 +1,7 @@
 import { useDashboardAlerts } from '@/hooks/useDashboard'
 import { useUIStore } from '@/stores/ui.store'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import { formatCurrency, formatDate } from '@/lib/constants'
@@ -135,10 +135,10 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
         className="w-full flex items-center justify-between p-4 border-b border-border group text-left"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <span className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+          <span className="p-1.5 rounded-lg bg-primary/10 text-primary-text shrink-0">
             <Clock className="h-4 w-4 shrink-0" />
           </span>
-          <h2 className="text-base font-bold text-foreground group-hover:text-primary transition-colors truncate">Cobros Pendientes</h2>
+          <h2 className="text-base font-bold text-foreground group-hover:text-primary-text transition-colors truncate">Cobros Pendientes</h2>
         </span>
         <span className="flex items-center gap-2 shrink-0">
           {items.length > 0 && (
@@ -172,11 +172,14 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
             {displayedItems.map((period) => (
               <div
                 key={period.periodId}
-                onClick={() => navigate(`/subscriptions/${period.subscriptionId}`, { state: { from: '/dashboard' } })}
-                className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle active:bg-surface-active transition-colors touch-manipulation cursor-pointer group"
+                className="flex items-center gap-3 pr-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                <Link
+                  to={`/subscriptions/${period.subscriptionId}`}
+                  state={{ from: '/dashboard' }}
+                  className="min-w-0 flex-1 p-3 rounded-xl active:bg-surface-active transition-colors touch-manipulation group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary-text transition-colors">
                     {period.clientName}
                   </p>
 
@@ -198,7 +201,7 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
                       </span>
                     )}
                   </div>
-                </div>
+                </Link>
 
                 <div className="shrink-0 flex items-center">
                   <button
@@ -452,7 +455,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
             <AlertTriangle className="h-4 w-4 shrink-0" />
           </span>
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary">Top Deudores</span>
+            <span className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary-text">Top Deudores</span>
             {data && data.topDebtors.count > 0 && (
               <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
                 {data.topDebtors.count}
@@ -499,11 +502,14 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
             {displayedItems.map((debtor) => (
               <div
                 key={debtor.clientId}
-                onClick={() => navigate(`/subscriptions/clients/${debtor.clientId}`, { state: { from: '/dashboard' } })}
-                className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle active:bg-surface-active transition-colors touch-manipulation cursor-pointer group"
+                className="flex items-center gap-3 pr-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                <Link
+                  to={`/subscriptions/clients/${debtor.clientId}`}
+                  state={{ from: '/dashboard' }}
+                  className="min-w-0 flex-1 p-3 rounded-xl active:bg-surface-active transition-colors touch-manipulation group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary-text transition-colors">
                     {debtor.clientName}
                   </p>
 
@@ -520,7 +526,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                       {debtor.overdueCount} vencidos
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 <div className="shrink-0 flex items-center">
                   <button
@@ -694,7 +700,7 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
           <span className="p-1.5 rounded-lg bg-warning/10 text-warning shrink-0">
             <Calendar className="h-4 w-4 shrink-0" />
           </span>
-          <h2 className="text-base font-bold text-foreground group-hover:text-primary transition-colors truncate">Vencimientos Próximos</h2>
+          <h2 className="text-base font-bold text-foreground group-hover:text-primary-text transition-colors truncate">Vencimientos Próximos</h2>
         </span>
         <span className="flex items-center gap-2 shrink-0">
           {items.length > 0 && (
@@ -728,11 +734,14 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
             {displayedItems.map((item) => (
               <div
                 key={item.periodId}
-                onClick={() => navigate(`/subscriptions/${item.subscriptionId}`, { state: { from: '/dashboard' } })}
-                className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle active:bg-surface-active transition-colors touch-manipulation cursor-pointer group"
+                className="flex items-center gap-3 pr-3 rounded-xl bg-surface-muted text-foreground border border-border-subtle"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                <Link
+                  to={`/subscriptions/${item.subscriptionId}`}
+                  state={{ from: '/dashboard' }}
+                  className="min-w-0 flex-1 p-3 rounded-xl active:bg-surface-active transition-colors touch-manipulation group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <p className="font-semibold text-sm text-foreground truncate group-hover:text-primary-text transition-colors">
                     {item.clientName}
                   </p>
 
@@ -753,13 +762,13 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
                       Vence: {formatDate(item.endDate)}
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 <div className="shrink-0 flex items-center">
                   <button
                     onClick={(e) => handleOpenChat(item.clientPhone, e)}
                     className="flex items-center justify-center h-10 w-10 rounded-full bg-success/10 text-success border border-success/20 active:bg-success/20 transition-colors touch-manipulation shadow-sm"
-                    aria-label="WhatsApp"
+                    aria-label={`Abrir chat con ${item.clientName}`}
                   >
                     <MessageSquare className="h-4 w-4 shrink-0" />
                   </button>

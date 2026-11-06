@@ -58,8 +58,8 @@ export function KPICards() {
         title: 'Clientes',
         value: data.clients.total,
         icon: Users,
-        iconClass: 'text-primary bg-primary/10',
-        href: '/clients',
+        iconClass: 'text-primary-text bg-primary/10',
+        href: '/subscriptions/clients',
       },
       {
         title: 'Suscripciones',
@@ -75,7 +75,7 @@ export function KPICards() {
         icon: Package,
         iconClass: 'text-info bg-info/10',
         subtitle: `${data.plans.total} totales`,
-        href: '/plans',
+        href: '/subscriptions/plans',
       },
     ]
 
@@ -86,20 +86,20 @@ export function KPICards() {
             key={card.title}
             type="button"
             onClick={() => navigate(card.href)}
-            className="flex items-center gap-2 rounded-xl border border-border bg-surface p-2.5 text-left text-surface-foreground shadow-sm transition-transform active:scale-95 touch-manipulation"
+            className="flex flex-col items-start gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-left sm:flex-row sm:items-center sm:gap-2 text-surface-foreground shadow-sm transition-transform active:scale-95 touch-manipulation"
           >
             <div className={`p-1.5 rounded-lg shrink-0 ${card.iconClass}`}>
               <card.icon className="h-4 w-4" />
             </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-muted-foreground truncate leading-tight">
+            <div className="w-full min-w-0">
+              <p className="text-xs font-semibold text-muted-foreground truncate leading-tight">
                 {card.title}
               </p>
               <p className="text-lg font-bold text-foreground leading-tight">
                 {card.value}
               </p>
               {card.subtitle && (
-                <p className="text-[10px] font-medium text-muted-foreground truncate leading-tight">
+                <p className="text-xs font-medium text-muted-foreground truncate leading-tight">
                   {card.subtitle}
                 </p>
               )}

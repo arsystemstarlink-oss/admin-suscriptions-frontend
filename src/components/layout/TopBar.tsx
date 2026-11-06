@@ -83,7 +83,7 @@ export function TopBar({
                     <button
                       type="button"
                       onClick={onRetryOrganizations}
-                      className="mt-1 text-sm font-medium text-primary hover:underline"
+                      className="mt-1 text-sm font-medium text-primary-text hover:underline"
                     >
                       Reintentar
                     </button>

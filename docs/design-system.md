@@ -44,7 +44,7 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 | `surface-hover` | `220 30% 93%` | `223 28% 22%` | Hover interactivo |
 | `surface-active` | `222 40% 91%` | `223 32% 25%` | Selección/estado activo |
 | `muted` / `muted-foreground` | `220 28% 96%` / `223 20% 42%` | `223 28% 20%` / `0 0% 72%` | Skeletons (`bg-muted`), texto secundario |
-| `subtle-foreground` | `223 15% 60%` | `0 0% 55%` | Texto de muy baja prioridad (iconos vacíos, "/mes") |
+| `subtle-foreground` | `223 15% 45%` | `0 0% 60%` | Texto de muy baja prioridad (iconos vacíos, "/mes") |
 | `disabled-foreground` | `223 10% 65%` | `0 0% 45%` | Elementos deshabilitados |
 
 ### Marca
@@ -52,6 +52,7 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 | Token | Light | Dark | Función |
 |---|---|---|---|
 | `primary` / `primary-foreground` | `223 68% 25%` / blanco | `223 68% 32%` / blanco | Botones y acciones primarias (navy) |
+| `primary-text` | `223 68% 25%` | `217 91% 75%` | Texto e iconos de marca sobre superficies; en dark, `primary` no es legible como texto |
 | `secondary` / `secondary-foreground` | `51 92% 49%` / `224 69% 11%` | igual | Amarillo de marca; SIEMPRE texto oscuro |
 | `header` / `header-foreground` / `header-hover` | `223 68% 25%` / `214 65% 96%` / `223 60% 30%` | `223 69% 11%` / `214 65% 96%` / `223 55% 16%` | TopBar, header móvil, panel Login/Setup |
 
@@ -59,10 +60,10 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 
 | Token | Light | Dark |
 |---|---|---|
-| `success` / `success-foreground` | `142 76% 30%` / blanco | `142 70% 55%` / blanco |
-| `warning` / `warning-foreground` | `38 92% 36%` / blanco | `42 96% 56%` / navy oscuro |
-| `destructive` / `destructive-foreground` | `0 74% 45%` / blanco | `0 84% 65%` / blanco |
-| `info` / `info-foreground` | `221 80% 42%` / blanco | `217 91% 65%` / navy oscuro |
+| `success` / `success-foreground` | `142 76% 25%` / blanco | `142 70% 55%` / `142 76% 10%` |
+| `warning` / `warning-foreground` | `38 92% 28%` / blanco | `42 96% 56%` / navy oscuro |
+| `destructive` / `destructive-foreground` | `0 74% 42%` / blanco | `0 84% 70%` / `0 74% 10%` |
+| `info` / `info-foreground` | `221 80% 42%` / blanco | `217 91% 70%` / navy oscuro |
 
 ### Bordes, input, focus, overlay
 
@@ -71,7 +72,7 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 | `border` | `220 24% 88%` | `223 24% 28%` | Separación normal |
 | `border-subtle` | `220 26% 91%` | `223 24% 22%` | Separación ligera (wells, bordes internos) |
 | `border-strong` | `220 20% 78%` | `223 22% 42%` | Focus/selección/bordes importantes, handles de sheet |
-| `input` | `220 28% 95%` | `223 28% 18%` | Borde de inputs/selects |
+| `input` | `220 14% 55%` | `223 16% 50%` | Borde de inputs/selects (mínimo 3:1 con el fondo) |
 | `ring` | `223 70% 45%` | `223 80% 62%` | Focus ring |
 | `overlay` | `222 47% 8% / 0.55` | `222 47% 3% / 0.7` | Scrims |
 
@@ -84,7 +85,7 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 1. **Par atómico**: todo `bg-*` lleva su `-foreground` en el mismo elemento o scope padre. Nunca `text-white`/`text-black` hardcodeados.
 2. **Prohibido en componentes**: `bg-white`, `bg-black`, `text-white`, `text-black`, `bg-gray-*`/`slate-*` y derivados, escalas raw (`bg-primary-800`, `text-primary-500`, `border-primary-100`, `bg-secondary-600`), paletas de estado raw (`emerald-*`, `amber-*`, `red-*`, `blue-*`, `sky-*`, `green-*`) y clases `dark:` (los tokens ya resuelven el modo).
 3. **Estados**: `hover:bg-surface-hover`, `active:bg-surface-active`, focus con `ring-ring`, disabled con `disabled:opacity-50 disabled:text-disabled-foreground`. Nunca `text-gray-500` para disabled.
-4. **Texto**: `foreground` (títulos/valores) → `muted-foreground` (descripciones/metadata/iconos secundarios) → `subtle-foreground` (muy baja prioridad, con moderación). Los íconos siguen la misma jerarquía que su texto.
+4. **Texto**: `foreground` (títulos/valores) → `muted-foreground` (descripciones/metadata/iconos secundarios) → `subtle-foreground` (muy baja prioridad, con moderación). Los íconos siguen la misma jerarquía que su texto. Tamaño mínimo `text-xs` (12 px); solo se admite menos en contadores dentro de círculos y en las etiquetas de la barra inferior móvil. Para texto o íconos de marca usa `text-primary-text`, nunca `text-primary`.
 5. **Primary/Secondary**: primario = `bg-primary text-primary-foreground` (o `<Button>` default). Ghost = transparente + `text-foreground` + `hover:bg-surface-hover`. Secondary siempre con `text-secondary-foreground` (texto oscuro sobre amarillo).
 6. **Status**: chip suave `bg-{status}/10 text-{status} border border-{status}/20`; sólido `bg-{status} text-{status}-foreground`; texto solo `text-{status}`. Strings centralizadas en `src/lib/constants.ts` (`STATUS_SUCCESS`, `STATUS_WARNING`, `STATUS_ERROR`, `STATUS_INFO`).
 7. **Inputs**: usar las primitivas (`<Input>`, `<SelectTrigger>`): `bg-surface-muted border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring`. No sobrescribir con colores raw.

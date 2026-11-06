@@ -1,12 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { useInfiniteSubscriptions } from '@/hooks/useSubscriptions'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
-import { billingApi } from '@/api/billing.api'
-import { qk } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
 import { Plus, Link2, RotateCcw, Box, Phone, Calendar, Zap, AlertTriangle, Clock, LoaderCircle } from 'lucide-react'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
@@ -15,27 +12,24 @@ import { EmptyState } from '@/components/design-system/EmptyState'
 import { ErrorState } from '@/components/design-system/ErrorState'
 import { formatCurrency, SUBSCRIPTION_STATUS_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, canPayAdvance } from '@/lib/utils'
-import { useUIStore } from '@/stores/ui.store'
+import { useOpenOldestUnpaidPeriod } from '@/hooks/useOpenOldestUnpaidPeriod'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
-import { toast } from 'sonner'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
 
 export function SubscriptionsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
-  const queryClient = useQueryClient()
-  const { openQuickPay } = useUIStore()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') || '')
-  const [pageIndex, setPageIndex] = useState(0)
-  const [payingId, setPayingId] = useState<string | null>(null)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
   const { isReadOnly } = getOrganizationPlanAccess(user?.role === 'admin' ? user.organization : undefined)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const { openOldestUnpaidPeriod, loadingSubscriptionId: payingId } = useOpenOldestUnpaidPeriod(organizationId ?? undefined)
 
+  const pageIndex = Math.max(0, (Number.parseInt(searchParams.get('page') ?? '', 10) || 1) - 1)
   const statusFilter = searchParams.get('status') as 'ACTIVE' | 'SUSPENDED' | null
   const hasOverdue = searchParams.get('hasOverdue') === 'true' ? true : searchParams.get('hasOverdue') === 'false' ? false : undefined
   const expiringFilter = searchParams.get('expiring') === 'true'
@@ -53,6 +47,7 @@ export function SubscriptionsListPage() {
     isFetching,
     refetch,
     isFetchingNextPage,
+    isFetchNextPageError,
     hasNextPage,
     fetchNextPage,
   } = useInfiniteSubscriptions(
@@ -72,24 +67,49 @@ export function SubscriptionsListPage() {
   const total = data?.pages[0]?.pagination.total
   const canGoNext = pageIndex < (data?.pages.length ?? 0) - 1 || hasNextPage
 
+  const goToPage = useCallback((index: number) => {
+    const params = new URLSearchParams(searchParams)
+    if (index > 0) params.set('page', String(index + 1))
+    else params.delete('page')
+    setSearchParams(params, { replace: true })
+  }, [searchParams, setSearchParams])
+
+  // Cambiar de organización invalida la página; cambiar filtros ya la quita en sus handlers.
+  const previousOrganizationId = useRef(organizationId)
   useEffect(() => {
-    setPageIndex(0)
-  }, [organizationId, statusFilter, hasOverdue, expiringFilter, pendingFilter, debouncedSearch])
+    if (previousOrganizationId.current === organizationId) return
+    previousOrganizationId.current = organizationId
+    if (searchParams.has('page')) goToPage(0)
+  }, [organizationId, searchParams, goToPage])
+
+  // Al volver a una página guardada en la URL sin caché, se piden las anteriores en orden.
+  const loadedPages = data?.pages.length ?? 0
+  const isLoadingSavedPage = loadedPages > 0 && pageIndex >= loadedPages && hasNextPage && !isFetchNextPageError
+  useEffect(() => {
+    if (isLoadingSavedPage && !isFetchingNextPage) void fetchNextPage()
+  }, [isLoadingSavedPage, isFetchingNextPage, loadedPages, fetchNextPage])
+
+  // La página guardada ya no existe (menos resultados): se muestra la última disponible.
+  useEffect(() => {
+    if (loadedPages > 0 && pageIndex >= loadedPages && !isLoadingSavedPage && !isFetchingNextPage) {
+      goToPage(loadedPages - 1)
+    }
+  }, [loadedPages, pageIndex, isLoadingSavedPage, isFetchingNextPage, goToPage])
 
   const showEmpty = isSuperAdmin && !organizationId
 
   const handleSearch = (value: string) => {
     setSearch(value)
-    setPageIndex(0)
     const params = new URLSearchParams(searchParams)
+    params.delete('page')
     if (value) params.set('search', value)
     else params.delete('search')
     setSearchParams(params, { replace: true })
   }
 
   const handleFilter = (key: string, value: string | null) => {
-    setPageIndex(0)
     const params = new URLSearchParams(searchParams)
+    params.delete('page')
     if (value) params.set(key, value)
     else params.delete(key)
     setSearchParams(params)
@@ -97,35 +117,7 @@ export function SubscriptionsListPage() {
 
   const clearAllFilters = () => {
     setSearch('')
-    setPageIndex(0)
     setSearchParams({})
-  }
-
-  const handleQuickPay = async (sub: SubscriptionWithDetails) => {
-    if (payingId) return
-    setPayingId(sub.id)
-    try {
-      const result = await queryClient.fetchQuery({
-        queryKey: [...qk.billing.lists, { subscriptionId: sub.id, organizationId: organizationId ?? undefined, limit: 50 }],
-        queryFn: () => billingApi.list({ subscriptionId: sub.id, organizationId: organizationId ?? undefined, limit: 50 }),
-        staleTime: 0,
-      })
-      const unpaid = result.periods
-        .filter((p) => p.status !== 'PAID' && p.subscription != null)
-        .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0]
-
-      if (unpaid) {
-        openQuickPay({ period: unpaid })
-      } else if (result.periods.some((p) => p.status !== 'PAID')) {
-        toast.error('No se pudo abrir el cobro: datos incompletos del período')
-      } else {
-        toast.info('No hay períodos pendientes para esta suscripción')
-      }
-    } catch {
-      toast.error('Error al consultar los períodos de la suscripción')
-    } finally {
-      setPayingId(null)
-    }
   }
 
   const isOverdueSub = (sub: SubscriptionWithDetails) => sub.hasDebt
@@ -163,14 +155,14 @@ export function SubscriptionsListPage() {
   )
 
   const handleNextPage = async () => {
-    if (pageIndex < (data?.pages.length ?? 0) - 1) {
-      setPageIndex((current) => current + 1)
+    if (pageIndex < loadedPages - 1) {
+      goToPage(pageIndex + 1)
       return
     }
 
     const result = await fetchNextPage()
     if (result.data?.pages[pageIndex + 1]) {
-      setPageIndex((current) => current + 1)
+      goToPage(pageIndex + 1)
     }
   }
 
@@ -199,7 +191,7 @@ export function SubscriptionsListPage() {
     return 'text-info bg-info/10'
   }
 
-  if (isLoading && !showEmpty) {
+  if ((isLoading || isLoadingSavedPage) && !showEmpty) {
     return (
       <div className="space-y-4 px-2">
         <div className="h-10 bg-muted rounded-xl animate-pulse" />
@@ -296,8 +288,8 @@ export function SubscriptionsListPage() {
               className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 data-[active=true]:ring-2 data-[active=true]:ring-destructive/50"
               data-active={hasOverdue === true}
             >
-              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex items-center gap-1 text-xs font-bold">
+                <AlertTriangle className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Vencidos
               </span>
               <span className="text-2xl font-bold mt-1 leading-none block">{metrics.debtCount}</span>
@@ -312,8 +304,8 @@ export function SubscriptionsListPage() {
               className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/50 data-[active=true]:ring-2 data-[active=true]:ring-warning/50"
               data-active={expiringFilter}
             >
-              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
-                <Clock className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex items-center gap-1 text-xs font-bold">
+                <Clock className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Por Vencer
               </span>
               <span className="text-2xl font-bold mt-1 leading-none block">{metrics.expiringCount}</span>
@@ -328,8 +320,8 @@ export function SubscriptionsListPage() {
               className="rounded-2xl border border-info/20 bg-info/10 text-info p-3 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/50 data-[active=true]:ring-2 data-[active=true]:ring-info/50"
               data-active={pendingFilter}
             >
-              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide">
-                <Box className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex items-center gap-1 text-xs font-bold">
+                <Box className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Pendientes
               </span>
               <span className="text-2xl font-bold mt-1 leading-none block">{metrics.pendingCount}</span>
@@ -388,16 +380,16 @@ export function SubscriptionsListPage() {
                         <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
                         <span className="truncate">{sub.client?.phone ?? 'Sin teléfono'}</span>
                         {sub.client?.dni && (
-                          <span className="text-[11px] sm:text-xs truncate shrink-0">• C.I. {sub.client.dni}</span>
+                          <span className="text-xs truncate shrink-0">• C.I. {sub.client.dni}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end shrink-0 gap-1 sm:gap-1.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${getStatusClass(sub.status)}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusClass(sub.status)}`}>
                         {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                       </span>
                       {sub.hasDebt && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide text-destructive bg-destructive/10">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide text-destructive bg-destructive/10">
                           Vencidos
                         </span>
                       )}
@@ -407,14 +399,14 @@ export function SubscriptionsListPage() {
                   {/* Middle Row: Service & Plan Details */}
                   <div className="flex items-center gap-2 sm:gap-3 bg-surface-muted rounded-lg sm:rounded-xl p-2 sm:p-2.5 mb-2 sm:mb-3 border border-border-subtle">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/10 text-primary shrink-0">
+                      <div className="flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-primary/10 text-primary-text shrink-0">
                         <Box className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </div>
                         <div className="min-w-0">
                           <p className="text-[13px] sm:text-sm font-semibold text-foreground truncate leading-tight">
                             {sub.accountNumber ? sub.accountNumber : sub.kitNumber}
                           </p>
-                          <p className="text-[11px] sm:text-xs text-muted-foreground font-medium truncate leading-tight mt-0.5">
+                          <p className="text-xs text-muted-foreground font-medium truncate leading-tight mt-0.5">
                             {sub.accountNumber ? `${sub.kitNumber} • ` : ''}{sub.plan.name}
                           </p>
                         </div>
@@ -422,7 +414,7 @@ export function SubscriptionsListPage() {
 
                     {/* Billing Day Badge */}
                     <div className="shrink-0 text-center px-2 sm:px-3 border-l border-border">
-                      <p className="text-[10px] font-medium uppercase text-subtle-foreground">Corte</p>
+                      <p className="text-xs font-medium uppercase text-subtle-foreground">Corte</p>
                       <p className="text-base sm:text-lg font-bold text-foreground leading-none mt-0.5">{sub.billingDay}</p>
                     </div>
                   </div>
@@ -458,7 +450,7 @@ export function SubscriptionsListPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            handleQuickPay(sub)
+                            void openOldestUnpaidPeriod(sub.id)
                           }}
                           disabled={payingId === sub.id}
                           className="flex items-center justify-center gap-1 h-10 min-w-10 px-3 sm:h-9 rounded-full sm:rounded-lg bg-primary text-primary-foreground text-[13px] sm:text-sm font-semibold shadow-sm transition-colors hover:bg-primary/90 active:scale-95 touch-manipulation disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -502,7 +494,7 @@ export function SubscriptionsListPage() {
                   variant="outline"
                   size="sm"
                   disabled={pageIndex === 0 || isFetchingNextPage}
-                  onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
+                  onClick={() => goToPage(pageIndex - 1)}
                 >
                   Anterior
                 </Button>

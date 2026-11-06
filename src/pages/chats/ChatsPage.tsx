@@ -544,7 +544,7 @@ export function ChatsPage() {
                               {isBulkSelected && <Check className="h-3.5 w-3.5" />}
                             </span>
                           )}
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary-text">
                             {initial}
                           </div>
 
@@ -558,7 +558,7 @@ export function ChatsPage() {
                               </div>
 
                               {latestMessage && (
-                                <span className="text-[11px] text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   {formatChatTime(latestMessage.createdAt)}
                                 </span>
                               )}
@@ -685,7 +685,7 @@ export function ChatsPage() {
                               <div className="flex items-center justify-between gap-3 mb-1">
                                 <span
                                   className={cn(
-                                    'text-[10px] font-semibold uppercase tracking-wide',
+                                    'text-xs font-semibold uppercase tracking-wide',
                                     isOutbound ? 'text-primary-foreground/85' : 'text-muted-foreground'
                                   )}
                                 >
@@ -693,7 +693,7 @@ export function ChatsPage() {
                                 </span>
                                 <span
                                   className={cn(
-                                    'text-[11px]',
+                                    'text-xs',
                                     isOutbound ? 'text-primary-foreground/75' : 'text-muted-foreground'
                                   )}
                                 >
@@ -705,7 +705,7 @@ export function ChatsPage() {
 
                               <div
                                 className={cn(
-                                  'mt-2 flex items-center justify-end gap-2 text-[11px]',
+                                  'mt-2 flex items-center justify-end gap-2 text-xs',
                                   isOutbound ? 'text-primary-foreground/80' : 'text-muted-foreground'
                                 )}
                               >

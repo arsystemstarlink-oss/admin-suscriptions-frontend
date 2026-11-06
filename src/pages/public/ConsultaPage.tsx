@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BrandMark } from '@/components/brand/BrandMark'
-import { ExchangeTicker } from '@/components/exchange/ExchangeTicker'
+import { ExchangeRateBar } from '@/components/exchange/ExchangeRateBar'
 import { InstallConsultaButton } from '@/components/public/InstallConsultaButton'
 import { TurnstileWidget } from '@/components/public/TurnstileWidget'
 import { isCaptchaEnabled, TURNSTILE_SITE_KEY } from '@/lib/turnstile'
@@ -421,7 +421,7 @@ export function ConsultaPage() {
           <BrandMark size="sm" variant="light" />
         </div>
       </header>
-      <ExchangeTicker />
+      <ExchangeRateBar />
 
       <main className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6 pb-16">
         <InstallConsultaButton orgName={orgName} />
@@ -775,7 +775,7 @@ export function ConsultaPage() {
                               <div className="flex items-center justify-between gap-2">
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-semibold text-foreground">
-                                    <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-active text-[11px] font-bold text-foreground">
+                                    <span className="mr-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface-active text-xs font-bold text-foreground">
                                       {index + 1}
                                     </span>
                                     {period.periodLabel}

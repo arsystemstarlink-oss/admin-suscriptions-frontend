@@ -186,7 +186,7 @@ export function EditOrganizationSheet({
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5 text-primary shrink-0" />
+              <Building2 className="h-5 w-5 text-primary-text shrink-0" />
             </div>
             <div>
               <SheetTitle>Editar Organización</SheetTitle>

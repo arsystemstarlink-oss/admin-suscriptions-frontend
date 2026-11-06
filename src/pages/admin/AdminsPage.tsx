@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Users, Edit, Trash2, ShieldCheck, Building2 } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import {
   Select,
@@ -26,6 +27,7 @@ export function AdminsPage() {
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const [deletingAdmin, setDeletingAdmin] = useState<Admin | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
 
   const organizationIdFilter = searchParams.get('organizationId') || undefined
@@ -157,18 +159,17 @@ export function AdminsPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => setEditingAdmin(admin)}
+                  aria-label={`Editar a ${admin.name}`}
+                  title={`Editar a ${admin.name}`}
                 >
                   <Edit className="h-4 w-4 shrink-0" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => {
-                    if (confirm(`¿Eliminar a ${admin.name}? Esta acción no se puede deshacer.`)) {
-                      deleteMutation.mutate(admin.id)
-                    }
-                  }}
-                  disabled={deleteMutation.isPending}
+                  onClick={() => setDeletingAdmin(admin)}
+                  aria-label={`Eliminar a ${admin.name}`}
+                  title={`Eliminar a ${admin.name}`}
                 >
                   <Trash2 className="h-4 w-4 text-destructive shrink-0" />
                 </Button>
@@ -179,6 +180,21 @@ export function AdminsPage() {
       </ListPageLayout>
 
       <CreateAdminSheet open={createOpen} onOpenChange={setCreateOpen} />
+
+      <ConfirmDialog
+        open={!!deletingAdmin}
+        onOpenChange={(open) => !open && setDeletingAdmin(null)}
+        title="Eliminar administrador"
+        description={`¿Eliminar a ${deletingAdmin?.name ?? ''}? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        pendingLabel="Eliminando..."
+        isPending={deleteMutation.isPending}
+        destructive
+        onConfirm={() => {
+          if (!deletingAdmin) return
+          deleteMutation.mutate(deletingAdmin.id, { onSettled: () => setDeletingAdmin(null) })
+        }}
+      />
 
       <EditAdminSheet
         admin={editingAdmin!}

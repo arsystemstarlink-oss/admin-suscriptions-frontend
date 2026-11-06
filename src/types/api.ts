@@ -60,6 +60,50 @@ export interface OrganizationWhatsAppConfig {
     missing: string[]
     usingLegacyTemplates: boolean
   }
+  /** `null` si el servidor no tiene una dirección pública https. */
+  webhooks: { inbound: string; status: string } | null
+}
+
+export type WhatsAppTemplateKey = keyof OrganizationWhatsAppTemplates
+
+export interface WhatsAppTemplateState {
+  key: WhatsAppTemplateKey
+  label: string
+  defaultBody: string
+  variables: { placeholder: string; description: string }[]
+  activeContentSid: string | null
+  request: {
+    contentSid: string
+    name: string
+    body: string
+    status: 'pending' | 'approved' | 'rejected' | 'blocked'
+    rejectionReason?: string
+    submittedAt: string
+  } | null
+}
+
+export interface WhatsAppTemplatesResponse {
+  templates: WhatsAppTemplateState[]
+}
+
+export interface WhatsAppConnectionCheck {
+  status:
+    | 'not_configured'
+    | 'invalid_credentials'
+    | 'sender_not_found'
+    | 'sender_offline'
+    | 'unverified'
+    | 'ok'
+  message: string
+  inboundWebhookConnected: boolean | null
+}
+
+export interface WhatsAppFailureGroup {
+  message: string
+  errorCode?: number
+  count: number
+  lastAt: string
+  recipients: string[]
 }
 
 export interface UpdateOrganizationWhatsAppConfigRequest {
@@ -1110,6 +1154,10 @@ export type ErrorCode =
   | 'TWILIO_NUMBER_IN_USE'
   | 'TWILIO_NUMBER_AMBIGUOUS'
   | 'INVALID_TWILIO_CONFIG'
+  | 'INVALID_TWILIO_CREDENTIALS'
+  | 'INVALID_WHATSAPP_TEMPLATE'
+  | 'WHATSAPP_TEMPLATE_PENDING'
+  | 'WHATSAPP_TEMPLATE_REQUIRED'
   | 'PASSWORD_CHANGE_REQUIRED'
   | 'INVITE_NOT_FOUND'
   | 'INVITE_EXPIRED'

@@ -32,6 +32,7 @@ import {
   ProfilePage,
   AdminsPage,
   OrganizationsPage,
+  WhatsAppSettingsPage,
   SetupPage,
   ChatsPage,
   ConsultaPage,
@@ -261,6 +262,15 @@ export const router = createBrowserRouter(
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'whatsapp',
+            handle: { title: 'WhatsApp' },
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <WhatsAppSettingsPage />
               </Suspense>
             ),
           },

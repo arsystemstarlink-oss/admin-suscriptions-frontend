@@ -8,6 +8,7 @@ import type {
   RegisterOrganizationPlanPaymentRequest,
   UpdateOrganizationRequest,
   UpdateOrganizationWhatsAppConfigRequest,
+  WhatsAppTemplateKey,
 } from '@/types/api'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
@@ -58,11 +59,73 @@ export function useUpdateOrganizationWhatsAppConfig() {
     }) => organizationsApi.updateWhatsAppConfig(id, data),
     onSuccess: (config, variables) => {
       qc.setQueryData(qk.organizations.whatsappConfig(variables.id), config)
+      qc.invalidateQueries({ queryKey: qk.organizations.whatsappConnection(variables.id) })
+      qc.invalidateQueries({ queryKey: qk.organizations.whatsappTemplates(variables.id) })
       qc.invalidateQueries({ queryKey: qk.organizations.lists })
       qc.invalidateQueries({ queryKey: qk.organizations.detail(variables.id) })
       toast.success('Configuración de WhatsApp actualizada')
     },
     onError: (err) => handleApiError(err),
+  })
+}
+
+/** Consulta a Twilio, así que no se repite cada vez que la ventana recupera el foco. */
+export function useWhatsAppConnectionCheck(id: string) {
+  return useQuery({
+    queryKey: qk.organizations.whatsappConnection(id),
+    queryFn: () => organizationsApi.checkWhatsAppConnection(id),
+    enabled: Boolean(id),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  })
+}
+
+const TEMPLATE_REVIEW_POLL_MS = 60_000
+
+export function useWhatsAppTemplates(id: string) {
+  return useQuery({
+    queryKey: qk.organizations.whatsappTemplates(id),
+    queryFn: () => organizationsApi.getWhatsAppTemplates(id),
+    enabled: Boolean(id),
+    refetchInterval: (query) =>
+      query.state.data?.templates.some((template) => template.request?.status === 'pending')
+        ? TEMPLATE_REVIEW_POLL_MS
+        : false,
+  })
+}
+
+export function useSubmitWhatsAppTemplate() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, key, body }: { id: string; key: WhatsAppTemplateKey; body: string }) =>
+      organizationsApi.submitWhatsAppTemplate(id, key, body),
+    onSuccess: (templates, variables) => {
+      qc.setQueryData(qk.organizations.whatsappTemplates(variables.id), templates)
+      toast.success('Plantilla enviada a revisión de WhatsApp')
+    },
+    onError: (err) => handleApiError(err),
+  })
+}
+
+export function useSendWhatsAppTestMessage() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, to }: { id: string; to: string }) => organizationsApi.sendWhatsAppTestMessage(id, to),
+    onSuccess: (_result, variables) => {
+      qc.invalidateQueries({ queryKey: qk.organizations.whatsappFailures(variables.id) })
+      toast.success('Prueba enviada. Revisa tu WhatsApp.')
+    },
+    onError: (err) => handleApiError(err),
+  })
+}
+
+export function useWhatsAppFailures(id: string) {
+  return useQuery({
+    queryKey: qk.organizations.whatsappFailures(id),
+    queryFn: () => organizationsApi.getWhatsAppFailures(id),
+    enabled: Boolean(id),
   })
 }
 

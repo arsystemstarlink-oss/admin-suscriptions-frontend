@@ -1,49 +1,33 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, ClipboardCopy, LoaderCircle, MessageCircle, Save } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ExternalLink, LoaderCircle, MessageCircle, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
 import {
   useOrganizationWhatsAppConfig,
   useUpdateOrganizationWhatsAppConfig,
 } from '@/hooks/useOrganizations'
+import {
+  StepHeading,
+  WhatsAppConnectionStatus,
+  WhatsAppFailuresSection,
+  WhatsAppTemplatesStep,
+  WhatsAppTestStep,
+  WhatsAppWebhooksStep,
+} from '@/components/organizations/WhatsAppSetupSections'
 import type { OrganizationWhatsAppConfig } from '@/types/api'
+
+const TWILIO_SIGNUP_URL = 'https://www.twilio.com/try-twilio'
+const TWILIO_CONSOLE_URL = 'https://console.twilio.com/'
+
+/** Sin credenciales guardadas, el `enabled: false` inicial no es una decisión de nadie. */
+function isWhatsAppEnabled(twilio: OrganizationWhatsAppConfig['twilio']): boolean {
+  return twilio.enabled !== false || !twilio.accountSid
+}
 
 interface OrganizationWhatsAppSettingsProps {
   organizationId: string
   organizationName: string
-}
-
-interface WhatsAppFormState {
-  accountSid: string
-  authToken: string
-  phoneNumber: string
-  twilioEnabled: boolean
-  reminderDaysBefore: string
-  dueDateWarningEnabled: boolean
-  suspensionNoticeEnabled: boolean
-  reminderTemplate: string
-  dueDateWarningTemplate: string
-  suspensionNoticeTemplate: string
-}
-
-const DEFAULT_DUE_DATE_WARNING_DRAFT =
-  'Hola {{1}}, el servicio {{2}} tiene un período vencido desde el {{3}}. Por favor, comunícate con nosotros para regularizar el pago.'
-
-function getFormState(config: OrganizationWhatsAppConfig): WhatsAppFormState {
-  return {
-    accountSid: config.twilio.accountSid || '',
-    authToken: '',
-    phoneNumber: config.twilio.phoneNumber || '',
-    twilioEnabled: config.twilio.enabled !== false,
-    reminderDaysBefore: config.rules.reminderDaysBefore.join(', '),
-    dueDateWarningEnabled: config.rules.dueDateWarningEnabled,
-    suspensionNoticeEnabled: config.rules.suspensionNoticeEnabled,
-    reminderTemplate: config.templates.reminder || '',
-    dueDateWarningTemplate: config.templates.dueDateWarning || '',
-    suspensionNoticeTemplate: config.templates.suspensionNotice || '',
-  }
 }
 
 function ToggleRow({
@@ -79,55 +63,218 @@ function ToggleRow({
   )
 }
 
-export function OrganizationWhatsAppSettings({
+function FormError({ message, error }: { message: string | null; error?: unknown }) {
+  const text = message ?? (error ? (error instanceof Error ? error.message : 'No se pudo guardar.') : null)
+  if (!text) return null
+  return (
+    <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+      {text}
+    </p>
+  )
+}
+
+function SaveButton({ pending, label }: { pending: boolean; label: string }) {
+  return (
+    <div className="flex justify-end">
+      <Button type="submit" disabled={pending}>
+        {pending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+        {pending ? 'Guardando...' : label}
+      </Button>
+    </div>
+  )
+}
+
+function ConnectionStep({
   organizationId,
-  organizationName,
-}: OrganizationWhatsAppSettingsProps) {
-  const configQuery = useOrganizationWhatsAppConfig(organizationId)
+  config,
+}: {
+  organizationId: string
+  config: OrganizationWhatsAppConfig
+}) {
   const updateMutation = useUpdateOrganizationWhatsAppConfig()
-  const [form, setForm] = useState<WhatsAppFormState | null>(null)
-  const [dueDateWarningDraft, setDueDateWarningDraft] = useState(DEFAULT_DUE_DATE_WARNING_DRAFT)
+  const [accountSid, setAccountSid] = useState(config.twilio.accountSid || '')
+  const [authToken, setAuthToken] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState(config.twilio.phoneNumber || '')
+  const [enabled, setEnabled] = useState(isWhatsAppEnabled(config.twilio))
   const [removeAuthToken, setRemoveAuthToken] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
 
+  // Por valor: guardar las reglas devuelve otro objeto y no debe borrar lo que se está editando aquí.
+  const savedEnabled = isWhatsAppEnabled(config.twilio)
   useEffect(() => {
-    if (!configQuery.data) return
-    setForm(getFormState(configQuery.data))
-    setRemoveAuthToken(false)
+    setAccountSid(config.twilio.accountSid || '')
+    setPhoneNumber(config.twilio.phoneNumber || '')
+    setEnabled(savedEnabled)
+  }, [config.twilio.accountSid, config.twilio.phoneNumber, savedEnabled])
+
+  const save = (event: React.FormEvent) => {
+    event.preventDefault()
     setValidationError(null)
-  }, [configQuery.data])
-
-  useEffect(() => {
-    setDueDateWarningDraft(DEFAULT_DUE_DATE_WARNING_DRAFT)
-  }, [organizationId])
-
-  const updateForm = <K extends keyof WhatsAppFormState>(key: K, value: WhatsAppFormState[K]) => {
-    setForm((current) => (current ? { ...current, [key]: value } : current))
-  }
-
-  const copyDueDateWarningDraft = async () => {
-    const missingVariables = ['{{1}}', '{{2}}', '{{3}}'].filter(
-      (variable) => !dueDateWarningDraft.includes(variable),
-    )
-    if (missingVariables.length > 0) {
-      toast.error(`Incluye las variables requeridas: ${missingVariables.join(', ')}.`)
+    if (phoneNumber.trim() && !/^\+?[1-9]\d{1,14}$/.test(phoneNumber.trim())) {
+      setValidationError('El número de WhatsApp debe usar formato internacional, por ejemplo +584223552626.')
       return
     }
-
-    try {
-      await navigator.clipboard.writeText(dueDateWarningDraft)
-      toast.success('Borrador copiado. Pégalo en Twilio para solicitar la aprobación.')
-    } catch {
-      toast.error('No se pudo copiar el borrador. Revisa los permisos del portapapeles.')
-    }
+    updateMutation.mutate(
+      {
+        id: organizationId,
+        data: {
+          twilio: {
+            accountSid: accountSid.trim(),
+            phoneNumber: phoneNumber.trim(),
+            enabled,
+            ...(removeAuthToken ? { authToken: null } : authToken.trim() ? { authToken: authToken.trim() } : {}),
+          },
+        },
+      },
+      {
+        onSuccess: () => {
+          setAuthToken('')
+          setRemoveAuthToken(false)
+        },
+      },
+    )
   }
 
-  const save = async () => {
-    if (!form) return
-    setValidationError(null)
+  return (
+    <form onSubmit={save} className="space-y-4">
+      <StepHeading
+        step={1}
+        title="Conectar tu cuenta de Twilio"
+        description="Los mensajes salen de tu propia cuenta y número de WhatsApp. Comprobamos los datos con Twilio al guardar."
+      />
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        <a
+          href={TWILIO_SIGNUP_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+        >
+          Crear una cuenta de Twilio
+          <ExternalLink className="h-3 w-3" />
+        </a>
+        <a
+          href={TWILIO_CONSOLE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+        >
+          Ver mi Account SID y Auth Token
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
 
-    const reminderDaysBefore = form.reminderDaysBefore.trim()
-      ? form.reminderDaysBefore.split(',').map((part) => Number(part.trim()))
+      <WhatsAppConnectionStatus organizationId={organizationId} />
+
+      <div className="space-y-2">
+        <Label htmlFor={`org-whatsapp-account-sid-${organizationId}`}>Account SID</Label>
+        <Input
+          id={`org-whatsapp-account-sid-${organizationId}`}
+          autoComplete="off"
+          placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          value={accountSid}
+          onChange={(event) => setAccountSid(event.target.value)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor={`org-whatsapp-auth-token-${organizationId}`}>Auth Token</Label>
+          {config.twilio.authTokenConfigured && (
+            <button
+              type="button"
+              className="text-xs font-medium text-destructive hover:underline"
+              onClick={() => {
+                setRemoveAuthToken((current) => !current)
+                setAuthToken('')
+              }}
+            >
+              {removeAuthToken ? 'Cancelar borrado' : 'Borrar token guardado'}
+            </button>
+          )}
+        </div>
+        <Input
+          id={`org-whatsapp-auth-token-${organizationId}`}
+          type="password"
+          autoComplete="new-password"
+          disabled={removeAuthToken}
+          placeholder={
+            removeAuthToken
+              ? 'Se eliminará al guardar'
+              : config.twilio.authTokenConfigured
+                ? '•••••••• (vacío para conservar el actual)'
+                : 'Auth Token de Twilio'
+          }
+          value={authToken}
+          onChange={(event) => setAuthToken(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          El token guardado nunca se muestra. Todos los administradores de esta organización pueden actualizarlo.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`org-whatsapp-phone-${organizationId}`}>Número de WhatsApp Business</Label>
+        <Input
+          id={`org-whatsapp-phone-${organizationId}`}
+          autoComplete="off"
+          placeholder="+584223552626"
+          value={phoneNumber}
+          onChange={(event) => setPhoneNumber(event.target.value)}
+        />
+      </div>
+
+      <ToggleRow
+        id={`org-whatsapp-enabled-${organizationId}`}
+        checked={enabled}
+        onChange={setEnabled}
+        title="Habilitar WhatsApp para esta organización"
+        description="Al desactivarlo, las tareas automáticas siguen procesando períodos pero no se envían mensajes."
+      />
+
+      <FormError message={validationError} error={updateMutation.error} />
+      <SaveButton pending={updateMutation.isPending} label="Guardar y comprobar" />
+    </form>
+  )
+}
+
+const MANUAL_TEMPLATE_FIELDS = [
+  { key: 'reminder', label: 'Recordatorio de pago' },
+  { key: 'dueDateWarning', label: 'Aviso de vencimiento' },
+  { key: 'suspensionNotice', label: 'Aviso de suspensión' },
+] as const
+
+function RulesSection({
+  organizationId,
+  config,
+}: {
+  organizationId: string
+  config: OrganizationWhatsAppConfig
+}) {
+  const updateMutation = useUpdateOrganizationWhatsAppConfig()
+  const [reminderDays, setReminderDays] = useState(config.rules.reminderDaysBefore.join(', '))
+  const [dueDateWarningEnabled, setDueDateWarningEnabled] = useState(config.rules.dueDateWarningEnabled)
+  const [suspensionNoticeEnabled, setSuspensionNoticeEnabled] = useState(config.rules.suspensionNoticeEnabled)
+  const [templates, setTemplates] = useState(config.templates)
+  const [validationError, setValidationError] = useState<string | null>(null)
+
+  // Por valor: guardar la conexión devuelve otro objeto y no debe borrar lo que se está editando aquí.
+  const savedRules = JSON.stringify(config.rules)
+  const savedTemplates = JSON.stringify(config.templates)
+  useEffect(() => {
+    const rules: OrganizationWhatsAppConfig['rules'] = JSON.parse(savedRules)
+    setReminderDays(rules.reminderDaysBefore.join(', '))
+    setDueDateWarningEnabled(rules.dueDateWarningEnabled)
+    setSuspensionNoticeEnabled(rules.suspensionNoticeEnabled)
+  }, [savedRules])
+  useEffect(() => {
+    setTemplates(JSON.parse(savedTemplates))
+  }, [savedTemplates])
+
+  const save = (event: React.FormEvent) => {
+    event.preventDefault()
+    setValidationError(null)
+    const reminderDaysBefore = reminderDays.trim()
+      ? reminderDays.split(',').map((part) => Number(part.trim()))
       : []
     if (
       reminderDaysBefore.some((day) => !Number.isInteger(day) || day < 1 || day > 30) ||
@@ -136,59 +283,103 @@ export function OrganizationWhatsAppSettings({
       setValidationError('Los días de recordatorio deben ser números únicos entre 1 y 30, separados por comas.')
       return
     }
-    if (form.phoneNumber.trim() && !/^\+?[1-9]\d{1,14}$/.test(form.phoneNumber.trim())) {
-      setValidationError('El número de WhatsApp debe usar formato internacional, por ejemplo +584223552626.')
-      return
-    }
-
-    const twilio: NonNullable<Parameters<typeof updateMutation.mutateAsync>[0]['data']['twilio']> = {
-      accountSid: form.accountSid.trim(),
-      phoneNumber: form.phoneNumber.trim(),
-      enabled: form.twilioEnabled,
-    }
-    if (removeAuthToken) {
-      twilio.authToken = null
-    } else if (form.authToken.trim()) {
-      twilio.authToken = form.authToken.trim()
-    }
-
-    try {
-      const updated = await updateMutation.mutateAsync({
-        id: organizationId,
-        data: {
-          twilio,
-          rules: {
-            reminderDaysBefore,
-            dueDateWarningEnabled: form.dueDateWarningEnabled,
-            suspensionNoticeEnabled: form.suspensionNoticeEnabled,
-          },
-          templates: {
-            reminder: form.reminderTemplate.trim() || null,
-            dueDateWarning: form.dueDateWarningTemplate.trim() || null,
-            suspensionNotice: form.suspensionNoticeTemplate.trim() || null,
-          },
+    updateMutation.mutate({
+      id: organizationId,
+      data: {
+        rules: { reminderDaysBefore, dueDateWarningEnabled, suspensionNoticeEnabled },
+        templates: {
+          reminder: templates.reminder?.trim() || null,
+          dueDateWarning: templates.dueDateWarning?.trim() || null,
+          suspensionNotice: templates.suspensionNotice?.trim() || null,
         },
-      })
-      setForm(getFormState(updated))
-      setRemoveAuthToken(false)
-    } catch {
-      // The mutation hook reports API failures through the standard error handler.
-    }
+      },
+    })
   }
 
-  if (configQuery.isLoading || !form) {
-    if (configQuery.isError) {
-      return (
-        <div className="space-y-3 rounded-md border border-destructive/20 bg-destructive/10 p-4">
-          <p className="text-sm text-destructive">
-            No se pudo cargar la configuración de WhatsApp para {organizationName}.
+  return (
+    <form onSubmit={save} className="space-y-4">
+      <StepHeading
+        title="Cuándo avisar"
+        description="Las reglas se evalúan con la fecha de vencimiento del período activo."
+      />
+
+      <div className="space-y-2">
+        <Label htmlFor={`org-whatsapp-reminder-days-${organizationId}`}>Días antes del vencimiento</Label>
+        <Input
+          id={`org-whatsapp-reminder-days-${organizationId}`}
+          inputMode="numeric"
+          placeholder="3, 5"
+          value={reminderDays}
+          onChange={(event) => setReminderDays(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          Escribe días separados por coma, entre 1 y 30. Deja vacío para desactivar estos recordatorios.
+        </p>
+      </div>
+
+      <ToggleRow
+        id={`org-whatsapp-due-warning-${organizationId}`}
+        checked={dueDateWarningEnabled}
+        onChange={setDueDateWarningEnabled}
+        title="Aviso el día de vencimiento"
+        description="Envía una advertencia cuando el período pendiente vence hoy."
+      />
+      <ToggleRow
+        id={`org-whatsapp-suspension-notice-${organizationId}`}
+        checked={suspensionNoticeEnabled}
+        onChange={setSuspensionNoticeEnabled}
+        title="Aviso al suspender el servicio"
+        description="Envía un mensaje cuando la suscripción cambia de activa a suspendida."
+      />
+
+      <details className="rounded-md border border-border bg-surface p-3">
+        <summary className="cursor-pointer text-sm font-medium text-foreground">
+          Avanzado: usar plantillas ya aprobadas en Twilio
+        </summary>
+        <div className="mt-3 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Solo si ya tienes plantillas propias. Deben usar las mismas variables que las de esta página.
           </p>
-          <Button type="button" variant="outline" size="sm" onClick={() => configQuery.refetch()}>
-            Reintentar
-          </Button>
+          {MANUAL_TEMPLATE_FIELDS.map(({ key, label }) => (
+            <div key={key} className="space-y-2">
+              <Label htmlFor={`org-whatsapp-template-${key}-${organizationId}`}>{label} (Content SID)</Label>
+              <Input
+                id={`org-whatsapp-template-${key}-${organizationId}`}
+                placeholder="HX..."
+                value={templates[key] ?? ''}
+                onChange={(event) => setTemplates((current) => ({ ...current, [key]: event.target.value }))}
+              />
+            </div>
+          ))}
         </div>
-      )
-    }
+      </details>
+
+      <FormError message={validationError} error={updateMutation.error} />
+      <SaveButton pending={updateMutation.isPending} label="Guardar reglas" />
+    </form>
+  )
+}
+
+export function OrganizationWhatsAppSettings({
+  organizationId,
+  organizationName,
+}: OrganizationWhatsAppSettingsProps) {
+  const configQuery = useOrganizationWhatsAppConfig(organizationId)
+  const config = configQuery.data
+
+  if (configQuery.isError && !config) {
+    return (
+      <div className="space-y-3 rounded-md border border-destructive/20 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive">
+          No se pudo cargar la configuración de WhatsApp para {organizationName}.
+        </p>
+        <Button type="button" variant="outline" size="sm" onClick={() => configQuery.refetch()}>
+          Reintentar
+        </Button>
+      </div>
+    )
+  }
+  if (!config) {
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
         <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -197,7 +388,13 @@ export function OrganizationWhatsAppSettings({
     )
   }
 
-  const readiness = configQuery.data?.readiness
+  const twilioReady = Boolean(
+    config.twilio.accountSid &&
+      config.twilio.authTokenConfigured &&
+      config.twilio.phoneNumber &&
+      config.twilio.enabled !== false,
+  )
+  const hasActiveTemplate = Object.values(config.templates).some(Boolean)
 
   return (
     <section
@@ -212,247 +409,50 @@ export function OrganizationWhatsAppSettings({
             WhatsApp y notificaciones
           </h3>
           <p className="text-xs text-muted-foreground">
-            Credenciales, plantillas y condiciones de envío para {organizationName}.
+            Conexión, plantillas y condiciones de envío para {organizationName}.
           </p>
         </div>
       </div>
 
-      {readiness?.ready ? (
+      {config.readiness.ready ? (
         <div className="flex items-start gap-2 rounded-md border border-success/20 bg-success/10 p-3 text-sm text-success">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>La configuración tiene los requisitos para enviar las notificaciones activas.</span>
+          <span>Todo listo para enviar las notificaciones activas.</span>
         </div>
       ) : (
         <div className="flex items-start gap-2 rounded-md border border-warning/20 bg-warning/10 p-3 text-sm text-warning">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-medium">Configuración incompleta</p>
+            <p className="font-medium">Falta para activar los avisos</p>
             <ul className="mt-1 list-inside list-disc">
-              {(readiness?.missing || []).map((missing) => <li key={missing}>{missing}</li>)}
+              {config.readiness.missing.map((missing) => <li key={missing}>{missing}</li>)}
             </ul>
           </div>
         </div>
       )}
 
-      {readiness?.usingLegacyTemplates && (
+      {config.readiness.usingLegacyTemplates && (
         <p className="rounded-md border border-border bg-surface-muted p-3 text-xs text-muted-foreground">
           Las plantillas actuales provienen de la configuración antigua del servidor. Al guardar,
           quedarán guardadas explícitamente para esta organización.
         </p>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <h4 className="text-sm font-medium text-foreground">Conexión Twilio</h4>
-          <p className="text-xs text-muted-foreground">
-            Usa las credenciales y el número de WhatsApp Business de esta organización.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-account-sid">Account SID</Label>
-          <Input
-            id="org-whatsapp-account-sid"
-            autoComplete="off"
-            placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            value={form.accountSid}
-            onChange={(event) => updateForm('accountSid', event.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="org-whatsapp-auth-token">Auth Token</Label>
-            {configQuery.data?.twilio.authTokenConfigured && (
-              <button
-                type="button"
-                className="text-xs font-medium text-destructive hover:underline"
-                onClick={() => {
-                  setRemoveAuthToken((current) => !current)
-                  updateForm('authToken', '')
-                }}
-              >
-                {removeAuthToken ? 'Cancelar borrado' : 'Borrar token guardado'}
-              </button>
-            )}
-          </div>
-          <Input
-            id="org-whatsapp-auth-token"
-            type="password"
-            autoComplete="new-password"
-            disabled={removeAuthToken}
-            placeholder={
-              removeAuthToken
-                ? 'Se eliminará al guardar'
-                : configQuery.data?.twilio.authTokenConfigured
-                  ? '•••••••• (vacío para conservar el actual)'
-                  : 'Auth Token de Twilio'
-            }
-            value={form.authToken}
-            onChange={(event) => updateForm('authToken', event.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            El token guardado nunca se muestra. Déjalo vacío para conservarlo o escribe uno nuevo
-            para reemplazarlo. Todos los administradores de esta organización pueden actualizar
-            estas credenciales.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-phone">Número de WhatsApp Business</Label>
-          <Input
-            id="org-whatsapp-phone"
-            autoComplete="off"
-            placeholder="+584223552626"
-            value={form.phoneNumber}
-            onChange={(event) => updateForm('phoneNumber', event.target.value)}
-          />
-        </div>
-
-        <ToggleRow
-          id="org-whatsapp-enabled"
-          checked={form.twilioEnabled}
-          onChange={(checked) => updateForm('twilioEnabled', checked)}
-          title="Habilitar WhatsApp para esta organización"
-          description="Al desactivarlo, el cron sigue procesando períodos pero no se envían mensajes."
-        />
+      <ConnectionStep organizationId={organizationId} config={config} />
+      <div className="border-t border-border pt-4">
+        <WhatsAppTemplatesStep organizationId={organizationId} twilioReady={twilioReady} />
       </div>
-
-      <div className="space-y-4 border-t border-border pt-4">
-        <div>
-          <h4 className="text-sm font-medium text-foreground">Reglas de notificación</h4>
-          <p className="text-xs text-muted-foreground">
-            Las reglas se evalúan con la fecha de vencimiento del período activo.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-reminder-days">Días antes del vencimiento</Label>
-          <Input
-            id="org-whatsapp-reminder-days"
-            inputMode="numeric"
-            placeholder="3, 5"
-            value={form.reminderDaysBefore}
-            onChange={(event) => updateForm('reminderDaysBefore', event.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Escribe días separados por coma, entre 1 y 30. Deja vacío para desactivar estos
-            recordatorios. El valor inicial es 3.
-          </p>
-        </div>
-
-        <ToggleRow
-          id="org-whatsapp-due-warning"
-          checked={form.dueDateWarningEnabled}
-          onChange={(checked) => updateForm('dueDateWarningEnabled', checked)}
-          title="Aviso el día de vencimiento"
-          description="Envía una advertencia cuando el período pendiente vence hoy."
-        />
-        <ToggleRow
-          id="org-whatsapp-suspension-notice"
-          checked={form.suspensionNoticeEnabled}
-          onChange={(checked) => updateForm('suspensionNoticeEnabled', checked)}
-          title="Aviso al suspender el servicio"
-          description="Envía un mensaje cuando la suscripción cambia de activa a suspendida."
-        />
+      <div className="border-t border-border pt-4">
+        <WhatsAppWebhooksStep organizationId={organizationId} webhooks={config.webhooks} />
       </div>
-
-      <div className="space-y-4 border-t border-border pt-4">
-        <div>
-          <h4 className="text-sm font-medium text-foreground">Plantillas aprobadas de Twilio</h4>
-          <p className="text-xs text-muted-foreground">
-            Configura el Content SID que existe en la cuenta Twilio de la organización.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-reminder-template">Plantilla de recordatorio</Label>
-          <Input
-            id="org-whatsapp-reminder-template"
-            placeholder="HX..."
-            value={form.reminderTemplate}
-            onChange={(event) => updateForm('reminderTemplate', event.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Variables: {'{1}'} nombre del cliente, {'{2}'} fecha de vencimiento.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-due-template-draft">Borrador personalizado del aviso de vencimiento</Label>
-          <textarea
-            id="org-whatsapp-due-template-draft"
-            value={dueDateWarningDraft}
-            onChange={(event) => setDueDateWarningDraft(event.target.value)}
-            rows={4}
-            className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            placeholder="Escribe aquí el texto que quieres enviar a revisión de WhatsApp."
-          />
-          <p className="text-xs text-muted-foreground">
-            Personaliza el texto y conserva {'{{1}}'} nombre, {'{{2}}'} código del servicio y {'{{3}}'} fecha de vencimiento.
-            Copia el borrador y solicita su aprobación en Twilio; este formulario no lo envía ni lo somete.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={copyDueDateWarningDraft}
-            disabled={!dueDateWarningDraft.trim()}
-          >
-            <ClipboardCopy className="mr-2 h-4 w-4" />
-            Copiar para solicitar aprobación
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-due-template">Content SID aprobado del aviso de vencimiento</Label>
-          <Input
-            id="org-whatsapp-due-template"
-            placeholder="HX..."
-            value={form.dueDateWarningTemplate}
-            onChange={(event) => updateForm('dueDateWarningTemplate', event.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Pega aquí el Content SID después de que Twilio apruebe el borrador.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="org-whatsapp-suspension-template">Plantilla de aviso de suspensión</Label>
-          <Input
-            id="org-whatsapp-suspension-template"
-            placeholder="HX..."
-            value={form.suspensionNoticeTemplate}
-            onChange={(event) => updateForm('suspensionNoticeTemplate', event.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">
-            Variables: {'{1}'} nombre del cliente, {'{2}'} código del servicio.
-          </p>
-        </div>
+      <div className="border-t border-border pt-4">
+        <WhatsAppTestStep organizationId={organizationId} disabled={!twilioReady || !hasActiveTemplate} />
       </div>
-
-      {validationError && (
-        <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-          {validationError}
-        </p>
-      )}
-
-      {updateMutation.isError && (
-        <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-          {updateMutation.error instanceof Error
-            ? updateMutation.error.message
-            : 'No se pudo guardar la configuración de WhatsApp.'}
-        </p>
-      )}
-
-      <div className="flex justify-end">
-        <Button type="button" onClick={save} disabled={updateMutation.isPending}>
-          {updateMutation.isPending ? (
-            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          {updateMutation.isPending ? 'Guardando...' : 'Guardar configuración WhatsApp'}
-        </Button>
+      <div className="border-t border-border pt-4">
+        <RulesSection organizationId={organizationId} config={config} />
+      </div>
+      <div className="border-t border-border pt-4">
+        <WhatsAppFailuresSection organizationId={organizationId} />
       </div>
     </section>
   )

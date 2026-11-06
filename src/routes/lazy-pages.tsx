@@ -17,6 +17,7 @@ export const SubscriptionsLayout = lazy(() => import('@/components/layout/Subscr
 export const PaymentsLayout = lazy(() => import('@/components/layout/PaymentsLayout').then(m => ({ default: m.PaymentsLayout })))
 export const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
 export const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
+export const WhatsAppSettingsPage = lazy(() => import('@/pages/admin/WhatsAppSettingsPage').then(m => ({ default: m.WhatsAppSettingsPage })))
 export const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
 export const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
 export const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))

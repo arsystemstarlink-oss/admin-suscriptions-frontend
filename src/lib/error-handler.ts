@@ -490,6 +490,26 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'Completa Account SID, Auth Token y número de WhatsApp para habilitar WhatsApp.',
   },
+  INVALID_TWILIO_CREDENTIALS: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Twilio rechazó las credenciales. Revisa el Account SID y el Auth Token.',
+  },
+  INVALID_WHATSAPP_TEMPLATE: {
+    type: 'toast',
+    variant: 'error',
+    message: 'Revisa el texto de la plantilla y sus variables.',
+  },
+  WHATSAPP_TEMPLATE_PENDING: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Esta plantilla ya está en revisión.',
+  },
+  WHATSAPP_TEMPLATE_REQUIRED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Necesitas al menos una plantilla aprobada.',
+  },
   INVALID_PAYLOAD: {
     type: 'toast',
     variant: 'error',

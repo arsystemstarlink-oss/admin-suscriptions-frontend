@@ -4,6 +4,10 @@ import type {
   OnboardOrganizationRequest,
   OnboardOrganizationResponse,
   OrganizationWhatsAppConfig,
+  WhatsAppConnectionCheck,
+  WhatsAppFailureGroup,
+  WhatsAppTemplateKey,
+  WhatsAppTemplatesResponse,
   OrganizationListFilter,
   SlugAvailabilityResponse,
   RegisterOrganizationPlanPaymentRequest,
@@ -78,6 +82,44 @@ export const organizationsApi = {
     data: UpdateOrganizationWhatsAppConfigRequest,
   ): Promise<OrganizationWhatsAppConfig> => {
     const response = await api.put<OrganizationWhatsAppConfig>('/whatsapp/config', data, {
+      params: { organizationId },
+    })
+    return response.data
+  },
+
+  checkWhatsAppConnection: async (organizationId: string): Promise<WhatsAppConnectionCheck> => {
+    const response = await api.get<WhatsAppConnectionCheck>('/whatsapp/config/connection', {
+      params: { organizationId },
+    })
+    return response.data
+  },
+
+  getWhatsAppTemplates: async (organizationId: string): Promise<WhatsAppTemplatesResponse> => {
+    const response = await api.get<WhatsAppTemplatesResponse>('/whatsapp/config/templates', {
+      params: { organizationId },
+    })
+    return response.data
+  },
+
+  submitWhatsAppTemplate: async (
+    organizationId: string,
+    key: WhatsAppTemplateKey,
+    body: string,
+  ): Promise<WhatsAppTemplatesResponse> => {
+    const response = await api.post<WhatsAppTemplatesResponse>(
+      `/whatsapp/config/templates/${key}/submit`,
+      { body },
+      { params: { organizationId } },
+    )
+    return response.data
+  },
+
+  sendWhatsAppTestMessage: async (organizationId: string, to: string): Promise<void> => {
+    await api.post('/whatsapp/config/test-message', { to }, { params: { organizationId } })
+  },
+
+  getWhatsAppFailures: async (organizationId: string): Promise<{ failures: WhatsAppFailureGroup[] }> => {
+    const response = await api.get<{ failures: WhatsAppFailureGroup[] }>('/whatsapp/config/failures', {
       params: { organizationId },
     })
     return response.data

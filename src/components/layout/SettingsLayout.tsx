@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { ClipboardList, Inbox, User, UserPlus, Building2 } from 'lucide-react'
+import { ClipboardList, Inbox, MessageCircle, User, UserPlus, Building2 } from 'lucide-react'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 
 export function SettingsLayout() {
@@ -23,6 +23,14 @@ export function SettingsLayout() {
         label: 'Tareas automáticas',
         title: 'Tareas automáticas',
         subtitle: 'Gestiona el sistema y tareas automáticas',
+        end: false,
+      },
+      {
+        to: '/config/whatsapp',
+        icon: MessageCircle,
+        label: 'WhatsApp',
+        title: 'WhatsApp',
+        subtitle: 'Conecta tu número y activa los avisos a tus clientes',
         end: false,
       },
     ]

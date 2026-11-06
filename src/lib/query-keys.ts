@@ -42,6 +42,9 @@ export const qk = {
     lists: ['organizations', 'list'] as const,
     detail: (id: string) => ['organizations', id, 'detail'] as const,
     whatsappConfig: (id: string) => ['organizations', id, 'whatsapp-config'] as const,
+    whatsappConnection: (id: string) => ['organizations', id, 'whatsapp-connection'] as const,
+    whatsappTemplates: (id: string) => ['organizations', id, 'whatsapp-templates'] as const,
+    whatsappFailures: (id: string) => ['organizations', id, 'whatsapp-failures'] as const,
   },
   paymentReports: {
     lists: ['payment-reports', 'list'] as const,

@@ -579,7 +579,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
               <p role="alert" className="text-sm text-destructive">No se pudo cargar la configuración de WhatsApp.</p>
             )}
             {!isLoadingWhatsAppConfig && !whatsAppConfigError && !reminderTemplateName && (
-              <p role="alert" className="text-sm text-destructive">Configura una plantilla de aviso de vencimiento en Configuración de WhatsApp antes de enviar.</p>
+              <p role="alert" className="text-sm text-destructive">Activa la plantilla de aviso de vencimiento en <Link to="/config/whatsapp" className="font-medium underline">Configuración › WhatsApp</Link> antes de enviar.</p>
             )}
             {overduePeriodsQuery.isFetching && (
               <p role="status" className="text-sm text-muted-foreground">Cargando todos los períodos vencidos...</p>

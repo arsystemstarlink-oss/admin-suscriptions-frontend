@@ -15,6 +15,8 @@ interface SubscriptionsListParams {
   status?: 'ACTIVE' | 'SUSPENDED'
   search?: string
   hasOverduePeriods?: boolean
+  expiring?: boolean
+  pending?: boolean
   organizationId?: string
   limit?: number
   offset?: number

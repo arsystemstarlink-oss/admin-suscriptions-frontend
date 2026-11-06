@@ -60,6 +60,8 @@ export function SubscriptionsListPage() {
       organizationId: organizationId ?? undefined,
       status: statusFilter ?? undefined,
       hasOverduePeriods: hasOverdue ?? undefined,
+      expiring: expiringFilter || undefined,
+      pending: pendingFilter || undefined,
       search: debouncedSearch || undefined,
       limit: 50,
     },
@@ -72,7 +74,7 @@ export function SubscriptionsListPage() {
 
   useEffect(() => {
     setPageIndex(0)
-  }, [organizationId, statusFilter, hasOverdue, debouncedSearch])
+  }, [organizationId, statusFilter, hasOverdue, expiringFilter, pendingFilter, debouncedSearch])
 
   const showEmpty = isSuperAdmin && !organizationId
 
@@ -155,25 +157,10 @@ export function SubscriptionsListPage() {
     }
   }, [pageData])
 
-  const visibleSubscriptions = useMemo(() => {
-    const items = [...(pageData?.subscriptions ?? [])].filter((sub) => sub.client != null)
-
-    const filtered = items.filter((sub) => {
-      if (expiringFilter && !isExpiringSub(sub)) return false
-      if (pendingFilter && !isPendingSub(sub)) return false
-      return true
-    })
-
-    if (expiringFilter) {
-      filtered.sort((a, b) => {
-        const aTime = a.currentPeriod?.endDate ? new Date(a.currentPeriod.endDate).getTime() : Infinity
-        const bTime = b.currentPeriod?.endDate ? new Date(b.currentPeriod.endDate).getTime() : Infinity
-        return aTime - bTime
-      })
-    }
-
-    return filtered
-  }, [pageData, expiringFilter, pendingFilter])
+  const visibleSubscriptions = useMemo(
+    () => (pageData?.subscriptions ?? []).filter((sub) => sub.client != null),
+    [pageData],
+  )
 
   const handleNextPage = async () => {
     if (pageIndex < (data?.pages.length ?? 0) - 1) {
@@ -353,11 +340,9 @@ export function SubscriptionsListPage() {
               icon={<Link2 className="h-16 w-16 text-subtle-foreground" />}
               title={hasActiveFilters ? 'Sin resultados' : 'Sin suscripciones'}
               description={
-                !hasActiveFilters
-                  ? 'Registra la primera suscripción para empezar a cobrar.'
-                  : (expiringFilter || pendingFilter) && canGoNext
-                    ? 'No hay coincidencias en esta página. Revisa la siguiente o limpia los filtros.'
-                    : 'Ninguna suscripción coincide con tu búsqueda o filtros.'
+                hasActiveFilters
+                  ? 'Ninguna suscripción coincide con tu búsqueda o filtros.'
+                  : 'Registra la primera suscripción para empezar a cobrar.'
               }
               action={
                 hasActiveFilters ? (

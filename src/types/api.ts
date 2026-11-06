@@ -797,6 +797,7 @@ export interface PayAdvanceRequest {
   paymentMethod: PaymentMethod
   paidAt: string
   notes?: string
+  anchorPeriodId?: string
 }
 
 export interface PayAdvanceResponse {

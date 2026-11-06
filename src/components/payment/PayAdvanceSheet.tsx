@@ -94,6 +94,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
         paymentMethod: data.paymentMethod as PaymentMethod,
         paidAt: data.paidAt,
         notes: data.notes || undefined,
+        anchorPeriodId: anchor?.id,
       })
       setShowSuccess(true)
       setTimeout(handleClose, 2500)

@@ -103,7 +103,7 @@ export function InvitePage() {
   if (previewQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary-text" />
       </div>
     )
   }
@@ -124,7 +124,7 @@ export function InvitePage() {
               'Este enlace no es válido o ya fue utilizado. Solicita una nueva invitación.'}
           </p>
         </div>
-        <Link to="/login" className="text-sm font-medium text-primary hover:underline">
+        <Link to="/login" className="text-sm font-medium text-primary-text hover:underline">
           Ir a iniciar sesión
         </Link>
       </div>

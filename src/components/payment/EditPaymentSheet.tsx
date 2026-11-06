@@ -202,7 +202,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
         ) : (
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="py-8 text-center space-y-4">
-              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 text-primary-text flex items-center justify-center">
                 <CheckCircle className="h-8 w-8 shrink-0" />
               </div>
               <div>

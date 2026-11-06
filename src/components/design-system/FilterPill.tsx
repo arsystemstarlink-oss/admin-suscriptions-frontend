@@ -29,6 +29,8 @@ export function FilterPill({ children, active, variant = 'default', onClick, cla
   }
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
         baseClasses,

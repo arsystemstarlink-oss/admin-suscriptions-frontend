@@ -13,6 +13,7 @@ import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanStatusBanner } from '@/components/plans/PlanStatusBanner'
 import { PendingPlanPaymentBanner } from '@/components/plans/PendingPlanPaymentBanner'
 import { StaleDataBanner } from './StaleDataBanner'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -27,6 +28,7 @@ export function AuthenticatedLayout() {
   const mainRef = useRef<HTMLElement>(null)
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  useScrollRestoration(mainRef)
 
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
@@ -78,10 +80,6 @@ export function AuthenticatedLayout() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  useEffect(() => {
-    mainRef.current?.scrollTo(0, 0)
-  }, [location.pathname])
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {

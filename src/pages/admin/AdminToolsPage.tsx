@@ -94,7 +94,7 @@ function LogStat({ label, value, alert = false }: { label: string; value: number
       >
         {value}
       </span>
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </span>
   )
 }
@@ -223,7 +223,7 @@ export function AdminToolsPage() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
                       <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
-                        <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-primary" />
+                        <Clock className="h-5 w-5 sm:h-7 sm:w-7 text-primary-text" />
                       </div>
                       <div className="min-w-0">
                         <CardTitle className="text-lg sm:text-xl">Tarea Diaria</CardTitle>
@@ -398,7 +398,7 @@ export function AdminToolsPage() {
                 <CardHeader className="p-4 sm:p-5">
                   <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
                     <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
-                      <History className="h-5 w-5 sm:h-7 sm:w-7 text-primary" />
+                      <History className="h-5 w-5 sm:h-7 sm:w-7 text-primary-text" />
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="text-lg sm:text-xl">Historial de Ejecuciones</CardTitle>
@@ -434,28 +434,28 @@ export function AdminToolsPage() {
                             <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                               <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                                 <Badge
-                                  className={`w-fit shrink-0 text-[11px] px-2 py-0.5 ${LOG_STATUS[log.status].className}`}
+                                  className={`w-fit shrink-0 text-xs px-2 py-0.5 ${LOG_STATUS[log.status].className}`}
                                 >
                                   <span className="flex items-center gap-1">
                                     <StatusIcon className="h-3 w-3 shrink-0" />
                                     {LOG_STATUS[log.status].label}
                                   </span>
                                 </Badge>
-                                <Badge className="w-fit shrink-0 text-[11px] px-2 py-0.5 bg-muted text-muted-foreground border border-border">
+                                <Badge className="w-fit shrink-0 text-xs px-2 py-0.5 bg-muted text-muted-foreground border border-border">
                                   {LOG_TRIGGERED_BY[log.triggeredBy]}
                                 </Badge>
-                                <span className="text-[11px] text-xs text-muted-foreground truncate">
+                                <span className="text-xs text-muted-foreground truncate">
                                   {formatLogTime(log.startedAt)}
                                 </span>
                               </div>
-                              <span className="shrink-0 text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                              <span className="shrink-0 text-xs font-medium text-muted-foreground flex items-center gap-1">
                                 <Timer className="h-3 w-3 shrink-0" />
                                 {formatDuration(log.durationMs)}
                               </span>
                             </div>
 
                             {log.error && (
-                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-[11px] text-destructive break-words">
+                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive break-words">
                                 {log.error}
                               </div>
                             )}
@@ -529,7 +529,7 @@ export function AdminToolsPage() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-destructive">{err.clientName}</p>
-                  <span className="text-[11px] uppercase tracking-wide text-destructive shrink-0">
+                  <span className="text-xs uppercase tracking-wide text-destructive shrink-0">
                     {NOTIFICATION_TYPE_LABELS[err.type] ?? err.type}
                   </span>
                 </div>

@@ -84,6 +84,10 @@ export function SubscriptionDetailPage() {
 
   const { subscription, billingPeriods, summary } = data
   const showAdvanceButton = canPayAdvance(subscription)
+  const unpaidPeriods = billingPeriods
+    .filter((period) => period.status === 'PENDING' || period.status === 'OVERDUE')
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+  const oldestUnpaidPeriod = unpaidPeriods[0]
   const returnTo = getNavigationStatePath(location.state, 'from') ?? '/subscriptions'
 
   const handleStatusChange = async () => {
@@ -229,7 +233,7 @@ export function SubscriptionDetailPage() {
         <div className="p-2.5 rounded-xl bg-surface-muted border border-border-subtle flex items-center gap-2.5 sm:gap-3 sm:p-3">
           {subscription.client ? (
             <>
-              <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+              <div className="h-10 w-10 rounded-full bg-primary/10 text-primary-text flex items-center justify-center font-bold shrink-0">
                 {getInitial(subscription.client.firstName)}
               </div>
               <div className="min-w-0 flex-1">
@@ -283,17 +287,24 @@ export function SubscriptionDetailPage() {
               <p className="text-xs text-warning/90 mt-1 font-medium">
                 Vence el {formatDate(subscription.currentPeriod.endDate)} • {formatCurrency(subscription.currentPeriod.amount)}
               </p>
+              {hasOlderUnpaidPeriod(subscription.currentPeriod, billingPeriods) && oldestUnpaidPeriod && (
+                <p className="text-xs text-warning mt-1 font-medium">
+                  Hay períodos anteriores sin pagar. Cobra primero {oldestUnpaidPeriod.periodLabel}.
+                </p>
+              )}
             </div>
           </div>
           <Button
             variant="outline"
             className="w-full sm:w-auto shrink-0 h-10 sm:h-11"
-            onClick={() => handlePayPeriod(subscription.currentPeriod!)}
-            disabled={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods)}
-            title={hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Existen períodos anteriores pendientes o vencidos' : undefined}
+            onClick={() => handlePayPeriod(
+              hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) && oldestUnpaidPeriod
+                ? oldestUnpaidPeriod
+                : subscription.currentPeriod!,
+            )}
           >
             <DollarSign className="h-4 w-4 mr-1 shrink-0" />
-            Cobrar Ahora
+            {hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Cobrar el más antiguo' : 'Cobrar Ahora'}
           </Button>
         </div>
       )}
@@ -325,15 +336,15 @@ export function SubscriptionDetailPage() {
       {/* Mini KPIs Horizontales */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar touch-pan-x -mx-4 px-4 snap-x snap-mandatory pt-1 sm:gap-3 sm:pt-2">
         <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-bold text-success uppercase tracking-wide">Pagados ({summary.paidPeriods})</p>
+          <p className="text-xs font-bold text-success uppercase tracking-wide">Pagados ({summary.paidPeriods})</p>
           <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(summary.totalPaid)}</p>
         </div>
         <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-bold text-warning uppercase tracking-wide">Pendientes ({summary.pendingPeriods})</p>
+          <p className="text-xs font-bold text-warning uppercase tracking-wide">Pendientes ({summary.pendingPeriods})</p>
           <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(summary.totalPending)}</p>
         </div>
         <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
-          <p className="text-[11px] font-bold text-destructive uppercase tracking-wide">Vencidos ({summary.overduePeriods})</p>
+          <p className="text-xs font-bold text-destructive uppercase tracking-wide">Vencidos ({summary.overduePeriods})</p>
           <p className="text-xl font-bold text-destructive mt-1">{summary.overduePeriods}</p>
         </div>
       </div>
@@ -352,6 +363,11 @@ export function SubscriptionDetailPage() {
           />
         ) : (
           <div className="space-y-1.5">
+            {unpaidPeriods.length > 1 && (
+              <p className="px-2 pb-1 text-xs font-medium text-muted-foreground">
+                Los períodos se cobran en orden, empezando por {oldestUnpaidPeriod.periodLabel}.
+              </p>
+            )}
             {billingPeriods.map((period) => (
               <div
                 key={period.id}
@@ -367,8 +383,8 @@ export function SubscriptionDetailPage() {
                     </p>
                   </div>
 
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-                    <Badge className={`px-2 py-0 text-[10px] ${BILLING_PERIOD_STATUS_COLORS[period.status]}`}>
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    <Badge className={`px-2 py-0 text-xs ${BILLING_PERIOD_STATUS_COLORS[period.status]}`}>
                       {BILLING_PERIOD_STATUS_LABELS[period.status]}
                     </Badge>
                     <span className="font-medium text-muted-foreground">
@@ -380,17 +396,17 @@ export function SubscriptionDetailPage() {
                       </span>
                     )}
                     {period.paymentMethod && (
-                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                         {PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}
                       </span>
                     )}
                     {period.paymentMethod === 'INITIAL_PAYMENT' && (
-                      <span className="rounded-sm bg-info/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-info">
+                      <span className="rounded-sm bg-info/10 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-info">
                         Pendiente
                       </span>
                     )}
                     {isAdvancePeriod(period) && (
-                      <span className="rounded-sm border border-success/20 bg-success/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success">
+                      <span className="rounded-sm border border-success/20 bg-success/10 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-success">
                         Adelanto
                       </span>
                     )}

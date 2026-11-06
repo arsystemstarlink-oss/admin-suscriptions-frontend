@@ -454,7 +454,7 @@ export function CreateOrganizationForm({
             {slugEdited && suggestedSlug && (
               <button
                 type="button"
-                className="text-xs font-medium text-primary hover:underline"
+                className="text-xs font-medium text-primary-text hover:underline"
                 onClick={() => {
                   setSlugEdited(false)
                   setValue('slug', suggestedSlug, { shouldValidate: true })
@@ -493,7 +493,7 @@ export function CreateOrganizationForm({
                   Se usará{' '}
                   <button
                     type="button"
-                    className="font-medium text-primary hover:underline"
+                    className="font-medium text-primary-text hover:underline"
                     onClick={() => {
                       setSlugEdited(true)
                       setValue('slug', slugStatus.suggestion!, { shouldValidate: true })

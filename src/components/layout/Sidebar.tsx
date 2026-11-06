@@ -164,7 +164,7 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
                 variant="ghost"
                 size="icon"
                 onClick={logout}
-                className="h-10 w-10 shrink-0 text-muted-foreground opacity-100 transition-all hover:bg-destructive/10 hover:text-destructive md:h-8 md:w-8 md:opacity-0 md:group-hover:opacity-100"
+                className="h-10 w-10 shrink-0 text-muted-foreground opacity-100 transition-all hover:bg-destructive/10 hover:text-destructive md:h-8 md:w-8 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >

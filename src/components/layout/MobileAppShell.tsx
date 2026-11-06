@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
 import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
 import { usePendingCollectionsCount } from '@/hooks/usePendingCollectionsCount';
-import { ExchangeTicker } from '@/components/exchange/ExchangeTicker';
+import { ExchangeRateBar } from '@/components/exchange/ExchangeRateBar';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { HeaderActions } from './HeaderActions';
 import { cn } from '@/lib/utils';
 import {
@@ -43,9 +44,7 @@ export default function MobileAppShell({
   const mainRef = useRef<HTMLElement>(null);
   const orgId = selectedOrganizationId ?? undefined
 
-  useEffect(() => {
-    mainRef.current?.scrollTo(0, 0);
-  }, [location.pathname]);
+  useScrollRestoration(mainRef);
 
   const badgesEnabled = !isSuperAdmin || !!selectedOrganizationId
   const unreadChatsCount = useUnreadChatsCount(orgId, { enabled: badgesEnabled });
@@ -116,7 +115,7 @@ export default function MobileAppShell({
                       <button
                         type="button"
                         onClick={onRetryOrganizations}
-                        className="mt-1 text-sm font-medium text-primary hover:underline"
+                        className="mt-1 text-sm font-medium text-primary-text hover:underline"
                       >
                         Reintentar
                       </button>
@@ -131,7 +130,7 @@ export default function MobileAppShell({
           </div>
         </div>
       </header>
-      <ExchangeTicker />
+      <ExchangeRateBar />
 
       {/* Contenedor Principal (Scroll) */}
       <main
@@ -179,7 +178,7 @@ export default function MobileAppShell({
                           strokeWidth={active ? 2.5 : 2}
                           className={`transition-colors ${
                             active
-                              ? 'text-primary'
+                              ? 'text-primary-text'
                               : 'text-muted-foreground'
                           }`}
                         />

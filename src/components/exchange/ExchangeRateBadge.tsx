@@ -48,7 +48,7 @@ export function ExchangeRateBadge({ className, compact = false }: ExchangeRateBa
           onClick={() => refetch()}
           disabled={isFetching}
           className={cn(
-            'flex min-w-0 items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-surface-hover disabled:opacity-50',
+            'flex min-w-0 items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-hover disabled:opacity-50',
             className,
           )}
           title="Tasa no disponible. Toca para reintentar."
@@ -65,14 +65,14 @@ export function ExchangeRateBadge({ className, compact = false }: ExchangeRateBa
         type="button"
         onClick={toggleSource}
         className={cn(
-          'flex min-w-0 max-w-[128px] items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-[11px] transition-opacity hover:opacity-80',
+          'flex min-w-0 max-w-[128px] items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-xs transition-opacity hover:opacity-80',
           className,
         )}
         title={toggleTitle}
         aria-label={`Tasa ${source === 'paralelo' ? 'paralela' : 'oficial BCV'}: Bs ${rateLabel}. Toca para cambiar.`}
       >
         <span className="truncate tabular-nums font-semibold text-foreground">Bs {rateLabel}</span>
-        <span className="shrink-0 rounded-full bg-surface-active px-1 py-px text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="shrink-0 rounded-full bg-surface-active px-1 py-px text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {source === 'paralelo' ? 'Par' : 'BCV'}
         </span>
       </button>
@@ -96,7 +96,7 @@ export function ExchangeRateBadge({ className, compact = false }: ExchangeRateBa
       >
         <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
         <span className="tabular-nums">Bs {rate !== null ? formatRate(rate) : 'N/D'}</span>
-        <span className="rounded-full bg-surface-active px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <span className="rounded-full bg-surface-active px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
           {source === 'paralelo' ? 'Par' : 'BCV'}
         </span>
       </button>

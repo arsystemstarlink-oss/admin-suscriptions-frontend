@@ -7,6 +7,7 @@ import { SettingsLayout } from '@/components/layout/SettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RouteErrorPage } from '@/pages/RouteErrorPage'
 import { RootRedirect } from '@/routes/RootRedirect'
+import { RouteTitle } from '@/routes/RouteTitle'
 import {
   LegacyClientEditRedirect,
   LegacyClientRedirect,
@@ -45,10 +46,12 @@ import {
 export const router = createBrowserRouter(
   [
   {
+  element: <RouteTitle />,
   errorElement: <RouteErrorPage />,
   children: [
   {
     path: '/login',
+    handle: { title: 'Iniciar sesión' },
     element: (
       <Suspense fallback={<PageLoader />}>
         <LoginPage />
@@ -57,6 +60,7 @@ export const router = createBrowserRouter(
   },
   {
     path: '/invite/:token',
+    handle: { title: 'Invitación' },
     element: (
       <Suspense fallback={<PageLoader />}>
         <InvitePage />
@@ -65,6 +69,7 @@ export const router = createBrowserRouter(
   },
   {
     path: '/setup',
+    handle: { title: 'Configuración inicial' },
     element: (
       <Suspense fallback={<PageLoader />}>
         <SetupPage />
@@ -73,6 +78,7 @@ export const router = createBrowserRouter(
   },
   {
     path: '/planes',
+    handle: { title: 'Planes' },
     element: (
       <Suspense fallback={<PageLoader />}>
         <PlansPage />
@@ -81,6 +87,7 @@ export const router = createBrowserRouter(
   },
   {
     path: '/planes/solicitar',
+    handle: { title: 'Solicitar plan' },
     element: (
       <Suspense fallback={<PageLoader />}>
         <PlansSignupPage />
@@ -89,6 +96,7 @@ export const router = createBrowserRouter(
   },
   {
     path: '/consulta/:orgSlug',
+    handle: { title: 'Consulta' },
     element: (
       <Suspense fallback={<PageLoader />}>
         <ConsultaPage />
@@ -108,6 +116,7 @@ export const router = createBrowserRouter(
     children: [
       {
         path: 'dashboard',
+        handle: { title: 'Inicio' },
         element: (
           <Suspense fallback={<PageLoader />}>
             <DashboardPage />
@@ -124,6 +133,7 @@ export const router = createBrowserRouter(
         children: [
           {
             index: true,
+            handle: { title: 'Suscripciones' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SubscriptionsListPage />
@@ -132,6 +142,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'new',
+            handle: { title: 'Nueva suscripción' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SubscriptionFormPage />
@@ -140,6 +151,7 @@ export const router = createBrowserRouter(
           },
           {
             path: ':id',
+            handle: { title: 'Suscripción' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SubscriptionDetailPage />
@@ -148,6 +160,7 @@ export const router = createBrowserRouter(
           },
           {
             path: ':id/edit',
+            handle: { title: 'Editar suscripción' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <SubscriptionEditPage />
@@ -156,6 +169,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'clients',
+            handle: { title: 'Clientes' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ClientsListPage />
@@ -164,6 +178,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'clients/new',
+            handle: { title: 'Nuevo cliente' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ClientFormPage />
@@ -172,6 +187,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'clients/:id',
+            handle: { title: 'Cliente' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ClientDetailPage />
@@ -180,6 +196,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'clients/:id/edit',
+            handle: { title: 'Editar cliente' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ClientFormPage />
@@ -188,6 +205,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plans',
+            handle: { title: 'Planes' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <PlansListPage />
@@ -196,6 +214,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plans/new',
+            handle: { title: 'Nuevo plan' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <PlanFormPage />
@@ -204,6 +223,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plans/:id/edit',
+            handle: { title: 'Editar plan' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <PlanFormPage />
@@ -228,6 +248,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'tasks',
+            handle: { title: 'Tareas automáticas' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AdminToolsPage />
@@ -236,6 +257,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'profile',
+            handle: { title: 'Perfil' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
@@ -248,6 +270,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'admins',
+            handle: { title: 'Administradores' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <AdminsPage />
@@ -256,6 +279,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'organizations',
+            handle: { title: 'Organizaciones' },
             element: (
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
@@ -270,6 +294,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plan-quote-requests',
+            handle: { title: 'Cotizaciones' },
             element: (
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
@@ -282,6 +307,7 @@ export const router = createBrowserRouter(
       },
       {
         path: 'chats',
+        handle: { title: 'Chats' },
         element: (
           <Suspense fallback={<PageLoader />}>
             <ChatsPage />
@@ -298,6 +324,7 @@ export const router = createBrowserRouter(
         children: [
           {
             index: true,
+            handle: { title: 'Cobros de clientes' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <PaymentReportsPage />
@@ -306,6 +333,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plans',
+            handle: { title: 'Pagos de planes' },
             element: (
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
@@ -376,6 +404,7 @@ export const router = createBrowserRouter(
   },
   {
     path: '*',
+    handle: { title: 'Página no encontrada' },
     element: <NotFoundPage />,
   },
   ],

@@ -4,12 +4,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { usePlanDetail, useCreatePlan, useUpdatePlan } from '@/hooks/usePlans'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertTriangle, Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormActionBar } from '@/components/design-system/FormActionBar'
+import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
@@ -42,7 +43,7 @@ export function PlanFormPage() {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<PlanForm>({
     resolver: zodResolver(planSchema),
   })
@@ -107,6 +108,7 @@ export function PlanFormPage() {
 
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
+      <UnsavedChangesGuard isDirty={isDirty} isSubmitting={isSubmitting} />
       <DetailNav
         backLabel="Volver a planes"
         backTo={returnTo}
@@ -179,18 +181,13 @@ export function PlanFormPage() {
         </div>
       </form>
 
-      <div className="fixed bottom-[var(--mobile-nav-h)] md:bottom-0 left-0 right-0 p-4 bg-surface/95 border-t border-border backdrop-blur-xl z-50">
-        <Button
-          type="submit"
-          form="plan-form"
-          className="w-full h-12 text-base font-semibold"
-          disabled={isSubmitting}
-        >
-          {isSubmitting
-            ? isEdit ? 'Actualizando Plan...' : 'Creando Plan...'
-            : isEdit ? 'Actualizar Plan' : 'Crear Plan'}
-        </Button>
-      </div>
+      <FormActionBar
+        formId="plan-form"
+        cancelTo={returnTo}
+        submitLabel={isEdit ? 'Actualizar Plan' : 'Crear Plan'}
+        submittingLabel={isEdit ? 'Actualizando Plan...' : 'Creando Plan...'}
+        isSubmitting={isSubmitting}
+      />
     </div>
   )
 }

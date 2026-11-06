@@ -21,6 +21,8 @@ import { AlertTriangle, Plus, Minus, Trash2, Box, CalendarDays, DollarSign, Cloc
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormActionBar } from '@/components/design-system/FormActionBar'
+import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
@@ -50,6 +52,18 @@ const subscriptionSchema = z.object({
 
 type SubscriptionForm = z.infer<typeof subscriptionSchema>
 
+function getFirstErrorPath(errors: object, prefix = ''): string | undefined {
+  for (const [key, value] of Object.entries(errors)) {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (!value || typeof value !== 'object') continue
+
+    if ('message' in value && typeof value.message === 'string') return path
+
+    const nestedPath = getFirstErrorPath(value, path)
+    if (nestedPath) return nestedPath
+  }
+}
+
 export function SubscriptionFormPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -68,7 +82,7 @@ export function SubscriptionFormPage() {
     setValue,
     watch,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<SubscriptionForm>({
     resolver: zodResolver(subscriptionSchema),
     defaultValues: {
@@ -116,11 +130,11 @@ export function SubscriptionFormPage() {
       .replace(/^-+/, '')
 
   const handleKitNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setValue('kitNumber', normalizeServiceCode(e.target.value), { shouldValidate: true })
+    setValue('kitNumber', normalizeServiceCode(e.target.value), { shouldValidate: true, shouldDirty: true })
   }
 
   const handleAccountNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setValue('accountNumber', normalizeServiceCode(e.target.value), { shouldValidate: true })
+    setValue('accountNumber', normalizeServiceCode(e.target.value), { shouldValidate: true, shouldDirty: true })
   }
 
   const isRetroactive = useMemo(() => {
@@ -133,6 +147,18 @@ export function SubscriptionFormPage() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
     return diffDays > 1
   }, [activationDate])
+
+  const handleInvalidSubmit = (formErrors: typeof errors) => {
+    const firstErrorPath = getFirstErrorPath(formErrors)
+    if (!firstErrorPath) return
+
+    const field = [...document.querySelectorAll<HTMLElement>('[data-validation-field]')]
+      .find((element) => element.dataset.validationField === firstErrorPath)
+    if (!field) return
+
+    field.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    field.focus({ preventScroll: true })
+  }
 
   const onSubmit = async (formData: SubscriptionForm) => {
     setError(null)
@@ -234,6 +260,7 @@ export function SubscriptionFormPage() {
 
   return (
     <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
+      <UnsavedChangesGuard isDirty={isDirty} isSubmitting={isSubmitting} />
       <DetailNav
         backLabel="Volver a suscripciones"
         backTo={returnTo}
@@ -246,7 +273,7 @@ export function SubscriptionFormPage() {
         }
       />
 
-      <form id="subscription-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form id="subscription-form" onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)} className="space-y-6">
         {error && (
           <div className="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -263,8 +290,10 @@ export function SubscriptionFormPage() {
 
           <div className="space-y-2.5">
             <Label className="text-foreground">Cliente *</Label>
-            <Select value={watch('clientId') || ''} onValueChange={(value) => setValue('clientId', value)}>
+            <Select value={watch('clientId') || ''} onValueChange={(value) => setValue('clientId', value, { shouldDirty: true })}>
               <SelectTrigger
+                data-validation-field="clientId"
+                aria-invalid={!!errors.clientId}
                 className="h-12"
                 disabled={!selectedOrganizationId}
               >
@@ -285,8 +314,10 @@ export function SubscriptionFormPage() {
 
           <div className="space-y-2.5">
             <Label className="text-foreground">Plan *</Label>
-            <Select onValueChange={(value) => setValue('planId', value)}>
+            <Select onValueChange={(value) => setValue('planId', value, { shouldDirty: true })}>
               <SelectTrigger
+                data-validation-field="planId"
+                aria-invalid={!!errors.planId}
                 className="h-12"
                 disabled={!selectedOrganizationId}
               >
@@ -317,6 +348,8 @@ export function SubscriptionFormPage() {
             <Label htmlFor="kitNumber" className="text-foreground">Código del Servicio *</Label>
             <Input
               id="kitNumber"
+              data-validation-field="kitNumber"
+              aria-invalid={!!errors.kitNumber}
               value={kitNumberValue || ''}
               onChange={handleKitNumberChange}
               placeholder="Ej: KIT-001 o FIBRA-001"
@@ -365,6 +398,8 @@ export function SubscriptionFormPage() {
                       <Label htmlFor="billingDay" className="text-foreground">Día de Corte *</Label>
                       <Button
                         id="billingDay"
+                        data-validation-field="billingDay"
+                        aria-invalid={!!errors.billingDay}
                         type="button"
                         variant="outline"
                         aria-haspopup="dialog"
@@ -537,11 +572,23 @@ export function SubscriptionFormPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-muted-foreground">DESDE</Label>
-                        <Input type="date" {...register(`historicalPayments.${index}.startDate`)} className="h-10" />
+                        <Input
+                          type="date"
+                          data-validation-field={`historicalPayments.${index}.startDate`}
+                          aria-invalid={!!errors.historicalPayments?.[index]?.startDate}
+                          {...register(`historicalPayments.${index}.startDate`)}
+                          className="h-10"
+                        />
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-muted-foreground">HASTA</Label>
-                        <Input type="date" {...register(`historicalPayments.${index}.endDate`)} className="h-10" />
+                        <Input
+                          type="date"
+                          data-validation-field={`historicalPayments.${index}.endDate`}
+                          aria-invalid={!!errors.historicalPayments?.[index]?.endDate}
+                          {...register(`historicalPayments.${index}.endDate`)}
+                          className="h-10"
+                        />
                       </div>
                     </div>
 
@@ -555,6 +602,8 @@ export function SubscriptionFormPage() {
                             step="0.01"
                             inputMode="decimal"
                             readOnly
+                            data-validation-field={`historicalPayments.${index}.amount`}
+                            aria-invalid={!!errors.historicalPayments?.[index]?.amount}
                             {...register(`historicalPayments.${index}.amount`)}
                             className="pl-8 h-10 text-sm font-semibold bg-surface-muted"
                           />
@@ -562,14 +611,28 @@ export function SubscriptionFormPage() {
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-muted-foreground">PAGADO EL</Label>
-                        <Input type="date" {...register(`historicalPayments.${index}.paidAt`)} className="h-10" />
+                        <Input
+                          type="date"
+                          data-validation-field={`historicalPayments.${index}.paidAt`}
+                          aria-invalid={!!errors.historicalPayments?.[index]?.paidAt}
+                          {...register(`historicalPayments.${index}.paidAt`)}
+                          className="h-10"
+                        />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold text-muted-foreground">MÉTODO</Label>
-                      <Select onValueChange={(value) => setValue(`historicalPayments.${index}.paymentMethod`, value)}>
-                        <SelectTrigger className="h-10 text-sm">
+                      <Select onValueChange={(value) => setValue(
+                        `historicalPayments.${index}.paymentMethod`,
+                        value,
+                        { shouldDirty: true },
+                      )}>
+                        <SelectTrigger
+                          data-validation-field={`historicalPayments.${index}.paymentMethod`}
+                          aria-invalid={!!errors.historicalPayments?.[index]?.paymentMethod}
+                          className="h-10 text-sm"
+                        >
                           <SelectValue placeholder="Seleccione..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -588,17 +651,13 @@ export function SubscriptionFormPage() {
         )}
       </form>
 
-      {/* Floating Action Button Bar (Fixed al fondo) */}
-      <div className="fixed bottom-[var(--mobile-nav-h)] md:bottom-0 left-0 right-0 p-4 bg-surface/95 border-t border-border backdrop-blur-xl z-50">
-        <Button
-          type="submit"
-          form="subscription-form"
-          className="w-full h-12 text-base font-semibold"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Creando Suscripción...' : 'Crear Suscripción'}
-        </Button>
-      </div>
+      <FormActionBar
+        formId="subscription-form"
+        cancelTo={returnTo}
+        submitLabel="Crear Suscripción"
+        submittingLabel="Creando Suscripción..."
+        isSubmitting={isSubmitting}
+      />
     </div>
   )
 }

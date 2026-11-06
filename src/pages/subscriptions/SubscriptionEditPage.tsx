@@ -23,6 +23,8 @@ import { CalendarDays, LockKeyhole, Minus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormActionBar } from '@/components/design-system/FormActionBar'
+import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { getNavigationStatePath } from '@/lib/navigation'
 
@@ -61,7 +63,7 @@ export function SubscriptionEditPage() {
     handleSubmit,
     control,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<SubscriptionEditForm>({
     resolver: zodResolver(subscriptionEditSchema),
     values: subscription
@@ -134,7 +136,8 @@ export function SubscriptionEditPage() {
     : activePlans
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-[calc(6rem+var(--mobile-nav-h))] md:pb-24">
+      <UnsavedChangesGuard isDirty={isDirty} isSubmitting={isSubmitting} />
       <DetailNav
         backLabel="Volver a la suscripción"
         backTo={`/subscriptions/${id}`}
@@ -154,7 +157,7 @@ export function SubscriptionEditPage() {
           <CardTitle>Configuración de Suscripción</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form id="subscription-edit-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 {error}
@@ -322,19 +325,17 @@ export function SubscriptionEditPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-3 pt-4">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Actualizando...' : 'Actualizar Suscripción'}
-              </Button>
-              <Button type="button" variant="outline" asChild>
-                <Link to={`/subscriptions/${id}`} replace state={{ from: returnTo }}>
-                  Cancelar
-                </Link>
-              </Button>
-            </div>
           </form>
         </CardContent>
       </Card>
+      <FormActionBar
+        formId="subscription-edit-form"
+        cancelTo={`/subscriptions/${id}`}
+        cancelState={{ from: returnTo }}
+        submitLabel="Actualizar Suscripción"
+        submittingLabel="Actualizando Suscripción..."
+        isSubmitting={isSubmitting}
+      />
     </div>
   )
 }

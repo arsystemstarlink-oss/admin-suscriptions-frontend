@@ -4,7 +4,6 @@ import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { QuickPayModal } from '@/components/payment/QuickPayModal'
 import MobileAppShell from './MobileAppShell'
-import { useTokenRefresh } from '@/hooks/useTokenRefresh'
 import { useOrganizations } from '@/hooks/useOrganizations'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -13,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { PlanStatusBanner } from '@/components/plans/PlanStatusBanner'
 import { PendingPlanPaymentBanner } from '@/components/plans/PendingPlanPaymentBanner'
+import { StaleDataBanner } from './StaleDataBanner'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -92,7 +92,6 @@ export function AuthenticatedLayout() {
   }
 
   const isChatsPage = location.pathname.startsWith('/chats')
-  useTokenRefresh()
 
   const isClientCreateRoute = location.pathname === '/subscriptions/clients/new'
   const isPlanWriteRoute =
@@ -120,6 +119,7 @@ export function AuthenticatedLayout() {
           selectedOrganizationId={selectedOrganizationId}
           onOrganizationChange={setOrganization}
         >
+          <StaleDataBanner />
           <PlanStatusBanner />
           <PendingPlanPaymentBanner />
           <Outlet />
@@ -152,6 +152,7 @@ export function AuthenticatedLayout() {
             isChatsPage ? 'flex min-h-0 flex-col overflow-hidden' : 'overflow-auto'
           )}
         >
+          <StaleDataBanner />
           {planAccess.isReadOnly && <PlanStatusBanner />}
           <PendingPlanPaymentBanner />
           <Outlet />

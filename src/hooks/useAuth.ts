@@ -4,6 +4,15 @@ import { qk } from '@/lib/query-keys'
 import { useAuthStore } from '@/stores/auth.store'
 import { useEffect } from 'react'
 
+type AuthQueryError = { code?: string; response?: { status?: number } }
+
+/** El servidor rechazó la sesión; un fallo de red o un 5xx no cuentan. */
+export function isSessionRejected(error: unknown): boolean {
+  if (!error) return false
+  const { code, response } = error as AuthQueryError
+  return response?.status === 401 || code === 'UNAUTHORIZED' || code === 'USER_NOT_FOUND'
+}
+
 export function useMe(enabled = true) {
   const setUser = useAuthStore((s) => s.setUser)
   const logout = useAuthStore((s) => s.logout)
@@ -26,15 +35,10 @@ export function useMe(enabled = true) {
 
   useEffect(() => {
     if (!query.error) return
-    const err = query.error as { code?: string; response?: { status?: number } }
-    const status = err.response?.status
-    const code = err.code
-    const isAuthFailure =
-      status === 401 ||
-      status === 404 ||
-      code === 'UNAUTHORIZED' ||
-      code === 'USER_NOT_FOUND'
-    if (isAuthFailure && !hasUser) {
+    const status = (query.error as AuthQueryError).response?.status
+    // Un 404 sin código no identifica a la sesión (p. ej. API mal configurada):
+    // con un usuario guardado no es motivo para cerrarla.
+    if (isSessionRejected(query.error) || (status === 404 && !hasUser)) {
       logout()
     }
   }, [query.error, logout, hasUser])

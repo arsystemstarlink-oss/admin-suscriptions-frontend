@@ -42,7 +42,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    const refreshToken = useAuthStore.getState().refreshToken
+    // Del storage, no del store: el interceptor de la API renueva los tokens solo
+    // en storage, y revocar uno ya reemplazado dejaría abierta la sesión real.
+    const { refreshToken } = getStoredTokens()
     if (refreshToken) {
       authApi.logout(refreshToken).catch(() => {})
     }
@@ -70,6 +72,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (accessToken && refreshToken) {
       set({ accessToken, refreshToken, user, isAuthenticated: true })
     } else if (useAuthStore.getState().isAuthenticated) {
+      // La sesión se cerró en otra pestaña: esta tampoco debe conservar sus datos.
+      queryClient.clear()
       set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false })
     }
   },

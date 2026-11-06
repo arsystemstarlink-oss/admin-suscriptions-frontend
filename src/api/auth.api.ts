@@ -26,7 +26,9 @@ export const authApi = {
   },
 
   me: async (): Promise<MeResponse> => {
-    const response = await api.get<MeResponse>('/auth/me')
+    // AuthGuard espera esta respuesta para mostrar la app: con una red colgada
+    // debe fallar pronto y seguir con los datos en caché.
+    const response = await api.get<MeResponse>('/auth/me', { timeout: 10_000 })
     return response.data
   },
 

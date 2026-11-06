@@ -1,6 +1,7 @@
-import { QueryClient } from '@tanstack/react-query'
+import { hashKey, QueryClient } from '@tanstack/react-query'
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client'
+import { qk } from '@/lib/query-keys'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,11 +29,20 @@ const persister = createSyncStoragePersister({
   throttleTime: 1000,
 })
 
+const AUTH_ME_HASH = hashKey(qk.auth.me)
+
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: PERSIST_MAX_AGE,
-  buster: 'v2',
+  buster: 'v3',
   dehydrateOptions: {
-    shouldDehydrateQuery: (query) => query.state.status === 'success',
+    // /auth/me no se persiste: es lo que valida la sesión en cada apertura y
+    // una copia restaurada evitaría esa comprobación.
+    shouldDehydrateQuery: (query) =>
+      query.state.status === 'success' && query.queryHash !== AUTH_ME_HASH,
   },
+}
+
+export function clearPersistedQueryCache(): void {
+  persister.removeClient()
 }

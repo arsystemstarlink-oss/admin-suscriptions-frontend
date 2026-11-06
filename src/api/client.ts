@@ -23,6 +23,58 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/** Sin respuesta, 5xx o 429: el refresh token sigue siendo válido y se puede reintentar. */
+function isTemporaryRefreshFailure(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false
+  const status = error.response?.status
+  return status === undefined || status >= 500 || status === 429
+}
+
+function readRenewedAccessToken(): string {
+  const { accessToken } = getStoredTokens()
+  if (!accessToken) throw new Error('No access token')
+  return accessToken
+}
+
+/** Renueva los tokens; el candado de storage coordina con las demás pestañas. */
+async function runTokenRefresh(): Promise<string> {
+  const versionAtStart = getRefreshVersion()
+
+  while (!acquireRefreshLock()) {
+    await sleep(150)
+    if (getRefreshVersion() !== versionAtStart) return readRenewedAccessToken()
+  }
+
+  try {
+    if (getRefreshVersion() !== versionAtStart) return readRenewedAccessToken()
+
+    const { refreshToken } = getStoredTokens()
+    if (!refreshToken) throw new Error('No refresh token')
+
+    const { data } = await requestWithFallback<{ accessToken: string; refreshToken: string }>({
+      url: '/auth/refresh',
+      method: 'POST',
+      data: { refreshToken },
+      timeout: 10_000,
+    })
+
+    setStoredTokens(data.accessToken, data.refreshToken)
+    return data.accessToken
+  } finally {
+    releaseRefreshLock()
+  }
+}
+
+let refreshInFlight: Promise<string> | null = null
+
+/** Las peticiones que reciben 401 a la vez comparten una sola renovación. */
+function refreshAccessToken(): Promise<string> {
+  refreshInFlight ??= runTokenRefresh().finally(() => {
+    refreshInFlight = null
+  })
+  return refreshInFlight
+}
+
 api.interceptors.request.use((config) => {
   const user = getStoredUser()
   const method = config.method?.toUpperCase()
@@ -87,42 +139,26 @@ api.interceptors.response.use(
     if (status === 401 && errorCode === 'UNAUTHORIZED' && !originalRequest._retry) {
       originalRequest._retry = true
 
-      const versionAtError = getRefreshVersion()
-
-      while (!acquireRefreshLock()) {
-        await sleep(150)
-        if (getRefreshVersion() !== versionAtError) {
-          const { accessToken } = getStoredTokens()
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`
-          return api(originalRequest)
-        }
+      // La petición salió con un token que ya se renovó mientras estaba en curso.
+      const { accessToken: currentToken } = getStoredTokens()
+      if (currentToken && originalRequest.headers.Authorization !== `Bearer ${currentToken}`) {
+        originalRequest.headers.Authorization = `Bearer ${currentToken}`
+        return api(originalRequest)
       }
 
       try {
-        const { refreshToken } = getStoredTokens()
-        if (!refreshToken) throw new Error('No refresh token')
-
-        if (getRefreshVersion() !== versionAtError) {
-          const { accessToken } = getStoredTokens()
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`
-          return api(originalRequest)
-        }
-
-        const { data } = await requestWithFallback<{ accessToken: string; refreshToken: string }>({
-          url: '/auth/refresh',
-          method: 'POST',
-          data: { refreshToken },
-        })
-
-        setStoredTokens(data.accessToken, data.refreshToken)
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
+        const accessToken = await refreshAccessToken()
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return api(originalRequest)
-      } catch {
+      } catch (refreshError) {
+        // Se rechaza con el error del refresh, no con el 401 original: useMe
+        // interpretaría ese 401 como una sesión rechazada y la cerraría.
+        if (isTemporaryRefreshFailure(refreshError)) {
+          return Promise.reject(refreshError)
+        }
         clearStoredTokens()
         window.location.href = `${import.meta.env.BASE_URL}login`
         return Promise.reject(error)
-      } finally {
-        releaseRefreshLock()
       }
     }
 

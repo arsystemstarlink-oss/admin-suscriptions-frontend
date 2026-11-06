@@ -6,7 +6,6 @@ import {
   createPushSubscription,
   getNotificationPermission,
   getPushSubscription,
-  getServiceWorkerRegistration,
   isPushSupported,
   removePushSubscription,
 } from '@/lib/push'
@@ -53,16 +52,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setChecking(true)
     setError(null)
     try {
-      const registration = await getServiceWorkerRegistration()
-      if (!registration) {
-        setSubscribed(false)
-        setError(
-          'Las notificaciones necesitan el service worker activo. Abre la app instalada (PWA) o una versión compilada.',
-        )
-        return
-      }
-
-      const subscription = await registration.pushManager.getSubscription()
+      const subscription = await getPushSubscription()
       if (!subscription) {
         setSubscribed(false)
         return

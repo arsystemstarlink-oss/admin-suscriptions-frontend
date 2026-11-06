@@ -38,43 +38,41 @@ export async function getPublicVapidKey(): Promise<string | null> {
   }
 }
 
-const SERVICE_WORKER_TIMEOUT_MS = 8000
+// La primera instalación descarga todo el precache: en móvil puede tardar varios segundos.
+const SERVICE_WORKER_TIMEOUT_MS = 20_000
 
-export async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
-  if (!('serviceWorker' in navigator)) return null
-  const registration = await navigator.serviceWorker.getRegistration()
-  return registration ?? null
+function serviceWorkerUnavailableMessage(): string {
+  return import.meta.env.DEV
+    ? 'El service worker está desactivado en desarrollo. Para probar las notificaciones usa npm run build y npm run preview.'
+    : 'No se pudo activar el servicio de notificaciones. Recarga la app e inténtalo de nuevo.'
 }
 
+// registerSW registra el worker de forma asíncrona, así que getRegistration() puede
+// no encontrar nada todavía en la primera carga. `ready` espera a que haya uno activo.
 async function requireActiveServiceWorker(): Promise<ServiceWorkerRegistration> {
-  const registration = await getServiceWorkerRegistration()
-  if (!registration) {
-    throw new Error(
-      'El service worker no está activo. Abre la app instalada (PWA) o una versión compilada para activar las notificaciones.',
-    )
+  if (import.meta.env.DEV || !('serviceWorker' in navigator)) {
+    throw new Error(serviceWorkerUnavailableMessage())
   }
-  if (registration.active) return registration
 
-  return Promise.race([
-    navigator.serviceWorker.ready,
-    new Promise<never>((_, reject) => {
-      setTimeout(
-        () =>
-          reject(
-            new Error(
-              'El service worker no terminó de activarse. Recarga la app e inténtalo de nuevo.',
-            ),
-          ),
-        SERVICE_WORKER_TIMEOUT_MS,
-      )
-    }),
-  ])
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error(serviceWorkerUnavailableMessage())),
+          SERVICE_WORKER_TIMEOUT_MS,
+        )
+      }),
+    ])
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 export async function getPushSubscription(): Promise<PushSubscription | null> {
   if (!isPushSupported()) return null
-  const registration = await getServiceWorkerRegistration()
-  if (!registration) return null
+  const registration = await requireActiveServiceWorker()
   return registration.pushManager.getSubscription()
 }
 

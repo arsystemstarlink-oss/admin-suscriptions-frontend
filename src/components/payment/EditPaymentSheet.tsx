@@ -102,7 +102,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
         {!showSuccess ? (
           <>
             <SheetHeader>
-              <SheetTitle>Editar Pago</SheetTitle>
+              <SheetTitle>Editar pago</SheetTitle>
               <SheetDescription>
                 Modifique los datos del pago registrado
               </SheetDescription>
@@ -150,7 +150,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Fecha de Pago *</Label>
+                  <Label>Fecha de pago *</Label>
                   <Input
                     type="date"
                     {...register('paidAt')}
@@ -161,7 +161,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Método de Pago *</Label>
+                  <Label>Método de pago *</Label>
                   <Select onValueChange={(value) => setValue('paymentMethod', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione método" />
@@ -194,7 +194,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                  {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
                 </Button>
               </SheetFooter>
             </form>
@@ -206,7 +206,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                 <CheckCircle className="h-8 w-8 shrink-0" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Pago Actualizado</h3>
+                <h3 className="text-lg font-semibold text-foreground">Pago actualizado</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   Los datos del pago han sido modificados correctamente
                 </p>

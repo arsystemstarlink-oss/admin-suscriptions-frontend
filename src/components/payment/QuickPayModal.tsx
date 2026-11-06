@@ -238,7 +238,7 @@ export function QuickPayModal() {
 
                   {/* Fecha */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-pay-date" className="text-foreground">Fecha de Pago *</Label>
+                    <Label htmlFor="quick-pay-date" className="text-foreground">Fecha de pago *</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                       <Input
@@ -258,7 +258,7 @@ export function QuickPayModal() {
 
                   {/* Método */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-pay-method" className="text-foreground">Método de Pago *</Label>
+                    <Label htmlFor="quick-pay-method" className="text-foreground">Método de pago *</Label>
                     <Select value={watch('paymentMethod')} onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
                       <SelectTrigger id="quick-pay-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
@@ -338,7 +338,7 @@ export function QuickPayModal() {
                 <CheckCircle className="h-10 w-10 shrink-0" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">Pago Registrado</h3>
+                <h3 className="text-xl font-bold text-foreground">Pago registrado</h3>
                 <p className="text-muted-foreground mt-2 font-medium">
                   {formatCurrency(period.amount)} — {period.periodLabel}
                 </p>

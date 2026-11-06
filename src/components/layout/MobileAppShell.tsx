@@ -1,9 +1,8 @@
 import React, { useRef } from 'react';
-import { Home, MessageSquare, CreditCard, Settings, Building2, ReceiptText } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '../brand/BrandMark';
-import { useUnreadChatsCount } from '@/hooks/useUnreadChatsCount';
-import { usePendingCollectionsCount } from '@/hooks/usePendingCollectionsCount';
+import { useNavItems } from '@/hooks/useNavItems';
 import { ExchangeRateBar } from '@/components/exchange/ExchangeRateBar';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { HeaderActions } from './HeaderActions';
@@ -42,29 +41,11 @@ export default function MobileAppShell({
 }: MobileAppShellProps) {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
-  const orgId = selectedOrganizationId ?? undefined
 
   useScrollRestoration(mainRef);
 
-  const badgesEnabled = !isSuperAdmin || !!selectedOrganizationId
-  const unreadChatsCount = useUnreadChatsCount(orgId, { enabled: badgesEnabled });
-  const { total: pendingCollectionsCount } = usePendingCollectionsCount();
-
+  const navItems = useNavItems();
   const isChatsPage = location.pathname.startsWith('/chats');
-
-  const navItems: Array<{
-    id: string
-    icon: typeof Home
-    label: string
-    path: string
-    badge?: number
-  }> = [
-    { id: 'home', icon: Home, label: 'Inicio', path: '/dashboard' },
-    { id: 'subs', icon: CreditCard, label: 'Suscripciones', path: '/subscriptions' },
-    { id: 'reports', icon: ReceiptText, label: 'Cobros', path: '/payment-reports', badge: pendingCollectionsCount },
-    { id: 'chats', icon: MessageSquare, label: 'Chats', path: '/chats', badge: unreadChatsCount },
-    { id: 'settings', icon: Settings, label: 'Ajustes', path: '/config' },
-  ];
 
   const hasOrganizations = !!organizations && organizations.length > 0
   const effectiveValue =
@@ -142,7 +123,7 @@ export default function MobileAppShell({
       >
         <div
           className={cn(
-            'px-4 py-6 flex flex-col gap-4',
+            'px-4 py-3 flex flex-col gap-4',
             isChatsPage && 'flex-1 min-h-0 overflow-hidden'
           )}
         >
@@ -155,7 +136,7 @@ export default function MobileAppShell({
         <ul className="flex items-center justify-around px-2 py-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const badgeCount = item.badge ?? 0;
+            const badgeCount = item.badge;
             
             return (
               <li key={item.id} className="flex-1 flex justify-center">
@@ -163,11 +144,7 @@ export default function MobileAppShell({
                   to={item.path}
                   end={item.path === '/dashboard'}
                   className="relative flex flex-col items-center justify-center w-full min-h-11 py-2 gap-1 rounded-lg active:scale-95 transition-transform touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label={
-                    badgeCount > 0
-                      ? `${item.label}, ${badgeCount} ${item.id === 'chats' ? 'sin leer' : 'pendientes'}`
-                      : item.label
-                  }
+                  aria-label={item.accessibleLabel}
                 >
                   {({ isActive: active }) => {
                     return (
@@ -183,7 +160,7 @@ export default function MobileAppShell({
                           }`}
                         />
                         {badgeCount > 0 && (
-                        <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-success px-1 text-[10px] font-semibold leading-none text-success-foreground">
+                        <span className={cn('absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none', item.badgeClass)}>
                           {badgeCount > 99 ? '99+' : badgeCount}
                         </span>
                         )}

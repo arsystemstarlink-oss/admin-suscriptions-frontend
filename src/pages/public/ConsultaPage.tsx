@@ -943,7 +943,7 @@ export function ConsultaPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-foreground">Fecha de Pago *</Label>
+                      <Label className="text-foreground">Fecha de pago *</Label>
                       <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 shrink-0 text-muted-foreground" />
                         <Input type="date" {...registerReport('paidAt')} min={minPaidAt} className="h-12 pl-9" />
@@ -954,7 +954,7 @@ export function ConsultaPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-foreground">Método de Pago *</Label>
+                      <Label className="text-foreground">Método de pago *</Label>
                       <Select onValueChange={(value) => setReportValue('paymentMethod', value)}>
                         <SelectTrigger className="h-12">
                           <div className="flex items-center gap-2">

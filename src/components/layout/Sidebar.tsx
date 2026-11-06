@@ -1,19 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, Link2, Settings, LogOut, MessageSquare, ChevronRight, User, ReceiptText, type LucideIcon } from 'lucide-react'
+import { LogOut, ChevronRight, User } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
-import { usePendingCollectionsCount } from '@/hooks/usePendingCollectionsCount'
+import { useNavItems } from '@/hooks/useNavItems'
 import { cn, getInitial } from '@/lib/utils'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-
-const navItems: Array<{ to: string; icon: LucideIcon; label: string; badgeKey?: 'reports' }> = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
-  { to: '/subscriptions', icon: Link2, label: 'Suscripciones' },
-  { to: '/payment-reports', icon: ReceiptText, label: 'Cobros', badgeKey: 'reports' },
-  { to: '/chats', icon: MessageSquare, label: 'Chats' },
-  { to: '/config', icon: Settings, label: 'Ajustes' },
-]
 
 function CollapsedAccountMenu({
   name,
@@ -98,16 +89,17 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
   const { user, logout } = useAuthStore()
-  const { total: pendingCollectionsCount } = usePendingCollectionsCount()
+  const navItems = useNavItems()
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
       <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => (
           <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/dashboard'}
+            key={item.id}
+            to={item.path}
+            end={item.path === '/dashboard'}
+            aria-label={item.accessibleLabel}
             className={({ isActive }) =>
               cn(
                 'flex items-center rounded-md text-sm font-medium transition-all',
@@ -121,19 +113,19 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
           >
             <span className="relative shrink-0">
               <item.icon className="h-5 w-5 shrink-0" />
-              {item.badgeKey === 'reports' && pendingCollectionsCount > 0 && (
-                <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
-                  {pendingCollectionsCount > 99 ? '99+' : pendingCollectionsCount}
+              {collapsed && item.badge > 0 && (
+                <span className={cn('absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none', item.badgeClass)}>
+                  {item.badge > 99 ? '99+' : item.badge}
                 </span>
               )}
             </span>
             {!collapsed && (
               <span className="flex flex-1 items-center gap-2">
                 {item.label}
-                {item.badgeKey === 'reports' && pendingCollectionsCount > 0 && (
-                  <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1.5 text-[11px]">
-                    {pendingCollectionsCount > 99 ? '99+' : pendingCollectionsCount}
-                  </Badge>
+                {item.badge > 0 && (
+                  <span className={cn('ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold leading-none', item.badgeClass)}>
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
                 )}
               </span>
             )}
@@ -190,18 +182,13 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      <div className={cn('flex items-center h-16 border-b border-border shrink-0 px-3 relative', collapsed ? 'justify-center' : '')}>
-        {!collapsed && (
-          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold tracking-wider text-muted-foreground uppercase pointer-events-none">
-            Menú Lateral
-          </span>
-        )}
+      <div className={cn('flex items-center h-12 border-b border-border shrink-0 px-3', collapsed ? 'justify-center' : '')}>
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          className={cn('h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted z-10', !collapsed && 'ml-auto')}
-          aria-label={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+          className={cn('h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted', !collapsed && 'ml-auto')}
+          aria-label={collapsed ? 'Expandir menú' : 'Contraer menú'}
         >
           <ChevronRight
             className={cn('h-4 w-4 shrink-0 transition-transform', collapsed ? '' : 'rotate-180')}

@@ -267,7 +267,7 @@ export function SubscriptionFormPage() {
         className="mb-4"
         title={
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Nueva Suscripción</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Nueva suscripción</h1>
             <p className="text-sm text-muted-foreground">Asociar cliente a plan</p>
           </div>
         }
@@ -654,7 +654,7 @@ export function SubscriptionFormPage() {
       <FormActionBar
         formId="subscription-form"
         cancelTo={returnTo}
-        submitLabel="Crear Suscripción"
+        submitLabel="Crear suscripción"
         submittingLabel="Creando Suscripción..."
         isSubmitting={isSubmitting}
       />

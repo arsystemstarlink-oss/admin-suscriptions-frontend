@@ -126,7 +126,7 @@ export function PlansListPage() {
             state: { returnTo: `${location.pathname}${location.search}` },
           })}>
             <Plus className="h-4 w-4 mr-2 shrink-0" />
-            Crear Plan
+            Crear plan
           </Button>
         ) : undefined
       }

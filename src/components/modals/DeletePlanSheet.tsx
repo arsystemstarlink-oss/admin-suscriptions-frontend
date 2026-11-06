@@ -49,7 +49,7 @@ export function DeletePlanSheet({ planId, planName, open, onOpenChange }: Delete
               <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             </div>
             <div>
-              <SheetTitle>Eliminar Plan</SheetTitle>
+              <SheetTitle>Eliminar plan</SheetTitle>
               <SheetDescription>
                 ¿Está seguro que desea eliminar el plan "{planName}"?
               </SheetDescription>

@@ -14,22 +14,16 @@ export function DashboardPage() {
 
   if (isSuperAdmin && !organizationId) {
     return (
-      <div className="flex flex-col gap-6 pb-20">
-        <PageHeader
-          title="Panel"
-          description="Centro de operaciones del sistema"
-        />
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Inicio" />
         <OrganizationSelectionEmptyState description="Elige una organización para consultar el panel general." />
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-20">
-      <PageHeader
-        title="Panel"
-        description="Revisa lo urgente y continúa con la gestión de tu organización."
-      />
+    <div className="flex flex-col gap-4 sm:gap-6">
+      <PageHeader title="Inicio" />
 
       <FinancialSummary organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
@@ -38,7 +32,7 @@ export function DashboardPage() {
           <h2 id="dashboard-priorities-title" className="text-lg font-semibold tracking-tight text-foreground">
             Requiere atención
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
             Atiende los cobros pendientes, prioriza a quienes tienen deuda y revisa los próximos vencimientos.
           </p>
         </div>

@@ -76,7 +76,7 @@ export function SubscriptionDetailPage() {
         <h2 className="text-xl font-bold text-foreground">Error al cargar suscripción</h2>
         <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del servicio solicitado.</p>
         <Button asChild>
-          <Link to="/subscriptions">Volver a Suscripciones</Link>
+          <Link to="/subscriptions">Volver a suscripciones</Link>
         </Button>
       </div>
     )
@@ -167,7 +167,7 @@ export function SubscriptionDetailPage() {
   )
 
   return (
-    <div className="flex flex-col gap-3 pb-[calc(100px+env(safe-area-inset-bottom))] sm:gap-4">
+    <div className="flex flex-col gap-3 sm:gap-4">
       
       <DetailNav
         backLabel="Volver a suscripciones"
@@ -304,7 +304,7 @@ export function SubscriptionDetailPage() {
             )}
           >
             <DollarSign className="h-4 w-4 mr-1 shrink-0" />
-            {hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Cobrar el más antiguo' : 'Cobrar Ahora'}
+            {hasOlderUnpaidPeriod(subscription.currentPeriod!, billingPeriods) ? 'Cobrar el más antiguo' : 'Cobrar ahora'}
           </Button>
         </div>
       )}
@@ -353,7 +353,7 @@ export function SubscriptionDetailPage() {
       <div className="bg-surface text-surface-foreground border border-border rounded-2xl p-1.5 shadow-sm mt-1 sm:mt-2 sm:rounded-3xl sm:p-4">
         <div className="flex items-center gap-2 p-2.5 border-b border-border mb-2 sm:p-3">
           <ListChecks className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-base font-bold text-foreground">Historial de Pagos</h2>
+          <h2 className="text-base font-bold text-foreground">Historial de pagos</h2>
         </div>
 
         {billingPeriods.length === 0 ? (
@@ -459,7 +459,7 @@ export function SubscriptionDetailPage() {
       <ConfirmationDialog
         open={showStatusDialog}
         onOpenChange={setShowStatusDialog}
-        title={`${newStatus === SubscriptionStatus.ACTIVE ? 'Reactivar' : 'Suspender'} Suscripción`}
+        title={`${newStatus === SubscriptionStatus.ACTIVE ? 'Reactivar' : 'Suspender'} suscripción`}
         description={newStatus === SubscriptionStatus.ACTIVE
           ? '¿Está seguro que desea reactivar este servicio?'
           : 'El cliente no podrá usar el servicio hasta que lo reactives. ¿Continuar?'}
@@ -472,7 +472,7 @@ export function SubscriptionDetailPage() {
       <ConfirmationDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title="Eliminar Suscripción"
+        title="Eliminar suscripción"
         description="Esta acción eliminará todos los períodos de facturación de este servicio y no se puede deshacer. ¿Proceder?"
         onConfirm={handleDelete}
         confirmText="Eliminar permanentemente"

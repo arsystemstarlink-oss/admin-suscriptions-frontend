@@ -34,7 +34,7 @@ export function PaymentsLayout() {
   ]
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-2 sm:space-y-4 md:space-y-6">
       {isSuperAdmin ? (
         <PageSubNav tabs={tabs} />
       ) : (

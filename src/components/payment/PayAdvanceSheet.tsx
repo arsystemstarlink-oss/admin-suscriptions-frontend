@@ -152,7 +152,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="pay-advance-date" className="text-foreground">Fecha de Pago *</Label>
+                    <Label htmlFor="pay-advance-date" className="text-foreground">Fecha de pago *</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground shrink-0" />
                       <Input
@@ -169,7 +169,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="pay-advance-method" className="text-foreground">Método de Pago *</Label>
+                    <Label htmlFor="pay-advance-method" className="text-foreground">Método de pago *</Label>
                     <Select value={watch('paymentMethod')} onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
                       <SelectTrigger id="pay-advance-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">

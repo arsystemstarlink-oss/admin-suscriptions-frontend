@@ -144,7 +144,7 @@ export function SubscriptionEditPage() {
         backState={{ from: returnTo }}
         title={
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Editar Suscripción</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Editar suscripción</h1>
             <p className="text-sm text-muted-foreground">
               {subscription?.kitNumber || 'Modificar configuración'}
             </p>
@@ -332,7 +332,7 @@ export function SubscriptionEditPage() {
         formId="subscription-edit-form"
         cancelTo={`/subscriptions/${id}`}
         cancelState={{ from: returnTo }}
-        submitLabel="Actualizar Suscripción"
+        submitLabel="Actualizar suscripción"
         submittingLabel="Actualizando Suscripción..."
         isSubmitting={isSubmitting}
       />

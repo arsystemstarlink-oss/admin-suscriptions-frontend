@@ -38,7 +38,7 @@ export function SubscriptionsLayout() {
   ].includes(pathname)
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-2 sm:space-y-4 md:space-y-6">
       {showSubNav && <PageSubNav tabs={tabs} />}
       <Outlet />
     </div>

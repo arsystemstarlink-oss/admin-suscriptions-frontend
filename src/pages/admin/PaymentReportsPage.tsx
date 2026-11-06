@@ -330,8 +330,8 @@ export function PaymentReportsPage() {
                   </div>
                 ) : rejectMode ? (
                   <form id="reject-report-form" onSubmit={handleSubmit(handleReject)} className="space-y-2">
-                    <Label className="text-foreground">Motivo del rechazo *</Label>
-                    <Input placeholder="Ej: referencia inválida, monto no coincide..." {...register('notes')} className="h-12" />
+                    <Label htmlFor="reject-report-notes" className="text-foreground">Motivo del rechazo *</Label>
+                    <Input id="reject-report-notes" placeholder="Ej: referencia inválida, monto no coincide..." {...register('notes')} aria-invalid={!!errors.notes} className="h-12" />
                     {errors.notes && (
                       <p className="text-sm font-medium text-destructive">{errors.notes.message}</p>
                     )}

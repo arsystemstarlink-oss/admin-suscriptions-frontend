@@ -64,7 +64,7 @@ export function ClientDetailPage() {
         <h2 className="text-xl font-bold text-foreground">Error al cargar cliente</h2>
         <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del cliente solicitado.</p>
         <Button asChild>
-          <Link to="/subscriptions/clients">Volver a Clientes</Link>
+          <Link to="/subscriptions/clients">Volver a clientes</Link>
         </Button>
       </div>
     )
@@ -122,7 +122,7 @@ export function ClientDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 pb-[calc(100px+env(safe-area-inset-bottom))] sm:gap-4">
+    <div className="flex flex-col gap-3 sm:gap-4">
       
       <DetailNav
         className="mb-2"
@@ -141,7 +141,7 @@ export function ClientDetailPage() {
                 state={{ returnTo: `${location.pathname}${location.search}` }}
               >
                 <Plus className="h-5 w-5 shrink-0 sm:mr-1.5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Nueva Suscripción</span>
+                <span className="hidden sm:inline">Nueva suscripción</span>
               </Link>
             </Button>
             <Button variant="outline" size="icon" asChild className="rounded-full bg-surface text-surface-foreground border-border shadow-sm" aria-label="Editar cliente" title="Editar cliente">
@@ -195,7 +195,7 @@ export function ClientDetailPage() {
             onClick={handleOpenChat}
             disabled={!client.phone}
             aria-label="Abrir chat de WhatsApp"
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-muted font-semibold text-surface-muted-foreground transition-colors hover:bg-surface-hover active:bg-surface-active touch-manipulation disabled:opacity-50 sm:h-11"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border-subtle bg-surface-muted px-2 text-xs font-semibold text-surface-muted-foreground transition-colors hover:bg-surface-hover active:bg-surface-active touch-manipulation disabled:opacity-50 sm:h-11 sm:px-3 sm:text-sm"
           >
             <MessageSquare className="h-4 w-4" /> Abrir WhatsApp
           </button>
@@ -227,7 +227,7 @@ export function ClientDetailPage() {
             className="col-span-2 h-10 gap-2 px-2 text-xs sm:h-11 sm:px-3 sm:text-sm"
           >
             <MessageSquare className="h-4 w-4 shrink-0" />
-            Enviar por WhatsApp
+            Enviar enlace por WhatsApp
           </Button>
         </div>
         {organizationError && (
@@ -248,7 +248,7 @@ export function ClientDetailPage() {
           <p className="text-xl font-bold leading-tight text-destructive sm:text-2xl">{summary.totalOverdue}</p>
         </div>
         <div className="flex w-[40vw] min-w-31.25 shrink-0 snap-center flex-col justify-center rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:w-[45vw] sm:min-w-35 sm:rounded-2xl sm:p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Total Subs</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Total</p>
           <p className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{summary.totalSubscriptions}</p>
         </div>
       </div>

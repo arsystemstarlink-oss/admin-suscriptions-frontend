@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type KeyboardEvent, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Slot } from '@radix-ui/react-slot'
 
@@ -16,8 +16,20 @@ export function ListCard({ children, className, onClick, asChild = false }: List
 
   return (
     <Component
-      className={cn(baseClasses, asChild && 'block', interactiveClasses, className)}
+      className={cn(baseClasses, asChild && 'block', interactiveClasses, onClick && !asChild && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', className)}
       onClick={onClick}
+      {...(onClick && !asChild
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+              if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                onClick()
+              }
+            },
+          }
+        : {})}
     >
       {children}
     </Component>

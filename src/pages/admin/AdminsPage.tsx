@@ -104,7 +104,7 @@ export function AdminsPage() {
             )}
             <FilterPill active={createOpen} onClick={() => setCreateOpen(!createOpen)}>
               <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-              Nuevo Administrador
+              Nuevo administrador
             </FilterPill>
           </>
         }
@@ -116,7 +116,7 @@ export function AdminsPage() {
         emptyAction={
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2 shrink-0" />
-            Crear Administrador
+            Crear administrador
           </Button>
         }
       >

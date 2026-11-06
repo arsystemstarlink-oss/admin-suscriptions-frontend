@@ -53,7 +53,7 @@ export function DeleteClientSheet({ clientId, clientName, open, onOpenChange }: 
               <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
             </div>
             <div>
-              <SheetTitle>Eliminar Cliente</SheetTitle>
+              <SheetTitle>Eliminar cliente</SheetTitle>
               <SheetDescription>
                 ¿Está seguro que desea eliminar a {clientName}?
               </SheetDescription>

@@ -189,7 +189,7 @@ export function EditOrganizationSheet({
               <Building2 className="h-5 w-5 text-primary-text shrink-0" />
             </div>
             <div>
-              <SheetTitle>Editar Organización</SheetTitle>
+              <SheetTitle>Editar organización</SheetTitle>
               <SheetDescription>
                 Modifica los datos de {organization.name}
               </SheetDescription>

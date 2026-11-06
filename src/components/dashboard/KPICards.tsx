@@ -18,14 +18,14 @@ export function KPICards() {
   if (!isSuperAdmin || !!organizationId) {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2">
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-2 rounded-xl border border-border bg-surface p-2.5 text-surface-foreground"
+              className="flex flex-col items-start gap-1.5 rounded-xl border border-border bg-surface p-2.5 text-surface-foreground sm:flex-row sm:items-center sm:gap-2"
             >
               <div className="h-8 w-8 shrink-0 rounded-lg bg-muted animate-pulse" />
-              <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="w-full min-w-0 flex-1 space-y-1.5">
                 <div className="h-2.5 w-14 rounded bg-muted animate-pulse" />
                 <div className="h-5 w-8 rounded bg-muted animate-pulse" />
               </div>

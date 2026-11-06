@@ -138,7 +138,7 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
           <span className="p-1.5 rounded-lg bg-primary/10 text-primary-text shrink-0">
             <Clock className="h-4 w-4 shrink-0" />
           </span>
-          <h2 className="text-base font-bold text-foreground group-hover:text-primary-text transition-colors truncate">Cobros Pendientes</h2>
+          <h2 className="text-base font-bold text-foreground group-hover:text-primary-text transition-colors truncate">Cobros pendientes</h2>
         </span>
         <span className="flex items-center gap-2 shrink-0">
           {items.length > 0 && (
@@ -455,7 +455,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
             <AlertTriangle className="h-4 w-4 shrink-0" />
           </span>
           <span className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary-text">Top Deudores</span>
+            <span className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary-text">Mayores deudores</span>
             {data && data.topDebtors.count > 0 && (
               <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold text-destructive">
                 {data.topDebtors.count}
@@ -700,7 +700,7 @@ export function ExpiringSoonWidget({ organizationId, enabled }: DashboardWidgetP
           <span className="p-1.5 rounded-lg bg-warning/10 text-warning shrink-0">
             <Calendar className="h-4 w-4 shrink-0" />
           </span>
-          <h2 className="text-base font-bold text-foreground group-hover:text-primary-text transition-colors truncate">Vencimientos Próximos</h2>
+          <h2 className="text-base font-bold text-foreground group-hover:text-primary-text transition-colors truncate">Vencimientos próximos</h2>
         </span>
         <span className="flex items-center gap-2 shrink-0">
           {items.length > 0 && (

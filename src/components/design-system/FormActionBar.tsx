@@ -19,7 +19,7 @@ export function FormActionBar({
   isSubmitting,
 }: FormActionBarProps) {
   return (
-    <div className="fixed bottom-(--mobile-nav-h) left-0 right-0 z-50 border-t border-border bg-surface/95 p-4 backdrop-blur-xl md:bottom-0">
+    <div className="fixed bottom-(--mobile-nav-h) left-0 right-0 z-50 border-t border-border bg-surface/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xl md:bottom-0">
       <div className="flex gap-3">
         <Button
           type="button"
@@ -44,6 +44,7 @@ export function FormActionBar({
           form={formId}
           className="h-12 flex-1 text-base font-semibold"
           disabled={isSubmitting}
+          aria-busy={isSubmitting}
         >
           {isSubmitting ? submittingLabel : submitLabel}
         </Button>

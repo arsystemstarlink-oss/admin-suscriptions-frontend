@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { usePlanDetail, useCreatePlan, useUpdatePlan } from '@/hooks/usePlans'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertTriangle, Package, DollarSign } from 'lucide-react'
@@ -11,7 +12,7 @@ import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { getNavigationStatePath } from '@/lib/navigation'
@@ -37,16 +38,28 @@ export function PlanFormPage() {
   const updateMutation = useUpdatePlan()
   const [error, setError] = useState<string | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
+  const userId = useAuthStore((state) => state.user?.id)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<PlanForm>({
     resolver: zodResolver(planSchema),
   })
+  const draft = useFormDraft({
+    key: `ar-form-draft:${userId ?? 'unknown'}:plan:new`,
+    watch,
+    reset,
+    enabled: !isEdit && !!userId,
+  })
+
+  useEffect(() => {
+    if (draft.restored) toast.info('Recuperamos el borrador del plan')
+  }, [draft.restored])
 
   useEffect(() => {
     if (isEdit && data) {
@@ -80,10 +93,12 @@ export function PlanFormPage() {
           organizationId: data?.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Plan actualizado correctamente')
+        draft.clearDraft()
         navigate(returnTo, { replace: true })
       } else {
         await createMutation.mutateAsync(payload)
         toast.success('Plan creado correctamente')
+        draft.clearDraft()
         navigate(returnTo, { replace: true })
       }
     } catch {

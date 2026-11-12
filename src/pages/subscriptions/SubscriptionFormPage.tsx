@@ -4,6 +4,7 @@ import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreateSubscription } from '@/hooks/useSubscriptions'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { useClients } from '@/hooks/useClients'
 import { usePlans } from '@/hooks/usePlans'
 import { Button } from '@/components/ui/button'
@@ -26,7 +27,7 @@ import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGu
 import { PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { findAlignedBillingPeriod } from '@/lib/billing-cycle'
@@ -71,6 +72,7 @@ export function SubscriptionFormPage() {
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions'
   const preselectedClientId = searchParams.get('clientId')
   const isSuperAdmin = useIsSuperAdmin()
+  const userId = useAuthStore((state) => state.user?.id)
   const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const createMutation = useCreateSubscription()
   const [error, setError] = useState<string | null>(null)
@@ -81,6 +83,7 @@ export function SubscriptionFormPage() {
     handleSubmit,
     setValue,
     watch,
+    reset,
     control,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<SubscriptionForm>({
@@ -90,6 +93,16 @@ export function SubscriptionFormPage() {
       historicalPayments: [],
     },
   })
+  const draft = useFormDraft({
+    key: `ar-form-draft:${userId ?? 'unknown'}:subscription:new`,
+    watch,
+    reset,
+    enabled: !!userId,
+  })
+
+  useEffect(() => {
+    if (draft.restored) toast.info('Recuperamos el borrador de la suscripción')
+  }, [draft.restored])
 
   const orgEnabled = !isSuperAdmin || !!selectedOrganizationId
   const { data: clientsData } = useClients(
@@ -213,6 +226,7 @@ export function SubscriptionFormPage() {
       }
 
       await createMutation.mutateAsync(request)
+      draft.clearDraft()
       toast.success('Suscripción creada correctamente')
       navigate(returnTo, { replace: true })
     } catch (err: unknown) {

@@ -4,8 +4,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useClientDetail, useCreateClient, useUpdateClient } from '@/hooks/useClients'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
@@ -57,6 +58,7 @@ export function ClientFormPage() {
   const isEdit = !!id
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/clients'
   const isSuperAdmin = useIsSuperAdmin()
+  const userId = useAuthStore((state) => state.user?.id)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { data, isLoading } = useClientDetail(id!, organizationId || undefined, {
     enabled: !isSuperAdmin || !!organizationId,
@@ -71,6 +73,7 @@ export function ClientFormPage() {
     control,
     handleSubmit,
     reset,
+    watch,
     setError,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ClientForm>({
@@ -80,6 +83,16 @@ export function ClientFormPage() {
       dniDigits: '',
     },
   })
+  const draft = useFormDraft({
+    key: `ar-form-draft:${userId ?? 'unknown'}:client:new`,
+    watch,
+    reset,
+    enabled: !isEdit && !!userId,
+  })
+
+  useEffect(() => {
+    if (draft.restored) toast.info('Recuperamos el borrador del cliente')
+  }, [draft.restored])
 
   useEffect(() => {
     if (isEdit && data) {
@@ -125,10 +138,12 @@ export function ClientFormPage() {
           organizationId: data?.client.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Cliente actualizado correctamente')
+        draft.clearDraft()
         navigate(`/subscriptions/clients/${id}`, { replace: true, state: { from: returnTo } })
       } else {
         const newClient = await createMutation.mutateAsync(payload as CreateClientRequest)
         toast.success('Cliente creado correctamente')
+        draft.clearDraft()
         navigate(`/subscriptions/clients/${newClient.id}`, {
           state: { from: returnTo },
         })

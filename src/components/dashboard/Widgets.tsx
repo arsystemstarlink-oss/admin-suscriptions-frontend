@@ -14,6 +14,7 @@ import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, Chevr
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { isAxiosError } from 'axios'
 import { useSendMessage } from '@/hooks/useWhatsApp'
 import { useOrganizationWhatsAppConfig } from '@/hooks/useOrganizations'
@@ -121,8 +122,8 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
         staleTime: 0,
       })
       openQuickPay({ period })
-    } catch {
-      toast.error('Error al cargar el período para el cobro')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cargar el período para el cobro'))
     } finally {
       setLoadingId(null)
     }
@@ -369,8 +370,8 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
         staleTime: 0,
       })
       openQuickPay({ period })
-    } catch {
-      toast.error('Error al cargar el período del cliente')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cargar el período del cliente'))
     } finally {
       setLoadingId(null)
     }

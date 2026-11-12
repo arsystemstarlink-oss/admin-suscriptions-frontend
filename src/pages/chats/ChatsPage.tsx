@@ -11,6 +11,7 @@ import { Check, MessageSquare, Send, Users, ArrowLeft, Trash2 } from 'lucide-rea
 import { cn, getClientFullName, getInitial } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { PageHeader } from '@/components/design-system/PageHeader'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -276,9 +277,14 @@ export function ChatsPage() {
         toast.error('La organización está inactiva y no puede enviar mensajes de WhatsApp.')
       } else if (apiError.code === 'TWILIO_ERROR') {
         const twilioDetail = apiError.twilioCode ? ` (Código Twilio: ${apiError.twilioCode})` : ''
-        toast.error(`${apiError.message || 'Error de Twilio al enviar el mensaje.'}${twilioDetail}`)
+        toast.error(`${apiError.message || 'Twilio no pudo enviar el mensaje.'}${twilioDetail}`)
       } else {
-        toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
+        toast.error(
+          getErrorMessage(
+            err,
+            'No se pudo enviar el mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa una plantilla.',
+          ),
+        )
       }
     } finally {
       sendingRef.current = false

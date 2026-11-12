@@ -307,7 +307,7 @@ export function QuickPayModal() {
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="h-5 w-5 mr-2 shrink-0 animate-spin" />
-                    Procesando...
+                    Registrando...
                   </>
                 ) : (
                   <>

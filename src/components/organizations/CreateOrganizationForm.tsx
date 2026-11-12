@@ -268,7 +268,7 @@ export function CreateOrganizationForm({
           toast.error(handler.message)
         }
       } else {
-        toast.error(handler?.message || apiError.message || 'Error al crear la organización')
+        toast.error(handler?.message || apiError.message || 'No se pudo crear la organización')
       }
     } finally {
       setIsSubmitting(false)

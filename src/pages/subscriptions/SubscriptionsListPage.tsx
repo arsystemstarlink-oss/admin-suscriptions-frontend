@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
-import { useInfiniteSubscriptions, useSubscriptionFilterTotals } from '@/hooks/useSubscriptions'
+import { useInfiniteSubscriptions, usePrefetchSubscriptionDetail, useSubscriptionFilterTotals } from '@/hooks/useSubscriptions'
 import { useDashboardAlerts, useDashboardSummary } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
@@ -30,6 +30,7 @@ export function SubscriptionsListPage() {
   const { isReadOnly } = getOrganizationPlanAccess(user?.role === 'admin' ? user.organization : undefined)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { openOldestUnpaidPeriod, loadingSubscriptionId: payingId } = useOpenOldestUnpaidPeriod(organizationId ?? undefined)
+  const prefetchSubscription = usePrefetchSubscriptionDetail(organizationId ?? undefined)
 
   const pageIndex = Math.max(0, (Number.parseInt(searchParams.get('page') ?? '', 10) || 1) - 1)
   const statusFilter = searchParams.get('status') as 'ACTIVE' | 'SUSPENDED' | null
@@ -341,7 +342,12 @@ export function SubscriptionsListPage() {
                 >
                   <Link
                     to={`/subscriptions/${sub.id}`}
-                    state={{ from: `${location.pathname}${location.search}` }}
+                    state={{
+                      from: `${location.pathname}${location.search}`,
+                      preview: { title: getClientFullName(sub.client), subtitle: sub.kitNumber },
+                    }}
+                    onPointerDown={() => prefetchSubscription(sub.id)}
+                    onFocus={() => prefetchSubscription(sub.id)}
                     className="block rounded-xl sm:rounded-2xl p-3 sm:p-4 active:scale-[0.98] transition-all touch-manipulation"
                   >
                   {/* Top Row: Client & Status */}

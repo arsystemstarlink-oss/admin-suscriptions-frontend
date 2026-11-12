@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { formatLocalDate } from '@/lib/constants'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { qk } from '@/lib/query-keys'
@@ -386,10 +387,6 @@ export function WhatsAppTestStep({ organizationId, disabled }: { organizationId:
   )
 }
 
-function formatFailureDate(value: string): string {
-  return new Date(value).toLocaleDateString('es', { day: 'numeric', month: 'short' })
-}
-
 export function WhatsAppFailuresSection({ organizationId }: { organizationId: string }) {
   const failures = useWhatsAppFailures(organizationId)
 
@@ -412,7 +409,7 @@ export function WhatsAppFailuresSection({ organizationId }: { organizationId: st
             {failure.count === 1 ? '1 aviso no salió' : `${failure.count} avisos no salieron`}: {failure.message}
           </p>
           <p className="mt-1 text-xs">
-            Último el {formatFailureDate(failure.lastAt)} · {failure.recipients.join(', ')}
+            Último el {formatLocalDate(failure.lastAt)} · {failure.recipients.join(', ')}
             {failure.count > failure.recipients.length && ' y otros'}
             {failure.errorCode ? ` · Código Twilio ${failure.errorCode}` : ''}
           </p>

@@ -9,8 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertTriangle, Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { FormSkeleton } from '@/components/design-system/Skeleton'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { Button } from '@/components/ui/button'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
@@ -34,7 +37,7 @@ export function PlanFormPage() {
   const location = useLocation()
   const isEdit = !!id
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/plans'
-  const { data, isLoading } = usePlanDetail(id!)
+  const { data, isLoading, refetch, isFetching } = usePlanDetail(id!)
   const createMutation = useCreatePlan()
   const updateMutation = useUpdatePlan()
   const [error, setError] = useState<string | null>(null)
@@ -102,8 +105,8 @@ export function PlanFormPage() {
         draft.clearDraft()
         navigate(returnTo, { replace: true })
       }
-    } catch {
-      setError('Error al guardar el plan. Inténtalo de nuevo.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo guardar el plan. Inténtalo de nuevo.'))
     }
   }
 
@@ -118,6 +121,21 @@ export function PlanFormPage() {
   if (!isEdit && isSuperAdmin && !organizationId) {
     return (
       <OrganizationSelectionEmptyState description="Elige una organización para crear el plan." />
+    )
+  }
+
+  if (isEdit && !data) {
+    return (
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar el plan"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        <Button variant="outline" onClick={() => navigate(returnTo, { replace: true })}>
+          Volver a planes
+        </Button>
+      </div>
     )
   }
 

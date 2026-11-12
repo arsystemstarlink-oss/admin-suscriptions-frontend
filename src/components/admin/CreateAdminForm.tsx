@@ -174,7 +174,7 @@ export function CreateAdminForm({
   const showGenericError = (err: unknown) => {
     const apiError = err as Partial<ApiError>
     const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
-    toast.error(handler?.message || apiError.message || 'Error al crear el administrador')
+    toast.error(handler?.message || apiError.message || 'No se pudo crear el administrador')
   }
 
   const onSubmit = async (data: AdminForm) => {

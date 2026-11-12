@@ -141,6 +141,9 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 - Estados en curso: gerundio del verbo de la acción y tres puntos — "Guardando...", "Eliminando...". Evitar el genérico "Procesando..." cuando hay un verbo concreto.
 - Errores de carga: "No se pudo cargar {cosa}". Errores de acción: "No se pudo {acción}. Inténtalo de nuevo."
 
+- En un `catch` con mensaje fijo, usar `getErrorMessage(err, 'No se pudo…')`: si el fallo fue por falta de red, muestra el aviso de sin conexión en lugar del genérico. Los `error.message` que llegan del cliente HTTP ya vienen en español.
+- Fechas: `formatDate` para fechas de facturación (sin hora, en UTC) y `formatLocalDate` para eventos con hora (último acceso, altas). No usar `toLocaleDateString` ni `date-fns` directo para esto.
+
 ### Plataforma
 
 - Alturas de pantalla con `dvh` (`min-h-dvh`, `h-dvh`), no `screen`: evita saltos con la barra del navegador móvil.

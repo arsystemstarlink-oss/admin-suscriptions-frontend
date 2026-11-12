@@ -62,6 +62,18 @@ export function useClientDetail(id: string, organizationId?: string, options?: {
   })
 }
 
+/** Adelanta la carga del detalle cuando el usuario toca o enfoca una fila de la lista. */
+export function usePrefetchClientDetail(organizationId?: string) {
+  const qc = useQueryClient()
+
+  return (id: string) => {
+    void qc.prefetchQuery({
+      queryKey: qk.clients.detail(id, organizationId),
+      queryFn: () => clientsApi.getById(id, organizationId),
+    })
+  }
+}
+
 export function useCreateClient() {
   const qc = useQueryClient()
 

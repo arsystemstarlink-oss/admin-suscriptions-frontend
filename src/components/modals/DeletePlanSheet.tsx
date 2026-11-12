@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDeletePlan } from '@/hooks/usePlans'
 import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 
 interface DeletePlanSheetProps {
   planId: string
@@ -31,7 +32,7 @@ export function DeletePlanSheet({ planId, planName, open, onOpenChange }: Delete
       if (apiErr.code === 'PLAN_HAS_SUBSCRIPTIONS') {
         setError('No puedes eliminar un plan con suscripciones asociadas. Reasígnalas a otro plan primero.')
       } else {
-        setError('No se pudo eliminar el plan. Inténtalo de nuevo.')
+        setError(getErrorMessage(err, 'No se pudo eliminar el plan. Inténtalo de nuevo.'))
       }
     }
   }

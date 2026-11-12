@@ -22,6 +22,8 @@ import { AlertTriangle, User, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { FormSkeleton } from '@/components/design-system/Skeleton'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { Button } from '@/components/ui/button'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { normalizeDni } from '@/lib/utils'
@@ -61,7 +63,7 @@ export function ClientFormPage() {
   const isSuperAdmin = useIsSuperAdmin()
   const userId = useAuthStore((state) => state.user?.id)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
-  const { data, isLoading } = useClientDetail(id!, organizationId || undefined, {
+  const { data, isLoading, refetch, isFetching } = useClientDetail(id!, organizationId || undefined, {
     enabled: !isSuperAdmin || !!organizationId,
   })
   const createMutation = useCreateClient()
@@ -164,9 +166,26 @@ export function ClientFormPage() {
     )
   }
 
-  if (!isEdit && isSuperAdmin && !organizationId) {
+  if (isSuperAdmin && !organizationId) {
     return (
-      <OrganizationSelectionEmptyState description="Elige una organización para registrar el cliente." />
+      <OrganizationSelectionEmptyState
+        description={isEdit ? 'Elige una organización para editar el cliente.' : 'Elige una organización para registrar el cliente.'}
+      />
+    )
+  }
+
+  if (isEdit && !data) {
+    return (
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar el cliente"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        <Button variant="outline" onClick={() => navigate(backTo, { replace: true })}>
+          Volver
+        </Button>
+      </div>
     )
   }
 

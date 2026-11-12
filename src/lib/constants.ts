@@ -92,6 +92,18 @@ export function formatDate(dateString: string): string {
   }).format(date)
 }
 
+/**
+ * Fecha de un evento con hora (último acceso, alta de un dispositivo), en la zona del
+ * usuario. formatDate usa UTC porque las fechas de facturación no llevan hora.
+ */
+export function formatLocalDate(dateString: string): string {
+  return new Intl.DateTimeFormat('es-MX', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(dateString))
+}
+
 export function isExpiringSoon(endDate: string, daysThreshold: number = 7): boolean {
   const today = new Date()
   const todayUTC = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())

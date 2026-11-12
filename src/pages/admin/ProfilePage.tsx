@@ -155,7 +155,7 @@ export function ProfilePage() {
   const showGenericError = (err: unknown) => {
     const apiError = err as Partial<ApiError>
     const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
-    toast.error(handler?.message || apiError.message || 'Error al guardar')
+    toast.error(handler?.message || apiError.message || 'No se pudieron guardar los cambios')
   }
 
   if (!user) {

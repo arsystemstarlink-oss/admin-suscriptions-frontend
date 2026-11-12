@@ -114,7 +114,7 @@ export function LoginPage() {
       } else if (!navigator.onLine) {
         setError('Sin conexión a internet. Revisa tu red e inténtalo de nuevo.')
       } else {
-        setError('Error al iniciar sesión. Inténtalo de nuevo.')
+        setError('No se pudo iniciar sesión. Inténtalo de nuevo.')
       }
       triggerShake()
     } finally {

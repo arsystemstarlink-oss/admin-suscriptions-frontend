@@ -12,8 +12,7 @@ import {
   Share,
   TriangleAlert,
 } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { formatLocalDate } from '@/lib/constants'
 import { toast } from 'sonner'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { describeUserAgent, getPushPlatform, isStandalone, type PushPlatform } from '@/lib/push'
@@ -308,7 +307,7 @@ export function NotificationSettings() {
                       {describeUserAgent(device.userAgent ?? '')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Activadas el {format(new Date(device.createdAt), "d 'de' MMM yyyy", { locale: es })}
+                      Activadas el {formatLocalDate(device.createdAt)}
                     </p>
                   </div>
                   <Button

@@ -99,6 +99,18 @@ export function useSubscriptionDetail(id: string, organizationId?: string, optio
   })
 }
 
+/** Adelanta la carga del detalle cuando el usuario toca o enfoca una fila de la lista. */
+export function usePrefetchSubscriptionDetail(organizationId?: string) {
+  const qc = useQueryClient()
+
+  return (id: string) => {
+    void qc.prefetchQuery({
+      queryKey: [...qk.subscriptions.detail(id), organizationId],
+      queryFn: () => subscriptionsApi.getById(id, organizationId),
+    })
+  }
+}
+
 export function useCreateSubscription() {
   const qc = useQueryClient()
 
@@ -199,13 +211,13 @@ export function usePayAdvance(subscriptionId: string) {
         qc.invalidateQueries({ queryKey: qk.billing.lists })
         qc.invalidateQueries({ queryKey: qk.subscriptions.detail(subscriptionId) })
       } else if (apiError.code === 'SUBSCRIPTION_SUSPENDED') {
-        toast.error('Suscripción suspendida: cobre los vencidos primero')
+        toast.error('Suscripción suspendida: cobra los vencidos primero')
       } else if (apiError.code === 'INVALID_PERIOD_STATE') {
         toast.error('La suscripción no está en un estado que permita registrar el adelanto')
       } else if (apiError.code === 'INVALID_DATE_FORMAT') {
         toast.error('El formato de fecha de pago no es válido')
       } else {
-        toast.error(apiError.message || 'Error al registrar el adelanto')
+        toast.error(apiError.message || 'No se pudo registrar el adelanto')
       }
     },
   })

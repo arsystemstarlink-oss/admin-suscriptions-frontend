@@ -157,7 +157,7 @@ export function EditOrganizationSheet({
           message: handler.message,
         })
       } else {
-        const message = handler?.message || apiError.message || 'Error al actualizar la organización'
+        const message = handler?.message || apiError.message || 'No se pudo actualizar la organización'
         toast.error(message)
         setError(message)
       }
@@ -173,7 +173,7 @@ export function EditOrganizationSheet({
     } catch (err) {
       const apiError = err as Partial<ApiError>
       const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
-      const message = handler?.message || apiError.message || 'Error al eliminar la organización'
+      const message = handler?.message || apiError.message || 'No se pudo eliminar la organización'
       toast.error(message)
       setError(message)
       setShowDeleteConfirm(false)

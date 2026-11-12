@@ -22,7 +22,7 @@ import { DetailSkeleton } from '@/components/design-system/Skeleton'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { isNotFoundError } from '@/lib/error-handler'
 import type { SubscriptionWithDetails } from '@/types/api'
-import { getNavigationStatePath } from '@/lib/navigation'
+import { getNavigationPreview, getNavigationStatePath } from '@/lib/navigation'
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -51,7 +51,7 @@ export function ClientDetailPage() {
   }
 
   if (isLoading) {
-    return <DetailSkeleton label="Cargando cliente" stats={2} sections={2} />
+    return <DetailSkeleton label="Cargando cliente" stats={2} sections={2} preview={getNavigationPreview(location.state)} />
   }
 
   // Con datos en caché se sigue mostrando el detalle aunque falle la actualización.

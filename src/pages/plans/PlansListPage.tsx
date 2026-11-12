@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Package, Edit, Trash2, Plus, RotateCcw } from 'lucide-react'
 import { formatCurrency } from '@/lib/constants'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { DeletePlanSheet } from '@/components/modals/DeletePlanSheet'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
@@ -56,8 +57,8 @@ export function PlansListPage() {
     try {
       await updateMutation.mutateAsync({ id, data: { active: !currentActive } })
       toast.success(currentActive ? 'Plan desactivado' : 'Plan activado')
-    } catch {
-      toast.error('Error al cambiar el estado del plan')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cambiar el estado del plan'))
     }
   }
 

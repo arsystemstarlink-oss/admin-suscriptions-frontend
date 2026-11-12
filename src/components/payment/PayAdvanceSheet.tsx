@@ -215,7 +215,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  'Procesando...'
+                  'Registrando...'
                 ) : (
                   <>
                     <DollarSign className="h-5 w-5 mr-2 shrink-0" />

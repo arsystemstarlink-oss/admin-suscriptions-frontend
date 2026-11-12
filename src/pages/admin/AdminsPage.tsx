@@ -4,6 +4,7 @@ import { useAdmins, useDeleteAdmin } from '@/hooks/useAdmins'
 import { useOrganizations } from '@/hooks/useOrganizations'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
+import { formatLocalDate } from '@/lib/constants'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Users, Edit, Trash2, ShieldCheck, Building2 } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
@@ -149,7 +150,7 @@ export function AdminsPage() {
                   )}
                   {admin.lastLoginAt && (
                     <span className="text-xs">
-                      Último acceso: {new Date(admin.lastLoginAt).toLocaleDateString('es-ES')}
+                      Último acceso: {formatLocalDate(admin.lastLoginAt)}
                     </span>
                   )}
                 </div>

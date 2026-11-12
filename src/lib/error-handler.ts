@@ -1,5 +1,6 @@
 import type { ErrorCode } from '@/types/api'
 import { toast } from 'sonner'
+import { isNetworkError, networkErrorMessage } from '@/lib/network-error'
 
 export class BusinessError extends Error {
   code: ErrorCode
@@ -207,7 +208,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INTERNAL_ERROR: {
     type: 'toast',
     variant: 'error',
-    message: 'Error interno del servidor',
+    message: 'El servidor tuvo un problema. Inténtalo de nuevo.',
   },
   INVALID_ACTIVATION_DATE: {
     type: 'toast',
@@ -307,7 +308,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   JOB_ALREADY_RUNNING: {
     type: 'toast',
     variant: 'warning',
-    message: 'El Daily Job ya está en ejecución para esta organización.',
+    message: 'La tarea diaria ya está en ejecución para esta organización.',
   },
   RATE_LIMITED: {
     type: 'toast',
@@ -362,7 +363,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   TWILIO_ERROR: {
     type: 'toast',
     variant: 'error',
-    message: 'Error de Twilio al enviar el mensaje de WhatsApp.',
+    message: 'Twilio no pudo enviar el mensaje de WhatsApp.',
   },
   PAYMENT_REPORT_NOT_FOUND: {
     type: 'toast',
@@ -612,6 +613,12 @@ export function isNotFoundError(error: unknown): boolean {
   return typeof code === 'string' && (code === 'NOT_FOUND' || code.endsWith('_NOT_FOUND'))
 }
 
+/** Mensaje para un fallo sin código de negocio: distingue "sin conexión" del error genérico. */
+export function getErrorMessage(error: unknown, fallback: string): string {
+  if (!isNetworkError(error)) return fallback
+  return networkErrorMessage((error as { config?: { method?: string } }).config?.method)
+}
+
 export function getErrorHandler(code: ErrorCode): ErrorHandler {
   if (BUSINESS_ERROR_HANDLERS[code]) return BUSINESS_ERROR_HANDLERS[code]
   if (code.startsWith('INVALID_SUBSCRIPTION')) return BUSINESS_ERROR_HANDLERS.INVALID_SUBSCRIPTION
@@ -636,7 +643,7 @@ export function handleApiError(
   
   if (!apiError.code) {
     if (options.showToast !== false) {
-      toast.error(apiError.message || options.fallbackMessage || 'Error desconocido')
+      toast.error(apiError.message || options.fallbackMessage || 'No se pudo completar la acción')
     }
     return
   }

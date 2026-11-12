@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { billingApi } from '@/api/billing.api'
 import { qk } from '@/lib/query-keys'
 import { useUIStore } from '@/stores/ui.store'
@@ -31,8 +32,8 @@ export function useOpenOldestUnpaidPeriod(organizationId?: string) {
       } else {
         toast.info('No hay períodos pendientes para esta suscripción')
       }
-    } catch {
-      toast.error('Error al consultar los períodos de la suscripción')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudieron consultar los períodos de la suscripción'))
     } finally {
       setLoadingSubscriptionId(null)
     }

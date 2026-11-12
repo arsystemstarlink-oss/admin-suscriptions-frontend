@@ -19,9 +19,9 @@ import { EmptyState } from '@/components/design-system/EmptyState'
 import { ErrorState } from '@/components/design-system/ErrorState'
 import { DetailSkeleton } from '@/components/design-system/Skeleton'
 import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
-import { isNotFoundError } from '@/lib/error-handler'
+import { getErrorMessage, isNotFoundError } from '@/lib/error-handler'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
-import { getNavigationStatePath } from '@/lib/navigation'
+import { getNavigationPreview, getNavigationStatePath } from '@/lib/navigation'
 
 export function SubscriptionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -49,7 +49,7 @@ export function SubscriptionDetailPage() {
   }
 
   if (isLoading) {
-    return <DetailSkeleton label="Cargando suscripción" />
+    return <DetailSkeleton label="Cargando suscripción" preview={getNavigationPreview(location.state)} />
   }
 
   // Con datos en caché se sigue mostrando el detalle aunque falle la actualización.
@@ -103,8 +103,8 @@ export function SubscriptionDetailPage() {
       toast.success(`Suscripción ${action} correctamente`)
       setShowStatusDialog(false)
       setNewStatus(null)
-    } catch {
-      toast.error('Error al cambiar el estado de la suscripción')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cambiar el estado de la suscripción'))
     }
   }
 
@@ -115,8 +115,8 @@ export function SubscriptionDetailPage() {
       await deleteMutation.mutateAsync(id)
       toast.success('Suscripción eliminada correctamente')
       navigate('/subscriptions')
-    } catch {
-      toast.error('Error al eliminar la suscripción')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo eliminar la suscripción'))
     }
   }
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDeleteClient } from '@/hooks/useClients'
 import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 
 interface DeleteClientSheetProps {
   clientId: string
@@ -36,7 +37,7 @@ export function DeleteClientSheet({ clientId, clientName, open, onOpenChange }: 
       } else if (apiErr.code === 'CLIENT_HAS_SUBSCRIPTIONS') {
         setError('No puedes eliminar un cliente con suscripciones suspendidas. Elimínalas primero.')
       } else {
-        setError('No se pudo eliminar el cliente. Inténtalo de nuevo.')
+        setError(getErrorMessage(err, 'No se pudo eliminar el cliente. Inténtalo de nuevo.'))
       }
     }
   }

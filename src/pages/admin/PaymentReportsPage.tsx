@@ -360,7 +360,7 @@ export function PaymentReportsPage() {
                       onClick={handleApprove}
                       disabled={reviewMutation.isPending}
                     >
-                      {reviewMutation.isPending ? 'Procesando...' : 'Aprobar pago'}
+                      {reviewMutation.isPending ? 'Aprobando...' : 'Aprobar pago'}
                     </Button>
                   </div>
                 )}
@@ -384,7 +384,7 @@ export function PaymentReportsPage() {
                       className="h-12 flex-1"
                       disabled={reviewMutation.isPending}
                     >
-                      {reviewMutation.isPending ? 'Procesando...' : 'Confirmar rechazo'}
+                      {reviewMutation.isPending ? 'Rechazando...' : 'Confirmar rechazo'}
                     </Button>
                   </div>
                 )}

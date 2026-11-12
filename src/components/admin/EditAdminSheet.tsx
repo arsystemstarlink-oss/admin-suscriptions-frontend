@@ -109,7 +109,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
   const showGenericError = (err: unknown) => {
     const apiError = err as Partial<ApiError>
     const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
-    const message = handler?.message || apiError.message || 'Error al actualizar el administrador'
+    const message = handler?.message || apiError.message || 'No se pudo actualizar el administrador'
     toast.error(message)
     setError(message)
   }
@@ -143,7 +143,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
       onOpenChange(false)
     } catch (err: any) {
       const handler = err.code ? getErrorHandler(err.code) : undefined
-      const message = handler?.message || err.message || 'Error al eliminar el administrador'
+      const message = handler?.message || err.message || 'No se pudo eliminar el administrador'
       toast.error(message)
       setError(message)
       setShowDeleteConfirm(false)

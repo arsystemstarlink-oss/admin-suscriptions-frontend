@@ -568,7 +568,7 @@ export function ProfilePage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Nombre</p>
-                  <p className="break-words text-sm font-semibold text-foreground sm:text-base">{user.name}</p>
+                  <p className="wrap-break-word text-sm font-semibold text-foreground sm:text-base">{user.name}</p>
                 </div>
               </div>
               <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:p-4">

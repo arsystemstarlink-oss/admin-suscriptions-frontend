@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { pushApi } from '@/api/push.api'
+import { pushApi, type PushSubscriptionInfo } from '@/api/push.api'
 import { getErrorHandler } from '@/lib/error-handler'
 import type { ErrorCode } from '@/types/api'
 import {
   createPushSubscription,
+  expectTestPush,
   getNotificationPermission,
   getPushSubscription,
   isPushSupported,
@@ -14,13 +15,19 @@ interface UsePushNotificationsReturn {
   supported: boolean
   permission: NotificationPermission | null
   subscribed: boolean
+  /** Dispositivos de la cuenta con notificaciones activas. */
+  devices: PushSubscriptionInfo[]
+  /** Endpoint de la suscripción de este dispositivo, si existe. */
+  currentEndpoint: string | null
   checking: boolean
   toggling: boolean
   sendingTest: boolean
+  removingEndpoint: string | null
   error: string | null
   enable: () => Promise<boolean>
   disable: () => Promise<boolean>
   sendTest: () => Promise<boolean>
+  removeDevice: (endpoint: string) => Promise<boolean>
   refresh: () => Promise<void>
 }
 
@@ -39,9 +46,13 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     getNotificationPermission(),
   )
   const [subscribed, setSubscribed] = useState(false)
-  const [checking, setChecking] = useState(false)
+  const [devices, setDevices] = useState<PushSubscriptionInfo[]>([])
+  const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null)
+  // Empieza en true para no mostrar "inactivas" antes de la primera comprobación.
+  const [checking, setChecking] = useState(supported)
   const [toggling, setToggling] = useState(false)
   const [sendingTest, setSendingTest] = useState(false)
+  const [removingEndpoint, setRemovingEndpoint] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -53,19 +64,24 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setError(null)
     try {
       const subscription = await getPushSubscription()
+      setCurrentEndpoint(subscription?.endpoint ?? null)
+
+      const { subscriptions } = await pushApi.listSubscriptions()
+      setDevices(subscriptions)
+
       if (!subscription) {
         setSubscribed(false)
         return
       }
 
-      const { subscriptions } = await pushApi.listSubscriptions()
       if (subscriptions.some((entry) => entry.endpoint === subscription.endpoint)) {
         setSubscribed(true)
         return
       }
 
       try {
-        await pushApi.register(subscription)
+        const { subscription: registered } = await pushApi.register(subscription)
+        setDevices((current) => [...current, registered])
         setSubscribed(true)
       } catch (err) {
         setSubscribed(false)
@@ -117,12 +133,21 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     try {
       const result = await Notification.requestPermission()
       setPermission(result)
+      if (result === 'denied') {
+        // La pantalla ya explica cómo volver a permitirlas; no hace falta otro error.
+        return false
+      }
       if (result !== 'granted') {
-        throw new Error('Permiso denegado. Habilita las notificaciones desde tu navegador.')
+        throw new Error('Para activarlas, acepta el permiso que pide el navegador.')
       }
 
       const subscription = await createPushSubscription()
-      await pushApi.register(subscription)
+      const { subscription: registered } = await pushApi.register(subscription)
+      setCurrentEndpoint(subscription.endpoint)
+      setDevices((current) => [
+        ...current.filter((entry) => entry.endpoint !== registered.endpoint),
+        registered,
+      ])
       setSubscribed(true)
       return true
     } catch (err) {
@@ -146,7 +171,9 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           // La suscripción pudo ser eliminada del servidor previamente
         }
         await removePushSubscription()
+        setDevices((current) => current.filter((entry) => entry.endpoint !== subscription.endpoint))
       }
+      setCurrentEndpoint(null)
       setSubscribed(false)
       return true
     } catch (err) {
@@ -161,6 +188,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     setSendingTest(true)
     setError(null)
     try {
+      await expectTestPush()
       await pushApi.sendTest()
       return true
     } catch (err) {
@@ -171,17 +199,36 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     }
   }, [])
 
+  const removeDevice = useCallback(async (endpoint: string) => {
+    setRemovingEndpoint(endpoint)
+    setError(null)
+    try {
+      await pushApi.unregister(endpoint)
+      setDevices((current) => current.filter((entry) => entry.endpoint !== endpoint))
+      return true
+    } catch (err) {
+      setError(resolveErrorMessage(err, 'No se pudo quitar el dispositivo'))
+      return false
+    } finally {
+      setRemovingEndpoint(null)
+    }
+  }, [])
+
   return {
     supported,
     permission,
     subscribed,
+    devices,
+    currentEndpoint,
     checking,
     toggling,
     sendingTest,
+    removingEndpoint,
     error,
     enable,
     disable,
     sendTest,
+    removeDevice,
     refresh,
   }
 }

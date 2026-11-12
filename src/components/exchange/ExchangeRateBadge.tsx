@@ -65,7 +65,7 @@ export function ExchangeRateBadge({ className, compact = false }: ExchangeRateBa
         type="button"
         onClick={toggleSource}
         className={cn(
-          'flex min-w-0 max-w-[128px] items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-xs transition-opacity hover:opacity-80',
+          'flex min-w-0 max-w-32 items-center gap-1 rounded-full border border-border bg-surface-muted px-2 py-1 text-xs transition-opacity hover:opacity-80',
           className,
         )}
         title={toggleTitle}

@@ -14,6 +14,8 @@ import { PlanStatusBanner } from '@/components/plans/PlanStatusBanner'
 import { PendingPlanPaymentBanner } from '@/components/plans/PendingPlanPaymentBanner'
 import { StaleDataBanner } from './StaleDataBanner'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
+import { useAppBadge } from '@/hooks/useAppBadge'
+import { PushPromptBanner } from './PushPromptBanner'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -29,6 +31,7 @@ export function AuthenticatedLayout() {
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   useScrollRestoration(mainRef)
+  useAppBadge()
 
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
@@ -120,6 +123,7 @@ export function AuthenticatedLayout() {
           <StaleDataBanner />
           <PlanStatusBanner />
           <PendingPlanPaymentBanner />
+          <PushPromptBanner />
           <Outlet />
         </MobileAppShell>
         <QuickPayModal />
@@ -153,6 +157,7 @@ export function AuthenticatedLayout() {
           <StaleDataBanner />
           {planAccess.isReadOnly && <PlanStatusBanner />}
           <PendingPlanPaymentBanner />
+          <PushPromptBanner />
           <Outlet />
         </main>
       </div>

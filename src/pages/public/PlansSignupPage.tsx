@@ -189,7 +189,7 @@ function PlanSelectionSummary({
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-surface to-surface-muted">
+    <div className="overflow-hidden rounded-2xl border border-border bg-linear-to-br from-primary/10 via-surface to-surface-muted">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 p-5">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -840,7 +840,7 @@ export function PlansSignupPage() {
                         )}
                       </>
                     ) : (
-                      <div className="rounded-2xl border border-success/25 bg-gradient-to-br from-success/10 via-surface to-surface p-5">
+                      <div className="rounded-2xl border border-success/25 bg-linear-to-br from-success/10 via-surface to-surface p-5">
                         <div className="flex items-start gap-3">
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15">
                             <Check className="h-5 w-5 text-success" />

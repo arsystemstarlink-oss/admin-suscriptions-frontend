@@ -250,7 +250,7 @@ export function ClientFormPage() {
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="dniPrefix" className={`w-[88px] shrink-0 ${fieldClassName}`} aria-label="Tipo de cédula">
+                    <SelectTrigger id="dniPrefix" className={`w-22 shrink-0 ${fieldClassName}`} aria-label="Tipo de cédula">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -335,7 +335,7 @@ export function ClientFormPage() {
               id="notes"
               rows={3}
               placeholder="Notas adicionales sobre el cliente..."
-              className="flex w-full min-h-[6rem] rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full min-h-24 rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               {...register('notes')}
             />
           </div>

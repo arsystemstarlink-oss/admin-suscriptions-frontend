@@ -841,7 +841,7 @@ export function ConsultaPage() {
                                         {period.paymentMethod ? ` · ${PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}` : ''}
                                       </p>
                                       {period.reference && (
-                                        <p className="break-words">Ref: {period.reference}</p>
+                                        <p className="wrap-break-word">Ref: {period.reference}</p>
                                       )}
                                     </div>
                                   </div>
@@ -891,7 +891,7 @@ export function ConsultaPage() {
                             {period.paymentMethod ? ` · ${PAYMENT_METHOD_LABELS[period.paymentMethod] ?? period.paymentMethod}` : ''}
                           </p>
                           {period.reference && (
-                            <p className="mt-0.5 break-words text-xs text-muted-foreground">Ref: {period.reference}</p>
+                            <p className="mt-0.5 wrap-break-word text-xs text-muted-foreground">Ref: {period.reference}</p>
                           )}
                         </div>
                       )

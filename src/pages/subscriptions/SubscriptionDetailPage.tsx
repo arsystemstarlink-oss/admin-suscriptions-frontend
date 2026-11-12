@@ -335,15 +335,15 @@ export function SubscriptionDetailPage() {
 
       {/* Mini KPIs Horizontales */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar touch-pan-x -mx-4 px-4 snap-x snap-mandatory pt-1 sm:gap-3 sm:pt-2">
-        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
+        <div className="snap-center shrink-0 w-[40vw] min-w-32.5 bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
           <p className="text-xs font-bold text-success uppercase tracking-wide">Pagados ({summary.paidPeriods})</p>
           <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(summary.totalPaid)}</p>
         </div>
-        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
+        <div className="snap-center shrink-0 w-[40vw] min-w-32.5 bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
           <p className="text-xs font-bold text-warning uppercase tracking-wide">Pendientes ({summary.pendingPeriods})</p>
           <p className="text-xl font-bold text-foreground mt-1">{formatCurrency(summary.totalPending)}</p>
         </div>
-        <div className="snap-center shrink-0 w-[40vw] min-w-[130px] bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
+        <div className="snap-center shrink-0 w-[40vw] min-w-32.5 bg-surface text-surface-foreground border border-border rounded-xl p-2.5 flex flex-col justify-center sm:rounded-2xl sm:p-4">
           <p className="text-xs font-bold text-destructive uppercase tracking-wide">Vencidos ({summary.overduePeriods})</p>
           <p className="text-xl font-bold text-destructive mt-1">{summary.overduePeriods}</p>
         </div>

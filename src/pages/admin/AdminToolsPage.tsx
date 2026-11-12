@@ -455,7 +455,7 @@ export function AdminToolsPage() {
                             </div>
 
                             {log.error && (
-                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive break-words">
+                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive wrap-break-word">
                                 {log.error}
                               </div>
                             )}
@@ -539,7 +539,7 @@ export function AdminToolsPage() {
                     Código Twilio: {err.errorCode}
                   </p>
                 )}
-                <p className="text-xs text-destructive break-words">{err.errorMessage}</p>
+                <p className="text-xs text-destructive wrap-break-word">{err.errorMessage}</p>
               </div>
             ))}
           </div>

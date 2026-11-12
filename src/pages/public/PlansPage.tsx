@@ -59,9 +59,9 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
         plan.key === 'pro' ? 'border-primary ring-2 ring-secondary' : ''
       }`}
     >
-      <CardContent className="flex h-full flex-col px-[22px] py-[26px]">
+      <CardContent className="flex h-full flex-col px-5.5 py-6.5">
         <h3 className="text-xl font-extrabold leading-[1.1] tracking-[-0.02em]">{plan.label}</h3>
-        <p className="mt-0.5 mb-[18px] text-sm text-muted-foreground">{capacity}</p>
+        <p className="mt-0.5 mb-4.5 text-sm text-muted-foreground">{capacity}</p>
         <p className="font-display text-[2.4rem] leading-none font-extrabold tracking-[-0.02em]">
           {plan.priceUsdMonthly === null ? 'Cotiza' : plan.priceUsdMonthly}
           {plan.priceUsdMonthly !== null && (
@@ -70,15 +70,15 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
             </span>
           )}
         </p>
-        <p className="mt-[6px] mb-5 text-[0.88rem] text-muted-foreground">
+        <p className="mt-1.5 mb-5 text-[0.88rem] text-muted-foreground">
           {plan.priceUsdMonthly === null
             ? 'Precio según tu organización'
             : 'Por organización, no por administrador'}
         </p>
         <ul className="mt-0 mb-6 text-[0.95rem]">
           {[...content.features, adminCapacity].map((feature) => (
-            <li key={feature} className="relative py-[5px] pl-[22px]">
-              <Check className="absolute left-0 top-[9px] h-4 w-4 text-success" aria-hidden="true" />
+            <li key={feature} className="relative py-1.25 pl-5.5">
+              <Check className="absolute left-0 top-2.25 h-4 w-4 text-success" aria-hidden="true" />
               <span>{feature}</span>
             </li>
           ))}
@@ -86,7 +86,7 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
         <Button
           asChild
           variant={plan.key === 'pro' ? 'secondary' : 'default'}
-          className="mt-auto h-auto w-full rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold"
+          className="mt-auto h-auto w-full rounded-[10px] border-2 border-transparent px-6 py-3.5 text-base font-semibold"
         >
           <Link to={`/planes/solicitar?plan=${plan.key}`}>{content.action}</Link>
         </Button>
@@ -149,7 +149,7 @@ export function PlansPage() {
       </a>
 
       <header className="bg-header text-header-foreground">
-        <div className="mx-auto max-w-[1040px] px-[22px] pb-[84px] pt-[22px]">
+        <div className="mx-auto max-w-260 px-5.5 pb-21 pt-5.5">
           <nav
             aria-label="Navegación de la página"
             className="mb-16 flex items-center justify-between gap-4"
@@ -170,7 +170,7 @@ export function PlansPage() {
               <Button
                 asChild
                 variant="outline"
-                className="h-auto rounded-[10px] border-2 border-header-foreground/40 bg-transparent px-[18px] py-[10px] text-base font-semibold text-header-foreground hover:border-header-foreground hover:bg-header-hover hover:text-header-foreground"
+                className="h-auto rounded-[10px] border-2 border-header-foreground/40 bg-transparent px-4.5 py-2.5 text-base font-semibold text-header-foreground hover:border-header-foreground hover:bg-header-hover hover:text-header-foreground"
               >
                 <a href="#planes">Ver planes</a>
               </Button>
@@ -182,7 +182,7 @@ export function PlansPage() {
               <h1 className="max-w-3xl font-display text-[clamp(2.2rem,5.4vw,3.7rem)] font-extrabold leading-[1.1] tracking-[-0.02em]">
                 Lleva en orden tus clientes de internet y tus cobros.
               </h1>
-              <p className="mt-[22px] mb-[30px] max-w-2xl text-[1.15rem] text-header-foreground/80">
+              <p className="mt-5.5 mb-7.5 max-w-2xl text-[1.15rem] text-header-foreground/80">
                 Registra a tus clientes, sus planes y sus pagos. Sabe quién pagó, quién debe y quién
                 vence, y avísales por WhatsApp. Para gestores de Starlink, ISP de fibra óptica y
                 cualquier proveedor de internet.
@@ -191,14 +191,14 @@ export function PlansPage() {
                 <Button
                   asChild
                   variant="secondary"
-                  className="h-auto rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold"
+                  className="h-auto rounded-[10px] border-2 border-transparent px-6 py-3.5 text-base font-semibold"
                 >
                   <Link to="/planes/solicitar?plan=basico">Pedir prueba gratis</Link>
                 </Button>
                 <Button
                   asChild
                   variant="outline"
-                  className="h-auto rounded-[10px] border-2 border-header-foreground/40 bg-transparent px-6 py-[14px] text-base font-semibold text-header-foreground hover:border-header-foreground hover:bg-header-hover hover:text-header-foreground"
+                  className="h-auto rounded-[10px] border-2 border-header-foreground/40 bg-transparent px-6 py-3.5 text-base font-semibold text-header-foreground hover:border-header-foreground hover:bg-header-hover hover:text-header-foreground"
                 >
                   <a href="#como">Cómo funciona</a>
                 </Button>
@@ -220,10 +220,10 @@ export function PlansPage() {
 
             <div
               aria-hidden="true"
-              className="space-y-[14px] min-[901px]:ml-auto min-[901px]:max-w-[340px]"
+              className="space-y-3.5 min-[901px]:ml-auto min-[901px]:max-w-85"
             >
-              <Card className="max-w-[340px] rounded-[18px] shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
-                <CardContent className="px-5 py-[18px]">
+              <Card className="max-w-85 rounded-[18px] shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+                <CardContent className="px-5 py-4.5">
                   <div className="mb-2 flex justify-between text-sm text-muted-foreground">
                     <span>A|R SYSTEM</span>
                     <span>ahora</span>
@@ -232,8 +232,8 @@ export function PlansPage() {
                   <p><span className="font-medium text-success">25 USD</span> · Plan mensual</p>
                 </CardContent>
               </Card>
-              <Card className="max-w-[340px] rounded-[18px] opacity-[0.92] shadow-[0_20px_50px_rgba(0,0,0,0.35)] min-[901px]:-translate-x-6">
-                <CardContent className="px-5 py-[18px]">
+              <Card className="max-w-85 rounded-[18px] opacity-[0.92] shadow-[0_20px_50px_rgba(0,0,0,0.35)] min-[901px]:-translate-x-6">
+                <CardContent className="px-5 py-4.5">
                   <div className="mb-2 flex justify-between text-sm text-muted-foreground">
                     <span>A|R SYSTEM</span>
                     <span>hace 2 h</span>
@@ -402,7 +402,7 @@ export function PlansPage() {
             <Button
               asChild
               variant="secondary"
-              className="mt-7 h-auto rounded-[10px] border-2 border-transparent px-6 py-[14px] text-base font-semibold"
+              className="mt-7 h-auto rounded-[10px] border-2 border-transparent px-6 py-3.5 text-base font-semibold"
             >
               <Link to="/planes/solicitar?plan=basico">Pedir prueba gratis</Link>
             </Button>

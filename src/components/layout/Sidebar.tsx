@@ -142,7 +142,7 @@ export function Sidebar({ collapsed, onToggleSidebar }: SidebarProps) {
                 className="flex items-center gap-3 flex-1 min-w-0"
                 title="Ver perfil"
               >
-                <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-primary to-primary/60 shadow-sm">
+                <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br from-primary to-primary/60 shadow-sm">
                   <span className="text-sm font-bold text-primary-foreground">
                     {getInitial(user?.name, 'U')}
                   </span>

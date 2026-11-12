@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { User } from '@/types/api'
 import { authApi } from '@/api/auth.api'
 import { queryClient } from '@/lib/queryClient'
+import { detachPushOnLogout } from '@/lib/push'
 import { useOrganizationStore } from '@/stores/organization.store'
 import {
   clearStoredTokens,
@@ -44,7 +45,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     // Del storage, no del store: el interceptor de la API renueva los tokens solo
     // en storage, y revocar uno ya reemplazado dejaría abierta la sesión real.
-    const { refreshToken } = getStoredTokens()
+    const { accessToken, refreshToken } = getStoredTokens()
+    // En dispositivos compartidos, los avisos de esta cuenta no deben seguir llegando.
+    void detachPushOnLogout(accessToken)
     if (refreshToken) {
       authApi.logout(refreshToken).catch(() => {})
     }
@@ -73,6 +76,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ accessToken, refreshToken, user, isAuthenticated: true })
     } else if (useAuthStore.getState().isAuthenticated) {
       // La sesión se cerró en otra pestaña: esta tampoco debe conservar sus datos.
+      void detachPushOnLogout(useAuthStore.getState().accessToken)
       queryClient.clear()
       set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false })
     }

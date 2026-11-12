@@ -5,6 +5,7 @@ import type {
   CreateSubscriptionRequest,
   Pagination,
   PayAdvanceRequest,
+  SubscriptionWithDetails,
   UpdateSubscriptionRequest,
 } from '@/types/api'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -23,6 +24,15 @@ interface UseSubscriptionsParams {
 }
 
 type SubscriptionPageParam = Pick<Pagination, 'offset'> & { cursor?: string }
+
+interface SubscriptionListPage {
+  subscriptions: SubscriptionWithDetails[]
+  pagination: Pagination
+}
+
+type SubscriptionCacheData =
+  | SubscriptionListPage
+  | { pages: SubscriptionListPage[]; pageParams: unknown[] }
 
 export function useSubscriptions(params?: UseSubscriptionsParams, options?: { enabled?: boolean }) {
   return useQuery({
@@ -128,7 +138,36 @@ export function useDeleteSubscription() {
 
   return useMutation({
     mutationFn: (id: string) => subscriptionsApi.remove(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.subscriptions.lists })
+      const previous = qc.getQueriesData<SubscriptionCacheData>({ queryKey: qk.subscriptions.lists })
+      previous.forEach(([queryKey, data]) => {
+        if (!data) return
+        if ('pages' in data) {
+          qc.setQueryData(queryKey, {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              subscriptions: page.subscriptions.filter((subscription) => subscription.id !== id),
+            })),
+          } as SubscriptionCacheData)
+        } else {
+          qc.setQueryData(queryKey, {
+            ...data,
+            subscriptions: data.subscriptions.filter((subscription) => subscription.id !== id),
+          } as SubscriptionCacheData)
+        }
+      })
+      return { previous }
+    },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
+      qc.invalidateQueries({ queryKey: qk.clients.lists })
+    },
+    onError: (_error, _id, context) => {
+      context?.previous.forEach(([queryKey, data]) => qc.setQueryData(queryKey, data))
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       qc.invalidateQueries({ queryKey: qk.clients.lists })
     },

@@ -16,6 +16,7 @@ import { StaleDataBanner } from './StaleDataBanner'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { useAppBadge } from '@/hooks/useAppBadge'
 import { PushPromptBanner } from './PushPromptBanner'
+import { PwaInstallBanner } from './PwaInstallBanner'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -123,6 +124,7 @@ export function AuthenticatedLayout() {
           <StaleDataBanner />
           <PlanStatusBanner />
           <PendingPlanPaymentBanner />
+          <PwaInstallBanner />
           <PushPromptBanner />
           <Outlet />
         </MobileAppShell>
@@ -157,6 +159,7 @@ export function AuthenticatedLayout() {
           <StaleDataBanner />
           {planAccess.isReadOnly && <PlanStatusBanner />}
           <PendingPlanPaymentBanner />
+          <PwaInstallBanner />
           <PushPromptBanner />
           <Outlet />
         </main>

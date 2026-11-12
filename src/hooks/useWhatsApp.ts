@@ -1,9 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { whatsappApi } from '@/api/whatsapp.api'
 import { qk } from '@/lib/query-keys'
-import type { SendMessageRequest } from '@/types/api'
+import type { MessagesByPhoneResponse, SendMessageRequest, WhatsAppMessage } from '@/types/api'
 import { toast } from 'sonner'
 import { handleApiError } from '@/lib/error-handler'
+
+/** Prefijo del id de un mensaje que aún no confirma el servidor. */
+export const PENDING_MESSAGE_PREFIX = 'pending-'
 
 export function useWhatsAppMessages(phone: string | null, organizationId?: string, options?: { enabled?: boolean }) {
   return useQuery({
@@ -33,7 +36,34 @@ export function useSendMessage(organizationId?: string) {
 
   return useMutation({
     mutationFn: (data: SendMessageRequest) => whatsappApi.sendMessage(data, organizationId),
-    onSuccess: (_data, variables) => {
+    // Optimista: el mensaje de texto aparece al instante y se retira si el envío falla.
+    // Las plantillas no: su texto final lo resuelve el servidor.
+    onMutate: async (variables) => {
+      if (!variables.body) return undefined
+      const queryKey = [...qk.whatsapp.messages(variables.to), organizationId]
+      await qc.cancelQueries({ queryKey })
+      const previous = qc.getQueryData<MessagesByPhoneResponse>(queryKey)
+      if (!previous) return undefined
+      const pending: WhatsAppMessage = {
+        id: `${PENDING_MESSAGE_PREFIX}${Date.now()}`,
+        organizationId,
+        phone: variables.to,
+        direction: 'OUTBOUND',
+        messageSid: '',
+        body: variables.body,
+        status: 'SENT',
+        createdAt: new Date().toISOString(),
+      }
+      qc.setQueryData<MessagesByPhoneResponse>(queryKey, {
+        ...previous,
+        messages: [...previous.messages, pending],
+      })
+      return { queryKey, previous }
+    },
+    onError: (_error, _variables, context) => {
+      if (context) qc.setQueryData(context.queryKey, context.previous)
+    },
+    onSettled: (_data, _error, variables) => {
       qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.to) })
       qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
     },

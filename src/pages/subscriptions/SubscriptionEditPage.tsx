@@ -26,10 +26,12 @@ import { DetailNav } from '@/components/design-system/DetailNav'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { FormSkeleton } from '@/components/design-system/Skeleton'
 import { getNavigationStatePath } from '@/lib/navigation'
 
 const subscriptionEditSchema = z.object({
-  planId: z.string().min(1, 'Seleccione un plan'),
+  planId: z.string().min(1, 'Selecciona un plan'),
   kitNumber: z.string().min(1, 'El código del servicio es requerido'),
   accountNumber: z.string().optional(),
   billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
@@ -45,7 +47,12 @@ export function SubscriptionEditPage() {
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions'
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
-  const { data: subscriptionData, isLoading: isLoadingSub } = useSubscriptionDetail(id!, organizationId ?? undefined, {
+  const {
+    data: subscriptionData,
+    isLoading: isLoadingSub,
+    refetch: refetchSub,
+    isFetching: isFetchingSub,
+  } = useSubscriptionDetail(id!, organizationId ?? undefined, {
     enabled: !isSuperAdmin || !!organizationId,
   })
   const updateMutation = useUpdateSubscription()
@@ -108,18 +115,17 @@ export function SubscriptionEditPage() {
   }
 
   if (isLoadingSub) {
-    return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-        <div className="h-64 bg-muted animate-pulse rounded" />
-      </div>
-    )
+    return <FormSkeleton label="Cargando suscripción" />
   }
 
   if (!subscriptionData?.subscription) {
     return (
-      <div className="space-y-4">
-        <p className="text-sm text-destructive">No pudimos cargar los datos de la suscripción para editarla.</p>
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar la suscripción"
+          onRetry={() => void refetchSub()}
+          isRetrying={isFetchingSub}
+        />
         <Button variant="outline" asChild>
           <Link to={`/subscriptions/${id}`} replace state={{ from: returnTo }}>
             Volver a la suscripción
@@ -173,7 +179,7 @@ export function SubscriptionEditPage() {
                   render={({ field }) => (
                     <Select value={field.value || initialPlanId} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccione un plan" />
+                        <SelectValue placeholder="Selecciona un plan" />
                       </SelectTrigger>
                       <SelectContent>
                         {plans.map((plan) => (

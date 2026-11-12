@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -30,7 +30,7 @@ const adminFields = {
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .regex(/^\+58\d{10,11}$/, 'Ingrese un teléfono venezolano válido (10-11 dígitos)')
+    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)')
     .optional()
     .or(z.literal('')),
   password: z
@@ -38,7 +38,7 @@ const adminFields = {
     .min(8, 'Mínimo 8 caracteres')
     .regex(/[a-zA-Z]/, 'Debe incluir letras')
     .regex(/\d/, 'Debe incluir números'),
-  confirmPassword: z.string().min(1, 'Confirme la contraseña'),
+  confirmPassword: z.string().min(1, 'Confirma la contraseña'),
 }
 
 const confirmRefine = {
@@ -64,7 +64,7 @@ const superAdminRegisterSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['organizationId'],
-          message: 'Seleccione una organización.',
+          message: 'Selecciona una organización.',
         })
       } else if (data.organizationId === NEW_ORG_VALUE && !(data.newOrganizationName || '').trim()) {
         ctx.addIssue({
@@ -104,6 +104,8 @@ interface CreateAdminFormProps {
   organizationId?: string
   onSuccess?: () => void
   onSetupDisabled?: () => void
+  /** Informa al contenedor si hay cambios sin guardar. */
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 export function CreateAdminForm({
@@ -111,6 +113,7 @@ export function CreateAdminForm({
   organizationId,
   onSuccess,
   onSetupDisabled,
+  onDirtyChange,
 }: CreateAdminFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSuperAdmin = useIsSuperAdmin()
@@ -132,13 +135,18 @@ export function CreateAdminForm({
     reset,
     watch,
     setError,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AdminForm>({
     resolver,
     defaultValues: isSuperRegister
       ? { role: 'admin', organizationId: '', newOrganizationName: '' }
       : undefined,
   })
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+    return () => onDirtyChange?.(false)
+  }, [isDirty, onDirtyChange])
 
   const watchedRole = watch('role')
   const watchedOrganizationId = watch('organizationId')
@@ -283,7 +291,7 @@ export function CreateAdminForm({
                         </SelectItem>
                       ))}
                       <SelectSeparator />
-                      <SelectItem value={NEW_ORG_VALUE}>Crear nueva organización…</SelectItem>
+                      <SelectItem value={NEW_ORG_VALUE}>Crear nueva organización...</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

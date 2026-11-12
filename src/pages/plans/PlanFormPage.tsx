@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { AlertTriangle, Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormSkeleton } from '@/components/design-system/Skeleton'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
@@ -75,7 +76,7 @@ export function PlanFormPage() {
     setError(null)
 
     if (!isEdit && !organizationId) {
-      setError('Seleccione una organización para continuar.')
+      setError('Selecciona una organización para continuar.')
       return
     }
 
@@ -102,15 +103,14 @@ export function PlanFormPage() {
         navigate(returnTo, { replace: true })
       }
     } catch {
-      setError('Error al guardar el plan. Intente nuevamente.')
+      setError('Error al guardar el plan. Inténtalo de nuevo.')
     }
   }
 
   if (isEdit && isLoading) {
     return (
       <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
-        <div className="h-10 w-48 bg-muted animate-pulse rounded-xl mb-4" />
-        <div className="h-64 bg-surface animate-pulse rounded-2xl" />
+        <FormSkeleton label="Cargando plan" />
       </div>
     )
   }

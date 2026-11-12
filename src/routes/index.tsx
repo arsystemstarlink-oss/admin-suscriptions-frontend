@@ -42,6 +42,7 @@ import {
   OrganizationPlanReportsPage,
   PlanQuoteRequestsPage,
   PageLoader,
+  FullPageLoader,
 } from '@/routes/lazy-pages'
 
 export const router = createBrowserRouter(
@@ -54,7 +55,7 @@ export const router = createBrowserRouter(
     path: '/login',
     handle: { title: 'Iniciar sesión' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <LoginPage />
       </Suspense>
     ),
@@ -63,7 +64,7 @@ export const router = createBrowserRouter(
     path: '/invite/:token',
     handle: { title: 'Invitación' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <InvitePage />
       </Suspense>
     ),
@@ -72,7 +73,7 @@ export const router = createBrowserRouter(
     path: '/setup',
     handle: { title: 'Configuración inicial' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <SetupPage />
       </Suspense>
     ),
@@ -81,7 +82,7 @@ export const router = createBrowserRouter(
     path: '/planes',
     handle: { title: 'Planes' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <PlansPage />
       </Suspense>
     ),
@@ -90,7 +91,7 @@ export const router = createBrowserRouter(
     path: '/planes/solicitar',
     handle: { title: 'Solicitar plan' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <PlansSignupPage />
       </Suspense>
     ),
@@ -99,7 +100,7 @@ export const router = createBrowserRouter(
     path: '/consulta/:orgSlug',
     handle: { title: 'Consulta' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <ConsultaPage />
       </Suspense>
     ),

@@ -50,7 +50,7 @@ const profileSchema = z.object({
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .regex(/^\+58\d{10,11}$/, 'Ingrese un teléfono venezolano válido (10-11 dígitos)')
+    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)')
     .optional()
     .or(z.literal('')),
   currentPassword: z.string().optional(),
@@ -66,7 +66,7 @@ const passwordSchema = z
       .min(8, 'Mínimo 8 caracteres')
       .regex(/[a-zA-Z]/, 'Debe incluir letras')
       .regex(/\d/, 'Debe incluir números'),
-    confirmPassword: z.string().min(1, 'Confirme la nueva contraseña'),
+    confirmPassword: z.string().min(1, 'Confirma la nueva contraseña'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     path: ['confirmPassword'],
@@ -180,7 +180,7 @@ export function ProfilePage() {
   const onProfileSubmit = async (data: ProfileForm) => {
     const emailChanged = data.email.toLowerCase() !== user.email.toLowerCase()
     if (emailChanged && !data.currentPassword) {
-      toast.error('Ingrese su contraseña actual para cambiar el correo')
+      toast.error('Ingresa tu contraseña actual para cambiar el correo')
       return
     }
     try {

@@ -98,7 +98,7 @@ export function NotificationSettings() {
   const loadingInitial = !hasChecked
 
   const statusLabel = loadingInitial
-    ? 'Comprobando…'
+    ? 'Comprobando...'
     : needsInstall
       ? 'Instala la app para activarlas'
       : !supported
@@ -255,7 +255,7 @@ export function NotificationSettings() {
                 {sendingTest || testState === 'waiting' ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Esperando el aviso…
+                    Esperando el aviso...
                   </>
                 ) : (
                   'Enviar aviso de prueba'
@@ -318,7 +318,7 @@ export function NotificationSettings() {
                     disabled={removingEndpoint === device.endpoint}
                     onClick={() => handleRemoveDevice(device.endpoint)}
                   >
-                    {removingEndpoint === device.endpoint ? 'Quitando…' : 'Quitar'}
+                    {removingEndpoint === device.endpoint ? 'Quitando...' : 'Quitar'}
                   </Button>
                 </li>
               ))}

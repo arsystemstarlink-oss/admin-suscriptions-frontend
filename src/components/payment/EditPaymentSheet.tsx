@@ -28,7 +28,7 @@ import { PaymentMethod, type BillingPeriodWithDetails } from '@/types/api'
 import { Edit, CheckCircle } from 'lucide-react'
 
 const editPaymentSchema = z.object({
-  paymentMethod: z.string().min(1, 'Seleccione un método de pago'),
+  paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
   paidAt: z.string().min(1, 'Fecha de pago requerida'),
   amount: z.coerce.number().min(0.01, 'Monto requerido'),
   notes: z.string().optional(),
@@ -164,7 +164,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                   <Label>Método de pago *</Label>
                   <Select onValueChange={(value) => setValue('paymentMethod', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione método" />
+                      <SelectValue placeholder="Selecciona método" />
                     </SelectTrigger>
                     <SelectContent>
                       {PAYMENT_METHOD_OPTIONS

@@ -37,7 +37,7 @@ import { getLastPaymentMethod, saveLastPaymentMethod } from '@/lib/payment-metho
 import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, CalendarClock } from 'lucide-react'
 
 const advanceSchema = z.object({
-  paymentMethod: z.string().min(1, 'Seleccione un método de pago'),
+  paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
   paidAt: z.string().min(1, 'Fecha de pago requerida'),
   notes: z.string().optional(),
 })
@@ -174,7 +174,7 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                       <SelectTrigger id="pay-advance-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Seleccione método" />
+                          <SelectValue placeholder="Selecciona método" />
                         </div>
                       </SelectTrigger>
                       <SelectContent>

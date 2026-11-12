@@ -21,6 +21,7 @@ import {
 import { AlertTriangle, User, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormSkeleton } from '@/components/design-system/Skeleton'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { normalizeDni } from '@/lib/utils'
@@ -35,7 +36,7 @@ const clientSchema = z.object({
   phone: z
     .string()
     .min(1, 'El teléfono es requerido')
-    .regex(/^\+58\d{10,11}$/, 'Ingrese un teléfono venezolano válido (10-11 dígitos)'),
+    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)'),
   dniPrefix: z.enum(['V-', 'J-']),
   dniDigits: z
     .string()
@@ -116,7 +117,7 @@ export function ClientFormPage() {
     setFormError(null)
 
     if (!isEdit && !organizationId) {
-      setFormError('Seleccione una organización para continuar.')
+      setFormError('Selecciona una organización para continuar.')
       return
     }
 
@@ -158,8 +159,7 @@ export function ClientFormPage() {
   if (isEdit && isLoading) {
     return (
       <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
-        <div className="h-10 w-48 bg-muted animate-pulse rounded-xl mb-4" />
-        <div className="h-64 bg-surface animate-pulse rounded-2xl" />
+        <FormSkeleton label="Cargando cliente" />
       </div>
     )
   }

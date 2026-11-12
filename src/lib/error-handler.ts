@@ -50,7 +50,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   PLAN_HAS_SUBSCRIPTIONS: {
     type: 'modal',
     title: 'No se puede eliminar este plan',
-    message: 'Tiene suscripciones asociadas. Reasígnelas a otro plan primero.',
+    message: 'Tiene suscripciones asociadas. Reasígnalas a otro plan primero.',
     actions: [
       { label: 'Ver suscripciones de este plan', variant: 'primary', action: 'navigate', payload: '/subscriptions' },
       { label: 'Cancelar', variant: 'ghost', action: 'close' },
@@ -86,17 +86,17 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   UNAUTHORIZED: {
     type: 'toast',
     variant: 'error',
-    message: 'Sesión expirada, inicie sesión nuevamente.',
+    message: 'Sesión expirada, inicia sesión de nuevo.',
   },
   REFRESH_TOKEN_REVOKED: {
     type: 'toast',
     variant: 'error',
-    message: 'Sesión expirada, inicie sesión nuevamente.',
+    message: 'Sesión expirada, inicia sesión de nuevo.',
   },
   USER_NOT_FOUND: {
     type: 'toast',
     variant: 'error',
-    message: 'Usuario no encontrado. Su sesión podría estar expirada.',
+    message: 'Usuario no encontrado. Tu sesión podría estar expirada.',
   },
   EMAIL_TAKEN: {
     type: 'field-error',
@@ -146,12 +146,12 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INVALID_PHONE: {
     type: 'field-error',
     field: 'phone',
-    message: 'El teléfono no es válido. Use formato +58 seguido de 10 u 11 dígitos.',
+    message: 'El teléfono no es válido. Usa formato +58 seguido de 10 u 11 dígitos.',
   },
   INVALID_DNI: {
     type: 'field-error',
     field: 'dni',
-    message: 'Cédula inválida. Use formato V-12345678 o J-123456789 (7-9 dígitos).',
+    message: 'Cédula inválida. Usa formato V-12345678 o J-123456789 (7-9 dígitos).',
   },
   DNI_TAKEN: {
     type: 'field-error',
@@ -192,12 +192,12 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INVALID_CLIENT: {
     type: 'field-error',
     field: 'clientId',
-    message: 'Seleccione un cliente válido.',
+    message: 'Selecciona un cliente válido.',
   },
   INVALID_PLAN: {
     type: 'field-error',
     field: 'planId',
-    message: 'Seleccione un plan activo.',
+    message: 'Selecciona un plan activo.',
   },
   NOT_FOUND: {
     type: 'toast',
@@ -573,7 +573,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   HAS_UNPAID_PERIODS: {
     type: 'toast',
     variant: 'warning',
-    message: 'Tiene períodos pendientes: cóbrelos primero antes del adelanto.',
+    message: 'Tienes períodos pendientes: cóbralos primero antes del adelanto.',
     sideEffect: 'invalidate-billing',
   },
   PERIOD_ALREADY_EXISTS: {
@@ -602,6 +602,14 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'error',
     message: 'No se pudo verificar la seguridad en este momento. Intenta de nuevo.',
   },
+}
+
+/** El recurso no existe (o no es accesible): reintentar no sirve, a diferencia de un fallo de red. */
+export function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const { code, response } = error as { code?: unknown; response?: { status?: number } }
+  if (response?.status === 404) return true
+  return typeof code === 'string' && (code === 'NOT_FOUND' || code.endsWith('_NOT_FOUND'))
 }
 
 export function getErrorHandler(code: ErrorCode): ErrorHandler {

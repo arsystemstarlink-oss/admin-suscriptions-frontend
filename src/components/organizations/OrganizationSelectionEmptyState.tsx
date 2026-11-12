@@ -42,7 +42,7 @@ export function OrganizationSelectionEmptyState({ description }: OrganizationSel
               aria-label="Seleccionar organización para continuar"
               className="w-64 bg-surface-muted border-input text-foreground"
             >
-              <SelectValue placeholder={isLoading ? 'Cargando organizaciones…' : 'Organización'} />
+              <SelectValue placeholder={isLoading ? 'Cargando organizaciones...' : 'Organización'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NO_ORGANIZATION_VALUE}>Ninguna organización</SelectItem>

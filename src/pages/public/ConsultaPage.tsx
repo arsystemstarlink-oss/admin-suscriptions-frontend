@@ -84,7 +84,7 @@ type LookupForm = z.infer<typeof lookupSchema>
 
 const reportSchema = (minDate: string) =>
   z.object({
-    paymentMethod: z.string().min(1, 'Seleccione un método de pago'),
+    paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
     paidAt: z
       .string()
       .min(1, 'Fecha de pago requerida')
@@ -387,7 +387,7 @@ export function ConsultaPage() {
 
   if (orgLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     )
@@ -395,7 +395,7 @@ export function ConsultaPage() {
 
   if (orgError || (!orgLoading && !orgData)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-background px-4">
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 text-center text-surface-foreground">
           <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
           <h1 className="mt-4 text-xl font-bold text-foreground">Organización no disponible</h1>
@@ -415,7 +415,7 @@ export function ConsultaPage() {
   const orgName = orgData!.organization.name
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border-subtle bg-header text-header-foreground">
         <div className="mx-auto flex max-w-2xl items-center justify-center px-4 py-3">
           <BrandMark size="sm" variant="light" />
@@ -959,7 +959,7 @@ export function ConsultaPage() {
                         <SelectTrigger className="h-12">
                           <div className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4 text-muted-foreground" />
-                            <SelectValue placeholder="Seleccione método" />
+                            <SelectValue placeholder="Selecciona método" />
                           </div>
                         </SelectTrigger>
                         <SelectContent>

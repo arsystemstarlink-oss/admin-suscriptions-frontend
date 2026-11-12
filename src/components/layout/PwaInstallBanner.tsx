@@ -63,7 +63,7 @@ export function PwaInstallBanner() {
       </div>
       {!isIos && canInstall && (
         <Button type="button" size="sm" onClick={install} disabled={installing} className="shrink-0">
-          {installing ? 'Instalando…' : 'Instalar'}
+          {installing ? 'Instalando...' : 'Instalar'}
         </Button>
       )}
       <button

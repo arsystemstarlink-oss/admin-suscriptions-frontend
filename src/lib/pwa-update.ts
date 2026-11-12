@@ -26,12 +26,6 @@ export function setPwaUpdateHandler(handler: UpdateServiceWorker): void {
 
 export async function applyPwaUpdate(): Promise<void> {
   if (!updateServiceWorker) return
-  if (
-    hasUnsavedChanges &&
-    !window.confirm('Tienes cambios sin guardar. Guarda el formulario antes de actualizar la aplicación.')
-  ) {
-    return
-  }
   updateAvailable = false
   emit()
   await updateServiceWorker(true)
@@ -39,4 +33,9 @@ export async function applyPwaUpdate(): Promise<void> {
 
 export function setHasUnsavedChanges(value: boolean): void {
   hasUnsavedChanges = value
+}
+
+/** Quien llama a applyPwaUpdate confirma antes si hay un formulario a medias. */
+export function hasPwaUnsavedChanges(): boolean {
+  return hasUnsavedChanges
 }

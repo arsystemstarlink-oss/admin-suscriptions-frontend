@@ -432,7 +432,7 @@ export function PlansSignupPage() {
       ? formatDate(signupResult.organization.trialEndsAt)
       : null
     return (
-      <div className="min-h-screen bg-background px-4 py-12 text-foreground">
+      <div className="min-h-dvh bg-background px-4 py-12 text-foreground">
         <div className="mx-auto max-w-xl space-y-4">
           <Card className="rounded-2xl border border-border bg-surface">
             <CardContent className="space-y-4 p-6">
@@ -472,7 +472,7 @@ export function PlansSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-10 text-foreground">
+    <div className="min-h-dvh bg-background px-4 py-10 text-foreground">
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="flex items-center justify-between gap-3">
           <Link to="/planes" className="font-bold tracking-wide">

@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { PageSkeleton } from '@/components/design-system/Skeleton'
 
 export const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
 export const InvitePage = lazy(() => import('@/pages/InvitePage').then(m => ({ default: m.InvitePage })))
@@ -28,9 +29,15 @@ export const PaymentReportsPage = lazy(() => import('@/pages/admin/PaymentReport
 export const OrganizationPlanReportsPage = lazy(() => import('@/pages/admin/OrganizationPlanReportsPage').then(m => ({ default: m.OrganizationPlanReportsPage })))
 export const PlanQuoteRequestsPage = lazy(() => import('@/pages/admin/PlanQuoteRequestsPage').then(m => ({ default: m.PlanQuoteRequestsPage })))
 
+/** Rutas dentro del layout autenticado: el mismo pulso que usa la página al cargar sus datos. */
 export function PageLoader() {
+  return <PageSkeleton />
+}
+
+/** Rutas públicas a pantalla completa, sin layout alrededor. */
+export function FullPageLoader() {
   return (
-    <div className="flex items-center justify-center h-64">
+    <div role="status" aria-label="Cargando" className="flex min-h-dvh items-center justify-center bg-background">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
     </div>
   )

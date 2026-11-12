@@ -6,15 +6,7 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { AlertTriangle, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock, UserRound } from 'lucide-react'
+import { AlertTriangle, SearchX, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock, UserRound } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, hasOlderUnpaidPeriod, canPayAdvance, isAdvancePeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
@@ -24,6 +16,10 @@ import { EditPaymentSheet } from '@/components/payment/EditPaymentSheet'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { DetailSkeleton } from '@/components/design-system/Skeleton'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
+import { isNotFoundError } from '@/lib/error-handler'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { getNavigationStatePath } from '@/lib/navigation'
 
@@ -33,7 +29,7 @@ export function SubscriptionDetailPage() {
   const location = useLocation()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((s) => s.selectedOrganizationId)
-  const { data, isLoading, error } = useSubscriptionDetail(id!, organizationId ?? undefined, {
+  const { data, isLoading, error, refetch, isFetching } = useSubscriptionDetail(id!, organizationId ?? undefined, {
     enabled: !isSuperAdmin || !!organizationId,
   })
   const updateMutation = useUpdateSubscription()
@@ -53,31 +49,36 @@ export function SubscriptionDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-4 px-2">
-        <div className="h-20 bg-muted rounded-2xl animate-pulse mb-6" />
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-24 flex-1 bg-muted rounded-xl animate-pulse" />)}
-        </div>
-        <div className="h-10 w-full bg-muted rounded-lg animate-pulse my-4" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-32 bg-muted rounded-2xl animate-pulse" />
-        ))}
-      </div>
-    )
+    return <DetailSkeleton label="Cargando suscripción" />
   }
 
-  if (error || !data) {
+  // Con datos en caché se sigue mostrando el detalle aunque falle la actualización.
+  if (!data) {
+    const backButton = (
+      <Button asChild variant="outline">
+        <Link to="/subscriptions">Volver a suscripciones</Link>
+      </Button>
+    )
+
+    if (isNotFoundError(error)) {
+      return (
+        <EmptyState
+          icon={<SearchX className="h-12 w-12 text-muted-foreground" />}
+          title="Suscripción no encontrada"
+          description="Puede que se haya eliminado o que el enlace ya no sea válido."
+          action={backButton}
+        />
+      )
+    }
+
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="h-16 w-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-4">
-          <AlertTriangle className="h-8 w-8" />
-        </div>
-        <h2 className="text-xl font-bold text-foreground">Error al cargar suscripción</h2>
-        <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del servicio solicitado.</p>
-        <Button asChild>
-          <Link to="/subscriptions">Volver a suscripciones</Link>
-        </Button>
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar la suscripción"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        {backButton}
       </div>
     )
   }
@@ -139,32 +140,7 @@ export function SubscriptionDetailPage() {
     })
   }
 
-  // Confirmación adaptativa: Bottom Sheet en móvil, Drawer lateral en desktop.
-  const ConfirmationDialog = ({ 
-    open, 
-    onOpenChange, 
-    title, 
-    description, 
-    onConfirm, 
-    confirmText, 
-    isDestructive = false, 
-    isPending = false 
-  }: any) => (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
-          <SheetDescription>{description}</SheetDescription>
-        </SheetHeader>
-        <SheetFooter className="flex-row justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button variant={isDestructive ? 'destructive' : 'default'} onClick={onConfirm} disabled={isPending}>
-            {isPending ? 'Procesando...' : confirmText}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  )
+  const isReactivating = newStatus === SubscriptionStatus.ACTIVE
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
@@ -318,7 +294,7 @@ export function SubscriptionDetailPage() {
             <div>
               <p className="font-bold text-foreground">Al día — próximo ciclo sin facturar</p>
               <p className="text-xs text-muted-foreground mt-1 font-medium">
-                Puede cobrar el siguiente ciclo por adelantado • {formatCurrency(subscription.plan.price)}
+                Puedes cobrar el siguiente ciclo por adelantado • {formatCurrency(subscription.plan.price)}
               </p>
             </div>
           </div>
@@ -456,28 +432,30 @@ export function SubscriptionDetailPage() {
         onOpenChange={setAdvanceOpen}
       />
 
-      <ConfirmationDialog
+      <ConfirmDialog
         open={showStatusDialog}
         onOpenChange={setShowStatusDialog}
-        title={`${newStatus === SubscriptionStatus.ACTIVE ? 'Reactivar' : 'Suspender'} suscripción`}
-        description={newStatus === SubscriptionStatus.ACTIVE
-          ? '¿Está seguro que desea reactivar este servicio?'
+        title={`${isReactivating ? 'Reactivar' : 'Suspender'} suscripción`}
+        description={isReactivating
+          ? '¿Reactivar este servicio? El cliente podrá volver a usarlo.'
           : 'El cliente no podrá usar el servicio hasta que lo reactives. ¿Continuar?'}
-        onConfirm={handleStatusChange}
-        confirmText={newStatus === SubscriptionStatus.ACTIVE ? 'Reactivar' : 'Suspender'}
-        isDestructive={newStatus === SubscriptionStatus.SUSPENDED}
+        confirmLabel={isReactivating ? 'Reactivar' : 'Suspender'}
+        pendingLabel={isReactivating ? 'Reactivando...' : 'Suspendiendo...'}
+        destructive={newStatus === SubscriptionStatus.SUSPENDED}
         isPending={updateMutation.isPending}
+        onConfirm={handleStatusChange}
       />
 
-      <ConfirmationDialog
+      <ConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Eliminar suscripción"
-        description="Esta acción eliminará todos los períodos de facturación de este servicio y no se puede deshacer. ¿Proceder?"
-        onConfirm={handleDelete}
-        confirmText="Eliminar permanentemente"
-        isDestructive={true}
+        description="Se eliminarán todos los períodos de facturación de este servicio. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        pendingLabel="Eliminando..."
+        destructive
         isPending={deleteMutation.isPending}
+        onConfirm={handleDelete}
       />
     </div>
   )

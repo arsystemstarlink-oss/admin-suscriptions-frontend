@@ -658,7 +658,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                 onClick={handleSendBulkReminders}
                 disabled={isSendingReminders || overduePeriodsQuery.isFetching || overduePeriodsQuery.isError || isLoadingWhatsAppConfig || whatsAppConfigError || !reminderTemplateName || selectedReminderCandidates.length === 0}
               >
-                {isSendingReminders ? 'Enviando…' : `Enviar a ${selectedReminderCandidates.length}`}
+                {isSendingReminders ? 'Enviando...' : `Enviar a ${selectedReminderCandidates.length}`}
               </Button>
             )}
           </DialogFooter>

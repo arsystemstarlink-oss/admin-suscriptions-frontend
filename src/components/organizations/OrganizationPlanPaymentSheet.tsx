@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form'
+import { useDiscardChangesGuard } from '@/components/design-system/useDiscardChangesGuard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useEffect } from 'react'
@@ -100,7 +101,7 @@ export function OrganizationPlanPaymentSheet({
     setError,
     watch,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<PaymentForm>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
@@ -228,6 +229,12 @@ export function OrganizationPlanPaymentSheet({
     if (!nextOpen) reset()
     onOpenChange(nextOpen)
   }
+  const { guardedOpenChange, discardDialog } = useDiscardChangesGuard({
+    open,
+    isDirty,
+    isSubmitting: isSubmitting || paymentMutation.isPending,
+    onOpenChange: handleOpenChange,
+  })
 
   const lockMessage =
     liveOrganization.planStatus === 'prueba'
@@ -246,7 +253,8 @@ export function OrganizationPlanPaymentSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <>
+    <Sheet open={open} onOpenChange={guardedOpenChange}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Pago y plan</SheetTitle>
@@ -523,5 +531,7 @@ export function OrganizationPlanPaymentSheet({
         </form>
       </SheetContent>
     </Sheet>
+    {discardDialog}
+    </>
   )
 }

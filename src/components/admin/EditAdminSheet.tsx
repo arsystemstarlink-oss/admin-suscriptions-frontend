@@ -17,8 +17,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { AlertTriangle, UserCog } from 'lucide-react'
+import { UserCog } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
+import { useDiscardChangesGuard } from '@/components/design-system/useDiscardChangesGuard'
 import type { Admin, UpdateAdminRequest } from '@/types/api'
 import { getErrorHandler } from '@/lib/error-handler'
 import type { ApiError } from '@/types/api'
@@ -28,7 +30,7 @@ const editAdminSchema = z.object({
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .regex(/^\+58\d{10,11}$/, 'Ingrese un teléfono venezolano válido (10-11 dígitos)')
+    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)')
     .optional()
     .or(z.literal('')),
   newPassword: z
@@ -63,7 +65,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
     handleSubmit,
     reset,
     setError: setFormError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<EditAdminForm>({
     resolver: zodResolver(editAdminSchema),
     defaultValues: {
@@ -144,13 +146,22 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
       const message = handler?.message || err.message || 'Error al eliminar el administrador'
       toast.error(message)
       setError(message)
+      setShowDeleteConfirm(false)
     }
   }
+
+  const { guardedOpenChange, requestClose, discardDialog } = useDiscardChangesGuard({
+    open,
+    isDirty,
+    isSubmitting: isSubmitting || updateMutation.isPending,
+    onOpenChange,
+  })
 
   if (!admin) return null
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <>
+    <Sheet open={open} onOpenChange={guardedOpenChange}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
@@ -251,33 +262,6 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
               </div>
             </div>
 
-            {showDeleteConfirm && (
-              <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
-                  <p className="text-sm text-destructive">
-                    ¿Eliminar a {admin.name}? Esta acción no se puede deshacer.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={deleteMutation.isPending}
-                  >
-                    {deleteMutation.isPending ? 'Eliminando...' : 'Confirmar eliminación'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowDeleteConfirm(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
 
           <SheetFooter className="flex-row justify-between gap-2">
@@ -290,7 +274,7 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
               Eliminar
             </Button>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={requestClose}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting || updateMutation.isPending}>
@@ -301,5 +285,18 @@ export function EditAdminSheet({ admin, open, onOpenChange }: EditAdminSheetProp
         </form>
       </SheetContent>
     </Sheet>
+    {discardDialog}
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title="Eliminar administrador"
+      description={`¿Eliminar a ${admin.name}? Esta acción no se puede deshacer.`}
+      confirmLabel="Eliminar"
+      pendingLabel="Eliminando..."
+      destructive
+      isPending={deleteMutation.isPending}
+      onConfirm={handleDelete}
+    />
+    </>
   )
 }

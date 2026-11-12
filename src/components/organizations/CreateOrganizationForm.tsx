@@ -75,7 +75,7 @@ const createOrganizationSchema = z
       context.addIssue({
         code: 'custom',
         path: ['twilioPhoneNumber'],
-        message: 'Número inválido. Use formato E.164, ej. +584223552626',
+        message: 'Número inválido. Usa formato E.164, ej. +584223552626',
       })
     }
   })
@@ -124,11 +124,14 @@ function formatShortDate(value: string) {
 
 interface CreateOrganizationFormProps {
   onSuccess?: () => void
+  /** Informa al contenedor si hay cambios sin guardar. */
+  onDirtyChange?: (isDirty: boolean) => void
   onConfigureWhatsApp?: (organization: Organization) => void
 }
 
 export function CreateOrganizationForm({
   onSuccess,
+  onDirtyChange,
   onConfigureWhatsApp,
 }: CreateOrganizationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -158,11 +161,18 @@ export function CreateOrganizationForm({
     setError,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<OrganizationForm>({
     resolver: zodResolver(createOrganizationSchema),
     defaultValues: getDefaultValues(),
   })
+
+  // Una vez creada la organización ya no hay nada que perder al cerrar.
+  const hasUnsavedChanges = isDirty && !createdInvite
+  useEffect(() => {
+    onDirtyChange?.(hasUnsavedChanges)
+    return () => onDirtyChange?.(false)
+  }, [hasUnsavedChanges, onDirtyChange])
 
   const name = watch('name')
   const slug = watch('slug')

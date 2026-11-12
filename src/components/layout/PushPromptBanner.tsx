@@ -78,7 +78,7 @@ function PushPrompt({ onDismiss, forChats }: { onDismiss: () => void; forChats: 
         </Button>
       ) : (
         <Button size="sm" className="shrink-0" onClick={handleEnable} disabled={toggling}>
-          {toggling ? 'Activando…' : 'Activar'}
+          {toggling ? 'Activando...' : 'Activar'}
         </Button>
       )}
       <button

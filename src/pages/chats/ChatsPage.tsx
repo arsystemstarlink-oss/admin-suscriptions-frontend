@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead } from '@/hooks/useWhatsApp'
+import { PENDING_MESSAGE_PREFIX, useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead } from '@/hooks/useWhatsApp'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,14 +18,9 @@ import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { ListSkeleton } from '@/components/design-system/Skeleton'
 
 const isSameDay = (date: Date, reference: Date = new Date()): boolean =>
   date.getFullYear() === reference.getFullYear() &&
@@ -65,11 +60,23 @@ export function ChatsPage() {
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { mutate: markReadOnServer } = useMarkConversationRead(organizationId ?? undefined)
 
-  const { data: clientsData, isLoading: clientsLoading } = useClients(
+  const {
+    data: clientsData,
+    isLoading: clientsLoading,
+    isError: clientsError,
+    refetch: refetchClients,
+    isFetching: clientsFetching,
+  } = useClients(
     { limit: 100, organizationId: organizationId ?? undefined },
     { enabled: !isSuperAdmin || !!organizationId }
   )
-  const { data: conversationsData } = useWhatsAppConversations(organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
+  const {
+    data: conversationsData,
+    isLoading: conversationsLoading,
+    isError: conversationsError,
+    refetch: refetchConversations,
+    isFetching: conversationsFetching,
+  } = useWhatsAppConversations(organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
 
   const clients = useMemo(() => clientsData?.clients || [], [clientsData])
   const clientPhones = useMemo(
@@ -98,6 +105,8 @@ export function ChatsPage() {
     data: messagesData,
     isLoading: messagesLoading,
     error: messagesError,
+    refetch: refetchMessages,
+    isFetching: messagesFetching,
   } = useWhatsAppMessages(selectedPhone, chatOrganizationId, {
     enabled: !!selectedPhone && (!isSuperAdmin || !!chatOrganizationId),
   })
@@ -248,14 +257,16 @@ export function ChatsPage() {
   const handleSendMessage = async () => {
     if (!selectedPhone || !message.trim() || sendingRef.current) return
     sendingRef.current = true
+    const text = message.trim()
+    // El mensaje ya se ve en la conversación; si falla, el texto vuelve al campo.
+    setMessage('')
     try {
       await sendMessageMutation.mutateAsync({
         to: selectedPhone,
-        body: message.trim(),
+        body: text,
       })
-      setMessage('')
-      toast.success('Mensaje enviado')
     } catch (err) {
+      setMessage((current) => current || text)
       const apiError = err as { code?: string; message?: string; twilioCode?: number; moreInfo?: string }
       if (apiError.code === 'WHATSAPP_NOT_CONFIGURED') {
         toast.error(
@@ -334,7 +345,7 @@ export function ChatsPage() {
 
   const handleConfirmDelete = () => {
     if (!deleteTargets.length || !deletePassword) {
-      toast.error('Ingrese su contraseña actual para continuar')
+      toast.error('Ingresa tu contraseña actual para continuar')
       return
     }
 
@@ -465,12 +476,17 @@ export function ChatsPage() {
               )}
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-y-auto p-2">
-              {clientsLoading && conversationItems.length === 0 ? (
-                <div className="space-y-3 p-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-                  ))}
-                </div>
+              {(clientsLoading || conversationsLoading) && conversationItems.length === 0 ? (
+                <ListSkeleton label="Cargando conversaciones" className="p-4" rowClassName="h-16" />
+              ) : (clientsError || conversationsError) && conversationItems.length === 0 ? (
+                <ErrorState
+                  title="No se pudieron cargar las conversaciones"
+                  onRetry={() => {
+                    void refetchClients()
+                    void refetchConversations()
+                  }}
+                  isRetrying={clientsFetching || conversationsFetching}
+                />
               ) : conversationItems.length === 0 ? (
                 <EmptyState
                   icon={<Users className="h-12 w-12 text-muted-foreground" />}
@@ -646,16 +662,12 @@ export function ChatsPage() {
 
                   <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 md:px-4 md:py-4 space-y-3">
                     {messagesLoading ? (
-                      <div className="space-y-3">
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} className="h-12 bg-muted animate-pulse rounded" />
-                        ))}
-                      </div>
-                    ) : messagesError ? (
-                      <EmptyState
-                        icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}
+                      <ListSkeleton label="Cargando mensajes" rowClassName="h-12" />
+                    ) : messagesError && !messagesData ? (
+                      <ErrorState
                         title="No se pudieron cargar los mensajes"
-                        description="Intenta abrir la conversación nuevamente."
+                        onRetry={() => void refetchMessages()}
+                        isRetrying={messagesFetching}
                       />
                     ) : sortedMessages.length === 0 ? (
                       <EmptyState
@@ -677,6 +689,7 @@ export function ChatsPage() {
                             <div
                               className={cn(
                                 'max-w-[78%] rounded-2xl px-4 py-3 shadow-sm',
+                                msg.id.startsWith(PENDING_MESSAGE_PREFIX) && 'opacity-60',
                                 isOutbound
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-surface-muted text-surface-muted-foreground'
@@ -711,7 +724,9 @@ export function ChatsPage() {
                               >
                                 {isOutbound && (
                                   <span>
-                                    {msg.status === 'FAILED'
+                                    {msg.id.startsWith(PENDING_MESSAGE_PREFIX)
+                                      ? 'Enviando...'
+                                      : msg.status === 'FAILED'
                                       ? 'No enviado'
                                       : msg.status === 'READ'
                                         ? 'Leído'
@@ -767,71 +782,43 @@ export function ChatsPage() {
           </div>
         </div>
       )}
-      <Dialog
+      <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={(open) => {
-          if (!open && (deleteChatMutation.isPending || deleteChatsMutation.isPending)) return
           setDeleteDialogOpen(open)
           if (!open) {
             setDeleteTargets([])
             setDeletePassword('')
           }
         }}
+        title={deleteTargets.length > 1 ? `Eliminar ${deleteTargets.length} chats` : 'Eliminar conversación'}
+        description={`${
+          deleteTargets.length > 1
+            ? `Se borrarán permanentemente los mensajes de ${deleteTargets.length} conversaciones.`
+            : 'Se borrarán permanentemente todos los mensajes de esta conversación.'
+        } Confirma tu identidad ingresando tu contraseña actual.`}
+        confirmLabel={`Eliminar${deleteTargets.length > 1 ? ` ${deleteTargets.length}` : ''}`}
+        pendingLabel="Eliminando..."
+        destructive
+        isPending={deleteChatMutation.isPending || deleteChatsMutation.isPending}
+        confirmDisabled={!deletePassword || (isSuperAdmin && !organizationId)}
+        onConfirm={handleConfirmDelete}
       >
-        <DialogContent className="bg-surface-elevated text-surface-elevated-foreground">
-          <DialogHeader>
-            <DialogTitle>
-              {deleteTargets.length > 1
-                ? `Eliminar ${deleteTargets.length} chats`
-                : 'Eliminar conversación'}
-            </DialogTitle>
-            <DialogDescription>
-              {deleteTargets.length > 1
-                ? `Se borrarán permanentemente los mensajes de ${deleteTargets.length} conversaciones.`
-                : 'Se borrarán permanentemente todos los mensajes de esta conversación.'}{' '}
-              Confirma tu identidad ingresando tu contraseña actual.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="delete-chats-password">Contraseña actual</Label>
-            <Input
-              id="delete-chats-password"
-              type="password"
-              autoComplete="current-password"
-              value={deletePassword}
-              onChange={(event) => setDeletePassword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') handleConfirmDelete()
-              }}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={deleteChatMutation.isPending || deleteChatsMutation.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={
-                !deletePassword ||
-                deleteChatMutation.isPending ||
-                deleteChatsMutation.isPending ||
-                (isSuperAdmin && !organizationId)
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleteChatMutation.isPending || deleteChatsMutation.isPending
-                ? 'Eliminando...'
-                : `Eliminar${deleteTargets.length > 1 ? ` ${deleteTargets.length}` : ''}`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="space-y-2">
+          <Label htmlFor="delete-chats-password">Contraseña actual</Label>
+          <Input
+            id="delete-chats-password"
+            type="password"
+            autoComplete="current-password"
+            value={deletePassword}
+            onChange={(event) => setDeletePassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleConfirmDelete()
+            }}
+            autoFocus
+          />
+        </div>
+      </ConfirmDialog>
     </div>
   )
 }

@@ -258,6 +258,39 @@
   to { opacity: 1; }
 }
 
+/* Avisos del layout (LayoutBanners): los grupos no generan caja propia. */
+.banner-group {
+  display: contents;
+}
+
+/* De los avisos promocionales se muestra solo el primero... */
+.banner-group--promo > :not(:first-child) {
+  display: none;
+}
+
+/* ...y ninguno mientras haya un aviso de estado visible. */
+.banner-group--status:not(:empty) + .banner-group--promo {
+  display: none;
+}
+
+/* Quien pide menos movimiento conserva los estados, sin transiciones ni entradas animadas. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* El giro de carga es la única señal de progreso: se mantiene, más lento. */
+  .animate-spin {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
 @layer utilities {
   .animate-shake {
     animation: shake 0.5s ease-in-out;

@@ -57,7 +57,7 @@ export function TopBar({
               className="w-auto h-8 sm:w-48 border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground"
               title={
                 organizationsLoading
-                  ? 'Cargando organizaciones…'
+                  ? 'Cargando organizaciones...'
                   : organizationsError
                     ? 'No se pudieron cargar las organizaciones'
                     : !hasOrganizations
@@ -66,7 +66,7 @@ export function TopBar({
               }
             >
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              <SelectValue placeholder={organizationsLoading ? 'Cargando…' : 'Organización'} />
+              <SelectValue placeholder={organizationsLoading ? 'Cargando...' : 'Organización'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NO_ORGANIZATION_VALUE}>Ninguna organización</SelectItem>

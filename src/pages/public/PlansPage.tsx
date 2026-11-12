@@ -140,7 +140,7 @@ export function PlansPage() {
   const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? DEFAULT_TRIAL_DAYS
 
   return (
-    <div className="plans-page-theme min-h-screen bg-background text-foreground">
+    <div className="plans-page-theme min-h-dvh bg-background text-foreground">
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface-elevated focus:px-4 focus:py-2 focus:text-surface-elevated-foreground focus-visible:ring-2 focus-visible:ring-ring"

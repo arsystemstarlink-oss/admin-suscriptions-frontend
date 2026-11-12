@@ -9,7 +9,7 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check, LoaderCircle } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, SearchX, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check, LoaderCircle } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod, canPayAdvance } from '@/lib/utils'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
@@ -17,6 +17,10 @@ import { ClientDebtSummary } from '@/components/clients/ClientDebtSummary'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { DetailNav } from '@/components/design-system/DetailNav'
 import { EmptyState } from '@/components/design-system/EmptyState'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { DetailSkeleton } from '@/components/design-system/Skeleton'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
+import { isNotFoundError } from '@/lib/error-handler'
 import type { SubscriptionWithDetails } from '@/types/api'
 import { getNavigationStatePath } from '@/lib/navigation'
 
@@ -26,7 +30,7 @@ export function ClientDetailPage() {
   const navigate = useNavigate()
   const isSuperAdmin = useIsSuperAdmin()
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
-  const { data, isLoading, error } = useClientDetail(id!, organizationId || undefined, {
+  const { data, isLoading, error, refetch, isFetching } = useClientDetail(id!, organizationId || undefined, {
     enabled: !isSuperAdmin || !!organizationId,
   })
   const {
@@ -40,32 +44,43 @@ export function ClientDetailPage() {
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const [consultaLinkCopied, setConsultaLinkCopied] = useState(false)
 
-  if (isLoading) {
+  if (isSuperAdmin && !organizationId) {
     return (
-      <div className="space-y-4 px-2">
-        <div className="h-20 bg-muted rounded-2xl animate-pulse mb-6" />
-        <div className="flex gap-2">
-          {[1, 2].map((i) => <div key={i} className="h-24 flex-1 bg-muted rounded-xl animate-pulse" />)}
-        </div>
-        <div className="h-10 w-full bg-muted rounded-lg animate-pulse my-4" />
-        {[1, 2].map((i) => (
-          <div key={i} className="h-32 bg-muted rounded-2xl animate-pulse" />
-        ))}
-      </div>
+      <OrganizationSelectionEmptyState description="Elige una organización para consultar este cliente." />
     )
   }
 
-  if (error || !data) {
+  if (isLoading) {
+    return <DetailSkeleton label="Cargando cliente" stats={2} sections={2} />
+  }
+
+  // Con datos en caché se sigue mostrando el detalle aunque falle la actualización.
+  if (!data) {
+    const backButton = (
+      <Button asChild variant="outline">
+        <Link to="/subscriptions/clients">Volver a clientes</Link>
+      </Button>
+    )
+
+    if (isNotFoundError(error)) {
+      return (
+        <EmptyState
+          icon={<SearchX className="h-12 w-12 text-muted-foreground" />}
+          title="Cliente no encontrado"
+          description="Puede que se haya eliminado o que el enlace ya no sea válido."
+          action={backButton}
+        />
+      )
+    }
+
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="h-16 w-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-4">
-          <AlertTriangle className="h-8 w-8" />
-        </div>
-        <h2 className="text-xl font-bold text-foreground">Error al cargar cliente</h2>
-        <p className="text-muted-foreground mt-2 mb-6">No pudimos obtener los datos del cliente solicitado.</p>
-        <Button asChild>
-          <Link to="/subscriptions/clients">Volver a clientes</Link>
-        </Button>
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar el cliente"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        {backButton}
       </div>
     )
   }

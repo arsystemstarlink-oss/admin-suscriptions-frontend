@@ -36,8 +36,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { AlertTriangle, Building2 } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
+import { useDiscardChangesGuard } from '@/components/design-system/useDiscardChangesGuard'
 import type {
   ApiError,
   Organization,
@@ -92,7 +94,7 @@ export function EditOrganizationSheet({
     handleSubmit,
     reset,
     setError: setFormError,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<EditOrganizationForm>({
     resolver: zodResolver(editOrganizationSchema),
     defaultValues: {
@@ -178,10 +180,18 @@ export function EditOrganizationSheet({
     }
   }
 
+  const { guardedOpenChange, requestClose, discardDialog } = useDiscardChangesGuard({
+    open,
+    isDirty,
+    isSubmitting: isSubmitting || updateMutation.isPending,
+    onOpenChange,
+  })
+
   if (!organization) return null
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <>
+    <Sheet open={open} onOpenChange={guardedOpenChange}>
       <SheetContent className="sm:max-w-xl">
         <SheetHeader>
           <div className="flex items-center gap-3 pr-8">
@@ -357,34 +367,6 @@ export function EditOrganizationSheet({
               organizationName={organization.name}
             />
 
-            {showDeleteConfirm && (
-              <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/10 space-y-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 text-destructive shrink-0" />
-                  <p className="text-sm text-destructive">
-                    Se eliminará {organization.name} y todos sus datos: administradores, clientes,
-                    planes, suscripciones y períodos de facturación. Esta acción no se puede deshacer.
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={deleteMutation.isPending}
-                  >
-                    {deleteMutation.isPending ? 'Eliminando...' : 'Confirmar eliminación'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowDeleteConfirm(false)}
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
 
           <SheetFooter className="flex-row justify-between gap-2">
@@ -397,7 +379,7 @@ export function EditOrganizationSheet({
               Eliminar
             </Button>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={requestClose}>
                 Cancelar
               </Button>
               <Button
@@ -412,5 +394,18 @@ export function EditOrganizationSheet({
         </div>
       </SheetContent>
     </Sheet>
+    {discardDialog}
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title="Eliminar organización"
+      description={`Se eliminará ${organization.name} y todos sus datos: administradores, clientes, planes, suscripciones y períodos de facturación. Esta acción no se puede deshacer.`}
+      confirmLabel="Eliminar"
+      pendingLabel="Eliminando..."
+      destructive
+      isPending={deleteMutation.isPending}
+      onConfirm={handleDelete}
+    />
+    </>
   )
 }

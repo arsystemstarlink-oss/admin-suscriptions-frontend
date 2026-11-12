@@ -193,7 +193,7 @@ export function usePayAdvance(subscriptionId: string) {
     onError: (error: unknown) => {
       const apiError = error as { code?: string; message?: string }
       if (apiError.code === 'HAS_UNPAID_PERIODS') {
-        toast.error('Tiene períodos pendientes: cóbrelos primero')
+        toast.error('Tienes períodos pendientes: cóbralos primero')
       } else if (apiError.code === 'PERIOD_ALREADY_EXISTS') {
         toast.warning('El siguiente ciclo ya existe')
         qc.invalidateQueries({ queryKey: qk.billing.lists })

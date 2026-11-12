@@ -114,7 +114,7 @@ export function LoginPage() {
       } else if (!navigator.onLine) {
         setError('Sin conexión a internet. Revisa tu red e inténtalo de nuevo.')
       } else {
-        setError('Error al iniciar sesión. Intente nuevamente.')
+        setError('Error al iniciar sesión. Inténtalo de nuevo.')
       }
       triggerShake()
     } finally {
@@ -124,7 +124,7 @@ export function LoginPage() {
 
   if (showSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="min-h-dvh flex items-center justify-center bg-background px-6">
         <div className="text-center animate-fade-slide-up">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 shadow-sm">
             <CheckCircle2 className="h-9 w-9 text-success shrink-0" />

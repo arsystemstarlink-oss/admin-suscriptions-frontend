@@ -11,7 +11,7 @@ export function SetupPage() {
   const goToLogin = () => navigate('/login', { replace: true })
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-6 py-8">
+    <div className="min-h-dvh flex items-center justify-center bg-background px-6 py-8">
       <div className="w-full max-w-140 animate-fade-slide-up">
         <div className="text-center mb-8">
           <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl bg-header px-5 py-3">

@@ -678,54 +678,84 @@ const MODE_OPTIONS: { mode: WhatsAppMode; Icon: typeof Zap; title: string; point
     mode: 'own',
     Icon: Smartphone,
     title: 'Tu propio número',
-    points: ['Tus clientes ven tu número y tu marca', 'Sin tope: pagas los mensajes a Twilio'],
+    points: [
+      'Requiere una cuenta Twilio y un número exclusivo, distinto al de la plataforma',
+      'Tus clientes ven tu número; pagas los mensajes a Twilio',
+    ],
   },
 ]
 
 export function WhatsAppModePicker({
   mode,
   pending,
+  ownReady,
   onChange,
 }: {
   mode: WhatsAppMode
   pending: boolean
+  ownReady: boolean
   onChange: (mode: WhatsAppMode) => void
 }) {
+  const [confirmOwnChange, setConfirmOwnChange] = useState(false)
+
   return (
-    <div role="radiogroup" aria-label="Desde dónde se envían los avisos" className="grid gap-2 sm:grid-cols-2">
-      {MODE_OPTIONS.map(({ mode: option, Icon, title, points }) => {
-        const selected = option === mode
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            disabled={pending}
-            onClick={() => !selected && onChange(option)}
-            className={cn(
-              'rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
-              selected
-                ? 'border-border-strong bg-surface-active text-surface-foreground'
-                : 'border-border bg-surface text-surface-foreground hover:bg-surface-hover',
-            )}
-          >
-            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Icon className="h-4 w-4 shrink-0 text-primary-text" aria-hidden="true" />
-              {title}
-              {selected && (
-                <span className={cn('ml-auto rounded-full border px-2 py-0.5 text-xs font-normal', TONE_CLASSES.success)}>
-                  En uso
-                </span>
+    <>
+      <div role="radiogroup" aria-label="Desde dónde se envían los avisos" className="grid gap-2 sm:grid-cols-2">
+        {MODE_OPTIONS.map(({ mode: option, Icon, title, points }) => {
+          const selected = option === mode
+          return (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={pending}
+              onClick={() => {
+                if (selected) return
+                if (option === 'own' && !ownReady) {
+                  setConfirmOwnChange(true)
+                  return
+                }
+                onChange(option)
+              }}
+              className={cn(
+                'rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+                selected
+                  ? 'border-border-strong bg-surface-active text-surface-foreground'
+                  : 'border-border bg-surface text-surface-foreground hover:bg-surface-hover',
               )}
-            </span>
-            <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-              {points.map((point) => <li key={point}>{point}</li>)}
-            </ul>
-          </button>
-        )
-      })}
-    </div>
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Icon className="h-4 w-4 shrink-0 text-primary-text" aria-hidden="true" />
+                {title}
+                {selected && (
+                  <span className="ml-auto rounded-full border border-border bg-surface-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                    Seleccionado
+                  </span>
+                )}
+              </span>
+              {option === 'own' && !ownReady && (
+                <span className="mt-1 block text-xs font-medium text-warning">Pendiente de configurar</span>
+              )}
+              <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                {points.map((point) => <li key={point}>{point}</li>)}
+              </ul>
+            </button>
+          )
+        })}
+      </div>
+      <ConfirmDialog
+        open={confirmOwnChange}
+        onOpenChange={setConfirmOwnChange}
+        title="Cambiar al número propio"
+        description="Si todavía falta configurar Twilio o alguna plantilla requerida, los avisos por WhatsApp de esta organización quedarán en pausa. Al cambiar, dejará de usar el WhatsApp de la plataforma."
+        confirmLabel="Cambiar igualmente"
+        onConfirm={() => {
+          setConfirmOwnChange(false)
+          onChange('own')
+        }}
+      />
+    </>
   )
 }
 

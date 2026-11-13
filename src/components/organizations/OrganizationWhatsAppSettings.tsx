@@ -63,6 +63,15 @@ function isTwilioReady(twilio: OrganizationWhatsAppConfig['twilio']): boolean {
   return Boolean(twilio.accountSid && twilio.authTokenConfigured && twilio.phoneNumber && twilio.enabled !== false)
 }
 
+function isOwnWhatsAppReady(config: OrganizationWhatsAppConfig): boolean {
+  if (!isTwilioReady(config.twilio)) return false
+  return (
+    (config.rules.reminderDaysBefore.length === 0 || Boolean(config.templates.reminder)) &&
+    (!config.rules.dueDateWarningEnabled || Boolean(config.templates.dueDateWarning)) &&
+    (!config.rules.suspensionNoticeEnabled || Boolean(config.templates.suspensionNotice))
+  )
+}
+
 interface OrganizationWhatsAppSettingsProps {
   organizationId: string
   organizationName: string
@@ -774,6 +783,7 @@ function WhatsAppSetupGuide({
         <WhatsAppModePicker
           mode={usesPlatform ? 'platform' : 'own'}
           pending={modeMutation.isPending}
+          ownReady={isOwnWhatsAppReady(config)}
           onChange={(mode) => modeMutation.mutate({ id: organizationId, data: { mode } })}
         />
       )}

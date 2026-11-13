@@ -11,6 +11,47 @@ export function isStandalone(): boolean {
   )
 }
 
+export type PushPlatform = 'ios' | 'android' | 'desktop'
+
+export function getPushPlatform(): PushPlatform {
+  const ua = navigator.userAgent
+  // iPadOS se identifica como Mac; se distingue por la pantalla táctil.
+  if (/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+    return 'ios'
+  }
+  if (/Android/.test(ua)) return 'android'
+  return 'desktop'
+}
+
+/** Nombre legible del dispositivo a partir del user agent guardado en la suscripción. */
+export function describeUserAgent(ua: string): string {
+  const browser = /Edg\//.test(ua)
+    ? 'Edge'
+    : /OPR\//.test(ua)
+      ? 'Opera'
+      : /Firefox\//.test(ua)
+        ? 'Firefox'
+        : /Chrome\//.test(ua)
+          ? 'Chrome'
+          : /Safari\//.test(ua)
+            ? 'Safari'
+            : 'Navegador'
+  const system = /iPhone|iPod/.test(ua)
+    ? 'iPhone'
+    : /iPad/.test(ua)
+      ? 'iPad'
+      : /Android/.test(ua)
+        ? 'Android'
+        : /Windows/.test(ua)
+          ? 'Windows'
+          : /Macintosh|Mac OS X/.test(ua)
+            ? 'Mac'
+            : /Linux/.test(ua)
+              ? 'Linux'
+              : ''
+  return system ? `${browser} en ${system}` : browser
+}
+
 export function getNotificationPermission(): NotificationPermission | null {
   if (!('Notification' in window)) return null
   return Notification.permission
@@ -100,5 +141,38 @@ export async function removePushSubscription(): Promise<void> {
   const subscription = await getPushSubscription()
   if (subscription) {
     await subscription.unsubscribe()
+  }
+}
+
+/**
+ * Al cerrar sesión este dispositivo deja de recibir avisos de la cuenta.
+ * Recibe el token porque para entonces ya se borró del storage.
+ */
+export async function detachPushOnLogout(accessToken: string | null): Promise<void> {
+  if (!isPushSupported()) return
+  try {
+    if ('clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => {})
+    }
+    const registration = await navigator.serviceWorker.getRegistration()
+    const subscription = await registration?.pushManager.getSubscription()
+    if (!subscription) return
+    if (accessToken) {
+      await pushApi.unregisterOnLogout(subscription.endpoint, accessToken).catch(() => {})
+    }
+    // Aunque el servidor no responda, sin suscripción local no llega ningún aviso.
+    await subscription.unsubscribe()
+  } catch {
+    // Sin service worker no hay nada que desvincular
+  }
+}
+
+/** Pide al service worker mostrar el próximo aviso aunque la app esté en pantalla. */
+export async function expectTestPush(): Promise<void> {
+  try {
+    const registration = await navigator.serviceWorker.getRegistration()
+    registration?.active?.postMessage({ type: 'EXPECT_TEST_PUSH' })
+  } catch {
+    // El aviso de prueba se mostrará dentro de la app
   }
 }

@@ -21,11 +21,33 @@ registerRoute(
   }),
 )
 
+// Tras pedir un aviso de prueba, se muestra aunque la app esté en pantalla.
+const TEST_PUSH_WINDOW_MS = 30_000
+let forceNotificationUntil = 0
+
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }
+  if (event.data && event.data.type === 'EXPECT_TEST_PUSH') {
+    forceNotificationUntil = Date.now() + TEST_PUSH_WINDOW_MS
+  }
 })
+
+// Safari revoca la suscripción si un push no muestra notificación del sistema.
+const mustAlwaysNotify =
+  /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) &&
+  !/Chrome|Chromium|Edg|Firefox/.test(navigator.userAgent)
+
+/** Los mensajes de un mismo chat se agrupan; el resto de avisos no se reemplazan entre sí. */
+function getNotificationTag(data: Record<string, unknown> | undefined): string | undefined {
+  if (!data) return undefined
+  if (typeof data.tag === 'string' && data.tag) return data.tag
+  if (data.type === 'whatsapp-message') {
+    return typeof data.url === 'string' && data.url ? `whatsapp:${data.url}` : 'whatsapp'
+  }
+  return undefined
+}
 
 function parsePushPayload(event: PushEvent): {
   title: string
@@ -72,22 +94,39 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     (async () => {
-      await self.registration.showNotification(title, {
-        body,
-        icon,
-        badge,
-        data,
-      })
-
-      // Reenvía el aviso a las pestañas abiertas para que la app invalide
-      // solo las consultas afectadas, sin necesidad de hacer polling.
       const windowClients = (await self.clients.matchAll({
         type: 'window',
         includeUncontrolled: true,
       })) as WindowClient[]
 
+      // Con la app en pantalla el aviso se muestra dentro de ella, no en el sistema.
+      const appInFront = windowClients.some(
+        (client) => client.focused && client.visibilityState === 'visible',
+      )
+      const shown = mustAlwaysNotify || !appInFront || Date.now() < forceNotificationUntil
+
+      if (shown) {
+        const tag = getNotificationTag(data)
+        await self.registration.showNotification(title, {
+          body,
+          icon,
+          badge,
+          data,
+          ...(tag ? { tag, renotify: true } : {}),
+        } as NotificationOptions)
+      }
+
+      // Reenvía el aviso a las pestañas abiertas para que la app invalide
+      // solo las consultas afectadas, sin necesidad de hacer polling.
       for (const client of windowClients) {
-        client.postMessage({ type: 'PUSH_RECEIVED', data: data ?? {} })
+        client.postMessage({
+          type: 'PUSH_RECEIVED',
+          data: data ?? {},
+          title,
+          body,
+          shown,
+          inFront: client.focused && client.visibilityState === 'visible',
+        })
       }
     })(),
   )
@@ -120,20 +159,23 @@ self.addEventListener('notificationclick', (event) => {
         includeUncontrolled: true,
       })) as WindowClient[]
 
-      for (const client of windowClients) {
-        if (client.url === url) {
-          await client.focus()
-          return
-        }
-      }
+      const target =
+        windowClients.find((client) => client.url === url) ??
+        windowClients.find((client) => client.focused) ??
+        windowClients.find((client) => client.visibilityState === 'visible') ??
+        windowClients[0]
 
-      for (const client of windowClients) {
-        await client.navigate(url)
-        await client.focus()
+      if (!target) {
+        await self.clients.openWindow(url)
         return
       }
 
-      await self.clients.openWindow(url)
+      // La app navega con su router: sin recargar la página y respetando el aviso
+      // de cambios sin guardar si hay un formulario a medias.
+      if (target.url !== url) {
+        target.postMessage({ type: 'PUSH_NAVIGATE', url })
+      }
+      await target.focus()
     })(),
   )
 })

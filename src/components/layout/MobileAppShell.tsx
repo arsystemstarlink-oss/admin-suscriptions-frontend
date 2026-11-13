@@ -69,7 +69,7 @@ export default function MobileAppShell({
                 className="h-8 w-auto max-w-28 shrink-0 gap-1 px-2 text-xs border-border bg-surface-elevated text-surface-elevated-foreground hover:bg-surface-hover hover:text-surface-elevated-foreground [&>span]:truncate"
                 title={
                   organizationsLoading
-                    ? 'Cargando organizaciones…'
+                    ? 'Cargando organizaciones...'
                     : organizationsError
                       ? 'No se pudieron cargar las organizaciones'
                       : !hasOrganizations
@@ -78,7 +78,7 @@ export default function MobileAppShell({
                 }
               >
                 <Building2 className="h-3.5 w-3.5 shrink-0" />
-                <SelectValue placeholder={organizationsLoading ? 'Cargando…' : 'Org'} />
+                <SelectValue placeholder={organizationsLoading ? 'Cargando...' : 'Org'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_ORGANIZATION_VALUE}>Ninguna organización</SelectItem>

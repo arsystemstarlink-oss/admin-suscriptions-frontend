@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams, useNavigate, useLocation } from 'react-router-dom'
-import { useInfiniteClients } from '@/hooks/useClients'
+import { useInfiniteClients, usePrefetchClientDetail } from '@/hooks/useClients'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { Users, Phone, Plus, LoaderCircle, IdCard, Link2, RotateCcw } from 'lucide-react'
@@ -95,6 +95,7 @@ export function ClientsListPage() {
   }
 
   const isEmpty = !data || clients.length === 0
+  const prefetchClient = usePrefetchClientDetail(organizationId || undefined)
   const showEmpty = isSuperAdmin && !organizationId
   const hasActiveFilters = Boolean(search || subscriptionStatus || hasOverdue !== undefined)
 
@@ -206,7 +207,12 @@ export function ClientsListPage() {
             >
               <Link
                 to={`/subscriptions/clients/${client.id}`}
-                state={{ from: `${location.pathname}${location.search}` }}
+                state={{
+                  from: `${location.pathname}${location.search}`,
+                  preview: { title: getClientFullName(client), subtitle: client.phone },
+                }}
+                onPointerDown={() => prefetchClient(client.id)}
+                onFocus={() => prefetchClient(client.id)}
               >
                 <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
                   <div className="relative shrink-0">

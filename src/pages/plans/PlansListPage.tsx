@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Package, Edit, Trash2, Plus, RotateCcw } from 'lucide-react'
 import { formatCurrency } from '@/lib/constants'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { DeletePlanSheet } from '@/components/modals/DeletePlanSheet'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
@@ -56,8 +57,8 @@ export function PlansListPage() {
     try {
       await updateMutation.mutateAsync({ id, data: { active: !currentActive } })
       toast.success(currentActive ? 'Plan desactivado' : 'Plan activado')
-    } catch {
-      toast.error('Error al cambiar el estado del plan')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cambiar el estado del plan'))
     }
   }
 
@@ -155,6 +156,8 @@ export function PlansListPage() {
               variant="outline"
               size="sm"
               onClick={() => handleToggleActive(plan.id, plan.active)}
+              disabled={updateMutation.isPending}
+              aria-busy={updateMutation.isPending}
               className="flex-1 md:flex-none"
             >
               {plan.active ? 'Desactivar' : 'Activar'}
@@ -163,6 +166,7 @@ export function PlansListPage() {
               <Link
                 to={`/subscriptions/plans/${plan.id}/edit`}
                 state={{ returnTo: `${location.pathname}${location.search}` }}
+                aria-label={`Editar plan ${plan.name}`}
               >
                 <Edit className="h-4 w-4 shrink-0" />
               </Link>
@@ -171,6 +175,7 @@ export function PlansListPage() {
               variant="outline"
               size="icon"
               onClick={() => setDeleteTarget({ id: plan.id, name: plan.name })}
+              aria-label={`Eliminar plan ${plan.name}`}
             >
               <Trash2 className="h-4 w-4 text-destructive shrink-0" />
             </Button>

@@ -27,7 +27,7 @@ export function useUpdateSchedulerConfig(organizationId?: string) {
       if (apiError.code === 'INVALID_CRON') {
         toast.error('La expresión cron no es válida')
       } else {
-        toast.error(apiError.message || 'Error al actualizar la configuración')
+        toast.error(apiError.message || 'No se pudo actualizar la configuración')
       }
     },
   })
@@ -50,20 +50,20 @@ export function useRunScheduler(organizationId?: string) {
       const errorCount = data.result?.errors?.length ?? 0
       if (errorCount > 0) {
         toast.warning(
-          `Daily Job ejecutado: ${data.result.overdue} vencidos, ${data.result.generated} generados, ` +
+          `Tarea diaria ejecutada: ${data.result.overdue} vencidos, ${data.result.generated} generados, ` +
             `${data.result.suspended} suspendidos, ${data.result.notifications} notificaciones. ` +
             `${errorCount} notificación(es) con error.`
         )
       } else {
-        toast.success('Daily Job ejecutado correctamente')
+        toast.success('Tarea diaria ejecutada correctamente')
       }
     },
     onError: (error: unknown) => {
       const apiError = error as { code?: string; message?: string }
       if (apiError.code === 'JOB_ALREADY_RUNNING') {
-        toast.warning('El Daily Job ya está en ejecución para esta organización. Espera a que termine.')
+        toast.warning('La tarea diaria ya está en ejecución para esta organización. Espera a que termine.')
       } else {
-        toast.error(apiError.message || 'Error al ejecutar el Daily Job')
+        toast.error(apiError.message || 'No se pudo ejecutar la tarea diaria')
       }
     },
   })

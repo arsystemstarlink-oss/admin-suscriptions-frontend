@@ -167,7 +167,30 @@ export default defineConfig(({ mode }) => {
           icons: [
             { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
             { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
-            { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+            { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+          // Accesos directos al mantener presionado el icono de la app instalada.
+          shortcuts: [
+            {
+              name: 'Nueva suscripción',
+              url: './subscriptions/new',
+              icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+            },
+            {
+              name: 'Nuevo cliente',
+              url: './subscriptions/clients/new',
+              icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+            },
+            {
+              name: 'Suscripciones',
+              url: './subscriptions',
+              icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+            },
+            {
+              name: 'Chats',
+              url: './chats',
+              icons: [{ src: 'pwa-192.png', sizes: '192x192', type: 'image/png' }],
+            },
           ],
         },
         injectManifest: {

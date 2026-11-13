@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { ReceiptText, Wallet } from 'lucide-react'
+import { Inbox, ReceiptText, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/design-system/PageHeader'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
 import { usePendingCollectionsCount } from '@/hooks/usePendingCollectionsCount'
@@ -30,6 +30,14 @@ export function PaymentsLayout() {
       subtitle: 'Aprueba o rechaza los pagos de plan reportados por los administradores.',
       end: false,
       badge: planReports,
+    },
+    {
+      to: '/payment-reports/quotes',
+      icon: Inbox,
+      label: 'Cotizaciones',
+      title: 'Cotizaciones',
+      subtitle: 'Solicitudes del plan A medida que esperan una propuesta.',
+      end: false,
     },
   ]
 

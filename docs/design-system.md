@@ -121,6 +121,34 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 - Los patrones de estado por entidad (suscripciones, períodos, clientes) viven en `src/lib/constants.ts`; importarlos, no reescribirlos inline.
 - Las instrucciones del repositorio para agentes están en [copilot-instructions.md](../.github/copilot-instructions.md); este documento es la referencia completa de tokens y valores.
 
+### Patrones de UX (uno por situación)
+
+| Situación | Usar | No usar |
+| --- | --- | --- |
+| Confirmar una acción (borrar, suspender, descartar) | `ConfirmDialog` — hoja inferior en móvil, diálogo en desktop; el error de la acción va en su prop `error` | `window.confirm`, un Sheet propio, un bloque de confirmación inline |
+| Cargando contenido | `Skeleton`, `ListSkeleton`, `DetailSkeleton`, `FormSkeleton`, `PageSkeleton` | Spinner de página. El spinner queda solo dentro de botones y en rutas públicas a pantalla completa |
+| Falló la carga y no hay datos | `ErrorState` con `onRetry` | Texto de error sin acción |
+| El recurso no existe (`isNotFoundError`) | `EmptyState` con botón para volver | `ErrorState`: reintentar no sirve |
+| Falló la actualización pero hay datos en caché | Seguir mostrando los datos; `StaleDataBanner` avisa | Reemplazar la pantalla por un error |
+| Formulario de página con cambios | `UnsavedChangesGuard` + `useFormDraft` | — |
+| Formulario dentro de un Sheet con cambios | `useDiscardChangesGuard` (pasar `guardedOpenChange` al Sheet y `requestClose` a "Cancelar") | Cerrar el Sheet directo con `onOpenChange` |
+| Aviso sobre el contenido | Añadirlo a `LayoutBanners` en su grupo: estado (siempre visible) o promocional (uno a la vez, oculto si hay avisos de estado) | Montarlo suelto en el layout |
+
+### Textos
+
+- Se trata al usuario de **tú**: "Selecciona un plan", "Inténtalo de nuevo", "No puedes eliminar…". Nunca "Seleccione", "Intente", "¿Está seguro que desea…?".
+- Confirmaciones: pregunta corta más consecuencia — "¿Eliminar a {nombre}? Esta acción no se puede deshacer." El botón repite el verbo ("Eliminar"), no "Confirmar".
+- Estados en curso: gerundio del verbo de la acción y tres puntos — "Guardando...", "Eliminando...". Evitar el genérico "Procesando..." cuando hay un verbo concreto.
+- Errores de carga: "No se pudo cargar {cosa}". Errores de acción: "No se pudo {acción}. Inténtalo de nuevo."
+
+- En un `catch` con mensaje fijo, usar `getErrorMessage(err, 'No se pudo…')`: si el fallo fue por falta de red, muestra el aviso de sin conexión en lugar del genérico. Los `error.message` que llegan del cliente HTTP ya vienen en español.
+- Fechas: `formatDate` para fechas de facturación (sin hora, en UTC) y `formatLocalDate` para eventos con hora (último acceso, altas). No usar `toLocaleDateString` ni `date-fns` directo para esto.
+
+### Plataforma
+
+- Alturas de pantalla con `dvh` (`min-h-dvh`, `h-dvh`), no `screen`: evita saltos con la barra del navegador móvil.
+- `prefers-reduced-motion` se respeta de forma global en `index.css`; no hace falta `motion-reduce:` por componente.
+
 ## 5. Checklist antes de commitear UI
 
 - [ ] Sin `dark:`, sin raw colors, sin escalas `primary-*`/`secondary-*`
@@ -128,3 +156,5 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 - [ ] Hover/active usan `surface-hover`/`surface-active`
 - [ ] Status vía tokens o constantes de `constants.ts`
 - [ ] Revisado en Light y Dark
+- [ ] Carga, error, vacío y confirmación usan los componentes de "Patrones de UX"
+- [ ] Textos en tú y con el formato de "Textos"

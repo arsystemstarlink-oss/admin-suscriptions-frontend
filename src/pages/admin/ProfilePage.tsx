@@ -50,7 +50,7 @@ const profileSchema = z.object({
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .regex(/^\+58\d{10,11}$/, 'Ingrese un teléfono venezolano válido (10-11 dígitos)')
+    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)')
     .optional()
     .or(z.literal('')),
   currentPassword: z.string().optional(),
@@ -66,7 +66,7 @@ const passwordSchema = z
       .min(8, 'Mínimo 8 caracteres')
       .regex(/[a-zA-Z]/, 'Debe incluir letras')
       .regex(/\d/, 'Debe incluir números'),
-    confirmPassword: z.string().min(1, 'Confirme la nueva contraseña'),
+    confirmPassword: z.string().min(1, 'Confirma la nueva contraseña'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     path: ['confirmPassword'],
@@ -155,7 +155,7 @@ export function ProfilePage() {
   const showGenericError = (err: unknown) => {
     const apiError = err as Partial<ApiError>
     const handler = apiError.code ? getErrorHandler(apiError.code) : undefined
-    toast.error(handler?.message || apiError.message || 'Error al guardar')
+    toast.error(handler?.message || apiError.message || 'No se pudieron guardar los cambios')
   }
 
   if (!user) {
@@ -180,7 +180,7 @@ export function ProfilePage() {
   const onProfileSubmit = async (data: ProfileForm) => {
     const emailChanged = data.email.toLowerCase() !== user.email.toLowerCase()
     if (emailChanged && !data.currentPassword) {
-      toast.error('Ingrese su contraseña actual para cambiar el correo')
+      toast.error('Ingresa tu contraseña actual para cambiar el correo')
       return
     }
     try {
@@ -568,7 +568,7 @@ export function ProfilePage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Nombre</p>
-                  <p className="break-words text-sm font-semibold text-foreground sm:text-base">{user.name}</p>
+                  <p className="wrap-break-word text-sm font-semibold text-foreground sm:text-base">{user.name}</p>
                 </div>
               </div>
               <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:p-4">

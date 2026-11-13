@@ -18,7 +18,6 @@ import {
   CheckCircle,
   XCircle,
   Zap,
-  RefreshCw,
   Pause,
   AlertTriangle,
   History,
@@ -30,6 +29,8 @@ import {
 import { formatDate } from '@/lib/constants'
 import type { NotificationFailure, NotificationType, SchedulerLog } from '@/types/api'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { Skeleton, ListSkeleton } from '@/components/design-system/Skeleton'
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   reminder: 'Recordatorio',
@@ -144,13 +145,23 @@ export function AdminToolsPage() {
   const isSuperAdmin = useIsSuperAdmin()
   const { selectedOrganizationId } = useOrganizationStore()
 
-  const { data: schedulerConfig, isLoading: isLoadingScheduler } = useSchedulerConfig(
+  const {
+    data: schedulerConfig,
+    isLoading: isLoadingScheduler,
+    refetch: refetchScheduler,
+    isFetching: isFetchingScheduler,
+  } = useSchedulerConfig(
     isSuperAdmin ? selectedOrganizationId || undefined : undefined,
     { enabled: !isSuperAdmin || !!selectedOrganizationId }
   )
   const updateSchedulerMutation = useUpdateSchedulerConfig(isSuperAdmin ? selectedOrganizationId || undefined : undefined)
   const runSchedulerMutation = useRunScheduler(isSuperAdmin ? selectedOrganizationId || undefined : undefined)
-  const { data: schedulerLogs, isLoading: isLoadingLogs } = useSchedulerLogs(
+  const {
+    data: schedulerLogs,
+    isLoading: isLoadingLogs,
+    refetch: refetchLogs,
+    isFetching: isFetchingLogs,
+  } = useSchedulerLogs(
     50,
     isSuperAdmin ? selectedOrganizationId || undefined : undefined,
     { enabled: !isSuperAdmin || !!selectedOrganizationId }
@@ -210,12 +221,10 @@ export function AdminToolsPage() {
           )}
 
           {isLoadingScheduler ? (
-            <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
-              <CardContent className="py-12 text-center">
-                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-3 shrink-0" />
-                <p className="text-muted-foreground">Cargando configuración...</p>
-              </CardContent>
-            </Card>
+            <div role="status" aria-label="Cargando configuración" className="space-y-4 md:space-y-6">
+              <Skeleton className="h-56 rounded-2xl" />
+              <Skeleton className="h-72 rounded-2xl" />
+            </div>
           ) : schedulerConfig ? (
             <>
               <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
@@ -412,10 +421,14 @@ export function AdminToolsPage() {
                 </CardHeader>
                 <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
                   {isLoadingLogs ? (
-                    <div className="flex items-center justify-center py-8">
-                      <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground shrink-0" />
-                    </div>
-                  ) : !schedulerLogs || schedulerLogs.logs.length === 0 ? (
+                    <ListSkeleton label="Cargando historial" rows={3} rowClassName="h-16" className="space-y-2" />
+                  ) : !schedulerLogs ? (
+                    <ErrorState
+                      title="No se pudo cargar el historial"
+                      onRetry={() => void refetchLogs()}
+                      isRetrying={isFetchingLogs}
+                    />
+                  ) : schedulerLogs.logs.length === 0 ? (
                     <div className="py-8 text-center">
                       <p className="text-sm text-xs text-muted-foreground">
                         Sin ejecuciones registradas todavía.
@@ -455,7 +468,7 @@ export function AdminToolsPage() {
                             </div>
 
                             {log.error && (
-                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive break-words">
+                              <div className="mt-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive wrap-break-word">
                                 {log.error}
                               </div>
                             )}
@@ -501,9 +514,12 @@ export function AdminToolsPage() {
             </>
           ) : (
             <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
-              <CardContent className="py-12 text-center">
-                <XCircle className="h-8 w-8 text-destructive mx-auto mb-3 shrink-0" />
-                <p className="text-destructive">Error al cargar la configuración</p>
+              <CardContent className="p-4">
+                <ErrorState
+                  title="No se pudo cargar la configuración"
+                  onRetry={() => void refetchScheduler()}
+                  isRetrying={isFetchingScheduler}
+                />
               </CardContent>
             </Card>
           )}
@@ -539,7 +555,7 @@ export function AdminToolsPage() {
                     Código Twilio: {err.errorCode}
                   </p>
                 )}
-                <p className="text-xs text-destructive break-words">{err.errorMessage}</p>
+                <p className="text-xs text-destructive wrap-break-word">{err.errorMessage}</p>
               </div>
             ))}
           </div>

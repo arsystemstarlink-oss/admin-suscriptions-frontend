@@ -102,7 +102,7 @@ export function InvitePage() {
 
   if (previewQuery.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-dvh items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary-text" />
       </div>
     )
@@ -112,7 +112,7 @@ export function InvitePage() {
     const apiError = previewQuery.error as Partial<ApiError> | undefined
     const handler = apiError?.code ? getErrorHandler(apiError.code as ApiError['code']) : undefined
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
           <AlertCircle className="h-7 w-7 text-destructive" />
         </div>
@@ -133,7 +133,7 @@ export function InvitePage() {
 
   if (accepted) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
           <CheckCircle2 className="h-9 w-9 text-success" />
         </div>
@@ -146,7 +146,7 @@ export function InvitePage() {
   const invite = previewQuery.data.invite
 
   return (
-    <div className="flex min-h-screen flex-col bg-background px-6 py-10 text-foreground">
+    <div className="flex min-h-dvh flex-col bg-background px-6 py-10 text-foreground">
       <div className="mx-auto flex w-full max-w-md flex-col items-center">
         <BrandMark size="lg" hideSystemOnMobile={false} />
         <div className="mt-8 w-full rounded-2xl border border-border bg-surface p-6 shadow-sm">

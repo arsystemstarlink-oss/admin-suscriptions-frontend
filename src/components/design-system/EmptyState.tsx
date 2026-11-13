@@ -17,7 +17,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
         {title}
       </h3>
       {description && (
-        <p className="text-sm text-muted-foreground mt-1 max-w-[250px]">
+        <p className="text-sm text-muted-foreground mt-1 max-w-62.5">
           {description}
         </p>
       )}

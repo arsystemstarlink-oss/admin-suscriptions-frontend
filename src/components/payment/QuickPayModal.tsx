@@ -45,7 +45,7 @@ import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle
 
 const createPaymentSchema = (minDate: string) =>
   z.object({
-    paymentMethod: z.string().min(1, 'Seleccione un método de pago'),
+    paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
     paidAt: z
       .string()
       .min(1, 'Fecha de pago requerida')
@@ -263,7 +263,7 @@ export function QuickPayModal() {
                       <SelectTrigger id="quick-pay-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Seleccione método" />
+                          <SelectValue placeholder="Selecciona método" />
                         </div>
                       </SelectTrigger>
                       <SelectContent>
@@ -307,7 +307,7 @@ export function QuickPayModal() {
                 {isSubmitting ? (
                   <>
                     <LoaderCircle className="h-5 w-5 mr-2 shrink-0 animate-spin" />
-                    Procesando...
+                    Registrando...
                   </>
                 ) : (
                   <>

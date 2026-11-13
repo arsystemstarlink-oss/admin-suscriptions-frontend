@@ -1,7 +1,12 @@
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientsApi } from '@/api/clients.api'
 import { qk } from '@/lib/query-keys'
-import type { CreateClientRequest, Pagination, UpdateClientRequest } from '@/types/api'
+import type { ClientWithStats, CreateClientRequest, Pagination, UpdateClientRequest } from '@/types/api'
+
+interface ClientsListData {
+  clients: ClientWithStats[]
+  pagination: Pagination
+}
 
 interface UseClientsParams {
   search?: string
@@ -57,6 +62,18 @@ export function useClientDetail(id: string, organizationId?: string, options?: {
   })
 }
 
+/** Adelanta la carga del detalle cuando el usuario toca o enfoca una fila de la lista. */
+export function usePrefetchClientDetail(organizationId?: string) {
+  const qc = useQueryClient()
+
+  return (id: string) => {
+    void qc.prefetchQuery({
+      queryKey: qk.clients.detail(id, organizationId),
+      queryFn: () => clientsApi.getById(id, organizationId),
+    })
+  }
+}
+
 export function useCreateClient() {
   const qc = useQueryClient()
 
@@ -88,7 +105,25 @@ export function useDeleteClient() {
 
   return useMutation({
     mutationFn: (id: string) => clientsApi.remove(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.clients.lists })
+      const previous = qc.getQueriesData<ClientsListData>({ queryKey: qk.clients.lists })
+      previous.forEach(([queryKey, data]) => {
+        if (!data || queryKey.at(-1) === 'infinite') return
+        qc.setQueryData<ClientsListData>(queryKey, {
+          ...data,
+          clients: data.clients.filter((client) => client.id !== id),
+        })
+      })
+      return { previous }
+    },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.clients.lists })
+    },
+    onError: (_error, _id, context) => {
+      context?.previous.forEach(([queryKey, data]) => qc.setQueryData(queryKey, data))
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.clients.lists })
     },
   })

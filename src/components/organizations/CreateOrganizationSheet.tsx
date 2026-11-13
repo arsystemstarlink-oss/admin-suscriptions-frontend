@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { CreateOrganizationForm } from '@/components/organizations/CreateOrganizationForm'
+import { useDiscardChangesGuard } from '@/components/design-system/useDiscardChangesGuard'
 import {
   Sheet,
   SheetContent,
@@ -19,8 +21,12 @@ export function CreateOrganizationSheet({
   onOpenChange,
   onConfigureWhatsApp,
 }: CreateOrganizationSheetProps) {
+  const [isDirty, setIsDirty] = useState(false)
+  const { guardedOpenChange, discardDialog } = useDiscardChangesGuard({ open, isDirty, onOpenChange })
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <>
+    <Sheet open={open} onOpenChange={guardedOpenChange}>
       <SheetContent className="sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>Crear organización y acceso</SheetTitle>
@@ -32,11 +38,14 @@ export function CreateOrganizationSheet({
           {open && (
             <CreateOrganizationForm
               onSuccess={() => onOpenChange(false)}
+              onDirtyChange={setIsDirty}
               onConfigureWhatsApp={onConfigureWhatsApp}
             />
           )}
         </div>
       </SheetContent>
     </Sheet>
+    {discardDialog}
+    </>
   )
 }

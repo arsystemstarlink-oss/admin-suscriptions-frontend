@@ -11,6 +11,20 @@
     <meta name="apple-mobile-web-app-title" content="Consulta de pagos" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>A|R SYSTEM</title>
+    <script>
+      // Aplica el tema guardado antes del primer pintado: sin esto, quien usa el tema
+      // oscuro ve un destello claro mientras carga la app. Misma clave que next-themes.
+      try {
+        var theme = localStorage.getItem('theme')
+        var dark =
+          theme === 'dark' ||
+          (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        if (dark) {
+          document.documentElement.classList.add('dark')
+          document.documentElement.style.colorScheme = 'dark'
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

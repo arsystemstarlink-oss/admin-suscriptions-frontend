@@ -62,7 +62,7 @@ export function StaleDataBanner() {
         onClick={retry}
         disabled={isRetrying}
       >
-        {isRetrying ? 'Reintentando…' : 'Reintentar'}
+        {isRetrying ? 'Reintentando...' : 'Reintentar'}
       </Button>
     </section>
   )

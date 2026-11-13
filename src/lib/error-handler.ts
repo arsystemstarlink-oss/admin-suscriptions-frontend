@@ -1,5 +1,6 @@
 import type { ErrorCode } from '@/types/api'
 import { toast } from 'sonner'
+import { isNetworkError, networkErrorMessage } from '@/lib/network-error'
 
 export class BusinessError extends Error {
   code: ErrorCode
@@ -50,7 +51,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   PLAN_HAS_SUBSCRIPTIONS: {
     type: 'modal',
     title: 'No se puede eliminar este plan',
-    message: 'Tiene suscripciones asociadas. Reasígnelas a otro plan primero.',
+    message: 'Tiene suscripciones asociadas. Reasígnalas a otro plan primero.',
     actions: [
       { label: 'Ver suscripciones de este plan', variant: 'primary', action: 'navigate', payload: '/subscriptions' },
       { label: 'Cancelar', variant: 'ghost', action: 'close' },
@@ -86,17 +87,17 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   UNAUTHORIZED: {
     type: 'toast',
     variant: 'error',
-    message: 'Sesión expirada, inicie sesión nuevamente.',
+    message: 'Sesión expirada, inicia sesión de nuevo.',
   },
   REFRESH_TOKEN_REVOKED: {
     type: 'toast',
     variant: 'error',
-    message: 'Sesión expirada, inicie sesión nuevamente.',
+    message: 'Sesión expirada, inicia sesión de nuevo.',
   },
   USER_NOT_FOUND: {
     type: 'toast',
     variant: 'error',
-    message: 'Usuario no encontrado. Su sesión podría estar expirada.',
+    message: 'Usuario no encontrado. Tu sesión podría estar expirada.',
   },
   EMAIL_TAKEN: {
     type: 'field-error',
@@ -146,12 +147,12 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INVALID_PHONE: {
     type: 'field-error',
     field: 'phone',
-    message: 'El teléfono no es válido. Use formato +58 seguido de 10 u 11 dígitos.',
+    message: 'El teléfono no es válido. Usa formato +58 seguido de 10 u 11 dígitos.',
   },
   INVALID_DNI: {
     type: 'field-error',
     field: 'dni',
-    message: 'Cédula inválida. Use formato V-12345678 o J-123456789 (7-9 dígitos).',
+    message: 'Cédula inválida. Usa formato V-12345678 o J-123456789 (7-9 dígitos).',
   },
   DNI_TAKEN: {
     type: 'field-error',
@@ -192,12 +193,12 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INVALID_CLIENT: {
     type: 'field-error',
     field: 'clientId',
-    message: 'Seleccione un cliente válido.',
+    message: 'Selecciona un cliente válido.',
   },
   INVALID_PLAN: {
     type: 'field-error',
     field: 'planId',
-    message: 'Seleccione un plan activo.',
+    message: 'Selecciona un plan activo.',
   },
   NOT_FOUND: {
     type: 'toast',
@@ -207,7 +208,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INTERNAL_ERROR: {
     type: 'toast',
     variant: 'error',
-    message: 'Error interno del servidor',
+    message: 'El servidor tuvo un problema. Inténtalo de nuevo.',
   },
   INVALID_ACTIVATION_DATE: {
     type: 'toast',
@@ -297,7 +298,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   WHATSAPP_NOT_CONFIGURED: {
     type: 'toast',
     variant: 'error',
-    message: 'WhatsApp (Twilio) no está configurado para esta organización.',
+    message: 'WhatsApp no está disponible para esta organización. Revísalo en Ajustes › Organización › WhatsApp.',
   },
   ORGANIZATION_INACTIVE: {
     type: 'toast',
@@ -307,7 +308,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   JOB_ALREADY_RUNNING: {
     type: 'toast',
     variant: 'warning',
-    message: 'El Daily Job ya está en ejecución para esta organización.',
+    message: 'La tarea diaria ya está en ejecución para esta organización.',
   },
   RATE_LIMITED: {
     type: 'toast',
@@ -362,7 +363,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   TWILIO_ERROR: {
     type: 'toast',
     variant: 'error',
-    message: 'Error de Twilio al enviar el mensaje de WhatsApp.',
+    message: 'Twilio no pudo enviar el mensaje de WhatsApp.',
   },
   PAYMENT_REPORT_NOT_FOUND: {
     type: 'toast',
@@ -510,6 +511,11 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'warning',
     message: 'Necesitas al menos una plantilla aprobada.',
   },
+  WHATSAPP_LIMIT_REACHED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Alcanzaste el límite de mensajes de WhatsApp de este mes.',
+  },
   INVALID_PAYLOAD: {
     type: 'toast',
     variant: 'error',
@@ -573,7 +579,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   HAS_UNPAID_PERIODS: {
     type: 'toast',
     variant: 'warning',
-    message: 'Tiene períodos pendientes: cóbrelos primero antes del adelanto.',
+    message: 'Tienes períodos pendientes: cóbralos primero antes del adelanto.',
     sideEffect: 'invalidate-billing',
   },
   PERIOD_ALREADY_EXISTS: {
@@ -604,6 +610,20 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   },
 }
 
+/** El recurso no existe (o no es accesible): reintentar no sirve, a diferencia de un fallo de red. */
+export function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const { code, response } = error as { code?: unknown; response?: { status?: number } }
+  if (response?.status === 404) return true
+  return typeof code === 'string' && (code === 'NOT_FOUND' || code.endsWith('_NOT_FOUND'))
+}
+
+/** Mensaje para un fallo sin código de negocio: distingue "sin conexión" del error genérico. */
+export function getErrorMessage(error: unknown, fallback: string): string {
+  if (!isNetworkError(error)) return fallback
+  return networkErrorMessage((error as { config?: { method?: string } }).config?.method)
+}
+
 export function getErrorHandler(code: ErrorCode): ErrorHandler {
   if (BUSINESS_ERROR_HANDLERS[code]) return BUSINESS_ERROR_HANDLERS[code]
   if (code.startsWith('INVALID_SUBSCRIPTION')) return BUSINESS_ERROR_HANDLERS.INVALID_SUBSCRIPTION
@@ -628,7 +648,7 @@ export function handleApiError(
   
   if (!apiError.code) {
     if (options.showToast !== false) {
-      toast.error(apiError.message || options.fallbackMessage || 'Error desconocido')
+      toast.error(apiError.message || options.fallbackMessage || 'No se pudo completar la acción')
     }
     return
   }

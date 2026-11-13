@@ -11,6 +11,7 @@ import {
   setStoredTokens,
 } from '@/lib/tokenStorage'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
+import { localizeNetworkError } from '@/lib/network-error'
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
@@ -188,13 +189,14 @@ api.interceptors.response.use(
     if (errorCode) {
       const apiError: ApiError = {
         code: errorCode as ApiError['code'],
-        message: error.response?.data?.error?.message || 'Error de negocio',
+        message: error.response?.data?.error?.message || 'No se pudo completar la acción',
         twilioCode: error.response?.data?.error?.twilioCode,
         moreInfo: error.response?.data?.error?.moreInfo,
       }
       return Promise.reject(apiError)
     }
 
+    localizeNetworkError(error)
     return Promise.reject(error)
   }
 )

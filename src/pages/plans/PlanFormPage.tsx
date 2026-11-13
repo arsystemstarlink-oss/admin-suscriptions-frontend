@@ -4,14 +4,19 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { usePlanDetail, useCreatePlan, useUpdatePlan } from '@/hooks/usePlans'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertTriangle, Package, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormSkeleton } from '@/components/design-system/Skeleton'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { Button } from '@/components/ui/button'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { getNavigationStatePath } from '@/lib/navigation'
@@ -32,21 +37,33 @@ export function PlanFormPage() {
   const location = useLocation()
   const isEdit = !!id
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/plans'
-  const { data, isLoading } = usePlanDetail(id!)
+  const { data, isLoading, refetch, isFetching } = usePlanDetail(id!)
   const createMutation = useCreatePlan()
   const updateMutation = useUpdatePlan()
   const [error, setError] = useState<string | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
+  const userId = useAuthStore((state) => state.user?.id)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<PlanForm>({
     resolver: zodResolver(planSchema),
   })
+  const draft = useFormDraft({
+    key: `ar-form-draft:${userId ?? 'unknown'}:plan:new`,
+    watch,
+    reset,
+    enabled: !isEdit && !!userId,
+  })
+
+  useEffect(() => {
+    if (draft.restored) toast.info('Recuperamos el borrador del plan')
+  }, [draft.restored])
 
   useEffect(() => {
     if (isEdit && data) {
@@ -62,7 +79,7 @@ export function PlanFormPage() {
     setError(null)
 
     if (!isEdit && !organizationId) {
-      setError('Seleccione una organización para continuar.')
+      setError('Selecciona una organización para continuar.')
       return
     }
 
@@ -80,22 +97,23 @@ export function PlanFormPage() {
           organizationId: data?.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Plan actualizado correctamente')
+        draft.clearDraft()
         navigate(returnTo, { replace: true })
       } else {
         await createMutation.mutateAsync(payload)
         toast.success('Plan creado correctamente')
+        draft.clearDraft()
         navigate(returnTo, { replace: true })
       }
-    } catch {
-      setError('Error al guardar el plan. Intente nuevamente.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo guardar el plan. Inténtalo de nuevo.'))
     }
   }
 
   if (isEdit && isLoading) {
     return (
       <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
-        <div className="h-10 w-48 bg-muted animate-pulse rounded-xl mb-4" />
-        <div className="h-64 bg-surface animate-pulse rounded-2xl" />
+        <FormSkeleton label="Cargando plan" />
       </div>
     )
   }
@@ -103,6 +121,21 @@ export function PlanFormPage() {
   if (!isEdit && isSuperAdmin && !organizationId) {
     return (
       <OrganizationSelectionEmptyState description="Elige una organización para crear el plan." />
+    )
+  }
+
+  if (isEdit && !data) {
+    return (
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar el plan"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        <Button variant="outline" onClick={() => navigate(returnTo, { replace: true })}>
+          Volver a planes
+        </Button>
+      </div>
     )
   }
 
@@ -174,7 +207,7 @@ export function PlanFormPage() {
               id="description"
               rows={3}
               placeholder="Detalles del plan..."
-              className="flex w-full min-h-[6rem] rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full min-h-24 rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               {...register('description')}
             />
           </div>

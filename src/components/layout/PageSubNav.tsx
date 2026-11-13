@@ -44,7 +44,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
       )}
 
       <nav
-        className="flex w-full gap-1 overflow-x-auto rounded-xl bg-surface text-surface-foreground p-1 text-muted-foreground border border-border no-scrollbar touch-pan-x sm:gap-3 sm:p-2 sm:rounded-2xl"
+        className="flex w-full gap-1 overflow-x-auto rounded-xl bg-surface text-surface-foreground p-1 border border-border no-scrollbar touch-pan-x sm:gap-3 sm:p-2 sm:rounded-2xl"
         aria-label="Secciones"
       >
         {tabs.map((tab) => {
@@ -58,7 +58,7 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
             aria-label={badgeCount > 0 ? `${tab.label}, ${badgeCount} pendientes` : tab.label}
             className={({ isActive }) =>
               cn(
-                'inline-flex min-w-[72px] flex-auto shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all min-h-10 touch-manipulation sm:min-w-0 sm:flex-1 sm:shrink sm:flex-col sm:gap-2 sm:rounded-xl sm:px-3 sm:py-3 sm:min-h-0',
+                'inline-flex min-w-18 flex-auto shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-all min-h-10 touch-manipulation sm:min-w-0 sm:flex-1 sm:shrink sm:flex-col sm:gap-2 sm:rounded-xl sm:px-3 sm:py-3 sm:min-h-0',
                 'hover:shadow-sm',
                 isActive
                   ? 'bg-surface-active shadow-sm ring-1 ring-border-strong border border-transparent'

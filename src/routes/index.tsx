@@ -4,6 +4,7 @@ import { AuthGuard } from '@/guards/AuthGuard'
 import { RoleGuard } from '@/guards/RoleGuard'
 import { AuthenticatedLayout } from '@/components/layout/AuthenticatedLayout'
 import { SettingsLayout } from '@/components/layout/SettingsLayout'
+import { OrganizationSettingsIndex, OrganizationSettingsLayout } from '@/components/layout/OrganizationSettingsLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RouteErrorPage } from '@/pages/RouteErrorPage'
 import { RootRedirect } from '@/routes/RootRedirect'
@@ -31,8 +32,8 @@ import {
   PaymentsLayout,
   ProfilePage,
   AdminsPage,
-  OrganizationsPage,
   WhatsAppSettingsPage,
+  PlatformWhatsAppPage,
   SetupPage,
   ChatsPage,
   ConsultaPage,
@@ -42,6 +43,7 @@ import {
   OrganizationPlanReportsPage,
   PlanQuoteRequestsPage,
   PageLoader,
+  FullPageLoader,
 } from '@/routes/lazy-pages'
 
 export const router = createBrowserRouter(
@@ -54,7 +56,7 @@ export const router = createBrowserRouter(
     path: '/login',
     handle: { title: 'Iniciar sesión' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <LoginPage />
       </Suspense>
     ),
@@ -63,7 +65,7 @@ export const router = createBrowserRouter(
     path: '/invite/:token',
     handle: { title: 'Invitación' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <InvitePage />
       </Suspense>
     ),
@@ -72,7 +74,7 @@ export const router = createBrowserRouter(
     path: '/setup',
     handle: { title: 'Configuración inicial' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <SetupPage />
       </Suspense>
     ),
@@ -81,7 +83,7 @@ export const router = createBrowserRouter(
     path: '/planes',
     handle: { title: 'Planes' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <PlansPage />
       </Suspense>
     ),
@@ -90,7 +92,7 @@ export const router = createBrowserRouter(
     path: '/planes/solicitar',
     handle: { title: 'Solicitar plan' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <PlansSignupPage />
       </Suspense>
     ),
@@ -99,7 +101,7 @@ export const router = createBrowserRouter(
     path: '/consulta/:orgSlug',
     handle: { title: 'Consulta' },
     element: (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<FullPageLoader />}>
         <ConsultaPage />
       </Suspense>
     ),
@@ -248,29 +250,48 @@ export const router = createBrowserRouter(
             ),
           },
           {
-            path: 'tasks',
-            handle: { title: 'Tareas automáticas' },
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminToolsPage />
-              </Suspense>
-            ),
+            path: 'organization',
+            element: <OrganizationSettingsLayout />,
+            children: [
+              {
+                index: true,
+                handle: { title: 'Organizaciones' },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <OrganizationSettingsIndex />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'whatsapp',
+                handle: { title: 'WhatsApp' },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <WhatsAppSettingsPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'tasks',
+                handle: { title: 'Tareas automáticas' },
+                element: (
+                  <Suspense fallback={<PageLoader />}>
+                    <AdminToolsPage />
+                  </Suspense>
+                ),
+              },
+            ],
           },
+          // Direcciones anteriores a que estas secciones se agruparan en «Organización».
+          { path: 'tasks', element: <Navigate to="/config/organization/tasks" replace /> },
+          { path: 'whatsapp', element: <Navigate to="/config/organization/whatsapp" replace /> },
+          { path: 'organizations', element: <Navigate to="/config/organization" replace /> },
           {
             path: 'profile',
             handle: { title: 'Perfil' },
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'whatsapp',
-            handle: { title: 'WhatsApp' },
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <WhatsAppSettingsPage />
               </Suspense>
             ),
           },
@@ -288,12 +309,12 @@ export const router = createBrowserRouter(
             ),
           },
           {
-            path: 'organizations',
-            handle: { title: 'Organizaciones' },
+            path: 'platform-whatsapp',
+            handle: { title: 'WhatsApp de la plataforma' },
             element: (
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
-                  <OrganizationsPage />
+                  <PlatformWhatsAppPage />
                 </Suspense>
               </RoleGuard>
             ),
@@ -304,14 +325,7 @@ export const router = createBrowserRouter(
           },
           {
             path: 'plan-quote-requests',
-            handle: { title: 'Cotizaciones' },
-            element: (
-              <RoleGuard allowedRoles={['super-admin']}>
-                <Suspense fallback={<PageLoader />}>
-                  <PlanQuoteRequestsPage />
-                </Suspense>
-              </RoleGuard>
-            ),
+            element: <Navigate to="/payment-reports/quotes" replace />,
           },
         ],
       },
@@ -348,6 +362,17 @@ export const router = createBrowserRouter(
               <RoleGuard allowedRoles={['super-admin']}>
                 <Suspense fallback={<PageLoader />}>
                   <OrganizationPlanReportsPage />
+                </Suspense>
+              </RoleGuard>
+            ),
+          },
+          {
+            path: 'quotes',
+            handle: { title: 'Cotizaciones' },
+            element: (
+              <RoleGuard allowedRoles={['super-admin']}>
+                <Suspense fallback={<PageLoader />}>
+                  <PlanQuoteRequestsPage />
                 </Suspense>
               </RoleGuard>
             ),

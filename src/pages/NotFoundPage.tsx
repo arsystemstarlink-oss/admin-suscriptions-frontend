@@ -4,7 +4,7 @@ import { Home } from 'lucide-react'
 
 export function NotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-dvh flex items-center justify-center bg-background">
       <div className="text-center space-y-6">
         <div className="space-y-2">
           <p className="text-9xl font-bold text-muted-foreground">404</p>

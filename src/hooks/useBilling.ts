@@ -99,7 +99,7 @@ export function useRegisterPayment(periodId: string) {
         toast.error('No se puede registrar pago en este estado')
         qc.invalidateQueries({ queryKey: qk.billing.detail(periodId) })
       } else {
-        toast.error(apiError.message || 'Error al registrar el pago')
+        toast.error(apiError.message || 'No se pudo registrar el pago')
       }
     },
   })
@@ -119,13 +119,13 @@ export function useUpdateBillingPeriod() {
       toast.success('Datos de pago actualizados')
     },
     onError: (error: unknown) => {
-      const apiError = error as { code?: string }
+      const apiError = error as { code?: string; message?: string }
       if (apiError.code === 'INVALID_PERIOD_STATE') {
         toast.error('Solo se pueden editar períodos pagados')
       } else if (apiError.code === 'INVALID_PAYMENT_DATE') {
         toast.error('La fecha de pago no es válida')
       } else {
-        toast.error('Error al actualizar los datos de pago')
+        toast.error(apiError.message || 'No se pudieron actualizar los datos de pago')
       }
     },
   })

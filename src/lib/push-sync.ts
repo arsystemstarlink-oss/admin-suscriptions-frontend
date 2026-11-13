@@ -1,6 +1,27 @@
 import { qk } from '@/lib/query-keys'
 
 export const PUSH_MESSAGE_TYPE = 'PUSH_RECEIVED'
+export const PUSH_NAVIGATE_TYPE = 'PUSH_NAVIGATE'
+
+/**
+ * Convierte la URL de un aviso en una ruta del router (sin el prefijo de la app).
+ * Devuelve null si apunta a otro origen.
+ */
+export function toAppPath(rawUrl: unknown): string | null {
+  if (typeof rawUrl !== 'string' || !rawUrl) return null
+  try {
+    const url = new URL(rawUrl, window.location.origin)
+    if (url.origin !== window.location.origin) return null
+    const base = import.meta.env.BASE_URL.replace(/\/+$/, '')
+    const pathname =
+      base && (url.pathname === base || url.pathname.startsWith(`${base}/`))
+        ? url.pathname.slice(base.length) || '/'
+        : url.pathname
+    return `${pathname}${url.search}${url.hash}`
+  } catch {
+    return null
+  }
+}
 
 export interface PushMessageData {
   type?: string

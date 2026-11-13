@@ -4,8 +4,9 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useClientDetail, useCreateClient, useUpdateClient } from '@/hooks/useClients'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
@@ -20,6 +21,9 @@ import {
 import { AlertTriangle, User, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import { DetailNav } from '@/components/design-system/DetailNav'
+import { FormSkeleton } from '@/components/design-system/Skeleton'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { Button } from '@/components/ui/button'
 import { FormActionBar } from '@/components/design-system/FormActionBar'
 import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGuard'
 import { normalizeDni } from '@/lib/utils'
@@ -34,7 +38,7 @@ const clientSchema = z.object({
   phone: z
     .string()
     .min(1, 'El teléfono es requerido')
-    .regex(/^\+58\d{10,11}$/, 'Ingrese un teléfono venezolano válido (10-11 dígitos)'),
+    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)'),
   dniPrefix: z.enum(['V-', 'J-']),
   dniDigits: z
     .string()
@@ -57,8 +61,9 @@ export function ClientFormPage() {
   const isEdit = !!id
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions/clients'
   const isSuperAdmin = useIsSuperAdmin()
+  const userId = useAuthStore((state) => state.user?.id)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
-  const { data, isLoading } = useClientDetail(id!, organizationId || undefined, {
+  const { data, isLoading, refetch, isFetching } = useClientDetail(id!, organizationId || undefined, {
     enabled: !isSuperAdmin || !!organizationId,
   })
   const createMutation = useCreateClient()
@@ -71,6 +76,7 @@ export function ClientFormPage() {
     control,
     handleSubmit,
     reset,
+    watch,
     setError,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ClientForm>({
@@ -80,6 +86,16 @@ export function ClientFormPage() {
       dniDigits: '',
     },
   })
+  const draft = useFormDraft({
+    key: `ar-form-draft:${userId ?? 'unknown'}:client:new`,
+    watch,
+    reset,
+    enabled: !isEdit && !!userId,
+  })
+
+  useEffect(() => {
+    if (draft.restored) toast.info('Recuperamos el borrador del cliente')
+  }, [draft.restored])
 
   useEffect(() => {
     if (isEdit && data) {
@@ -103,7 +119,7 @@ export function ClientFormPage() {
     setFormError(null)
 
     if (!isEdit && !organizationId) {
-      setFormError('Seleccione una organización para continuar.')
+      setFormError('Selecciona una organización para continuar.')
       return
     }
 
@@ -125,10 +141,12 @@ export function ClientFormPage() {
           organizationId: data?.client.organizationId ?? organizationId ?? undefined,
         })
         toast.success('Cliente actualizado correctamente')
+        draft.clearDraft()
         navigate(`/subscriptions/clients/${id}`, { replace: true, state: { from: returnTo } })
       } else {
         const newClient = await createMutation.mutateAsync(payload as CreateClientRequest)
         toast.success('Cliente creado correctamente')
+        draft.clearDraft()
         navigate(`/subscriptions/clients/${newClient.id}`, {
           state: { from: returnTo },
         })
@@ -143,15 +161,31 @@ export function ClientFormPage() {
   if (isEdit && isLoading) {
     return (
       <div className="flex flex-col min-h-full pb-[calc(100px+env(safe-area-inset-bottom))] bg-background -mx-4 px-4 pt-2">
-        <div className="h-10 w-48 bg-muted animate-pulse rounded-xl mb-4" />
-        <div className="h-64 bg-surface animate-pulse rounded-2xl" />
+        <FormSkeleton label="Cargando cliente" />
       </div>
     )
   }
 
-  if (!isEdit && isSuperAdmin && !organizationId) {
+  if (isSuperAdmin && !organizationId) {
     return (
-      <OrganizationSelectionEmptyState description="Elige una organización para registrar el cliente." />
+      <OrganizationSelectionEmptyState
+        description={isEdit ? 'Elige una organización para editar el cliente.' : 'Elige una organización para registrar el cliente.'}
+      />
+    )
+  }
+
+  if (isEdit && !data) {
+    return (
+      <div className="flex flex-col items-center py-8">
+        <ErrorState
+          title="No se pudo cargar el cliente"
+          onRetry={() => void refetch()}
+          isRetrying={isFetching}
+        />
+        <Button variant="outline" onClick={() => navigate(backTo, { replace: true })}>
+          Volver
+        </Button>
+      </div>
     )
   }
 
@@ -250,7 +284,7 @@ export function ClientFormPage() {
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="dniPrefix" className={`w-[88px] shrink-0 ${fieldClassName}`} aria-label="Tipo de cédula">
+                    <SelectTrigger id="dniPrefix" className={`w-22 shrink-0 ${fieldClassName}`} aria-label="Tipo de cédula">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -335,7 +369,7 @@ export function ClientFormPage() {
               id="notes"
               rows={3}
               placeholder="Notas adicionales sobre el cliente..."
-              className="flex w-full min-h-[6rem] rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex w-full min-h-24 rounded-md border border-input bg-surface-muted px-3 py-2 text-base md:text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               {...register('notes')}
             />
           </div>

@@ -14,6 +14,7 @@ import { AlertTriangle, MessageSquare, DollarSign, Calendar, ChevronRight, Chevr
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { isAxiosError } from 'axios'
 import { useSendMessage } from '@/hooks/useWhatsApp'
 import { useOrganizationWhatsAppConfig } from '@/hooks/useOrganizations'
@@ -121,8 +122,8 @@ export function PendingPaymentsWidget({ organizationId, enabled }: DashboardWidg
         staleTime: 0,
       })
       openQuickPay({ period })
-    } catch {
-      toast.error('Error al cargar el período para el cobro')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cargar el período para el cobro'))
     } finally {
       setLoadingId(null)
     }
@@ -340,7 +341,12 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
     () => toReminderCandidates(overduePeriodsQuery.data ?? []),
     [overduePeriodsQuery.data],
   )
-  const reminderTemplateName = whatsAppConfig?.templates.dueDateWarning?.trim()
+  // La plantilla que de verdad se enviará: la central si la organización usa el WhatsApp de la plataforma.
+  const reminderTemplateName = (
+    whatsAppConfig?.mode === 'platform'
+      ? whatsAppConfig.platform?.templates.find((template) => template.key === 'dueDateWarning')?.contentSid
+      : whatsAppConfig?.templates.dueDateWarning
+  )?.trim()
   const selectedReminderCandidates = reminderCandidates.filter((debtor) =>
     selectedReminderIds.includes(debtor.clientId),
   )
@@ -369,8 +375,8 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
         staleTime: 0,
       })
       openQuickPay({ period })
-    } catch {
-      toast.error('Error al cargar el período del cliente')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo cargar el período del cliente'))
     } finally {
       setLoadingId(null)
     }
@@ -579,7 +585,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
               <p role="alert" className="text-sm text-destructive">No se pudo cargar la configuración de WhatsApp.</p>
             )}
             {!isLoadingWhatsAppConfig && !whatsAppConfigError && !reminderTemplateName && (
-              <p role="alert" className="text-sm text-destructive">Activa la plantilla de aviso de vencimiento en <Link to="/config/whatsapp" className="font-medium underline">Configuración › WhatsApp</Link> antes de enviar.</p>
+              <p role="alert" className="text-sm text-destructive">El aviso de vencimiento aún no está disponible. Revísalo en <Link to="/config/organization/whatsapp" className="font-medium underline">Ajustes › Organización › WhatsApp</Link> antes de enviar.</p>
             )}
             {overduePeriodsQuery.isFetching && (
               <p role="status" className="text-sm text-muted-foreground">Cargando todos los períodos vencidos...</p>
@@ -658,7 +664,7 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
                 onClick={handleSendBulkReminders}
                 disabled={isSendingReminders || overduePeriodsQuery.isFetching || overduePeriodsQuery.isError || isLoadingWhatsAppConfig || whatsAppConfigError || !reminderTemplateName || selectedReminderCandidates.length === 0}
               >
-                {isSendingReminders ? 'Enviando…' : `Enviar a ${selectedReminderCandidates.length}`}
+                {isSendingReminders ? 'Enviando...' : `Enviar a ${selectedReminderCandidates.length}`}
               </Button>
             )}
           </DialogFooter>

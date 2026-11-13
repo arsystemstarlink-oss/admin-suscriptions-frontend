@@ -10,6 +10,23 @@ export function getNavigationStatePath(
     : undefined
 }
 
+/** Datos que la lista ya tiene de un elemento, para pintar su detalle antes de que cargue. */
+export interface NavigationPreview {
+  title: string
+  subtitle?: string
+}
+
+export function getNavigationPreview(state: unknown): NavigationPreview | undefined {
+  if (!state || typeof state !== 'object') return undefined
+
+  const preview = (state as Record<string, unknown>).preview
+  if (!preview || typeof preview !== 'object') return undefined
+
+  const { title, subtitle } = preview as Record<string, unknown>
+  if (typeof title !== 'string' || !title) return undefined
+  return { title, subtitle: typeof subtitle === 'string' ? subtitle : undefined }
+}
+
 export function getNavigationBackLabel(path: string, fallback: string): string {
   const pathname = path.split(/[?#]/, 1)[0]
 

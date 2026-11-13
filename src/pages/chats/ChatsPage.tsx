@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead } from '@/hooks/useWhatsApp'
+import { PENDING_MESSAGE_PREFIX, useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead, useAssignConversation } from '@/hooks/useWhatsApp'
+import { useOrganizations } from '@/hooks/useOrganizations'
+import { UNASSIGNED_WHATSAPP_ID } from '@/lib/whatsapp-setup'
+import { FilterPill } from '@/components/design-system/FilterPill'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,6 +15,7 @@ import { Check, MessageSquare, Send, Users, ArrowLeft, Trash2 } from 'lucide-rea
 import { cn, getClientFullName, getInitial } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 import { PageHeader } from '@/components/design-system/PageHeader'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -18,14 +23,9 @@ import type { WhatsAppMessage } from '@/types/api'
 import { useUIStore } from '@/stores/ui.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
+import { ErrorState } from '@/components/design-system/ErrorState'
+import { ListSkeleton } from '@/components/design-system/Skeleton'
 
 const isSameDay = (date: Date, reference: Date = new Date()): boolean =>
   date.getFullYear() === reference.getFullYear() &&
@@ -62,14 +62,42 @@ export function ChatsPage() {
   const { markChatAsRead } = useUIStore()
   const { readChatTimestamps } = useUIStore()
   const isSuperAdmin = useIsSuperAdmin()
-  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  // Bandeja del super-admin con los chats que no pertenecen a ninguna organización.
+  const showUnassigned = isSuperAdmin && searchParams.get('inbox') === 'unassigned'
+  const organizationId = showUnassigned ? UNASSIGNED_WHATSAPP_ID : selectedOrganizationId
+  const [assignTarget, setAssignTarget] = useState('')
+  const assignMutation = useAssignConversation()
+  const { data: unassignedData } = useWhatsAppConversations(UNASSIGNED_WHATSAPP_ID, { enabled: isSuperAdmin })
+  const unassignedCount = unassignedData?.conversations.length ?? 0
+  const { data: organizationsData } = useOrganizations({ limit: 100 }, { enabled: showUnassigned })
+  // Solo quien envía con la plataforma puede atender un chat que llegó a su número.
+  const platformOrganizations = useMemo(
+    () =>
+      (organizationsData?.organizations || []).filter(
+        (organization) => organization.active && organization.whatsappMode === 'platform',
+      ),
+    [organizationsData],
+  )
   const { mutate: markReadOnServer } = useMarkConversationRead(organizationId ?? undefined)
 
-  const { data: clientsData, isLoading: clientsLoading } = useClients(
+  const {
+    data: clientsData,
+    isLoading: clientsLoading,
+    isError: clientsError,
+    refetch: refetchClients,
+    isFetching: clientsFetching,
+  } = useClients(
     { limit: 100, organizationId: organizationId ?? undefined },
-    { enabled: !isSuperAdmin || !!organizationId }
+    { enabled: !showUnassigned && (!isSuperAdmin || !!organizationId) }
   )
-  const { data: conversationsData } = useWhatsAppConversations(organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
+  const {
+    data: conversationsData,
+    isLoading: conversationsLoading,
+    isError: conversationsError,
+    refetch: refetchConversations,
+    isFetching: conversationsFetching,
+  } = useWhatsAppConversations(organizationId ?? undefined, { enabled: !isSuperAdmin || !!organizationId })
 
   const clients = useMemo(() => clientsData?.clients || [], [clientsData])
   const clientPhones = useMemo(
@@ -98,6 +126,8 @@ export function ChatsPage() {
     data: messagesData,
     isLoading: messagesLoading,
     error: messagesError,
+    refetch: refetchMessages,
+    isFetching: messagesFetching,
   } = useWhatsAppMessages(selectedPhone, chatOrganizationId, {
     enabled: !!selectedPhone && (!isSuperAdmin || !!chatOrganizationId),
   })
@@ -248,26 +278,33 @@ export function ChatsPage() {
   const handleSendMessage = async () => {
     if (!selectedPhone || !message.trim() || sendingRef.current) return
     sendingRef.current = true
+    const text = message.trim()
+    // El mensaje ya se ve en la conversación; si falla, el texto vuelve al campo.
+    setMessage('')
     try {
       await sendMessageMutation.mutateAsync({
         to: selectedPhone,
-        body: message.trim(),
+        body: text,
       })
-      setMessage('')
-      toast.success('Mensaje enviado')
     } catch (err) {
+      setMessage((current) => current || text)
       const apiError = err as { code?: string; message?: string; twilioCode?: number; moreInfo?: string }
       if (apiError.code === 'WHATSAPP_NOT_CONFIGURED') {
         toast.error(
-          'WhatsApp no está configurado para esta organización. Conéctalo en Configuración › WhatsApp.'
+          'WhatsApp no está configurado para esta organización. Revísalo en Ajustes › Organización › WhatsApp.'
         )
       } else if (apiError.code === 'ORGANIZATION_INACTIVE') {
         toast.error('La organización está inactiva y no puede enviar mensajes de WhatsApp.')
       } else if (apiError.code === 'TWILIO_ERROR') {
         const twilioDetail = apiError.twilioCode ? ` (Código Twilio: ${apiError.twilioCode})` : ''
-        toast.error(`${apiError.message || 'Error de Twilio al enviar el mensaje.'}${twilioDetail}`)
+        toast.error(`${apiError.message || 'Twilio no pudo enviar el mensaje.'}${twilioDetail}`)
       } else {
-        toast.error('Error al enviar mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa un template.')
+        toast.error(
+          getErrorMessage(
+            err,
+            'No se pudo enviar el mensaje. Verifica que el cliente haya escrito en las últimas 24h o usa una plantilla.',
+          ),
+        )
       }
     } finally {
       sendingRef.current = false
@@ -334,7 +371,7 @@ export function ChatsPage() {
 
   const handleConfirmDelete = () => {
     if (!deleteTargets.length || !deletePassword) {
-      toast.error('Ingrese su contraseña actual para continuar')
+      toast.error('Ingresa tu contraseña actual para continuar')
       return
     }
 
@@ -392,6 +429,36 @@ export function ChatsPage() {
     markChatAsRead(phone, Date.now())
   }
 
+  const switchInbox = (unassigned: boolean) => {
+    if (unassigned === showUnassigned) return
+    const next = new URLSearchParams(searchParams)
+    if (unassigned) next.set('inbox', 'unassigned')
+    else next.delete('inbox')
+    next.delete('phone')
+    setSearchParams(next, { replace: true })
+    setSelectedPhone(null)
+    setSelectedPhones(new Set())
+    setIsSelectionMode(false)
+    setHasAutoSelected(false)
+    setAssignTarget('')
+    setMessage('')
+  }
+
+  const handleAssign = () => {
+    if (!selectedPhone || !assignTarget) return
+    const organizationName = platformOrganizations.find((organization) => organization.id === assignTarget)?.name
+    assignMutation.mutate(
+      { phone: selectedPhone, organizationId: assignTarget },
+      {
+        onSuccess: () => {
+          toast.success(`Chat asignado a ${organizationName ?? 'la organización'}`)
+          setAssignTarget('')
+          closeConversation()
+        },
+      },
+    )
+  }
+
   const closeConversation = () => {
     setSelectedPhone(null)
     if (searchParams.get('phone')) {
@@ -408,7 +475,19 @@ export function ChatsPage() {
       <PageHeader
         title="Chats"
         description="Conversaciones de WhatsApp con clientes"
-        className={cn('block shrink-0', isMobile && selectedPhone && 'hidden')}
+        className={cn('shrink-0', isMobile && selectedPhone && 'hidden')}
+        actions={
+          isSuperAdmin && (
+            <>
+              <FilterPill active={!showUnassigned} onClick={() => switchInbox(false)}>
+                De la organización
+              </FilterPill>
+              <FilterPill active={showUnassigned} onClick={() => switchInbox(true)}>
+                Sin asignar{unassignedCount > 0 ? ` (${unassignedCount})` : ''}
+              </FilterPill>
+            </>
+          )
+        }
       />
 
       {showEmpty ? (
@@ -465,16 +544,26 @@ export function ChatsPage() {
               )}
             </CardHeader>
             <CardContent className="min-h-0 flex-1 overflow-y-auto p-2">
-              {clientsLoading && conversationItems.length === 0 ? (
-                <div className="space-y-3 p-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-                  ))}
-                </div>
+              {(clientsLoading || conversationsLoading) && conversationItems.length === 0 ? (
+                <ListSkeleton label="Cargando conversaciones" className="p-4" rowClassName="h-16" />
+              ) : (clientsError || conversationsError) && conversationItems.length === 0 ? (
+                <ErrorState
+                  title="No se pudieron cargar las conversaciones"
+                  onRetry={() => {
+                    void refetchClients()
+                    void refetchConversations()
+                  }}
+                  isRetrying={clientsFetching || conversationsFetching}
+                />
               ) : conversationItems.length === 0 ? (
                 <EmptyState
                   icon={<Users className="h-12 w-12 text-muted-foreground" />}
-                  title="No hay conversaciones disponibles"
+                  title={showUnassigned ? 'No hay chats sin asignar' : 'No hay conversaciones disponibles'}
+                  description={
+                    showUnassigned
+                      ? 'Aquí llegan los mensajes al WhatsApp de la plataforma de números que no son clientes de ninguna organización.'
+                      : undefined
+                  }
                 />
               ) : (
                 <div className="space-y-1">
@@ -646,16 +735,12 @@ export function ChatsPage() {
 
                   <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-3 md:px-4 md:py-4 space-y-3">
                     {messagesLoading ? (
-                      <div className="space-y-3">
-                        {[...Array(5)].map((_, i) => (
-                          <div key={i} className="h-12 bg-muted animate-pulse rounded" />
-                        ))}
-                      </div>
-                    ) : messagesError ? (
-                      <EmptyState
-                        icon={<MessageSquare className="h-12 w-12 text-muted-foreground" />}
+                      <ListSkeleton label="Cargando mensajes" rowClassName="h-12" />
+                    ) : messagesError && !messagesData ? (
+                      <ErrorState
                         title="No se pudieron cargar los mensajes"
-                        description="Intenta abrir la conversación nuevamente."
+                        onRetry={() => void refetchMessages()}
+                        isRetrying={messagesFetching}
                       />
                     ) : sortedMessages.length === 0 ? (
                       <EmptyState
@@ -677,6 +762,7 @@ export function ChatsPage() {
                             <div
                               className={cn(
                                 'max-w-[78%] rounded-2xl px-4 py-3 shadow-sm',
+                                msg.id.startsWith(PENDING_MESSAGE_PREFIX) && 'opacity-60',
                                 isOutbound
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-surface-muted text-surface-muted-foreground'
@@ -711,7 +797,9 @@ export function ChatsPage() {
                               >
                                 {isOutbound && (
                                   <span>
-                                    {msg.status === 'FAILED'
+                                    {msg.id.startsWith(PENDING_MESSAGE_PREFIX)
+                                      ? 'Enviando...'
+                                      : msg.status === 'FAILED'
                                       ? 'No enviado'
                                       : msg.status === 'READ'
                                         ? 'Leído'
@@ -731,6 +819,40 @@ export function ChatsPage() {
                     )}
                   </div>
 
+                  {showUnassigned ? (
+                  <div className="shrink-0 border-t border-border bg-surface-muted px-3 py-3 text-surface-foreground md:px-4 md:py-4">
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      {platformOrganizations.length > 0
+                        ? 'Este número no es cliente de ninguna organización. Asígnalo a la que corresponda: recibirá el chat con todo su historial.'
+                        : 'Ninguna organización activa envía con el WhatsApp de la plataforma, así que no hay a quién asignarlo.'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Select value={assignTarget} onValueChange={setAssignTarget}>
+                        <SelectTrigger
+                          className="h-11 min-w-0 flex-1"
+                          aria-label="Organización que recibirá el chat"
+                          disabled={platformOrganizations.length === 0}
+                        >
+                          <SelectValue placeholder="Elige una organización" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {platformOrganizations.map((organization) => (
+                            <SelectItem key={organization.id} value={organization.id}>
+                              {organization.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleAssign}
+                        disabled={!assignTarget || assignMutation.isPending}
+                        className="h-11 shrink-0"
+                      >
+                        {assignMutation.isPending ? 'Asignando...' : 'Asignar'}
+                      </Button>
+                    </div>
+                  </div>
+                  ) : (
                   <div className="shrink-0 border-t border-border bg-surface-muted px-3 py-3 text-surface-foreground md:px-4 md:py-4">
                     <p className="mb-2 text-xs text-muted-foreground">
                       {canSendFreeMessage
@@ -761,77 +883,50 @@ export function ChatsPage() {
                       </Button>
                     </div>
                   </div>
+                  )}
                 </>
               )}
             </Card>
           </div>
         </div>
       )}
-      <Dialog
+      <ConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={(open) => {
-          if (!open && (deleteChatMutation.isPending || deleteChatsMutation.isPending)) return
           setDeleteDialogOpen(open)
           if (!open) {
             setDeleteTargets([])
             setDeletePassword('')
           }
         }}
+        title={deleteTargets.length > 1 ? `Eliminar ${deleteTargets.length} chats` : 'Eliminar conversación'}
+        description={`${
+          deleteTargets.length > 1
+            ? `Se borrarán permanentemente los mensajes de ${deleteTargets.length} conversaciones.`
+            : 'Se borrarán permanentemente todos los mensajes de esta conversación.'
+        } Confirma tu identidad ingresando tu contraseña actual.`}
+        confirmLabel={`Eliminar${deleteTargets.length > 1 ? ` ${deleteTargets.length}` : ''}`}
+        pendingLabel="Eliminando..."
+        destructive
+        isPending={deleteChatMutation.isPending || deleteChatsMutation.isPending}
+        confirmDisabled={!deletePassword || (isSuperAdmin && !organizationId)}
+        onConfirm={handleConfirmDelete}
       >
-        <DialogContent className="bg-surface-elevated text-surface-elevated-foreground">
-          <DialogHeader>
-            <DialogTitle>
-              {deleteTargets.length > 1
-                ? `Eliminar ${deleteTargets.length} chats`
-                : 'Eliminar conversación'}
-            </DialogTitle>
-            <DialogDescription>
-              {deleteTargets.length > 1
-                ? `Se borrarán permanentemente los mensajes de ${deleteTargets.length} conversaciones.`
-                : 'Se borrarán permanentemente todos los mensajes de esta conversación.'}{' '}
-              Confirma tu identidad ingresando tu contraseña actual.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="delete-chats-password">Contraseña actual</Label>
-            <Input
-              id="delete-chats-password"
-              type="password"
-              autoComplete="current-password"
-              value={deletePassword}
-              onChange={(event) => setDeletePassword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') handleConfirmDelete()
-              }}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={deleteChatMutation.isPending || deleteChatsMutation.isPending}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              disabled={
-                !deletePassword ||
-                deleteChatMutation.isPending ||
-                deleteChatsMutation.isPending ||
-                (isSuperAdmin && !organizationId)
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleteChatMutation.isPending || deleteChatsMutation.isPending
-                ? 'Eliminando...'
-                : `Eliminar${deleteTargets.length > 1 ? ` ${deleteTargets.length}` : ''}`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <div className="space-y-2">
+          <Label htmlFor="delete-chats-password">Contraseña actual</Label>
+          <Input
+            id="delete-chats-password"
+            type="password"
+            autoComplete="current-password"
+            value={deletePassword}
+            onChange={(event) => setDeletePassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleConfirmDelete()
+            }}
+            autoFocus
+          />
+        </div>
+      </ConfirmDialog>
     </div>
   )
 }

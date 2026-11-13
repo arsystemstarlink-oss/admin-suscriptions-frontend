@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { ApiError } from '@/types/api'
 import { getApiBaseUrl, switchToFallback } from '@/api/baseUrl'
+import { localizeNetworkError } from '@/lib/network-error'
 
 export const publicApi = axios.create({
   baseURL: getApiBaseUrl(),
@@ -25,11 +26,12 @@ publicApi.interceptors.response.use(
     if (errorCode) {
       const apiError: ApiError = {
         code: errorCode as ApiError['code'],
-        message: error.response?.data?.error?.message || 'Error en el portal de consulta',
+        message: error.response?.data?.error?.message || 'No se pudo completar la consulta',
       }
       return Promise.reject(apiError)
     }
 
+    localizeNetworkError(error)
     return Promise.reject(error)
   },
 )

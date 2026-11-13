@@ -8,10 +8,16 @@ import { clearPersistedQueryCache, queryClient, persistOptions } from '@/lib/que
 import { useAuthStore } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useExchangeStore } from '@/stores/exchange.store'
+import { setPwaUpdateHandler } from '@/lib/pwa-update'
 import '@fontsource-variable/figtree/wght.css'
 import './index.css'
 
-registerSW({ immediate: true })
+const updateServiceWorker = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    setPwaUpdateHandler(updateServiceWorker)
+  },
+})
 
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {

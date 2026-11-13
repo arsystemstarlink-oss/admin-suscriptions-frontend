@@ -22,7 +22,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // sesión se mantiene el spinner mientras useMe la cierra.
   if (isPending || isSessionRejected(error)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     )
@@ -32,12 +32,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // devolvería aquí de inmediato porque la sesión sigue abierta.
   if (isError && !user) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <p className="text-sm text-muted-foreground">
           No pudimos verificar tu sesión. Revisa tu conexión e inténtalo de nuevo.
         </p>
         <Button onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? 'Verificando…' : 'Reintentar'}
+          {isFetching ? 'Verificando...' : 'Reintentar'}
         </Button>
       </div>
     )

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
-import { useInfiniteSubscriptions, useSubscriptionFilterTotals } from '@/hooks/useSubscriptions'
+import { useInfiniteSubscriptions, usePrefetchSubscriptionDetail, useSubscriptionFilterTotals } from '@/hooks/useSubscriptions'
 import { useDashboardAlerts, useDashboardSummary } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
@@ -11,6 +11,7 @@ import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import { ErrorState } from '@/components/design-system/ErrorState'
+import { Skeleton } from '@/components/design-system/Skeleton'
 import { formatCurrency, SUBSCRIPTION_STATUS_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, canPayAdvance } from '@/lib/utils'
 import { useOpenOldestUnpaidPeriod } from '@/hooks/useOpenOldestUnpaidPeriod'
@@ -29,6 +30,7 @@ export function SubscriptionsListPage() {
   const { isReadOnly } = getOrganizationPlanAccess(user?.role === 'admin' ? user.organization : undefined)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { openOldestUnpaidPeriod, loadingSubscriptionId: payingId } = useOpenOldestUnpaidPeriod(organizationId ?? undefined)
+  const prefetchSubscription = usePrefetchSubscriptionDetail(organizationId ?? undefined)
 
   const pageIndex = Math.max(0, (Number.parseInt(searchParams.get('page') ?? '', 10) || 1) - 1)
   const statusFilter = searchParams.get('status') as 'ACTIVE' | 'SUSPENDED' | null
@@ -184,28 +186,19 @@ export function SubscriptionsListPage() {
 
   if ((isLoading || isLoadingSavedPage) && !showEmpty) {
     return (
-      <div className="space-y-4 px-2">
-        <div className="h-10 bg-muted rounded-xl animate-pulse" />
+      <div role="status" aria-label="Cargando suscripciones" className="space-y-4 px-2">
+        <Skeleton className="h-10" />
         <div className="grid grid-cols-3 gap-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-muted rounded-2xl animate-pulse" />
+            <Skeleton key={i} className="h-20 rounded-2xl" />
           ))}
         </div>
-        <div className="flex gap-2 mb-4">
-          <div className="h-8 w-20 bg-muted rounded-full animate-pulse" />
-          <div className="h-8 w-24 bg-muted rounded-full animate-pulse" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-full" />
         </div>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="flex gap-4 p-4 rounded-2xl bg-surface border border-border">
-            <div className="flex-1 space-y-3">
-              <div className="flex justify-between">
-                <div className="h-5 w-1/2 bg-muted rounded animate-pulse" />
-                <div className="h-5 w-12 bg-muted rounded animate-pulse" />
-              </div>
-              <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
-              <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
-            </div>
-          </div>
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-20 rounded-2xl" />
         ))}
       </div>
     )
@@ -349,7 +342,12 @@ export function SubscriptionsListPage() {
                 >
                   <Link
                     to={`/subscriptions/${sub.id}`}
-                    state={{ from: `${location.pathname}${location.search}` }}
+                    state={{
+                      from: `${location.pathname}${location.search}`,
+                      preview: { title: getClientFullName(sub.client), subtitle: sub.kitNumber },
+                    }}
+                    onPointerDown={() => prefetchSubscription(sub.id)}
+                    onFocus={() => prefetchSubscription(sub.id)}
                     className="block rounded-xl sm:rounded-2xl p-3 sm:p-4 active:scale-[0.98] transition-all touch-manipulation"
                   >
                   {/* Top Row: Client & Status */}

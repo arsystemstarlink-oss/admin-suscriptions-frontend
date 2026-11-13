@@ -1,4 +1,6 @@
+import axios from 'axios'
 import { api } from './client'
+import { getApiBaseUrl } from '@/api/baseUrl'
 import type {
   PushSubscriptionInfo,
   PushSubscriptionsListResponse,
@@ -31,6 +33,18 @@ export const pushApi = {
       `/push/subscriptions/${encodeURIComponent(endpoint)}`,
     )
     return response.data
+  },
+
+  /**
+   * Baja de la suscripción al cerrar sesión. Va sin los interceptores de `api`:
+   * el token ya no está en el storage y un 401 aquí no debe redirigir ni tocar
+   * la sesión que se abra después.
+   */
+  unregisterOnLogout: async (endpoint: string, accessToken: string): Promise<void> => {
+    await axios.delete(`${getApiBaseUrl()}/push/subscriptions/${encodeURIComponent(endpoint)}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 10_000,
+    })
   },
 
   sendTest: async (): Promise<SendTestPushResponse> => {

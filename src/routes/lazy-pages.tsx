@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { PageSkeleton } from '@/components/design-system/Skeleton'
 
 export const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
 export const InvitePage = lazy(() => import('@/pages/InvitePage').then(m => ({ default: m.InvitePage })))
@@ -18,6 +19,7 @@ export const PaymentsLayout = lazy(() => import('@/components/layout/PaymentsLay
 export const ProfilePage = lazy(() => import('@/pages/admin/ProfilePage').then(m => ({ default: m.ProfilePage })))
 export const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m => ({ default: m.AdminsPage })))
 export const WhatsAppSettingsPage = lazy(() => import('@/pages/admin/WhatsAppSettingsPage').then(m => ({ default: m.WhatsAppSettingsPage })))
+export const PlatformWhatsAppPage = lazy(() => import('@/pages/admin/PlatformWhatsAppPage').then(m => ({ default: m.PlatformWhatsAppPage })))
 export const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
 export const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
 export const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))
@@ -28,9 +30,15 @@ export const PaymentReportsPage = lazy(() => import('@/pages/admin/PaymentReport
 export const OrganizationPlanReportsPage = lazy(() => import('@/pages/admin/OrganizationPlanReportsPage').then(m => ({ default: m.OrganizationPlanReportsPage })))
 export const PlanQuoteRequestsPage = lazy(() => import('@/pages/admin/PlanQuoteRequestsPage').then(m => ({ default: m.PlanQuoteRequestsPage })))
 
+/** Rutas dentro del layout autenticado: el mismo pulso que usa la página al cargar sus datos. */
 export function PageLoader() {
+  return <PageSkeleton />
+}
+
+/** Rutas públicas a pantalla completa, sin layout alrededor. */
+export function FullPageLoader() {
   return (
-    <div className="flex items-center justify-center h-64">
+    <div role="status" aria-label="Cargando" className="flex min-h-dvh items-center justify-center bg-background">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
     </div>
   )

@@ -331,7 +331,7 @@ export function OrganizationPlanReportsPage() {
                       onClick={handleApprove}
                       disabled={reviewMutation.isPending}
                     >
-                      {reviewMutation.isPending ? 'Procesando...' : 'Aprobar pago'}
+                      {reviewMutation.isPending ? 'Aprobando...' : 'Aprobar pago'}
                     </Button>
                   </div>
                 )}
@@ -355,7 +355,7 @@ export function OrganizationPlanReportsPage() {
                       onClick={handleReject}
                       disabled={reviewMutation.isPending || !notes.trim()}
                     >
-                      {reviewMutation.isPending ? 'Procesando...' : 'Confirmar rechazo'}
+                      {reviewMutation.isPending ? 'Rechazando...' : 'Confirmar rechazo'}
                     </Button>
                   </div>
                 )}

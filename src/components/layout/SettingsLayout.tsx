@@ -1,69 +1,64 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { ClipboardList, Inbox, MessageCircle, User, UserPlus, Building2 } from 'lucide-react'
+import { MessagesSquare, User, UserPlus, Building2 } from 'lucide-react'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 
+// Etiquetas de una sola palabra: en móvil la barra no tiene sitio para dos.
 export function SettingsLayout() {
   const isSuperAdmin = useIsSuperAdmin()
 
   const tabs = useMemo<PageSubNavTab[]>(() => {
-    const base: PageSubNavTab[] = [
-      {
-        to: '/config/profile',
-        icon: User,
-        label: 'Perfil',
-        title: 'Perfil',
-        subtitle: 'Información de tu cuenta de administrador',
-        end: false,
-      },
-      {
-        to: '/config/tasks',
-        icon: ClipboardList,
-        label: 'Tareas automáticas',
-        title: 'Tareas automáticas',
-        subtitle: 'Gestiona el sistema y tareas automáticas',
-        end: false,
-      },
-      {
-        to: '/config/whatsapp',
-        icon: MessageCircle,
-        label: 'WhatsApp',
-        title: 'WhatsApp',
-        subtitle: 'Conecta tu número y activa los avisos a tus clientes',
-        end: false,
-      },
-    ]
+    const profile: PageSubNavTab = {
+      to: '/config/profile',
+      icon: User,
+      label: 'Perfil',
+      title: 'Perfil',
+      subtitle: 'Información de tu cuenta de administrador',
+      end: false,
+    }
 
     if (isSuperAdmin) {
-      base.push({
-        to: '/config/organizations',
+      return [
+        profile,
+        {
+          to: '/config/organization',
+          icon: Building2,
+          label: 'Organizaciones',
+          title: 'Organizaciones',
+          subtitle: 'Las organizaciones del sistema, sus avisos por WhatsApp y sus tareas automáticas',
+          end: false,
+        },
+        {
+          to: '/config/platform-whatsapp',
+          icon: MessagesSquare,
+          label: 'Plataforma',
+          title: 'WhatsApp de la plataforma',
+          subtitle: 'La cuenta que envía por las organizaciones sin número propio',
+          end: false,
+        },
+      ]
+    }
+
+    return [
+      profile,
+      {
+        to: '/config/organization',
         icon: Building2,
-        label: 'Organizaciones',
-        title: 'Organizaciones',
-        subtitle: 'Gestiona las organizaciones del sistema',
+        label: 'Organización',
+        title: 'Organización',
+        subtitle: 'Avisos por WhatsApp y tareas automáticas de tu organización',
         end: false,
-      })
-      base.push({
-        to: '/config/plan-quote-requests',
-        icon: Inbox,
-        label: 'Cotizaciones',
-        title: 'Cotizaciones',
-        subtitle: 'Solicitudes del plan A medida',
-        end: false,
-      })
-    } else {
-      base.push({
+      },
+      {
         to: '/config/admins',
         icon: UserPlus,
         label: 'Admins',
         title: 'Admins',
         subtitle: 'Creación de administradores adicionales',
         end: false,
-      })
-    }
-
-    return base
+      },
+    ]
   }, [isSuperAdmin])
 
   return (

@@ -4,6 +4,7 @@ import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useCreateSubscription } from '@/hooks/useSubscriptions'
+import { useFormDraft } from '@/hooks/useFormDraft'
 import { useClients } from '@/hooks/useClients'
 import { usePlans } from '@/hooks/usePlans'
 import { Button } from '@/components/ui/button'
@@ -26,16 +27,16 @@ import { UnsavedChangesGuard } from '@/components/design-system/UnsavedChangesGu
 import { PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod } from '@/types/api'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { findAlignedBillingPeriod } from '@/lib/billing-cycle'
 import { getNavigationStatePath } from '@/lib/navigation'
 
 const subscriptionSchema = z.object({
-  clientId: z.string().min(1, 'Seleccione un cliente'),
-  planId: z.string().min(1, 'Seleccione un plan'),
-  kitNumber: z.string().min(1, 'Ingrese el código del servicio'),
+  clientId: z.string().min(1, 'Selecciona un cliente'),
+  planId: z.string().min(1, 'Selecciona un plan'),
+  kitNumber: z.string().min(1, 'Ingresa el código del servicio'),
   accountNumber: z.string().optional(),
   billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
   maxOverduePeriods: z.coerce.number().min(1).max(3).optional(),
@@ -71,6 +72,7 @@ export function SubscriptionFormPage() {
   const returnTo = getNavigationStatePath(location.state, 'returnTo') ?? '/subscriptions'
   const preselectedClientId = searchParams.get('clientId')
   const isSuperAdmin = useIsSuperAdmin()
+  const userId = useAuthStore((state) => state.user?.id)
   const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const createMutation = useCreateSubscription()
   const [error, setError] = useState<string | null>(null)
@@ -81,6 +83,7 @@ export function SubscriptionFormPage() {
     handleSubmit,
     setValue,
     watch,
+    reset,
     control,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<SubscriptionForm>({
@@ -90,6 +93,16 @@ export function SubscriptionFormPage() {
       historicalPayments: [],
     },
   })
+  const draft = useFormDraft({
+    key: `ar-form-draft:${userId ?? 'unknown'}:subscription:new`,
+    watch,
+    reset,
+    enabled: !!userId,
+  })
+
+  useEffect(() => {
+    if (draft.restored) toast.info('Recuperamos el borrador de la suscripción')
+  }, [draft.restored])
 
   const orgEnabled = !isSuperAdmin || !!selectedOrganizationId
   const { data: clientsData } = useClients(
@@ -164,7 +177,7 @@ export function SubscriptionFormPage() {
     setError(null)
 
     if (!selectedOrganizationId) {
-      setError('Seleccione una organización para continuar.')
+      setError('Selecciona una organización para continuar.')
       return
     }
 
@@ -213,6 +226,7 @@ export function SubscriptionFormPage() {
       }
 
       await createMutation.mutateAsync(request)
+      draft.clearDraft()
       toast.success('Suscripción creada correctamente')
       navigate(returnTo, { replace: true })
     } catch (err: unknown) {
@@ -297,7 +311,7 @@ export function SubscriptionFormPage() {
                 className="h-12"
                 disabled={!selectedOrganizationId}
               >
-                <SelectValue placeholder={!selectedOrganizationId ? 'Seleccione primero la organización' : 'Seleccione un cliente'} />
+                <SelectValue placeholder={!selectedOrganizationId ? 'Selecciona primero la organización' : 'Selecciona un cliente'} />
               </SelectTrigger>
               <SelectContent>
                 {clients.map((client) => (
@@ -321,7 +335,7 @@ export function SubscriptionFormPage() {
                 className="h-12"
                 disabled={!selectedOrganizationId}
               >
-                <SelectValue placeholder={!selectedOrganizationId ? 'Seleccione primero la organización' : 'Seleccione un plan'} />
+                <SelectValue placeholder={!selectedOrganizationId ? 'Selecciona primero la organización' : 'Selecciona un plan'} />
               </SelectTrigger>
               <SelectContent>
                 {plans.map((plan) => (
@@ -407,7 +421,7 @@ export function SubscriptionFormPage() {
                         onClick={() => setIsBillingDayPickerOpen(true)}
                         className="w-full h-12 justify-between px-3 font-bold text-lg"
                       >
-                        <span>{field.value != null ? `Día ${field.value}` : 'Seleccione'}</span>
+                        <span>{field.value != null ? `Día ${field.value}` : 'Selecciona'}</span>
                         <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
                       </Button>
                       {errors.billingDay && (
@@ -633,7 +647,7 @@ export function SubscriptionFormPage() {
                           aria-invalid={!!errors.historicalPayments?.[index]?.paymentMethod}
                           className="h-10 text-sm"
                         >
-                          <SelectValue placeholder="Seleccione..." />
+                          <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                         <SelectContent>
                           {PAYMENT_METHOD_OPTIONS

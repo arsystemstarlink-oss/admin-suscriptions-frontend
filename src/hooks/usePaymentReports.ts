@@ -83,7 +83,7 @@ export function useReviewPaymentReport() {
         qc.invalidateQueries({ queryKey: qk.badges })
         qc.invalidateQueries({ queryKey: qk.billing.lists })
       } else {
-        toast.error(apiError.message || 'Error al procesar el reporte')
+        toast.error(apiError.message || 'No se pudo procesar el reporte')
       }
     },
   })

@@ -10,10 +10,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { cn } from '@/lib/utils'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
-import { PlanStatusBanner } from '@/components/plans/PlanStatusBanner'
-import { PendingPlanPaymentBanner } from '@/components/plans/PendingPlanPaymentBanner'
-import { StaleDataBanner } from './StaleDataBanner'
+import { LayoutBanners } from './LayoutBanners'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
+import { useAppBadge } from '@/hooks/useAppBadge'
 
 const SIDEBAR_STORAGE_KEY = 'sidebarCollapsed'
 
@@ -29,6 +28,7 @@ export function AuthenticatedLayout() {
   const [collapsed, setCollapsed] = useState<boolean>(getInitialCollapsed)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   useScrollRestoration(mainRef)
+  useAppBadge()
 
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
@@ -117,9 +117,7 @@ export function AuthenticatedLayout() {
           selectedOrganizationId={selectedOrganizationId}
           onOrganizationChange={setOrganization}
         >
-          <StaleDataBanner />
-          <PlanStatusBanner />
-          <PendingPlanPaymentBanner />
+          <LayoutBanners />
           <Outlet />
         </MobileAppShell>
         <QuickPayModal />
@@ -128,7 +126,7 @@ export function AuthenticatedLayout() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className="flex flex-col h-dvh bg-background overflow-hidden">
       <TopBar
         isSuperAdmin={isSuperAdmin}
         organizations={organizations}
@@ -150,9 +148,7 @@ export function AuthenticatedLayout() {
             isChatsPage ? 'flex min-h-0 flex-col overflow-hidden' : 'overflow-auto'
           )}
         >
-          <StaleDataBanner />
-          {planAccess.isReadOnly && <PlanStatusBanner />}
-          <PendingPlanPaymentBanner />
+          <LayoutBanners />
           <Outlet />
         </main>
       </div>

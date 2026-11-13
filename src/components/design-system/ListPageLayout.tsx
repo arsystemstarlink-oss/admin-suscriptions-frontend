@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/design-system/PageHeader'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { EmptyState } from '@/components/design-system/EmptyState'
 import { ErrorState } from '@/components/design-system/ErrorState'
+import { ListSkeleton } from '@/components/design-system/Skeleton'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -67,11 +68,7 @@ export function ListPageLayout({
       />
 
       {isLoading ? (
-        <div className="space-y-3 px-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 bg-muted animate-pulse rounded-2xl" />
-          ))}
-        </div>
+        <ListSkeleton className="px-2" />
       ) : isError ? (
         <ErrorState onRetry={onRetry} isRetrying={isRetrying} />
       ) : isEmpty ? (

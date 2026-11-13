@@ -75,7 +75,7 @@ const createOrganizationSchema = z
       context.addIssue({
         code: 'custom',
         path: ['twilioPhoneNumber'],
-        message: 'Número inválido. Use formato E.164, ej. +584223552626',
+        message: 'Número inválido. Usa formato E.164, ej. +584223552626',
       })
     }
   })
@@ -124,11 +124,14 @@ function formatShortDate(value: string) {
 
 interface CreateOrganizationFormProps {
   onSuccess?: () => void
+  /** Informa al contenedor si hay cambios sin guardar. */
+  onDirtyChange?: (isDirty: boolean) => void
   onConfigureWhatsApp?: (organization: Organization) => void
 }
 
 export function CreateOrganizationForm({
   onSuccess,
+  onDirtyChange,
   onConfigureWhatsApp,
 }: CreateOrganizationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -158,11 +161,18 @@ export function CreateOrganizationForm({
     setError,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<OrganizationForm>({
     resolver: zodResolver(createOrganizationSchema),
     defaultValues: getDefaultValues(),
   })
+
+  // Una vez creada la organización ya no hay nada que perder al cerrar.
+  const hasUnsavedChanges = isDirty && !createdInvite
+  useEffect(() => {
+    onDirtyChange?.(hasUnsavedChanges)
+    return () => onDirtyChange?.(false)
+  }, [hasUnsavedChanges, onDirtyChange])
 
   const name = watch('name')
   const slug = watch('slug')
@@ -258,7 +268,7 @@ export function CreateOrganizationForm({
           toast.error(handler.message)
         }
       } else {
-        toast.error(handler?.message || apiError.message || 'Error al crear la organización')
+        toast.error(handler?.message || apiError.message || 'No se pudo crear la organización')
       }
     } finally {
       setIsSubmitting(false)
@@ -393,7 +403,7 @@ export function CreateOrganizationForm({
               <span>
                 {createdInvite.whatsappConfigured
                   ? 'WhatsApp quedó conectado con las credenciales de la organización.'
-                  : 'WhatsApp quedó sin configurar. La organización debe usar su propio número, exclusivo, para activarlo.'}
+                  : 'Enviará los avisos con el WhatsApp de la plataforma. Puede cambiar a su propio número cuando quiera.'}
               </span>
             </div>
           </div>
@@ -404,7 +414,7 @@ export function CreateOrganizationForm({
               onClick={() => onConfigureWhatsApp(createdOrganization)}
             >
               <MessageCircle className="mr-2 h-4 w-4" />
-              Configurar WhatsApp ahora
+              Ver WhatsApp de la organización
             </Button>
           )}
         </div>
@@ -565,8 +575,8 @@ export function CreateOrganizationForm({
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Se puede configurar después. Cada organización debe usar su propio número, y un número
-          solo puede pertenecer a una organización.
+          Por defecto la organización envía con el WhatsApp de la plataforma, sin configurar nada.
+          Si prefiere su propio número, debe ser exclusivo de ella.
         </p>
 
         <Controller
@@ -584,11 +594,11 @@ export function CreateOrganizationForm({
                 }`}
               >
                 <span className="block text-sm font-medium text-foreground">
-                  Configurar más tarde
+                  WhatsApp de la plataforma
                 </span>
                 <span className="mt-1 block text-xs text-muted-foreground">
-                  Recomendado. El administrador activa WhatsApp con las credenciales y el número de
-                  la organización.
+                  Recomendado. Los avisos funcionan desde el primer día, con el tope mensual de su
+                  plan.
                 </span>
               </button>
               <button
@@ -601,7 +611,7 @@ export function CreateOrganizationForm({
                 }`}
               >
                 <span className="block text-sm font-medium text-foreground">
-                  Configurar ahora
+                  Número propio
                 </span>
                 <span className="mt-1 block text-xs text-muted-foreground">
                   Si ya tienes el Account SID, el Auth Token y el número exclusivo de esta

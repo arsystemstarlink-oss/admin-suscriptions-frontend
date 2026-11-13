@@ -238,7 +238,16 @@ export function OrganizationsPage() {
                   >
                     {planBadgeLabel}
                   </Badge>
-                  {organization.twilioConfigured ? (
+                  {organization.whatsappMode === 'platform' ? (
+                    <Badge
+                      variant="outline"
+                      title="Envía con el WhatsApp de la plataforma"
+                      className="text-info bg-info/10 border-info/20"
+                    >
+                      <MessageCircle className="h-3 w-3 mr-1 shrink-0" />
+                      WhatsApp de la plataforma
+                    </Badge>
+                  ) : organization.twilioConfigured ? (
                     <Badge
                       variant="outline"
                       title="WhatsApp conectado"

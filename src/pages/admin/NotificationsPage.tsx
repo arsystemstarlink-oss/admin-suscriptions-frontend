@@ -1,87 +1,186 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Bell,
+  BellOff,
   CheckCircle2,
-  Globe,
-  Smartphone,
-  Server,
-  XCircle,
-  RefreshCw,
-  HelpCircle,
   ChevronDown,
   ChevronUp,
+  HelpCircle,
+  Loader2,
+  MonitorSmartphone,
+  RefreshCw,
+  Share,
+  TriangleAlert,
 } from 'lucide-react'
+import { formatLocalDate } from '@/lib/constants'
 import { toast } from 'sonner'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
-import { isStandalone } from '@/lib/push'
+import { describeUserAgent, getPushPlatform, isStandalone, type PushPlatform } from '@/lib/push'
+import { PUSH_MESSAGE_TYPE } from '@/lib/push-sync'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 const permissionLabels: Record<NotificationPermission, string> = {
-  granted: 'Permiso concedido',
-  default: 'Permiso no solicitado',
-  denied: 'Permiso denegado',
+  granted: 'Concedido',
+  default: 'Aún no solicitado',
+  denied: 'Bloqueado',
 }
+
+const UNBLOCK_STEPS: Record<PushPlatform, string[]> = {
+  ios: [
+    'Abre Ajustes en tu iPhone o iPad y entra en Notificaciones.',
+    'Busca esta app en la lista y activa "Permitir notificaciones".',
+    'Vuelve aquí y toca "Ya las permití".',
+  ],
+  android: [
+    'Mantén presionado el ícono de la app y toca "Información de la app" (o el candado junto a la dirección si usas Chrome).',
+    'Entra en Notificaciones y actívalas.',
+    'Vuelve aquí y toca "Ya las permití".',
+  ],
+  desktop: [
+    'Haz clic en el ícono que está a la izquierda de la dirección de la página (candado o ajustes).',
+    'En Notificaciones, elige "Permitir".',
+    'Recarga la página y actívalas desde aquí.',
+  ],
+}
+
+const TEST_TIMEOUT_MS = 12_000
+
+type TestState = 'idle' | 'waiting' | 'received' | 'timeout'
 
 export function NotificationSettings() {
   const {
     supported,
     permission,
     subscribed,
+    devices,
+    currentEndpoint,
     checking,
     toggling,
     sendingTest,
+    removingEndpoint,
     error,
     enable,
     disable,
     sendTest,
+    removeDevice,
     refresh,
   } = usePushNotifications()
+  const [platform] = useState(() => getPushPlatform())
   const [isStandaloneApp] = useState(() => isStandalone())
   const [showHelp, setShowHelp] = useState(false)
+  const [testState, setTestState] = useState<TestState>('idle')
 
-  const handleEnable = async () => {
-    const ok = await enable()
-    if (ok) {
-      toast.success('Notificaciones activadas correctamente')
-    } else {
-      toast.error('No se pudieron activar las notificaciones')
+  // Confirma que el aviso de prueba llegó de verdad a este dispositivo.
+  useEffect(() => {
+    if (testState !== 'waiting' || !('serviceWorker' in navigator)) return
+
+    const handleMessage = (event: MessageEvent<{ type?: string }>) => {
+      if (event.data?.type === PUSH_MESSAGE_TYPE) setTestState('received')
     }
-  }
+    const timeoutId = setTimeout(() => setTestState('timeout'), TEST_TIMEOUT_MS)
+    navigator.serviceWorker.addEventListener('message', handleMessage)
+    return () => {
+      clearTimeout(timeoutId)
+      navigator.serviceWorker.removeEventListener('message', handleMessage)
+    }
+  }, [testState])
 
-  const handleDisable = async () => {
-    const ok = await disable()
-    if (ok) {
-      toast.success('Notificaciones desactivadas')
-    } else {
-      toast.error('No se pudieron desactivar las notificaciones')
+  const denied = permission === 'denied'
+  const needsInstall = !supported && platform === 'ios' && !isStandaloneApp
+  // Solo la primera comprobación oculta el interruptor; "Verificar" no lo hace parpadear.
+  const [hasChecked, setHasChecked] = useState(!checking)
+  useEffect(() => {
+    if (!checking) setHasChecked(true)
+  }, [checking])
+  const loadingInitial = !hasChecked
+
+  const statusLabel = loadingInitial
+    ? 'Comprobando...'
+    : needsInstall
+      ? 'Instala la app para activarlas'
+      : !supported
+        ? 'No disponibles en este navegador'
+        : denied
+          ? 'Bloqueadas en este dispositivo'
+          : subscribed
+            ? 'Activas'
+            : 'Desactivadas'
+
+  const handleToggle = async () => {
+    setTestState('idle')
+    if (subscribed) {
+      if (await disable()) toast.success('Notificaciones desactivadas')
+    } else if (await enable()) {
+      toast.success('Notificaciones activadas')
     }
   }
 
   const handleTest = async () => {
-    const ok = await sendTest()
-    if (ok) {
-      toast.success('Notificación de prueba enviada')
-    } else {
-      toast.error('No se pudo enviar la notificación de prueba')
-    }
+    setTestState('idle')
+    if (await sendTest()) setTestState('waiting')
   }
+
+  const handleRemoveDevice = async (endpoint: string) => {
+    if (await removeDevice(endpoint)) toast.success('Dispositivo quitado')
+  }
+
+  const otherDevices = devices.filter((device) => device.endpoint !== currentEndpoint)
+  const showSwitch = supported && !denied && !loadingInitial
 
   return (
     <div className="space-y-3 sm:space-y-4">
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-4 sm:p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary-text">
-              <Bell className="h-5 w-5" />
+            <div
+              className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                subscribed ? 'bg-primary/10 text-primary-text' : 'bg-surface-muted text-muted-foreground',
+              )}
+            >
+              {subscribed ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
             </div>
-            <div className="min-w-0">
-              <h2 className="font-semibold text-lg">Notificaciones en este dispositivo</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Controla las alertas que recibes aquí.
+            <div className="min-w-0 flex-1">
+              <h2 id="push-switch-label" className="font-semibold text-lg">
+                Notificaciones en este dispositivo
+              </h2>
+              <p
+                className={cn(
+                  'mt-1 flex items-center gap-1.5 text-sm',
+                  subscribed ? 'text-success' : denied ? 'text-destructive' : 'text-muted-foreground',
+                )}
+                role="status"
+              >
+                {loadingInitial && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />}
+                {subscribed && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
+                {statusLabel}
               </p>
             </div>
+            {showSwitch && (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={subscribed}
+                aria-labelledby="push-switch-label"
+                disabled={toggling}
+                onClick={handleToggle}
+                className={cn(
+                  'relative mt-1 inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60',
+                  // Área táctil de 44px sin agrandar el interruptor.
+                  'before:absolute before:-inset-2 before:content-[""]',
+                  subscribed ? 'bg-primary' : 'bg-border',
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+                    subscribed ? 'translate-x-6' : 'translate-x-1',
+                  )}
+                />
+              </button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
@@ -90,131 +189,142 @@ export function NotificationSettings() {
             incluso cuando la app no está abierta.
           </p>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:justify-center sm:p-4 sm:text-center">
-              <div className="flex min-w-0 items-center gap-2 sm:flex-col sm:gap-1.5">
-                <Globe className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
-                <p className="text-sm font-medium text-foreground">Navegador</p>
-              </div>
-              <div className="flex shrink-0 justify-end sm:mt-1">
-                {supported ? (
-                  <Badge variant="outline" className="border-success/20 bg-success/10 text-xs text-success">
-                    <CheckCircle2 className="h-3 w-3 mr-1 shrink-0" />
-                    Soportado
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive" className="text-xs">
-                    <XCircle className="h-3 w-3 mr-1 shrink-0" />
-                    No compatible
-                  </Badge>
-                )}
-              </div>
+          {needsInstall && (
+            <div className="rounded-xl border border-border-subtle bg-surface-muted px-3 py-3 text-sm sm:px-4">
+              <p className="font-medium text-foreground">
+                En iPhone y iPad las notificaciones solo funcionan con la app instalada
+              </p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                <li>
+                  En Safari, toca Compartir{' '}
+                  <Share className="inline h-3.5 w-3.5 align-text-bottom" aria-hidden="true" />.
+                </li>
+                <li>Elige "Añadir a pantalla de inicio".</li>
+                <li>Abre la app desde el nuevo ícono y vuelve a esta pantalla.</li>
+              </ol>
+              <p className="mt-2 text-xs text-muted-foreground">Requiere iOS 16.4 o posterior.</p>
             </div>
+          )}
 
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:justify-center sm:p-4 sm:text-center">
-              <div className="flex min-w-0 items-center gap-2 sm:flex-col sm:gap-1.5">
-                <Smartphone className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
-                <p className="text-sm font-medium text-foreground">Permiso</p>
-              </div>
-              <div className="flex shrink-0 justify-end sm:mt-1">
-                {permission ? (
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${
-                      permission === 'granted'
-                        ? 'border-success/20 bg-success/10 text-success'
-                        : permission === 'denied'
-                          ? 'border-destructive/20 bg-destructive/10 text-destructive'
-                          : 'border-warning/20 bg-warning/10 text-warning'
-                    }`}
-                  >
-                    {permission === 'granted' && <CheckCircle2 className="h-3 w-3 mr-1 shrink-0" />}
-                    {permissionLabels[permission]}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">
-                    No disponible
-                  </Badge>
-                )}
-              </div>
+          {!supported && !needsInstall && (
+            <div className="rounded-xl border border-border-subtle bg-surface-muted px-3 py-3 text-sm text-muted-foreground sm:px-4">
+              Este navegador no permite notificaciones.
+              {platform === 'ios'
+                ? ' Actualiza tu iPhone o iPad a iOS 16.4 o posterior.'
+                : ' Prueba con Chrome, Edge o Firefox actualizados.'}
             </div>
+          )}
 
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:justify-center sm:p-4 sm:text-center">
-              <div className="flex min-w-0 items-center gap-2 sm:flex-col sm:gap-1.5">
-                <Server className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
-                <p className="text-sm font-medium text-foreground">Suscripción</p>
-              </div>
-              <div className="flex shrink-0 justify-end sm:mt-1">
-                {supported ? (
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${
-                      subscribed
-                        ? 'border-success/20 bg-success/10 text-success'
-                        : 'border-border text-muted-foreground'
-                    }`}
-                  >
-                    {subscribed ? 'Activas' : 'Inactivas'}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">
-                    No disponible
-                  </Badge>
-                )}
-              </div>
+          {supported && denied && (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-3 text-sm sm:px-4">
+              <p className="flex items-center gap-2 font-medium text-foreground">
+                <TriangleAlert className="h-4 w-4 shrink-0 text-destructive" />
+                Las notificaciones están bloqueadas para esta app
+              </p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                {UNBLOCK_STEPS[platform].map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => window.location.reload()}
+              >
+                Ya las permití
+              </Button>
             </div>
-          </div>
+          )}
 
           {error && (
-            <div className="rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
+            <div role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-3">
-            {supported && subscribed ? (
-              <>
-                <Button variant="destructive" onClick={handleDisable} disabled={toggling} className="w-full sm:w-auto">
-                  {toggling ? 'Desactivando...' : 'Desactivar'}
-                </Button>
-                <Button variant="outline" onClick={handleTest} disabled={sendingTest} className="w-full sm:w-auto">
-                  {sendingTest ? 'Enviando...' : 'Enviar prueba'}
-                </Button>
-              </>
-            ) : (
-              supported && (
-                <Button onClick={handleEnable} disabled={toggling || permission === 'denied'} className="w-full sm:w-auto">
-                  {toggling ? 'Activando...' : 'Activar notificaciones'}
-                </Button>
-              )
-            )}
-            {supported && (
-              <Button variant="ghost" onClick={refresh} disabled={checking} className="w-full sm:w-auto">
-                <RefreshCw className={`h-4 w-4 mr-1 shrink-0 ${checking ? 'animate-spin' : ''}`} />
-                Verificar
+          {supported && subscribed && (
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={sendingTest || testState === 'waiting'}
+                className="w-full sm:w-auto"
+              >
+                {sendingTest || testState === 'waiting' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Esperando el aviso...
+                  </>
+                ) : (
+                  'Enviar aviso de prueba'
+                )}
               </Button>
-            )}
-          </div>
-
-          {permission === 'denied' && (
-            <p className="text-sm text-destructive">
-              El permiso fue denegado. Habilítalo desde la configuración de tu navegador y vuelve a
-              intentar.
-            </p>
-          )}
-
-          {supported && !subscribed && !isStandaloneApp && (
-            <div className="rounded-xl bg-surface-muted px-3 py-2.5 sm:px-4 sm:py-3 text-sm text-surface-muted-foreground border border-border-subtle">
-              <p className="font-medium">En iPhone/iPad (iOS 16.4+)</p>
-              <p className="mt-1 text-muted-foreground">
-                Las notificaciones solo funcionan si la app está instalada: toca Compartir{' '}
-                <span className="font-semibold">→</span> Añadir a pantalla de inicio, y luego
-                actívalas desde aquí.
-              </p>
+              <div aria-live="polite">
+                {testState === 'received' && (
+                  <p className="flex items-start gap-2 text-sm text-success">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      El aviso llegó a este dispositivo.{' '}
+                      <span className="text-muted-foreground">
+                        Si no lo viste, revisa que el modo No molestar o Concentración esté apagado.
+                      </span>
+                    </span>
+                  </p>
+                )}
+                {testState === 'timeout' && (
+                  <p className="flex items-start gap-2 text-sm text-warning">
+                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      El aviso se envió, pero todavía no llega aquí.{' '}
+                      <span className="text-muted-foreground">
+                        Revisa tu conexión y que el sistema permita notificaciones de este navegador.
+                        Si sigue sin llegar, desactívalas y vuelve a activarlas.
+                      </span>
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {otherDevices.length > 0 && (
+        <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
+          <CardHeader className="p-4 pb-2 sm:p-5 sm:pb-2">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <MonitorSmartphone className="h-5 w-5 shrink-0 text-muted-foreground" />
+              Otros dispositivos con notificaciones
+            </h2>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0">
+            <ul className="divide-y divide-border-subtle">
+              {otherDevices.map((device) => (
+                <li key={device.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {describeUserAgent(device.userAgent ?? '')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Activadas el {formatLocalDate(device.createdAt)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 text-destructive hover:text-destructive"
+                    disabled={removingEndpoint === device.endpoint}
+                    onClick={() => handleRemoveDevice(device.endpoint)}
+                  >
+                    {removingEndpoint === device.endpoint ? 'Quitando...' : 'Quitar'}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-3 sm:p-4">
@@ -237,38 +347,68 @@ export function NotificationSettings() {
           </button>
         </CardHeader>
         {showHelp && (
-          <CardContent id="notification-help-content" className="p-4 pt-0 sm:p-5 sm:pt-0">
-          <ul className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
-              <span>
-                <span className="font-medium text-foreground">Android:</span>{' '}
-                instala la app desde Chrome (Añadir a pantalla de inicio) y activa las
-                notificaciones.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
-              <span>
-                <span className="font-medium text-foreground">iPhone/iPad:</span>{' '}
-                requiere iOS 16.4+ y la app instalada en pantalla de inicio.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
-              <span>
-                <span className="font-medium text-foreground">Computadora:</span>{' '}
-                funciona en Chrome, Edge y Firefox con la app abierta o cerrada.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
-              <span>
-                Las notificaciones se reciben incluso con la app cerrada; al tocarlas, la app se
-                abre en la sección correspondiente.
-              </span>
-            </li>
-          </ul>
+          <CardContent id="notification-help-content" className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
+            <ul className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
+                <span>
+                  <span className="font-medium text-foreground">Android:</span>{' '}
+                  instala la app desde Chrome (Añadir a pantalla de inicio) y activa las
+                  notificaciones.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
+                <span>
+                  <span className="font-medium text-foreground">iPhone/iPad:</span>{' '}
+                  requiere iOS 16.4+ y la app instalada en pantalla de inicio.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
+                <span>
+                  <span className="font-medium text-foreground">Computadora:</span>{' '}
+                  funciona en Chrome, Edge y Firefox con la app abierta o cerrada.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
+                <span>
+                  Con la app en pantalla el aviso aparece dentro de ella; con la app cerrada llega
+                  como notificación y al tocarla se abre la sección correspondiente.
+                </span>
+              </li>
+            </ul>
+
+            <div className="rounded-xl border border-border-subtle bg-surface-muted p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-foreground">Diagnóstico</p>
+                {supported && (
+                  <Button variant="ghost" size="sm" onClick={refresh} disabled={checking}>
+                    <RefreshCw className={cn('mr-1 h-4 w-4 shrink-0', checking && 'animate-spin')} />
+                    Verificar
+                  </Button>
+                )}
+              </div>
+              <dl className="mt-2 grid gap-1.5 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Navegador</dt>
+                  <dd className="text-foreground">{supported ? 'Compatible' : 'No compatible'}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Permiso</dt>
+                  <dd className="text-foreground">
+                    {permission ? permissionLabels[permission] : 'No disponible'}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Registro en el servidor</dt>
+                  <dd className="text-foreground">
+                    {!supported ? 'No disponible' : subscribed ? 'Activo' : 'Inactivo'}
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </CardContent>
         )}
       </Card>

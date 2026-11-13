@@ -1,17 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDeleteClient } from '@/hooks/useClients'
-import { Button } from '@/components/ui/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
-import { AlertTriangle } from 'lucide-react'
+import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
 import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/error-handler'
 
 interface DeleteClientSheetProps {
   clientId: string
@@ -25,6 +17,11 @@ export function DeleteClientSheet({ clientId, clientName, open, onOpenChange }: 
   const deleteMutation = useDeleteClient()
   const [error, setError] = useState<string | null>(null)
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) setError(null)
+    onOpenChange(nextOpen)
+  }
+
   const handleDelete = async () => {
     setError(null)
 
@@ -33,55 +30,30 @@ export function DeleteClientSheet({ clientId, clientName, open, onOpenChange }: 
       toast.success('Cliente eliminado correctamente')
       onOpenChange(false)
       navigate('/subscriptions/clients')
-    } catch (err: any) {
-      if (err.code === 'CLIENT_HAS_ACTIVE_SUBSCRIPTIONS') {
-        setError('No puede eliminar un cliente con suscripciones activas. Elimínelas primero.')
-      } else if (err.code === 'CLIENT_HAS_SUBSCRIPTIONS') {
-        setError('No puede eliminar un cliente con suscripciones suspendidas. Elimínelas primero.')
+    } catch (err: unknown) {
+      const apiErr = err as { code?: string }
+      if (apiErr.code === 'CLIENT_HAS_ACTIVE_SUBSCRIPTIONS') {
+        setError('No puedes eliminar un cliente con suscripciones activas. Elimínalas primero.')
+      } else if (apiErr.code === 'CLIENT_HAS_SUBSCRIPTIONS') {
+        setError('No puedes eliminar un cliente con suscripciones suspendidas. Elimínalas primero.')
       } else {
-        setError('Error al eliminar el cliente. Intente nuevamente.')
+        setError(getErrorMessage(err, 'No se pudo eliminar el cliente. Inténtalo de nuevo.'))
       }
     }
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
-        <SheetHeader>
-          <div className="flex items-center gap-3 pr-8">
-            <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-            </div>
-            <div>
-              <SheetTitle>Eliminar cliente</SheetTitle>
-              <SheetDescription>
-                ¿Está seguro que desea eliminar a {clientName}?
-              </SheetDescription>
-            </div>
-          </div>
-        </SheetHeader>
-
-        <div className="flex-1 overflow-y-auto p-6 pt-4">
-          {error && (
-            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-              {error}
-            </div>
-          )}
-        </div>
-
-        <SheetFooter className="flex-row justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      title="Eliminar cliente"
+      description={`¿Eliminar a ${clientName}? Esta acción no se puede deshacer.`}
+      confirmLabel="Eliminar"
+      pendingLabel="Eliminando..."
+      isPending={deleteMutation.isPending}
+      destructive
+      error={error}
+      onConfirm={handleDelete}
+    />
   )
 }

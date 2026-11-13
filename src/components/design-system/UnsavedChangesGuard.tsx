@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useBlocker } from 'react-router-dom'
+import { setHasUnsavedChanges } from '@/lib/pwa-update'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,6 +25,11 @@ export function UnsavedChangesGuard({ isDirty, isSubmitting }: UnsavedChangesGua
         currentLocation.search !== nextLocation.search ||
         currentLocation.hash !== nextLocation.hash),
   )
+
+  useEffect(() => {
+    setHasUnsavedChanges(isDirty && !isSubmitting)
+    return () => setHasUnsavedChanges(false)
+  }, [isDirty, isSubmitting])
 
   useEffect(() => {
     if (!isDirty || isSubmitting) return

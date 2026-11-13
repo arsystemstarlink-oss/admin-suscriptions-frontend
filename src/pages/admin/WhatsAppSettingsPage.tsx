@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
+import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { OrganizationWhatsAppSettings } from '@/components/organizations/OrganizationWhatsAppSettings'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -20,9 +21,7 @@ export function WhatsAppSettingsPage() {
             />
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Selecciona una organización para configurar su WhatsApp.
-          </p>
+          <OrganizationSelectionEmptyState description="Elige una organización para configurar sus avisos por WhatsApp." />
         )}
       </CardContent>
     </Card>

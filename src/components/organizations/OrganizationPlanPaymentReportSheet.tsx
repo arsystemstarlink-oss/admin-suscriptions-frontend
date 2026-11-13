@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form'
+import { useDiscardChangesGuard } from '@/components/design-system/useDiscardChangesGuard'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useEffect } from 'react'
@@ -80,7 +81,7 @@ export function OrganizationPlanPaymentReportSheet({
     setError,
     watch,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ReportForm>({
     resolver: zodResolver(reportSchema),
     defaultValues: {
@@ -163,9 +164,16 @@ export function OrganizationPlanPaymentReportSheet({
     if (!nextOpen) reset()
     onOpenChange(nextOpen)
   }
+  const { guardedOpenChange, discardDialog } = useDiscardChangesGuard({
+    open,
+    isDirty,
+    isSubmitting: isSubmitting || createMutation.isPending,
+    onOpenChange: handleOpenChange,
+  })
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <>
+    <Sheet open={open} onOpenChange={guardedOpenChange}>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Reportar pago del plan</SheetTitle>
@@ -355,5 +363,7 @@ export function OrganizationPlanPaymentReportSheet({
         </form>
       </SheetContent>
     </Sheet>
+    {discardDialog}
+    </>
   )
 }

@@ -6,8 +6,8 @@ export function HeaderActions() {
   return (
     <div className="flex items-center gap-1.5 sm:gap-2">
       <GlobalSearch />
-      <RefreshButton className="h-9 w-9 sm:h-8 sm:w-8" />
-      <ThemeToggle className="h-9 w-9 sm:h-8 sm:w-8" />
+      <RefreshButton className="h-11 w-11 sm:h-10 sm:w-10" />
+      <ThemeToggle className="h-11 w-11 sm:h-10 sm:w-10" />
     </div>
   )
 }

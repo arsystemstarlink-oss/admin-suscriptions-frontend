@@ -5,6 +5,7 @@ import type {
   CreateSubscriptionRequest,
   Pagination,
   PayAdvanceRequest,
+  SubscriptionWithDetails,
   UpdateSubscriptionRequest,
 } from '@/types/api'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -23,6 +24,15 @@ interface UseSubscriptionsParams {
 }
 
 type SubscriptionPageParam = Pick<Pagination, 'offset'> & { cursor?: string }
+
+interface SubscriptionListPage {
+  subscriptions: SubscriptionWithDetails[]
+  pagination: Pagination
+}
+
+type SubscriptionCacheData =
+  | SubscriptionListPage
+  | { pages: SubscriptionListPage[]; pageParams: unknown[] }
 
 export function useSubscriptions(params?: UseSubscriptionsParams, options?: { enabled?: boolean }) {
   return useQuery({
@@ -89,6 +99,18 @@ export function useSubscriptionDetail(id: string, organizationId?: string, optio
   })
 }
 
+/** Adelanta la carga del detalle cuando el usuario toca o enfoca una fila de la lista. */
+export function usePrefetchSubscriptionDetail(organizationId?: string) {
+  const qc = useQueryClient()
+
+  return (id: string) => {
+    void qc.prefetchQuery({
+      queryKey: [...qk.subscriptions.detail(id), organizationId],
+      queryFn: () => subscriptionsApi.getById(id, organizationId),
+    })
+  }
+}
+
 export function useCreateSubscription() {
   const qc = useQueryClient()
 
@@ -128,7 +150,36 @@ export function useDeleteSubscription() {
 
   return useMutation({
     mutationFn: (id: string) => subscriptionsApi.remove(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: qk.subscriptions.lists })
+      const previous = qc.getQueriesData<SubscriptionCacheData>({ queryKey: qk.subscriptions.lists })
+      previous.forEach(([queryKey, data]) => {
+        if (!data) return
+        if ('pages' in data) {
+          qc.setQueryData(queryKey, {
+            ...data,
+            pages: data.pages.map((page) => ({
+              ...page,
+              subscriptions: page.subscriptions.filter((subscription) => subscription.id !== id),
+            })),
+          } as SubscriptionCacheData)
+        } else {
+          qc.setQueryData(queryKey, {
+            ...data,
+            subscriptions: data.subscriptions.filter((subscription) => subscription.id !== id),
+          } as SubscriptionCacheData)
+        }
+      })
+      return { previous }
+    },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
+      qc.invalidateQueries({ queryKey: qk.clients.lists })
+    },
+    onError: (_error, _id, context) => {
+      context?.previous.forEach(([queryKey, data]) => qc.setQueryData(queryKey, data))
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       qc.invalidateQueries({ queryKey: qk.clients.lists })
     },
@@ -154,19 +205,19 @@ export function usePayAdvance(subscriptionId: string) {
     onError: (error: unknown) => {
       const apiError = error as { code?: string; message?: string }
       if (apiError.code === 'HAS_UNPAID_PERIODS') {
-        toast.error('Tiene períodos pendientes: cóbrelos primero')
+        toast.error('Tienes períodos pendientes: cóbralos primero')
       } else if (apiError.code === 'PERIOD_ALREADY_EXISTS') {
         toast.warning('El siguiente ciclo ya existe')
         qc.invalidateQueries({ queryKey: qk.billing.lists })
         qc.invalidateQueries({ queryKey: qk.subscriptions.detail(subscriptionId) })
       } else if (apiError.code === 'SUBSCRIPTION_SUSPENDED') {
-        toast.error('Suscripción suspendida: cobre los vencidos primero')
+        toast.error('Suscripción suspendida: cobra los vencidos primero')
       } else if (apiError.code === 'INVALID_PERIOD_STATE') {
         toast.error('La suscripción no está en un estado que permita registrar el adelanto')
       } else if (apiError.code === 'INVALID_DATE_FORMAT') {
         toast.error('El formato de fecha de pago no es válido')
       } else {
-        toast.error(apiError.message || 'Error al registrar el adelanto')
+        toast.error(apiError.message || 'No se pudo registrar el adelanto')
       }
     },
   })

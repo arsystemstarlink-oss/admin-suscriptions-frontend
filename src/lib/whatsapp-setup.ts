@@ -7,7 +7,8 @@ export const PLATFORM_WHATSAPP_ID = '__platform__'
 export const UNASSIGNED_WHATSAPP_ID = '__unassigned__'
 
 export const MAX_TEMPLATE_BODY_LENGTH = 1024
-export const MAX_REMINDER_DAY = 30
+/** Días de antelación posibles para el recordatorio. El día del vencimiento tiene su propio aviso. */
+export const REMINDER_DAY_OPTIONS = [3, 5, 7]
 
 export type TemplateDisplayStatus = 'active' | 'pending' | 'rejected' | 'blocked' | 'none'
 
@@ -85,6 +86,7 @@ export function validateTemplateBody(rawBody: string, variables: WhatsAppTemplat
 export interface TemplatePreviewPart {
   text: string
   isVariable: boolean
+  bold: boolean
 }
 
 /** Sustituye cada `{{n}}` por un dato de ejemplo o, si el servidor no lo envía, por su descripción. */
@@ -98,11 +100,42 @@ export function buildTemplatePreview(
   const parts: TemplatePreviewPart[] = []
   let cursor = 0
   for (const match of body.matchAll(PLACEHOLDER_PATTERN)) {
-    if (match.index > cursor) parts.push({ text: body.slice(cursor, match.index), isVariable: false })
+    if (match.index > cursor) {
+      parts.push({ text: body.slice(cursor, match.index), isVariable: false, bold: false })
+    }
     const description = descriptions.get(match[0])
-    parts.push(description ? { text: description, isVariable: true } : { text: match[0], isVariable: false })
+    parts.push(
+      description
+        ? { text: description, isVariable: true, bold: false }
+        : { text: match[0], isVariable: false, bold: false },
+    )
     cursor = match.index + match[0].length
   }
-  if (cursor < body.length) parts.push({ text: body.slice(cursor), isVariable: false })
-  return parts
+  if (cursor < body.length) parts.push({ text: body.slice(cursor), isVariable: false, bold: false })
+
+  const tokens = parts.flatMap((part) =>
+    part.isVariable
+      ? [part]
+      : part.text
+          .split(/(\*)/)
+          .filter(Boolean)
+          .map((text) => ({ text, isVariable: false, bold: false })),
+  )
+  const preview: TemplatePreviewPart[] = []
+  let bold = false
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index]
+    if (!token.isVariable && token.text === '*') {
+      if (bold) {
+        bold = false
+        continue
+      }
+      if (tokens.slice(index + 1).some((next) => !next.isVariable && next.text === '*')) {
+        bold = true
+        continue
+      }
+    }
+    preview.push({ ...token, bold })
+  }
+  return preview
 }

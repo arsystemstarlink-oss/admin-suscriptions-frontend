@@ -28,6 +28,7 @@ import {
   describeTemplateUsage,
   getTemplateDisplayStatus,
   MAX_TEMPLATE_BODY_LENGTH,
+  PLATFORM_WHATSAPP_ID,
   validateTemplateBody,
 } from '@/lib/whatsapp-setup'
 import { ConfirmDialog } from '@/components/design-system'
@@ -213,15 +214,17 @@ function MessagePreview({
       <p className="text-xs text-muted-foreground">{caption}</p>
       <div className="rounded-xl border border-border-subtle bg-surface-muted p-3">
         <p className="w-fit max-w-full whitespace-pre-wrap wrap-break-word rounded-2xl bg-primary px-3 py-2 text-sm text-primary-foreground shadow-sm">
-          {buildTemplatePreview(body, variables).map((part, index) =>
-            part.isVariable ? (
-              <span key={index} className="rounded bg-primary-foreground/20 px-1 font-medium">
-                {part.text}
-              </span>
-            ) : (
-              part.text
-            ),
-          )}
+          {buildTemplatePreview(body, variables).map((part, index) => (
+            <span
+              key={index}
+              className={cn(
+                part.isVariable && 'rounded bg-primary-foreground/20 px-1 font-medium',
+                part.bold && 'font-bold',
+              )}
+            >
+              {part.text}
+            </span>
+          ))}
         </p>
       </div>
     </div>
@@ -383,6 +386,10 @@ function TemplateCard({
               Los códigos como {template.variables[0]?.placeholder ?? '{{1}}'} se reemplazan por el dato real de cada
               cliente. Este mensaje debe incluirlos todos.
             </p>
+            <p className="text-xs text-muted-foreground">
+              WhatsApp muestra *texto* en negrita; la vista previa oculta esos asteriscos. El carácter | sí se envía
+              como texto.
+            </p>
             {validationError && (
               <p id={errorId} role="alert" className="text-xs text-destructive">
                 {validationError}
@@ -450,6 +457,16 @@ export function WhatsAppTemplatesStep({
         Hay una por cada tipo de aviso. Puedes usar el texto sugerido o adaptarlo; la app lo envía a revisión y lo
         activa sola.
       </p>
+      <Notice tone="muted">
+        El recordatorio sugerido ahora incluye el número de kit. Si ya tienes un recordatorio aprobado, envía la nueva
+        versión a aprobación; la anterior seguirá activa hasta que WhatsApp apruebe el cambio.
+      </Notice>
+      {organizationId === PLATFORM_WHATSAPP_ID && (
+        <Notice tone="muted">
+          Los textos sugeridos de la plataforma incluyen al final la firma «A|R SYSTEM» y el aviso de notificación
+          automática.
+        </Notice>
+      )}
       {!twilioReady && (
         <Notice tone="muted">Completa primero el paso 1 para poder enviar los mensajes a aprobación.</Notice>
       )}

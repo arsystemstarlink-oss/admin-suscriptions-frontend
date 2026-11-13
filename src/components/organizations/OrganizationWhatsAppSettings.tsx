@@ -11,7 +11,6 @@ import {
   LoaderCircle,
   MessageCircle,
   MessagesSquare,
-  Plus,
   Save,
   Smartphone,
 } from 'lucide-react'
@@ -41,7 +40,7 @@ import {
   formatReminderDays,
   getTemplateDisplayStatus,
   isTemplateRequired,
-  MAX_REMINDER_DAY,
+  REMINDER_DAY_OPTIONS,
   PLATFORM_WHATSAPP_ID,
 } from '@/lib/whatsapp-setup'
 import { formatLocalDate } from '@/lib/constants'
@@ -54,7 +53,6 @@ import type {
 
 const TWILIO_SIGNUP_URL = 'https://www.twilio.com/try-twilio'
 const TWILIO_CONSOLE_URL = 'https://console.twilio.com/'
-const REMINDER_DAY_PRESETS = [1, 2, 3, 5, 7, 10, 15]
 
 /** Sin credenciales guardadas, el `enabled: false` inicial no es una decisión de nadie. */
 function isWhatsAppEnabled(twilio: OrganizationWhatsAppConfig['twilio']): boolean {
@@ -384,44 +382,31 @@ function ConnectionStep({
 }
 
 function ReminderDaysPicker({
-  organizationId,
   days,
   onChange,
 }: {
-  organizationId: string
   days: number[]
   onChange: (days: number[]) => void
 }) {
-  const [customDay, setCustomDay] = useState('')
-  const options = [...new Set([...REMINDER_DAY_PRESETS, ...days])].sort((a, b) => a - b)
-  const parsedCustomDay = Number(customDay)
-  const customDayValid =
-    Number.isInteger(parsedCustomDay) && parsedCustomDay >= 1 && parsedCustomDay <= MAX_REMINDER_DAY
-
   const toggle = (day: number) =>
     onChange(days.includes(day) ? days.filter((current) => current !== day) : [...days, day])
-
-  const addCustomDay = () => {
-    if (!customDayValid) return
-    if (!days.includes(parsedCustomDay)) onChange([...days, parsedCustomDay])
-    setCustomDay('')
-  }
 
   return (
     <fieldset className="space-y-2">
       <legend className="text-sm font-medium text-foreground">Recordatorio antes del vencimiento</legend>
       <p className="text-xs text-muted-foreground">
-        Toca los días de antelación con los que quieres avisar. Puedes elegir varios o ninguno.
+        Elige con cuántos días de antelación avisar. Puedes marcar varios o ninguno; el día del vencimiento
+        tiene su propio aviso.
       </p>
       <div className="flex flex-wrap gap-2">
-        {options.map((day) => {
+        {REMINDER_DAY_OPTIONS.map((day) => {
           const selected = days.includes(day)
           return (
             <button
               key={day}
               type="button"
               aria-pressed={selected}
-              aria-label={day === 1 ? '1 día antes' : `${day} días antes`}
+              aria-label={`${day} días antes`}
               onClick={() => toggle(day)}
               className={cn(
                 'flex h-11 min-w-11 items-center justify-center rounded-full border px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -434,30 +419,6 @@ function ReminderDaysPicker({
             </button>
           )
         })}
-      </div>
-      <div className="flex items-center gap-2">
-        <Label htmlFor={`org-whatsapp-custom-day-${organizationId}`} className="shrink-0 text-xs font-normal text-muted-foreground">
-          Otro día (1 a {MAX_REMINDER_DAY})
-        </Label>
-        <Input
-          id={`org-whatsapp-custom-day-${organizationId}`}
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={MAX_REMINDER_DAY}
-          className="w-20"
-          value={customDay}
-          onChange={(event) => setCustomDay(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter') return
-            event.preventDefault()
-            addCustomDay()
-          }}
-        />
-        <Button type="button" variant="outline" size="sm" disabled={!customDayValid} onClick={addCustomDay}>
-          <Plus />
-          Añadir
-        </Button>
       </div>
     </fieldset>
   )
@@ -475,7 +436,9 @@ function RulesSection({
 }) {
   const updateMutation = useUpdateOrganizationWhatsAppConfig()
   const manualTemplateFields = useWhatsAppTemplates(ownAccount ? organizationId : '').data?.templates ?? []
-  const [reminderDays, setReminderDays] = useState(config.rules.reminderDaysBefore)
+  const [reminderDays, setReminderDays] = useState(() =>
+    config.rules.reminderDaysBefore.filter((day) => REMINDER_DAY_OPTIONS.includes(day)),
+  )
   const [dueDateWarningEnabled, setDueDateWarningEnabled] = useState(config.rules.dueDateWarningEnabled)
   const [suspensionNoticeEnabled, setSuspensionNoticeEnabled] = useState(config.rules.suspensionNoticeEnabled)
   const [templates, setTemplates] = useState(config.templates)
@@ -485,7 +448,7 @@ function RulesSection({
   const savedTemplates = JSON.stringify(config.templates)
   useEffect(() => {
     const rules: OrganizationWhatsAppConfig['rules'] = JSON.parse(savedRules)
-    setReminderDays(rules.reminderDaysBefore)
+    setReminderDays(rules.reminderDaysBefore.filter((day) => REMINDER_DAY_OPTIONS.includes(day)))
     setDueDateWarningEnabled(rules.dueDateWarningEnabled)
     setSuspensionNoticeEnabled(rules.suspensionNoticeEnabled)
   }, [savedRules])
@@ -499,7 +462,9 @@ function RulesSection({
       id: organizationId,
       data: {
         rules: {
-          reminderDaysBefore: [...reminderDays].sort((a, b) => b - a),
+          reminderDaysBefore: reminderDays
+            .filter((day) => REMINDER_DAY_OPTIONS.includes(day))
+            .sort((a, b) => b - a),
           dueDateWarningEnabled,
           suspensionNoticeEnabled,
         },
@@ -527,7 +492,7 @@ function RulesSection({
         description="Elige en qué momentos la app le escribe a cada cliente. Se calcula con la fecha de vencimiento de su período."
       />
 
-      <ReminderDaysPicker organizationId={organizationId} days={reminderDays} onChange={setReminderDays} />
+      <ReminderDaysPicker days={reminderDays} onChange={setReminderDays} />
 
       <ToggleRow
         id={`org-whatsapp-due-warning-${organizationId}`}

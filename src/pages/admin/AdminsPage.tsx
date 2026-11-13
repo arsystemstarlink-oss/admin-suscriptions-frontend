@@ -73,7 +73,7 @@ export function AdminsPage() {
   const admins = (data?.admins || []).filter((admin) => admin.role !== 'super-admin')
   const isEmpty = !isLoading && admins.length === 0
 
-  if (isSuperAdmin) return <Navigate to="/config/organizations" replace />
+  if (isSuperAdmin) return <Navigate to="/config/organization" replace />
 
   return (
     <>

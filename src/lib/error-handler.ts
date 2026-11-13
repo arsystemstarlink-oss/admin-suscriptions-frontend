@@ -298,7 +298,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   WHATSAPP_NOT_CONFIGURED: {
     type: 'toast',
     variant: 'error',
-    message: 'WhatsApp (Twilio) no está configurado para esta organización.',
+    message: 'WhatsApp no está disponible para esta organización. Revísalo en Ajustes › Organización › WhatsApp.',
   },
   ORGANIZATION_INACTIVE: {
     type: 'toast',
@@ -510,6 +510,11 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     type: 'toast',
     variant: 'warning',
     message: 'Necesitas al menos una plantilla aprobada.',
+  },
+  WHATSAPP_LIMIT_REACHED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Alcanzaste el límite de mensajes de WhatsApp de este mes.',
   },
   INVALID_PAYLOAD: {
     type: 'toast',

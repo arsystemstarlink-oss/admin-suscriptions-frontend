@@ -48,8 +48,30 @@ export type WhatsAppTemplateKey = 'reminder' | 'dueDateWarning' | 'suspensionNot
 
 export type OrganizationWhatsAppTemplates = Partial<Record<WhatsAppTemplateKey, string>>
 
+/** Con qué cuenta envía la organización: la de la plataforma o su propia cuenta de Twilio. */
+export type WhatsAppMode = 'platform' | 'own'
+
+export interface PlatformWhatsAppSummary {
+  /** La plataforma tiene su cuenta lista para enviar. */
+  available: boolean
+  phoneNumber: string | null
+  /** Cupo del mes en curso (YYYY-MM, UTC). */
+  usage: { month: string; used: number; limit: number }
+  templates: {
+    key: WhatsAppTemplateKey
+    label: string
+    body: string
+    variables: WhatsAppTemplateState['variables']
+    contentSid: string | null
+  }[]
+}
+
 export interface OrganizationWhatsAppConfig {
   organizationId: string
+  /** Ausente en servidores anteriores, que solo conocían la cuenta propia. */
+  mode?: WhatsAppMode
+  /** `null` al consultar la propia cuenta de la plataforma. */
+  platform?: PlatformWhatsAppSummary | null
   twilio: OrganizationTwilioInfo
   rules: OrganizationWhatsAppRules
   templates: OrganizationWhatsAppTemplates
@@ -60,13 +82,17 @@ export interface OrganizationWhatsAppConfig {
   }
   /** `null` si el servidor no tiene una dirección pública https. */
   webhooks: { inbound: string; status: string } | null
+  /** Último mensaje de prueba enviado desde la configuración. */
+  lastTestAt?: string | null
 }
 
 export interface WhatsAppTemplateState {
   key: WhatsAppTemplateKey
   label: string
   defaultBody: string
-  variables: { placeholder: string; description: string }[]
+  variables: { placeholder: string; description: string; sample?: string }[]
+  /** Si una regla activa la envía sola. Ausente en servidores anteriores. */
+  required?: boolean
   activeContentSid: string | null
   request: {
     contentSid: string
@@ -97,6 +123,8 @@ export interface WhatsAppConnectionCheck {
     | 'ok'
   message: string
   inboundWebhookConnected: boolean | null
+  /** URL a la que el número entrega hoy las respuestas. */
+  inboundWebhookUrl?: string | null
 }
 
 export interface WhatsAppFailureGroup {
@@ -108,6 +136,7 @@ export interface WhatsAppFailureGroup {
 }
 
 export interface UpdateOrganizationWhatsAppConfigRequest {
+  mode?: WhatsAppMode
   twilio?: OrganizationTwilioConfigRequest
   rules?: Partial<OrganizationWhatsAppRules>
   templates?: Partial<Record<WhatsAppTemplateKey, string | null>>
@@ -127,6 +156,7 @@ export interface Organization {
   clientCount?: number
   twilio?: OrganizationTwilioInfo
   twilioConfigured?: boolean
+  whatsappMode?: WhatsAppMode
   createdAt: string
   createdBy?: string
 }
@@ -254,6 +284,8 @@ export interface BusinessPlanCatalogItem {
   clientLimit: number | null
   adminLimit: number
   trialDays: number
+  /** Mensajes de WhatsApp al mes incluidos con el número de la plataforma; `null` en A medida. */
+  whatsappMonthlyLimit?: number | null
 }
 
 export interface BusinessPlansResponse {
@@ -1155,6 +1187,7 @@ export type ErrorCode =
   | 'INVALID_WHATSAPP_TEMPLATE'
   | 'WHATSAPP_TEMPLATE_PENDING'
   | 'WHATSAPP_TEMPLATE_REQUIRED'
+  | 'WHATSAPP_LIMIT_REACHED'
   | 'PASSWORD_CHANGE_REQUIRED'
   | 'INVITE_NOT_FOUND'
   | 'INVITE_EXPIRED'

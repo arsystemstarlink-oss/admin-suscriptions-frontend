@@ -95,6 +95,13 @@ export const organizationsApi = {
     return response.data
   },
 
+  connectWhatsAppInboundWebhook: async (organizationId: string): Promise<WhatsAppConnectionCheck> => {
+    const response = await api.post<WhatsAppConnectionCheck>('/whatsapp/config/webhooks/connect', undefined, {
+      params: { organizationId },
+    })
+    return response.data
+  },
+
   getWhatsAppTemplates: async (organizationId: string): Promise<WhatsAppTemplatesResponse> => {
     const response = await api.get<WhatsAppTemplatesResponse>('/whatsapp/config/templates', {
       params: { organizationId },

@@ -24,6 +24,8 @@ Auth: Authorization: Bearer {accessToken}
 - Rate limits: `POST /api/auth/login` (20 intentos / 15 min por IP), `POST /api/auth/refresh` (60 / 15 min por IP) e invitaciones `/api/auth/invite/*` (30 / 15 min por IP). Portal publico `/api/public/*` (60 / 15 min por IP).
 - Alta conjunta de organización y administrador: `POST /api/organizations/onboard` (10 intentos / 15 min por IP). El alta crea una invitación de un solo uso (7 días) en vez de exigir contraseña; también acepta `password` por compatibilidad.
 - Un administrador con `mustChangePassword: true` solo puede usar `/api/auth/me` y `/api/auth/change-password` hasta cambiar su contraseña inicial (`403 PASSWORD_CHANGE_REQUIRED` en el resto).
+- Una organización desactivada (`active: false`) responde `403 ORGANIZATION_INACTIVE` al iniciar sesión, renovar sesión, aceptar invitaciones y en cualquier escritura. Un access token ya emitido conserva la lectura hasta expirar. Su Daily Job no se ejecuta.
+- En clientes, planes, suscripciones y períodos, un campo con tipo o longitud incorrectos responde `400 INVALID_DATA`. Una fecha inexistente (`2026-02-31`) responde `400 INVALID_DATE_FORMAT` y una fecha de pago futura `400 INVALID_PAYMENT_DATE`.
 - Una organización vencida o suspendida permanece en solo lectura: el backend bloquea sus escrituras y conserva las lecturas. `/api/public/*` mantiene su acceso normal.
 - Headers de seguridad HTTP vía Helmet.
 - `POST /communications/webhook` (público) valida firma Twilio (obligatoria en production).
@@ -123,6 +125,7 @@ interface Subscription {
   clientId: string; planId: string; kitNumber: string;
   accountNumber?: string;
   billingDay: number; status: SubscriptionStatus;
+  suspensionSource?: 'AUTOMATIC' | 'MANUAL'; // solo con status SUSPENDED. AUTOMATIC: por deuda, se levanta al saldarla. MANUAL: solo la levanta un admin. Sin valor en documentos anteriores: se trata como AUTOMATIC
   maxOverduePeriods: number; activationDate?: string; createdAt: string;
 }
 
@@ -234,6 +237,8 @@ interface DebtorItem {
 | PUT | /auth/me | Bearer admin/super-admin | Editar name/email/phone |
 | POST | /auth/change-password | Bearer admin/super-admin | Cambiar contraseña |
 
+<!-- Cédula (por organización) y email son únicos también ante altas simultáneas: 409 DNI_TAKEN | 409 EMAIL_TAKEN. -->
+
 **POST /auth/setup**
 ```typescript
 // Header: X-Setup-Key: {SETUP_KEY}
@@ -307,8 +312,9 @@ interface DebtorItem {
 { name?: string; email?: string; phone?: string; currentPassword?: string }
 // currentPassword es obligatorio SOLO si email cambia
 // phone se normaliza a E.164 (+58...)
+// Si email cambia, se revocan todas las sesiones y la respuesta incluye accessToken/refreshToken nuevos
 // Response 200
-{ user: User }
+{ user: User; accessToken?: string; refreshToken?: string }
 // Para admin, incluye la organización y sus datos de plan actualizados; organizationId no es editable.
 // Errors: 400 INVALID_EMAIL | 400 INVALID_PASSWORD | 400 INVALID_PHONE | 409 EMAIL_TAKEN
 ```
@@ -388,6 +394,7 @@ interface DebtorItem {
 // Request (parcial, al menos un campo)
 { name?: string; email?: string; phone?: string; newPassword?: string }
 // No requiere currentPassword del admin editado (lo hace otro admin)
+// El propio admin no puede cambiar aquí su email ni su contraseña → 403 FORBIDDEN; se hace con PUT /auth/me y POST /auth/change-password
 // newPassword: mínimo 8 caracteres, letras y números
 // phone se normaliza a E.164 (+58...)
 // Si email o newPassword cambian, se revocan todas las sesiones del admin editado
@@ -543,14 +550,12 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
   method: 'transferencia' | 'usdt' | 'efectivo';
   plan: 'basico' | 'pro' | 'negocio' | 'a-medida';
   clientLimit?: number; // requerido para A medida (>= 151); ignorado en planes fijos
-  months?: number; // 1-12; el servidor calcula newPlanExpiresAt con el día de corte
-  newPlanExpiresAt?: string; // legado; solo si no se envía months
+  months: number; // obligatorio, 1-12; el servidor calcula newPlanExpiresAt con el día de corte
   notes?: string;
 }
 // Response 201 → { payment: OrganizationPlanPayment; organization: Organization }
 // Guarda el pago externo y activa/renueva el plan en una transacción. No procesa cobros.
 // Monto: en planes fijos es priceUsdMonthly × months (total); en A medida es el amount enviado.
-// Si se envía newPlanExpiresAt sin months, el monto fijo equivale a 1 mes.
 // Meses: mismo plan → se suman al vencimiento actual.
 // Cambio entre planes fijos con tiempo vigente → el saldo se convierte en días del plan nuevo:
 // días restantes × precio actual ÷ precio nuevo, hacia arriba. Los meses se suman al terminar esos
@@ -591,7 +596,8 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
 **DELETE /organizations/:id**
 ```typescript
 // Response 204
-// Errors: 404 ORGANIZATION_NOT_FOUND | 400 INVALID_DATA (tiene usuarios asignados)
+// Elimina también sus usuarios y todos los datos de la organización, y detiene su cron.
+// Errors: 404 ORGANIZATION_NOT_FOUND
 ```
 
 ---
@@ -607,6 +613,7 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
 | DELETE | /clients/:id | Eliminar cliente |
 
 **GET /clients**
+<!-- Con subscriptionStatus o hasOverdue, los filtros se aplican antes de paginar: total y hasMore son exactos. -->
 ```typescript
 // Query params
 { search?: string; include?: 'subscriptions'; subscriptionStatus?: SubscriptionStatus | 'MIXED' | 'NONE'; hasOverdue?: boolean; limit?: number; offset?: number }
@@ -648,6 +655,7 @@ Endpoints adicionales (solo super-admin): `GET /organizations/check-slug`,
 
 **DELETE /clients/:id** → Response 204
 // El borrado y decremento de clientCount son atómicos e idempotentes.
+// Errors: 409 CLIENT_HAS_ACTIVE_SUBSCRIPTIONS | 409 CLIENT_HAS_SUBSCRIPTIONS (suspendidas: conservan deuda; hay que eliminarlas primero)
 
 ---
 
@@ -747,6 +755,8 @@ Lista por defecto todas las suscripciones de la organización, ordenadas alfabé
 ```typescript
 // Request (partial)
 { planId?: string; kitNumber?: string; accountNumber?: string; billingDay?: number; maxOverduePeriods?: number; status?: SubscriptionStatus }
+// status: pasar de ACTIVE a SUSPENDED fija suspensionSource = MANUAL; volver a ACTIVE lo limpia y, si ningún período cubre el ciclo de hoy, crea uno PENDING (los meses suspendida no generan deuda)
+// billingDay: rige desde el ciclo siguiente, sin prorrateo. El ciclo de transición va del fin del actual al nuevo día de corte y dura al menos 28 días (de 20 a 5: 46 días; de 5 a 20: 46 días)
 // kitNumber se convierte a UPPERCASE automaticamente
 // Response 200 → Subscription
 ```
@@ -754,8 +764,9 @@ Lista por defecto todas las suscripciones de la organización, ordenadas alfabé
 **POST /subscriptions/:id/pay-advance** (solo suscripcion ACTIVE y al día)
 ```typescript
 // Request (amount lo fija el backend = plan.price vigente)
-{ paymentMethod: PaymentMethod; paidAt: string; notes?: string }
+{ paymentMethod: PaymentMethod; paidAt: string; notes?: string; anchorPeriodId?: string }
 // paidAt formato YYYY-MM-DD
+// anchorPeriodId: último período que vio el cliente. Si ya cambió → 409 PERIOD_ALREADY_EXISTS, para que un doble envío no cobre dos meses
 // Response 200
 {
   billingPeriod: BillingPeriod; // ciclo futuro generado ya en PAID (start = fin del ancla, +1 mes)
@@ -768,6 +779,7 @@ Lista por defecto todas las suscripciones de la organización, ordenadas alfabé
 ```
 
 **DELETE /subscriptions/:id** → Response 204
+// Elimina de forma atómica la suscripción, sus períodos y sus reportes de pago, y registra subscription.deleted.
 > Elimina tambien todos los periodos de facturacion asociados a la suscripcion.
 
 ---
@@ -804,9 +816,11 @@ Lista por defecto todas las suscripciones de la organización, ordenadas alfabé
 // Request
 { paymentMethod: PaymentMethod; amount: number; paidAt: string; notes?: string }
 // paidAt formato YYYY-MM-DD
+// Los reportes pendientes de ese periodo se cierran como REJECTED, porque ya no se podrian aprobar
 // Response 200
 {
   billingPeriod: BillingPeriod;
+  currentPeriod?: BillingPeriod; // período creado al reactivar; ausente si otro período ya cubre el ciclo de hoy
   subscription: { id: string; status: SubscriptionStatus; previousStatus: SubscriptionStatus; reactivated: boolean };
 }
 ```
@@ -861,7 +875,7 @@ interface BusinessPlanCatalogItem {
   client: { id: string; firstName: string; lastName: string; dni?: string; phoneMasked: string; emailMasked?: string };
   subscriptions: { id: string; kitNumber: string; accountNumber?: string; billingDay: number; status: SubscriptionStatus; plan: { id: string; name: string; price: number } | null }[];
   periods: { id: string; subscriptionId: string; periodLabel: string; startDate: string; endDate: string; amount: number; status: BillingPeriodStatus; hasPendingReport: boolean; paymentMethod?: PaymentMethod; paidAt?: string; reference?: string }[];
-  // paymentMethod/paidAt/reference solo presentes en periodos PAID (detalle del pago registrado; sin datos internos)
+  // paymentMethod/paidAt solo presentes en periodos PAID. reference: la que dio el cliente en un reporte aprobado; nunca las notas internas del periodo
   pendingReports: { id: string; billingPeriodId: string; amount: number; status: PaymentReportStatus; createdAt: string }[];
   totals: { totalDebt: number; pendingCount: number; overdueCount: number; pendingVerificationCount: number; pendingVerificationAmount: number };
 }
@@ -1130,7 +1144,7 @@ El scheduler es siempre por organización: no existe una configuración global n
 // Query: ?organizationId=org_X (obligatorio para super-admin)
 // Request (partial)
 { enabled?: boolean; cronSchedule?: string }
-// cronSchedule debe ser una expresión cron válida (ej: "0 0 * * *" para medianoche diario)
+// cronSchedule indica una hora diaria: minuto y hora fijos (ej: "30 2 * * *"). Otro formato → 400 INVALID_CRON
 // Response 200 → SchedulerConfig
 // Reprograma el cron de la organización indicada automáticamente (en caliente)
 ```
@@ -1225,12 +1239,22 @@ El scheduler es siempre por organización: no existe una configuración global n
     suspensionNotice?: string;
   };
   readiness: { ready: boolean; missing: string[]; usingLegacyTemplates: boolean };
+  mode: 'platform' | 'own'; // Con qué cuenta envía: la de la plataforma (por defecto) o la suya
+  platform: {               // null al consultar la propia cuenta de la plataforma
+    available: boolean;     // La plataforma tiene su cuenta de Twilio lista
+    phoneNumber: string | null;
+    usage: { month: string; used: number; limit: number }; // Cupo del mes (YYYY-MM, UTC)
+    templates: { key; label; body; variables: [{ placeholder, description, sample }]; contentSid: string | null }[];
+  } | null;
+  webhooks: { inbound: string; status: string } | null; // null si BASE_URL no es https
+  lastTestAt: string | null; // Último mensaje de prueba enviado desde la configuración (ISO 8601)
 }
 ```
 
 **PUT /api/whatsapp/config**
 ```typescript
 {
+  mode?: 'platform' | 'own';
   twilio?: {
     accountSid?: string;
     authToken?: string | null; // Omitido conserva el existente; null o "" lo elimina.
@@ -1377,10 +1401,11 @@ POST /subscriptions
 { clientId, planId, kitNumber, billingDay: 6, maxOverduePeriods: 2, activationDate: "2026-01-05" }
 ```
 - Genera periodos desde activationDate hasta hoy
+- El primer periodo termina en el siguiente dia de corte; si duraria menos de 28 dias se une al ciclo siguiente, porque se cobra completo
 - El primer mes de activacion siempre nace `PENDING` (el cliente pago para activar, aunque el pago no este registrado aun)
 - Periodos siguientes pasados → `OVERDUE`, periodo actual → `PENDING` (maximo `maxOverduePeriods` vencidos)
 - Si overdueCount >= maxOverduePeriods → suscripcion `SUSPENDED` y NO se genera el periodo actual (los meses durante la suspension no generan deuda)
-- El primer mes de activacion nunca pasa a `OVERDUE`, ni siquiera por el Daily Job
+- El primer mes de activacion nunca pasa a `OVERDUE`, ni siquiera por el Daily Job. Si sigue impago al terminar, el Daily Job genera igual el siguiente periodo
 - Al pagar todos los vencidos, la suscripcion se reactiva y se genera el periodo actual desde hoy + billingDay
 - Frontend muestra periodos vencidos con boton "Registrar Pago"
 
@@ -1409,9 +1434,11 @@ POST /billing-periods/:id/pay
 { paymentMethod: "CASH", amount: 50, paidAt: "2026-07-31" }
 ```
 - amount debe coincidir con el amount del periodo
+- Un periodo sigue `PENDING` durante su dia de corte y pasa a `OVERDUE` desde el dia siguiente (dias UTC)
 - La reactivacion requiere pagar TODOS los periodos vencidos (overdueCount === 0)
+- Una suspension con `suspensionSource: MANUAL` no se levanta al pagar: se reactiva con `PUT /subscriptions/:id`
 - Si la suscripcion estaba `SUSPENDED` y se reactiva → `reactivated: true`
-- Al reactivar se genera el periodo actual `PENDING` desde hoy + billingDay (respuesta: `currentPeriod`)
+- Al reactivar se genera el periodo actual `PENDING` desde hoy + billingDay (respuesta: `currentPeriod`), salvo que otro periodo ya cubra ese ciclo
 
 ### 5. Editar datos de pago de periodo ya pagado
 
@@ -1548,7 +1575,7 @@ Codigos de planes: `PLAN_READ_ONLY` (403) | `PLAN_NOT_CONFIGURED` (409) | `CLIEN
 
 Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
 
-Codigos WhatsApp: `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`). `TWILIO_NUMBER_IN_USE` (409) — el número de WhatsApp ya pertenece a otra organización. `TWILIO_NUMBER_AMBIGUOUS` (409) — el número resuelve a varias organizaciones en el webhook.
+Codigos WhatsApp: `WHATSAPP_LIMIT_REACHED` (409) — la organización agotó su cupo mensual de mensajes con la cuenta de la plataforma. `WHATSAPP_NOT_CONFIGURED` (503) — la organización no tiene credenciales Twilio propias completas (`accountSid`, `authToken`, `phoneNumber` y `enabled !== false`). `TWILIO_NUMBER_IN_USE` (409) — el número de WhatsApp ya pertenece a otra organización. `TWILIO_NUMBER_AMBIGUOUS` (409) — el número resuelve a varias organizaciones en el webhook.
 
 Codigos portal/reportes: `PAYMENT_REPORT_NOT_FOUND` (404) | `PAYMENT_REPORT_ALREADY_EXISTS` (409) | `PAYMENT_REPORT_ALREADY_REVIEWED` (409) | `PAYMENT_REPORT_INVALID_STATE` (400)
 
@@ -1558,12 +1585,19 @@ Codigos adelanto: `HAS_UNPAID_PERIODS` (409) | `PERIOD_ALREADY_EXISTS` (409) | `
 
 - `GET/PUT /api/whatsapp/config` permite al administrador administrar las credenciales, Content SID de plantillas y reglas de recordatorio/vencimiento/suspensión de su propia organización. La respuesta nunca incluye `authToken`.
 - `GET /api/whatsapp/config` incluye `webhooks: { inbound, status } | null` (`null` si `BASE_URL` no es https). `PUT` rechaza con `400 INVALID_TWILIO_CREDENTIALS` las credenciales nuevas que Twilio niegue; si Twilio no responde, guarda igualmente.
-- `GET /api/whatsapp/config/connection` comprueba con Twilio la cuenta y el número: `{ status: 'not_configured' | 'invalid_credentials' | 'sender_not_found' | 'sender_offline' | 'unverified' | 'ok', message, inboundWebhookConnected: boolean | null }`.
-- `GET /api/whatsapp/config/templates` devuelve cada plantilla con `{ key, label, defaultBody, variables, activeContentSid, request }` tras consultar las que están en revisión. `POST /api/whatsapp/config/templates/:key/submit` con `{ body? }` la crea y la envía a aprobación (`201`, misma respuesta). Errores: `400 INVALID_WHATSAPP_TEMPLATE`, `409 WHATSAPP_TEMPLATE_PENDING`.
+- `GET /api/whatsapp/config/connection` comprueba con Twilio la cuenta y el número: `{ status: 'not_configured' | 'invalid_credentials' | 'sender_not_found' | 'sender_offline' | 'unverified' | 'ok', message, inboundWebhookConnected: boolean | null, inboundWebhookUrl: string | null }`. `inboundWebhookUrl` es la URL a la que el número entrega hoy las respuestas.
+- `POST /api/whatsapp/config/webhooks/connect` (sin cuerpo) configura en Twilio la URL de mensajes entrantes del número, conservando el resto de su webhook, y responde como `GET /api/whatsapp/config/connection`. Reemplaza la URL que tuviera el número. Errores: `503 WHATSAPP_NOT_CONFIGURED`, `400 INVALID_DATA` si `BASE_URL` no es https, `400 INVALID_TWILIO_CONFIG` si el número no está en la cuenta, `400 INVALID_TWILIO_CREDENTIALS`, `502 TWILIO_ERROR`.
+- `GET /api/whatsapp/config/templates` devuelve cada plantilla con `{ key, label, defaultBody, variables: [{ placeholder, description, sample }], required, activeContentSid, request }` tras consultar las que están en revisión. `required` indica que una regla activa la envía sola; `sample` es el dato de ejemplo que se usa en la revisión y en el mensaje de prueba. `POST /api/whatsapp/config/templates/:key/submit` con `{ body? }` la crea y la envía a aprobación (`201`, misma respuesta). Errores: `400 INVALID_WHATSAPP_TEMPLATE`, `409 WHATSAPP_TEMPLATE_PENDING`.
 - `POST /api/whatsapp/config/templates/submit-missing` solicita con el texto sugerido las plantillas nunca pedidas. Responde `{ templates, submitted, failed: [{ key, label, message }] }`; `201` si envió alguna, `200` si no faltaba ninguna.
 - `POST /whatsapp/send` acepta `{ to, templateKey, context }` como alternativa a `templateName` + `variables`: el servidor usa el SID activo de la organización y ordena las variables. Errores: `409 WHATSAPP_TEMPLATE_REQUIRED` si no está activa, `400 INVALID_DATA` si la clave no existe o faltan datos.
-- `POST /api/whatsapp/config/test-message` con `{ to }` envía una plantilla activa con datos de ejemplo (`201 { messageSid, templateKey }`). Error: `409 WHATSAPP_TEMPLATE_REQUIRED`.
+- `POST /api/whatsapp/config/test-message` con `{ to }` envía una plantilla activa con datos de ejemplo (`201 { messageSid, templateKey }`) y registra `lastTestAt`. Error: `409 WHATSAPP_TEMPLATE_REQUIRED`.
 - `GET /api/whatsapp/config/failures` devuelve `{ failures: [{ message, errorCode?, count, lastAt, recipients }] }`: envíos fallidos de los últimos 7 días agrupados por causa.
+- **Dos modos de envío.** `mode: 'platform'` (por defecto): los avisos salen por la cuenta de WhatsApp de la plataforma, sin que la organización configure nada, con un cupo mensual de mensajes según su plan (Básico 120, Pro 300, Negocio 600, A medida 4 por cliente contratado). `mode: 'own'`: la organización usa su propia cuenta de Twilio, sin cupo. Una organización sin `whatsappMode` guardado usa `own` si ya tenía Account SID y `platform` si no. En modo `platform`, `twilio`, `templates`, `webhooks` y los endpoints de plantillas siguen refiriéndose a la cuenta propia de la organización; `readiness` describe lo que falta en el modo activo.
+- El cupo cuenta todo mensaje enviado por la cuenta de la plataforma (avisos automáticos, envíos manuales, respuestas del chat y pruebas) y se reinicia el día 1 (UTC). Agotado, `POST /whatsapp/send` y `POST /api/whatsapp/config/test-message` responden `409 WHATSAPP_LIMIT_REACHED`, y el Daily Job registra cada aviso no enviado como fallo.
+- Las plantillas de la plataforma incluyen el nombre del negocio como variable adicional (`platform.templates`). Al enviar con `templateKey`, el servidor pone ese nombre: `context.organizationName` se ignora. En modo `platform` hay que enviar con `templateKey`; `templateName` + `variables` exige conocer el SID y el orden de la cuenta central.
+- Las respuestas al número de la plataforma se asignan a la organización en modo `platform` que conversó más recientemente con ese teléfono; si ninguna lo hizo, el mensaje queda sin organización.
+- La cuenta de la plataforma la administra el super-admin con estos mismos endpoints y `?organizationId=__platform__` (credenciales, plantillas, conexión, webhook, prueba y fallos). Un admin de organización no puede acceder a ella.
+- `GET /public/plans` incluye `whatsappMonthlyLimit: number | null` por plan (`null` en A medida) y las organizaciones devuelven `whatsappMode`.
 - Las organizaciones creadas guardan su configuración de notificaciones desde el inicio y no usan los Content SID de entorno.
 - Defaults: recordatorio a 3 días, aviso de vencimiento habilitado y aviso de suspensión habilitado. Los Content SID de entorno antiguos se usan solo como fallback hasta que la organización guarde su configuración.
 - `readiness.ready` y `readiness.missing` describen los requisitos activos pendientes. La falta de configuración WhatsApp no detiene el cron ni el ciclo de negocio.

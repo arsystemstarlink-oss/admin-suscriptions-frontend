@@ -52,6 +52,10 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
   const adminLimit = plan.adminLimit ?? DEFAULT_ADMIN_LIMITS[plan.key]
   const adminCapacity =
     adminLimit === 1 ? '1 administrador incluido' : `Hasta ${adminLimit} administradores`
+  // Un servidor anterior no informa el cupo: mejor no prometer una cifra.
+  const whatsappCapacity = plan.whatsappMonthlyLimit
+    ? [`${plan.whatsappMonthlyLimit} mensajes de WhatsApp al mes`]
+    : []
 
   return (
     <Card
@@ -76,7 +80,7 @@ function PlanCard({ plan }: { plan: BusinessPlanCatalogItem }) {
             : 'Por organización, no por administrador'}
         </p>
         <ul className="mt-0 mb-6 text-[0.95rem]">
-          {[...content.features, adminCapacity].map((feature) => (
+          {[...content.features, ...whatsappCapacity, adminCapacity].map((feature) => (
             <li key={feature} className="relative py-1.25 pl-5.5">
               <Check className="absolute left-0 top-2.25 h-4 w-4 text-success" aria-hidden="true" />
               <span>{feature}</span>
@@ -124,7 +128,7 @@ const FAQS = [
   {
     question: '¿Quién paga los mensajes de WhatsApp?',
     answer:
-      'Tú, directo a Twilio con tu propia cuenta. La app trae WhatsApp incluido en todos los planes; el costo de los mensajes es aparte.',
+      'Cada plan incluye una cantidad de mensajes al mes, enviados desde el WhatsApp de la plataforma y sin configurar nada. Si prefieres que salgan de tu propio número, lo conectas con tu cuenta de Twilio y pagas esos mensajes directo a Twilio, sin tope.',
   },
   {
     question: '¿Qué recibo al registrarme?',
@@ -282,7 +286,7 @@ export function PlansPage() {
             </h2>
             <div className="mt-8 grid gap-x-12 sm:grid-cols-2">
               {[
-                ['WhatsApp incluido en todos los planes', 'Envía recordatorios y mensajes a tus clientes desde su perfil, con tu propia cuenta. Las plantillas ya vienen redactadas.'],
+                ['WhatsApp incluido en todos los planes', 'Los recordatorios salen solos desde el primer día, sin configurar nada. Los mensajes ya vienen redactados y aprobados.'],
                 ['Quién pagó, quién debe, quién vence', 'Todo claro de un vistazo, sin abrir Excel ni buscar en chats.'],
                 ['Tus clientes consultan solos', 'Abren un enlace, ven su estado y reportan su pago. Tú solo apruebas.'],
                 ['Estado de cada cuenta', 'Define cuántos períodos vencidos permites y la app marca la cuenta como suspendida. El corte del servicio lo haces tú.'],
@@ -341,10 +345,10 @@ export function PlansPage() {
         <section className="bg-surface-muted px-4 py-14 text-surface-muted-foreground sm:px-6 sm:py-20 lg:px-8">
           <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2">
             <div>
-              <h2 className="text-2xl font-bold">Lo que pagas aparte</h2>
+              <h2 className="text-2xl font-bold">Solo si quieres tu propio número</h2>
               <p className="mt-3 text-sm">
-                Los mensajes de WhatsApp los pagas directo a quien los presta. Así controlas tu gasto
-                y nosotros no te lo encarecemos.
+                Los mensajes de tu plan salen del WhatsApp de la plataforma y no pagas nada más. Si
+                prefieres que tus clientes vean tu número, lo conectas tú.
               </p>
               <ul className="mt-5">
                 <li className="border-t border-border py-4">
@@ -353,7 +357,7 @@ export function PlansPage() {
                 </li>
                 <li className="border-t border-border py-4">
                   <strong className="text-foreground">Los mensajes que envíes</strong>
-                  <span className="mt-1 block text-sm">Pagas solo por lo que uses.</span>
+                  <span className="mt-1 block text-sm">Se los pagas directo a Twilio, sin tope mensual.</span>
                 </li>
               </ul>
             </div>

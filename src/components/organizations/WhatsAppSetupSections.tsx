@@ -1,23 +1,38 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
+  Check,
   CheckCircle2,
+  ChevronDown,
   Clock,
   ClipboardCopy,
+  Link2,
   LoaderCircle,
   RefreshCw,
   Send,
+  Smartphone,
   XCircle,
+  Zap,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { formatLocalDate } from '@/lib/constants'
+import { formatLocalDate, PLAN_USAGE_WARNING_PERCENT } from '@/lib/constants'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { qk } from '@/lib/query-keys'
 import { cn } from '@/lib/utils'
 import {
+  buildTemplatePreview,
+  describeTemplateUsage,
+  getTemplateDisplayStatus,
+  MAX_TEMPLATE_BODY_LENGTH,
+  validateTemplateBody,
+} from '@/lib/whatsapp-setup'
+import { ConfirmDialog } from '@/components/design-system'
+import {
+  useConnectWhatsAppInboundWebhook,
   useSendWhatsAppTestMessage,
   useSubmitMissingWhatsAppTemplates,
   useSubmitWhatsAppTemplate,
@@ -25,7 +40,13 @@ import {
   useWhatsAppFailures,
   useWhatsAppTemplates,
 } from '@/hooks/useOrganizations'
-import type { OrganizationWhatsAppConfig, WhatsAppTemplateState } from '@/types/api'
+import type {
+  OrganizationWhatsAppConfig,
+  OrganizationWhatsAppRules,
+  PlatformWhatsAppSummary,
+  WhatsAppMode,
+  WhatsAppTemplateState,
+} from '@/types/api'
 
 type Tone = 'success' | 'warning' | 'destructive' | 'muted'
 
@@ -36,7 +57,7 @@ const TONE_CLASSES: Record<Tone, string> = {
   muted: 'border-border bg-surface-muted text-muted-foreground',
 }
 
-function Notice({ tone, children }: { tone: Tone; children: React.ReactNode }) {
+export function Notice({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   const Icon = tone === 'success' ? CheckCircle2 : tone === 'destructive' ? XCircle : AlertTriangle
   return (
     <div className={cn('flex items-start gap-2 rounded-md border p-3 text-sm', TONE_CLASSES[tone])}>
@@ -46,14 +67,91 @@ function Notice({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   )
 }
 
-export function StepHeading({ step, title, description }: { step?: number; title: string; description: string }) {
+export function StepHeading({ title, description }: { title: string; description: string }) {
   return (
     <div>
-      <h4 className="text-sm font-medium text-foreground">
-        {step !== undefined && <span className="text-muted-foreground">{step}. </span>}
-        {title}
-      </h4>
+      <h4 className="text-sm font-medium text-foreground">{title}</h4>
       <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+  )
+}
+
+/** `loading` no muestra etiqueta: evita anunciar "Pendiente" antes de saberlo. */
+export type SetupStepState = 'done' | 'todo' | 'attention' | 'waiting' | 'optional' | 'loading'
+
+const STEP_STATE_BADGES: Record<Exclude<SetupStepState, 'loading'>, { label: string; tone: Tone }> = {
+  done: { label: 'Listo', tone: 'success' },
+  todo: { label: 'Pendiente', tone: 'warning' },
+  attention: { label: 'Revisar', tone: 'destructive' },
+  waiting: { label: 'En revisión', tone: 'warning' },
+  optional: { label: 'Opcional', tone: 'muted' },
+}
+
+export function SetupStep({
+  id,
+  number,
+  title,
+  summary,
+  state,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string
+  number: number
+  title: string
+  summary: string
+  state: SetupStepState
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  const badge = state === 'loading' ? null : STEP_STATE_BADGES[state]
+  return (
+    <div className="rounded-xl border border-border bg-surface text-surface-foreground">
+      <h4>
+        <button
+          type="button"
+          id={`${id}-header`}
+          aria-expanded={open}
+          aria-controls={`${id}-panel`}
+          onClick={onToggle}
+          className="flex w-full items-center gap-3 rounded-xl p-3 text-left hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span
+            aria-hidden="true"
+            className={cn(
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold',
+              state === 'done' ? TONE_CLASSES.success : TONE_CLASSES.muted,
+            )}
+          >
+            {state === 'done' ? <Check className="h-4 w-4" /> : number}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-foreground">{title}</span>
+            <span className="block text-xs text-muted-foreground">{summary}</span>
+          </span>
+          {badge && (
+            <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-xs', TONE_CLASSES[badge.tone])}>
+              {badge.label}
+            </span>
+          )}
+          <ChevronDown
+            aria-hidden="true"
+            className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
+          />
+        </button>
+      </h4>
+      {/* Oculto en vez de desmontado: conserva lo que se estaba escribiendo al cambiar de paso. */}
+      <div
+        id={`${id}-panel`}
+        role="region"
+        aria-labelledby={`${id}-header`}
+        hidden={!open}
+        className="space-y-4 border-t border-border p-3 sm:p-4"
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -100,30 +198,65 @@ const REQUEST_BADGES = {
   none: { label: 'Sin solicitar', tone: 'muted', Icon: Clock },
 } as const
 
-function getTemplateDisplayStatus(template: WhatsAppTemplateState): keyof typeof REQUEST_BADGES {
-  const status = template.request?.status
-  if (status === 'pending' || status === 'rejected' || status === 'blocked') return status
-  return template.activeContentSid ? 'active' : 'none'
+/** El mensaje como lo recibirá el cliente, con cada dato variable resaltado. */
+function MessagePreview({
+  body,
+  variables,
+  caption,
+}: {
+  body: string
+  variables: WhatsAppTemplateState['variables']
+  caption: string
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs text-muted-foreground">{caption}</p>
+      <div className="rounded-xl border border-border-subtle bg-surface-muted p-3">
+        <p className="w-fit max-w-full whitespace-pre-wrap wrap-break-word rounded-2xl bg-primary px-3 py-2 text-sm text-primary-foreground shadow-sm">
+          {buildTemplatePreview(body, variables).map((part, index) =>
+            part.isVariable ? (
+              <span key={index} className="rounded bg-primary-foreground/20 px-1 font-medium">
+                {part.text}
+              </span>
+            ) : (
+              part.text
+            ),
+          )}
+        </p>
+      </div>
+    </div>
+  )
 }
 
 function TemplateCard({
   template,
   organizationId,
   twilioReady,
+  rules,
 }: {
   template: WhatsAppTemplateState
   organizationId: string
   twilioReady: boolean
+  rules: OrganizationWhatsAppRules
 }) {
   const submit = useSubmitWhatsAppTemplate()
   const displayStatus = getTemplateDisplayStatus(template)
   const badge = REQUEST_BADGES[displayStatus]
+  const usage = describeTemplateUsage(template.key, rules)
   const [body, setBody] = useState(template.request?.body ?? template.defaultBody)
   const [editing, setEditing] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const textareaId = `whatsapp-template-${organizationId}-${template.key}`
+  const errorId = `${textareaId}-error`
 
   const pending = displayStatus === 'pending'
   const showEditor = !pending && (editing || displayStatus !== 'active')
+  const validationError = validateTemplateBody(body, template.variables)
+  // Solo se conoce el texto activo si se aprobó desde aquí; un Content SID pegado a mano no lo trae.
+  const activeBody =
+    template.request?.status === 'approved' && template.request.contentSid === template.activeContentSid
+      ? template.request.body
+      : null
 
   const requestApproval = () => {
     submit.mutate(
@@ -132,21 +265,40 @@ function TemplateCard({
     )
   }
 
+  const insertVariable = (placeholder: string) => {
+    const textarea = textareaRef.current
+    const start = textarea?.selectionStart ?? body.length
+    const end = textarea?.selectionEnd ?? body.length
+    setBody(body.slice(0, start) + placeholder + body.slice(end))
+    requestAnimationFrame(() => {
+      textarea?.focus()
+      textarea?.setSelectionRange(start + placeholder.length, start + placeholder.length)
+    })
+  }
+
   return (
-    <div className="space-y-3 rounded-md border border-border bg-surface p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-medium text-foreground">{template.label}</span>
-        <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs', TONE_CLASSES[badge.tone])}>
-          <badge.Icon className="h-3 w-3" />
-          {badge.label}
-        </span>
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-3">
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-foreground">{template.label}</span>
+          <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs', TONE_CLASSES[badge.tone])}>
+            <badge.Icon className="h-3 w-3" />
+            {badge.label}
+          </span>
+        </div>
+        {usage && <p className="text-xs text-muted-foreground">{usage.when}</p>}
       </div>
 
       {pending && (
         <>
-          <p className="rounded-md bg-surface-muted p-2 text-sm text-foreground">{template.request?.body}</p>
+          <MessagePreview
+            body={template.request?.body ?? ''}
+            variables={template.variables}
+            caption="Texto enviado a revisión"
+          />
           <p className="text-xs text-muted-foreground">
-            Se activará sola cuando WhatsApp la apruebe. No tienes que copiar nada.
+            WhatsApp suele responder en minutos, a veces tarda hasta un día. Se activará sola al aprobarse: no
+            tienes que hacer nada más.
             {template.activeContentSid && ' Mientras tanto se sigue usando la plantilla actual.'}
           </p>
         </>
@@ -168,30 +320,91 @@ function TemplateCard({
         </p>
       )}
 
+      {displayStatus === 'active' && !editing && (
+        <>
+          {activeBody ? (
+            <MessagePreview body={activeBody} variables={template.variables} caption="Así lo recibe tu cliente" />
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Usa una plantilla creada directamente en Twilio, por eso no mostramos su texto aquí.
+            </p>
+          )}
+          <button
+            type="button"
+            className="text-xs font-medium text-primary-text underline-offset-2 hover:underline"
+            onClick={() => setEditing(true)}
+          >
+            Cambiar el texto
+          </button>
+        </>
+      )}
+
       {showEditor && (
-        <div className="space-y-2">
-          <Label htmlFor={textareaId} className="sr-only">
-            Texto de {template.label}
-          </Label>
-          <textarea
-            id={textareaId}
-            value={body}
-            onChange={(event) => setBody(event.target.value)}
-            rows={3}
-            className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm"
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor={textareaId}>Texto del mensaje</Label>
+              {body !== template.defaultBody && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary-text underline-offset-2 hover:underline"
+                  onClick={() => setBody(template.defaultBody)}
+                >
+                  Usar el texto sugerido
+                </button>
+              )}
+            </div>
+            <textarea
+              ref={textareaRef}
+              id={textareaId}
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+              rows={4}
+              maxLength={MAX_TEMPLATE_BODY_LENGTH}
+              aria-invalid={validationError ? true : undefined}
+              aria-describedby={validationError ? errorId : undefined}
+              className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-muted-foreground">Insertar dato:</span>
+              {template.variables.map((variable) => (
+                <button
+                  key={variable.placeholder}
+                  type="button"
+                  title={`Inserta ${variable.placeholder}`}
+                  onClick={() => insertVariable(variable.placeholder)}
+                  className="rounded-full border border-border bg-surface px-2.5 py-1 text-xs text-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {variable.placeholder} {variable.description}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Los códigos como {template.variables[0]?.placeholder ?? '{{1}}'} se reemplazan por el dato real de cada
+              cliente. Este mensaje debe incluirlos todos.
+            </p>
+            {validationError && (
+              <p id={errorId} role="alert" className="text-xs text-destructive">
+                {validationError}
+              </p>
+            )}
+          </div>
+
+          <MessagePreview
+            body={body}
+            variables={template.variables}
+            caption="Así lo recibirá tu cliente (los datos resaltados son de ejemplo)"
           />
-          <p className="text-xs text-muted-foreground">
-            Conserva {template.variables.map((variable) => `${variable.placeholder} ${variable.description}`).join(', ')}.
-          </p>
+
           <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               size="sm"
               onClick={requestApproval}
-              disabled={!twilioReady || submit.isPending || !body.trim()}
+              disabled={!twilioReady || submit.isPending || Boolean(validationError)}
             >
-              {submit.isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-              Solicitar aprobación
+              {submit.isPending && <LoaderCircle className="animate-spin" />}
+              {submit.isPending ? 'Enviando...' : 'Enviar a aprobación'}
             </Button>
             {editing && (
               <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
@@ -201,16 +414,6 @@ function TemplateCard({
           </div>
         </div>
       )}
-
-      {displayStatus === 'active' && !editing && (
-        <button
-          type="button"
-          className="text-xs font-medium text-primary underline-offset-2 hover:underline"
-          onClick={() => setEditing(true)}
-        >
-          Cambiar el texto
-        </button>
-      )}
     </div>
   )
 }
@@ -218,9 +421,11 @@ function TemplateCard({
 export function WhatsAppTemplatesStep({
   organizationId,
   twilioReady,
+  rules,
 }: {
   organizationId: string
   twilioReady: boolean
+  rules: OrganizationWhatsAppRules
 }) {
   const queryClient = useQueryClient()
   const templates = useWhatsAppTemplates(organizationId)
@@ -240,13 +445,13 @@ export function WhatsAppTemplatesStep({
 
   return (
     <div className="space-y-3">
-      <StepHeading
-        step={2}
-        title="Plantillas"
-        description="WhatsApp debe aprobar cada mensaje. Puedes ajustar el texto; la app lo envía a revisión por ti."
-      />
+      <p className="text-sm text-muted-foreground">
+        WhatsApp solo deja escribirle primero a un cliente con un mensaje que haya aprobado antes: una plantilla.
+        Hay una por cada tipo de aviso. Puedes usar el texto sugerido o adaptarlo; la app lo envía a revisión y lo
+        activa sola.
+      </p>
       {!twilioReady && (
-        <Notice tone="muted">Conecta primero tu cuenta de Twilio para poder solicitar la aprobación.</Notice>
+        <Notice tone="muted">Completa primero el paso 1 para poder enviar los mensajes a aprobación.</Notice>
       )}
       {templates.isLoading && (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -254,7 +459,7 @@ export function WhatsAppTemplatesStep({
           Cargando plantillas...
         </p>
       )}
-      {templates.isError && (
+      {templates.isError && !templates.data && (
         <div className="space-y-2">
           <Notice tone="destructive">No se pudieron cargar las plantillas.</Notice>
           <Button type="button" variant="outline" size="sm" onClick={() => templates.refetch()}>
@@ -263,16 +468,21 @@ export function WhatsAppTemplatesStep({
         </div>
       )}
       {twilioReady && missingCount > 1 && (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={submitMissing.isPending}
-          onClick={() => submitMissing.mutate(organizationId)}
-        >
-          {submitMissing.isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-          Solicitar las {missingCount} con el texto sugerido
-        </Button>
+        <div className="flex flex-col gap-2 rounded-xl border border-border-subtle bg-surface-muted p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-foreground">
+            ¿No quieres cambiar nada? Envía las {missingCount} con el texto sugerido.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="shrink-0"
+            disabled={submitMissing.isPending}
+            onClick={() => submitMissing.mutate(organizationId)}
+          >
+            {submitMissing.isPending && <LoaderCircle className="animate-spin" />}
+            {submitMissing.isPending ? 'Enviando...' : `Enviar las ${missingCount} a aprobación`}
+          </Button>
+        </div>
       )}
       {templates.data?.templates.map((template) => (
         <TemplateCard
@@ -280,6 +490,7 @@ export function WhatsAppTemplatesStep({
           template={template}
           organizationId={organizationId}
           twilioReady={twilioReady}
+          rules={rules}
         />
       ))}
     </div>
@@ -289,12 +500,21 @@ export function WhatsAppTemplatesStep({
 export function WhatsAppWebhooksStep({
   organizationId,
   webhooks,
+  twilioReady,
 }: {
   organizationId: string
   webhooks: OrganizationWhatsAppConfig['webhooks']
+  twilioReady: boolean
 }) {
   const check = useWhatsAppConnectionCheck(organizationId)
+  const connect = useConnectWhatsAppInboundWebhook()
+  const [confirmingReplace, setConfirmingReplace] = useState(false)
   const connected = check.data?.inboundWebhookConnected
+  // Otra dirección ya recibe las respuestas: conectarla aquí la deja sin ellas.
+  const currentUrl = connected === false ? check.data?.inboundWebhookUrl : null
+
+  const connectNow = () =>
+    connect.mutate(organizationId, { onSettled: () => setConfirmingReplace(false) })
 
   const copyUrl = async (url: string) => {
     try {
@@ -307,31 +527,68 @@ export function WhatsAppWebhooksStep({
 
   return (
     <div className="space-y-3">
-      <StepHeading
-        step={3}
-        title="Recibir respuestas"
-        description="Para que los mensajes de tus clientes lleguen a Chats. Los estados de entrega ya se configuran solos."
-      />
+      <p className="text-sm text-muted-foreground">
+        Cuando un cliente responde a un aviso, Twilio necesita saber a dónde entregar ese mensaje. Con esta
+        dirección, las respuestas aparecen en{' '}
+        <Link to="/chats" className="font-medium text-primary-text underline-offset-2 hover:underline">
+          Chats
+        </Link>
+        . Sin ella los avisos se envían igual, pero no verás lo que te contestan.
+      </p>
       {webhooks ? (
         <>
-          <div className="flex items-center gap-2">
-            <Input readOnly aria-label="URL para mensajes entrantes" value={webhooks.inbound} />
-            <Button type="button" variant="outline" onClick={() => copyUrl(webhooks.inbound)}>
-              <ClipboardCopy className="mr-2 h-4 w-4" />
-              Copiar
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            En Twilio, abre tu número (Messaging › Senders › WhatsApp senders) y pega esta URL como webhook de
-            mensajes entrantes, con método POST.
-          </p>
-          {connected === true && <Notice tone="success">Tu número ya usa esta URL.</Notice>}
-          {connected === false && (
-            <Notice tone="warning">
-              Aún no vemos esta URL en tu número. Si la configuraste en un Messaging Service, puedes ignorar este
-              aviso y comprobarlo respondiendo al mensaje de prueba.
-            </Notice>
+          {connected === true ? (
+            <Notice tone="success">Conectado: tu número ya entrega las respuestas a esta app.</Notice>
+          ) : (
+            <div className="space-y-2">
+              <Button
+                type="button"
+                disabled={!twilioReady || connect.isPending}
+                onClick={() => (currentUrl ? setConfirmingReplace(true) : connectNow())}
+              >
+                {connect.isPending ? <LoaderCircle className="animate-spin" /> : <Link2 />}
+                {connect.isPending ? 'Conectando...' : 'Conectar automáticamente'}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {twilioReady
+                  ? 'La app lo configura en tu cuenta de Twilio por ti. No tienes que copiar nada.'
+                  : 'Completa primero el paso 1.'}
+              </p>
+            </div>
           )}
+          <details className="rounded-md border border-border-subtle bg-surface-muted p-3">
+            <summary className="cursor-pointer text-sm font-medium text-foreground">
+              Hacerlo a mano en Twilio
+            </summary>
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Input readOnly aria-label="URL para mensajes entrantes" value={webhooks.inbound} />
+                <Button type="button" variant="outline" className="shrink-0" onClick={() => copyUrl(webhooks.inbound)}>
+                  <ClipboardCopy />
+                  Copiar
+                </Button>
+              </div>
+              <ol className="list-inside list-decimal space-y-1 text-sm text-muted-foreground">
+                <li>Copia la dirección de arriba.</li>
+                <li>En Twilio, entra en Messaging › Senders › WhatsApp senders y abre tu número.</li>
+                <li>Pégala en el campo del webhook para mensajes entrantes, con método POST, y guarda.</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">
+                Si recibes los mensajes a través de un Messaging Service, pégala allí. En ese caso este paso seguirá
+                sin marcarse como listo: compruébalo respondiendo al mensaje de prueba.
+              </p>
+            </div>
+          </details>
+          <ConfirmDialog
+            open={confirmingReplace}
+            onOpenChange={setConfirmingReplace}
+            title="¿Reemplazar la dirección actual?"
+            description={`Tu número entrega hoy las respuestas a ${currentUrl}. Si otro sistema las usa, dejará de recibirlas.`}
+            confirmLabel="Reemplazar"
+            pendingLabel="Conectando..."
+            isPending={connect.isPending}
+            onConfirm={connectNow}
+          />
         </>
       ) : (
         <Notice tone="muted">
@@ -342,18 +599,25 @@ export function WhatsAppWebhooksStep({
   )
 }
 
-export function WhatsAppTestStep({ organizationId, disabled }: { organizationId: string; disabled: boolean }) {
+export function WhatsAppTestStep({
+  organizationId,
+  disabled,
+  disabledReason = 'Disponible cuando WhatsApp apruebe al menos una plantilla.',
+}: {
+  organizationId: string
+  disabled: boolean
+  disabledReason?: string
+}) {
   const send = useSendWhatsAppTestMessage()
   const [phone, setPhone] = useState('')
   const inputId = `whatsapp-test-phone-${organizationId}`
 
   return (
     <div className="space-y-3">
-      <StepHeading
-        step={4}
-        title="Enviar una prueba"
-        description="Recibirás una plantilla activa con datos de ejemplo. Twilio la cobra como un mensaje normal."
-      />
+      <p className="text-sm text-muted-foreground">
+        Te enviamos uno de tus mensajes aprobados con datos de ejemplo, para que veas lo mismo que verá tu cliente.
+        Twilio lo cobra como un mensaje normal.
+      </p>
       <div className="space-y-2">
         <Label htmlFor={inputId}>Tu número de WhatsApp</Label>
         <div className="flex items-center gap-2">
@@ -368,20 +632,183 @@ export function WhatsAppTestStep({ organizationId, disabled }: { organizationId:
           <Button
             type="button"
             variant="outline"
+            className="shrink-0"
             disabled={disabled || send.isPending || !phone.trim()}
             onClick={() => send.mutate({ id: organizationId, to: phone.trim() })}
           >
-            {send.isPending ? (
-              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="mr-2 h-4 w-4" />
-            )}
-            Enviar
+            {send.isPending ? <LoaderCircle className="animate-spin" /> : <Send />}
+            {send.isPending ? 'Enviando...' : 'Enviar'}
           </Button>
         </div>
-        {disabled && (
-          <p className="text-xs text-muted-foreground">Necesitas al menos una plantilla activa para enviar la prueba.</p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          {disabled
+            ? disabledReason
+            : 'Con código de país, por ejemplo +58. Si respondes a la prueba, compruebas también que las respuestas llegan a Chats.'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+const MODE_OPTIONS: { mode: WhatsAppMode; Icon: typeof Zap; title: string; points: string[] }[] = [
+  {
+    mode: 'platform',
+    Icon: Zap,
+    title: 'WhatsApp de la plataforma',
+    points: ['Listo al instante, sin configurar nada', 'Mensajes incluidos en tu plan, con un tope mensual'],
+  },
+  {
+    mode: 'own',
+    Icon: Smartphone,
+    title: 'Tu propio número',
+    points: ['Tus clientes ven tu número y tu marca', 'Sin tope: pagas los mensajes a Twilio'],
+  },
+]
+
+export function WhatsAppModePicker({
+  mode,
+  pending,
+  onChange,
+}: {
+  mode: WhatsAppMode
+  pending: boolean
+  onChange: (mode: WhatsAppMode) => void
+}) {
+  return (
+    <div role="radiogroup" aria-label="Desde dónde se envían los avisos" className="grid gap-2 sm:grid-cols-2">
+      {MODE_OPTIONS.map(({ mode: option, Icon, title, points }) => {
+        const selected = option === mode
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            disabled={pending}
+            onClick={() => !selected && onChange(option)}
+            className={cn(
+              'rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+              selected
+                ? 'border-border-strong bg-surface-active text-surface-foreground'
+                : 'border-border bg-surface text-surface-foreground hover:bg-surface-hover',
+            )}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Icon className="h-4 w-4 shrink-0 text-primary-text" aria-hidden="true" />
+              {title}
+              {selected && (
+                <span className={cn('ml-auto rounded-full border px-2 py-0.5 text-xs font-normal', TONE_CLASSES.success)}>
+                  En uso
+                </span>
+              )}
+            </span>
+            <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+              {points.map((point) => <li key={point}>{point}</li>)}
+            </ul>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function UsageMeter({ usage }: { usage: PlatformWhatsAppSummary['usage'] }) {
+  const percent = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 100
+  const exhausted = usage.used >= usage.limit
+  const tone: Tone = exhausted ? 'destructive' : percent >= PLAN_USAGE_WARNING_PERCENT ? 'warning' : 'success'
+  const barClass = { success: 'bg-success', warning: 'bg-warning', destructive: 'bg-destructive', muted: 'bg-muted' }[tone]
+  return (
+    <div className="space-y-2 rounded-xl border border-border bg-surface p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-medium text-foreground">Mensajes de este mes</span>
+        <span className="text-sm text-foreground">
+          <span className="font-semibold">{usage.used}</span> de {usage.limit}
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Mensajes usados este mes"
+        aria-valuemin={0}
+        aria-valuemax={usage.limit}
+        aria-valuenow={Math.min(usage.used, usage.limit)}
+        className="h-2 overflow-hidden rounded-full bg-surface-muted"
+      >
+        <div className={cn('h-full rounded-full', barClass)} style={{ width: `${percent}%` }} />
+      </div>
+      <p className={cn('text-xs', exhausted ? 'text-destructive' : 'text-muted-foreground')}>
+        {exhausted
+          ? 'Llegaste al tope: los avisos están en pausa hasta el día 1. Para seguir enviando, sube de plan o usa tu propio número.'
+          : 'Cuenta cada aviso, cada respuesta que envías desde Chats y cada prueba. Se renueva el día 1 de cada mes.'}
+      </p>
+    </div>
+  )
+}
+
+/** Lo que ve una organización que envía con la cuenta de la plataforma: nada que configurar. */
+export function WhatsAppPlatformPanel({
+  organizationId,
+  platform,
+  rules,
+}: {
+  organizationId: string
+  platform: PlatformWhatsAppSummary
+  rules: OrganizationWhatsAppRules
+}) {
+  const exhausted = platform.usage.used >= platform.usage.limit
+  const hasTemplate = platform.templates.some((template) => template.contentSid)
+  const testDisabledReason = !platform.available || !hasTemplate
+    ? 'Disponible cuando la plataforma termine de activar el servicio.'
+    : 'Llegaste al tope de mensajes de este mes.'
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-muted-foreground">
+        Tus clientes reciben los avisos desde el número de la plataforma
+        {platform.phoneNumber ? ` (${platform.phoneNumber})` : ''}, con el nombre de tu negocio dentro del mensaje.
+        Si te responden, lo ves en{' '}
+        <Link to="/chats" className="font-medium text-primary-text underline-offset-2 hover:underline">
+          Chats
+        </Link>
+        .
+      </p>
+
+      <UsageMeter usage={platform.usage} />
+
+      <div className="space-y-3">
+        <StepHeading
+          title="Los mensajes que reciben tus clientes"
+          description="Ya están aprobados por WhatsApp. Si quieres otro texto, cambia a tu propio número."
+        />
+        {platform.templates.map((template) => (
+          <div key={template.key} className="space-y-2 rounded-xl border border-border bg-surface p-3">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">{template.label}</span>
+                {!template.contentSid && (
+                  <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs', TONE_CLASSES.warning)}>
+                    <Clock className="h-3 w-3" />
+                    Aún no disponible
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{describeTemplateUsage(template.key, rules)?.when}</p>
+            </div>
+            <MessagePreview
+              body={template.body}
+              variables={template.variables}
+              caption="Así lo recibe tu cliente (los datos resaltados son de ejemplo)"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <StepHeading title="Envía una prueba" description="Comprueba en tu teléfono cómo llega el aviso." />
+        <WhatsAppTestStep
+          organizationId={organizationId}
+          disabled={!platform.available || !hasTemplate || exhausted}
+          disabledReason={testDisabledReason}
+        />
       </div>
     </div>
   )
@@ -392,7 +819,10 @@ export function WhatsAppFailuresSection({ organizationId }: { organizationId: st
 
   return (
     <div className="space-y-3">
-      <StepHeading title="Avisos que no salieron" description="Últimos 7 días, agrupados por causa." />
+      <StepHeading
+        title="Avisos que no salieron"
+        description="Últimos 7 días, agrupados por causa. Revísalo si un cliente dice que no recibió su aviso."
+      />
       {failures.isLoading && (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
           <LoaderCircle className="h-4 w-4 animate-spin" />

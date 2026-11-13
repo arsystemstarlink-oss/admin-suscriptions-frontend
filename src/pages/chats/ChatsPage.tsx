@@ -271,7 +271,7 @@ export function ChatsPage() {
       const apiError = err as { code?: string; message?: string; twilioCode?: number; moreInfo?: string }
       if (apiError.code === 'WHATSAPP_NOT_CONFIGURED') {
         toast.error(
-          'WhatsApp no está configurado para esta organización. Conéctalo en Configuración › WhatsApp.'
+          'WhatsApp no está configurado para esta organización. Revísalo en Ajustes › Organización › WhatsApp.'
         )
       } else if (apiError.code === 'ORGANIZATION_INACTIVE') {
         toast.error('La organización está inactiva y no puede enviar mensajes de WhatsApp.')

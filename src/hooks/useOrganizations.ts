@@ -80,6 +80,23 @@ export function useWhatsAppConnectionCheck(id: string) {
   })
 }
 
+export function useConnectWhatsAppInboundWebhook() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => organizationsApi.connectWhatsAppInboundWebhook(id),
+    onSuccess: (connection, id) => {
+      qc.setQueryData(qk.organizations.whatsappConnection(id), connection)
+      if (connection.inboundWebhookConnected) {
+        toast.success('Listo: las respuestas de tus clientes llegarán a Chats')
+      } else {
+        toast.error('Twilio aceptó el cambio, pero aún no lo vemos en tu número. Compruébalo de nuevo en un momento.')
+      }
+    },
+    onError: (err) => handleApiError(err),
+  })
+}
+
 const TEMPLATE_REVIEW_POLL_MS = 60_000
 
 export function useWhatsAppTemplates(id: string) {
@@ -135,6 +152,8 @@ export function useSendWhatsAppTestMessage() {
     mutationFn: ({ id, to }: { id: string; to: string }) => organizationsApi.sendWhatsAppTestMessage(id, to),
     onSuccess: (_result, variables) => {
       qc.invalidateQueries({ queryKey: qk.organizations.whatsappFailures(variables.id) })
+      // El servidor registra la fecha de la prueba en la configuración.
+      qc.invalidateQueries({ queryKey: qk.organizations.whatsappConfig(variables.id) })
       toast.success('Prueba enviada. Revisa tu WhatsApp.')
     },
     onError: (err) => handleApiError(err),

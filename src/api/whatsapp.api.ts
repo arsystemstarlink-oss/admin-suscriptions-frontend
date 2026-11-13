@@ -35,6 +35,18 @@ export const whatsappApi = {
     return response.data
   },
 
+  /** Entrega a una organización un chat de la bandeja sin asignar, con su historial. Solo super-admin. */
+  assignConversation: async (
+    phone: string,
+    organizationId: string,
+  ): Promise<{ success: boolean; organizationId: string; clientId?: string }> => {
+    const response = await api.post<{ success: boolean; organizationId: string; clientId?: string }>(
+      `/whatsapp/conversations/${encodeURIComponent(phone)}/assign`,
+      { organizationId },
+    )
+    return response.data
+  },
+
   sendMessage: async (
     data: SendMessageRequest,
     organizationId?: string,

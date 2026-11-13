@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useClients } from '@/hooks/useClients'
-import { PENDING_MESSAGE_PREFIX, useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead } from '@/hooks/useWhatsApp'
+import { PENDING_MESSAGE_PREFIX, useWhatsAppMessages, useSendMessage, useWhatsAppConversations, useDeleteChat, useDeleteChats, useMarkConversationRead, useAssignConversation } from '@/hooks/useWhatsApp'
+import { useOrganizations } from '@/hooks/useOrganizations'
+import { UNASSIGNED_WHATSAPP_ID } from '@/lib/whatsapp-setup'
+import { FilterPill } from '@/components/design-system/FilterPill'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,7 +62,23 @@ export function ChatsPage() {
   const { markChatAsRead } = useUIStore()
   const { readChatTimestamps } = useUIStore()
   const isSuperAdmin = useIsSuperAdmin()
-  const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
+  // Bandeja del super-admin con los chats que no pertenecen a ninguna organización.
+  const showUnassigned = isSuperAdmin && searchParams.get('inbox') === 'unassigned'
+  const organizationId = showUnassigned ? UNASSIGNED_WHATSAPP_ID : selectedOrganizationId
+  const [assignTarget, setAssignTarget] = useState('')
+  const assignMutation = useAssignConversation()
+  const { data: unassignedData } = useWhatsAppConversations(UNASSIGNED_WHATSAPP_ID, { enabled: isSuperAdmin })
+  const unassignedCount = unassignedData?.conversations.length ?? 0
+  const { data: organizationsData } = useOrganizations({ limit: 100 }, { enabled: showUnassigned })
+  // Solo quien envía con la plataforma puede atender un chat que llegó a su número.
+  const platformOrganizations = useMemo(
+    () =>
+      (organizationsData?.organizations || []).filter(
+        (organization) => organization.active && organization.whatsappMode === 'platform',
+      ),
+    [organizationsData],
+  )
   const { mutate: markReadOnServer } = useMarkConversationRead(organizationId ?? undefined)
 
   const {
@@ -69,7 +89,7 @@ export function ChatsPage() {
     isFetching: clientsFetching,
   } = useClients(
     { limit: 100, organizationId: organizationId ?? undefined },
-    { enabled: !isSuperAdmin || !!organizationId }
+    { enabled: !showUnassigned && (!isSuperAdmin || !!organizationId) }
   )
   const {
     data: conversationsData,
@@ -409,6 +429,36 @@ export function ChatsPage() {
     markChatAsRead(phone, Date.now())
   }
 
+  const switchInbox = (unassigned: boolean) => {
+    if (unassigned === showUnassigned) return
+    const next = new URLSearchParams(searchParams)
+    if (unassigned) next.set('inbox', 'unassigned')
+    else next.delete('inbox')
+    next.delete('phone')
+    setSearchParams(next, { replace: true })
+    setSelectedPhone(null)
+    setSelectedPhones(new Set())
+    setIsSelectionMode(false)
+    setHasAutoSelected(false)
+    setAssignTarget('')
+    setMessage('')
+  }
+
+  const handleAssign = () => {
+    if (!selectedPhone || !assignTarget) return
+    const organizationName = platformOrganizations.find((organization) => organization.id === assignTarget)?.name
+    assignMutation.mutate(
+      { phone: selectedPhone, organizationId: assignTarget },
+      {
+        onSuccess: () => {
+          toast.success(`Chat asignado a ${organizationName ?? 'la organización'}`)
+          setAssignTarget('')
+          closeConversation()
+        },
+      },
+    )
+  }
+
   const closeConversation = () => {
     setSelectedPhone(null)
     if (searchParams.get('phone')) {
@@ -425,7 +475,19 @@ export function ChatsPage() {
       <PageHeader
         title="Chats"
         description="Conversaciones de WhatsApp con clientes"
-        className={cn('block shrink-0', isMobile && selectedPhone && 'hidden')}
+        className={cn('shrink-0', isMobile && selectedPhone && 'hidden')}
+        actions={
+          isSuperAdmin && (
+            <>
+              <FilterPill active={!showUnassigned} onClick={() => switchInbox(false)}>
+                De la organización
+              </FilterPill>
+              <FilterPill active={showUnassigned} onClick={() => switchInbox(true)}>
+                Sin asignar{unassignedCount > 0 ? ` (${unassignedCount})` : ''}
+              </FilterPill>
+            </>
+          )
+        }
       />
 
       {showEmpty ? (
@@ -496,7 +558,12 @@ export function ChatsPage() {
               ) : conversationItems.length === 0 ? (
                 <EmptyState
                   icon={<Users className="h-12 w-12 text-muted-foreground" />}
-                  title="No hay conversaciones disponibles"
+                  title={showUnassigned ? 'No hay chats sin asignar' : 'No hay conversaciones disponibles'}
+                  description={
+                    showUnassigned
+                      ? 'Aquí llegan los mensajes al WhatsApp de la plataforma de números que no son clientes de ninguna organización.'
+                      : undefined
+                  }
                 />
               ) : (
                 <div className="space-y-1">
@@ -752,6 +819,40 @@ export function ChatsPage() {
                     )}
                   </div>
 
+                  {showUnassigned ? (
+                  <div className="shrink-0 border-t border-border bg-surface-muted px-3 py-3 text-surface-foreground md:px-4 md:py-4">
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      {platformOrganizations.length > 0
+                        ? 'Este número no es cliente de ninguna organización. Asígnalo a la que corresponda: recibirá el chat con todo su historial.'
+                        : 'Ninguna organización activa envía con el WhatsApp de la plataforma, así que no hay a quién asignarlo.'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Select value={assignTarget} onValueChange={setAssignTarget}>
+                        <SelectTrigger
+                          className="h-11 min-w-0 flex-1"
+                          aria-label="Organización que recibirá el chat"
+                          disabled={platformOrganizations.length === 0}
+                        >
+                          <SelectValue placeholder="Elige una organización" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {platformOrganizations.map((organization) => (
+                            <SelectItem key={organization.id} value={organization.id}>
+                              {organization.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleAssign}
+                        disabled={!assignTarget || assignMutation.isPending}
+                        className="h-11 shrink-0"
+                      >
+                        {assignMutation.isPending ? 'Asignando...' : 'Asignar'}
+                      </Button>
+                    </div>
+                  </div>
+                  ) : (
                   <div className="shrink-0 border-t border-border bg-surface-muted px-3 py-3 text-surface-foreground md:px-4 md:py-4">
                     <p className="mb-2 text-xs text-muted-foreground">
                       {canSendFreeMessage
@@ -782,6 +883,7 @@ export function ChatsPage() {
                       </Button>
                     </div>
                   </div>
+                  )}
                 </>
               )}
             </Card>

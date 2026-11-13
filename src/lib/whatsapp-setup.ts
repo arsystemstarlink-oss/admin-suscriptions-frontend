@@ -3,6 +3,9 @@ import type { OrganizationWhatsAppRules, WhatsAppTemplateKey, WhatsAppTemplateSt
 /** Identificador con el que el super-admin administra la cuenta de WhatsApp de la plataforma. */
 export const PLATFORM_WHATSAPP_ID = '__platform__'
 
+/** Bandeja del super-admin: chats al número de la plataforma que no pertenecen a ninguna organización. */
+export const UNASSIGNED_WHATSAPP_ID = '__unassigned__'
+
 export const MAX_TEMPLATE_BODY_LENGTH = 1024
 export const MAX_REMINDER_DAY = 30
 

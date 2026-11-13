@@ -81,6 +81,21 @@ export function useMarkConversationRead(organizationId?: string) {
   })
 }
 
+export function useAssignConversation() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ phone, organizationId }: { phone: string; organizationId: string }) =>
+      whatsappApi.assignConversation(phone, organizationId),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.whatsapp.messages(variables.phone) })
+      qc.invalidateQueries({ queryKey: qk.whatsapp.conversations })
+      qc.invalidateQueries({ queryKey: qk.badges })
+    },
+    onError: (err) => handleApiError(err),
+  })
+}
+
 export function useDeleteChat() {
   const qc = useQueryClient()
 

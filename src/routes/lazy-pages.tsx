@@ -21,6 +21,7 @@ export const AdminsPage = lazy(() => import('@/pages/admin/AdminsPage').then(m =
 export const WhatsAppSettingsPage = lazy(() => import('@/pages/admin/WhatsAppSettingsPage').then(m => ({ default: m.WhatsAppSettingsPage })))
 export const PlatformWhatsAppPage = lazy(() => import('@/pages/admin/PlatformWhatsAppPage').then(m => ({ default: m.PlatformWhatsAppPage })))
 export const OrganizationsPage = lazy(() => import('@/pages/admin/OrganizationsPage').then(m => ({ default: m.OrganizationsPage })))
+export const OrganizationDetailPage = lazy(() => import('@/pages/admin/OrganizationDetailPage').then(m => ({ default: m.OrganizationDetailPage })))
 export const SetupPage = lazy(() => import('@/pages/admin/SetupPage').then(m => ({ default: m.SetupPage })))
 export const ChatsPage = lazy(() => import('@/pages/chats/ChatsPage').then(m => ({ default: m.ChatsPage })))
 export const ConsultaPage = lazy(() => import('@/pages/public/ConsultaPage').then(m => ({ default: m.ConsultaPage })))

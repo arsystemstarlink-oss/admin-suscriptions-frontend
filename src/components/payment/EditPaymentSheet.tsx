@@ -15,14 +15,8 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { formatCurrency, formatDate, PAYMENT_METHOD_OPTIONS, BILLING_PERIOD_STATUS_COLORS } from '@/lib/constants'
+import { PaymentMethodPicker } from '@/components/payment/PaymentMethodPicker'
+import { formatCurrency, formatDate, BILLING_PERIOD_STATUS_COLORS } from '@/lib/constants'
 import { getClientFullName } from '@/lib/utils'
 import { PaymentMethod, type BillingPeriodWithDetails } from '@/types/api'
 import { Edit, CheckCircle } from 'lucide-react'
@@ -49,6 +43,7 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
   const {
     handleSubmit,
     setValue,
+    watch,
     register,
     reset,
     formState: { errors, isSubmitting },
@@ -60,7 +55,8 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
     if (period && open) {
       reset({
         paymentMethod: period.paymentMethod || '',
-        paidAt: period.paidAt || '',
+        // El input type="date" solo acepta YYYY-MM-DD; con hora quedaría vacío.
+        paidAt: period.paidAt ? period.paidAt.split('T')[0] : '',
         amount: period.amount,
         notes: period.notes || '',
       })
@@ -161,20 +157,13 @@ export function EditPaymentSheet({ period, open, onOpenChange }: EditPaymentShee
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Método de pago *</Label>
-                  <Select onValueChange={(value) => setValue('paymentMethod', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona método" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHOD_OPTIONS
-                        .map(([key, label]) => (
-                          <SelectItem key={key} value={key}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Label id="edit-payment-method-label">Método de pago *</Label>
+                  <PaymentMethodPicker
+                    labelledBy="edit-payment-method-label"
+                    value={watch('paymentMethod') ?? ''}
+                    onChange={(value) => setValue('paymentMethod', value, { shouldValidate: true, shouldDirty: true })}
+                    invalid={!!errors.paymentMethod}
+                  />
                   {errors.paymentMethod && (
                     <p className="text-sm text-destructive">{errors.paymentMethod.message}</p>
                   )}

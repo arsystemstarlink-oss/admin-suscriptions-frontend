@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useSearchParams, Navigate } from 'react-router-dom'
+import { useSearchParams, Navigate, Link } from 'react-router-dom'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizations, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check, ReceiptText } from 'lucide-react'
+import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check, ReceiptText, ArrowRight } from 'lucide-react'
 import { ListPageLayout, ListCard, ConfirmDialog } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
@@ -313,6 +313,11 @@ export function OrganizationsPage() {
                   )}
                 </Button>
                 )}
+                <Button asChild size="sm" className="shrink-0">
+                  <Link to={`/config/organization/${organization.id}`}>
+                    Administrar <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Link>
+                </Button>
                 <Button
                   variant="outline"
                   size="icon"

@@ -87,6 +87,13 @@ export function useInfiniteSubscriptions(
         ? { offset: 0, cursor: lastPage.pagination.nextCursor }
         : undefined
     },
+    // Al buscar o filtrar se conserva la lista anterior hasta tener la nueva: la página no
+    // vuelve al esqueleto ni desmonta el buscador. Nunca entre organizaciones.
+    placeholderData: (previous, previousQuery) =>
+      (previousQuery?.queryKey[qk.subscriptions.lists.length] as UseSubscriptionsParams | undefined)
+        ?.organizationId === params.organizationId
+        ? previous
+        : undefined,
     ...options,
   })
 }

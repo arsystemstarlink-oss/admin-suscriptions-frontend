@@ -9,6 +9,7 @@ interface PageToolbarProps {
     value: string
     onChange: (value: string) => void
     placeholder: string
+    loading?: boolean
   }
   filters?: ReactNode
   primaryAction?: ReactNode
@@ -47,6 +48,7 @@ export function PageToolbar({ title, description, searchProps, filters, primaryA
               value={searchProps.value}
               onChange={searchProps.onChange}
               placeholder={searchProps.placeholder}
+              loading={searchProps.loading}
             />
           </div>
           {primaryAction && <div className="flex shrink-0 items-center">{primaryAction}</div>}

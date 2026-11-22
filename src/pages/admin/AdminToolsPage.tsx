@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useSchedulerConfig, useUpdateSchedulerConfig, useRunScheduler, useSchedulerLogs } from '@/hooks/useScheduler'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizationStore } from '@/stores/organization.store'
@@ -34,8 +35,8 @@ import { Skeleton, ListSkeleton } from '@/components/design-system/Skeleton'
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   reminder: 'Recordatorio',
-  'suspension-warning': 'Advertencia de suspensión',
-  'suspended-notice': 'Aviso de suspensión',
+  dueDateWarning: 'Aviso de vencimiento',
+  suspensionNotice: 'Aviso de suspensión',
 }
 
 const VISIBLE_LOGS_COUNT = 3
@@ -550,6 +551,12 @@ export function AdminToolsPage() {
                   </span>
                 </div>
                 <p className="text-xs text-destructive">{err.phone}</p>
+                <Link
+                  to={`/subscriptions/${err.subscriptionId}`}
+                  className="inline-flex text-xs font-medium text-destructive underline underline-offset-2"
+                >
+                  Ver suscripción {err.kitNumber}
+                </Link>
                 {err.errorCode && (
                   <p className="text-xs font-medium text-destructive">
                     Código Twilio: {err.errorCode}

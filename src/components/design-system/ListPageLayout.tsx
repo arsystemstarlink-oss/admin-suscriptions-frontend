@@ -14,6 +14,7 @@ interface ListPageLayoutProps {
     value: string
     onChange: (value: string) => void
     placeholder: string
+    loading?: boolean
   }
   filters?: ReactNode
   primaryAction?: ReactNode
@@ -23,6 +24,8 @@ interface ListPageLayoutProps {
   onRetry?: () => void
   isRetrying?: boolean
   isEmpty?: boolean
+  /** Resultados anteriores visibles mientras llegan los de la nueva búsqueda o filtro. */
+  isUpdating?: boolean
   emptyIcon?: ReactNode
   emptyTitle?: string
   emptyDescription?: string
@@ -44,6 +47,7 @@ export function ListPageLayout({
   onRetry,
   isRetrying,
   isEmpty,
+  isUpdating,
   emptyIcon,
   emptyTitle,
   emptyDescription,
@@ -81,7 +85,10 @@ export function ListPageLayout({
           />
         )
       ) : (
-        <div className="space-y-3">
+        <div
+          aria-busy={isUpdating || undefined}
+          className={cn('space-y-3 transition-opacity', isUpdating && 'opacity-60')}
+        >
           {children}
         </div>
       )}

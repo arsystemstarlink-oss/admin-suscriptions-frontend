@@ -48,6 +48,7 @@ export function SubscriptionsListPage() {
     isLoading,
     isError,
     isFetching,
+    isPlaceholderData,
     refetch,
     isFetchingNextPage,
     isFetchNextPageError,
@@ -160,6 +161,9 @@ export function SubscriptionsListPage() {
   }
 
   const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter || pendingFilter)
+  // Resultados del filtro o búsqueda anterior visibles mientras llegan los nuevos.
+  const isUpdating = isPlaceholderData && isFetching
+  const isSearching = search.trim() !== debouncedSearch || isUpdating
 
   const getCardTone = (sub: SubscriptionWithDetails) => {
     if (sub.hasDebt) {
@@ -211,7 +215,8 @@ export function SubscriptionsListPage() {
         searchProps={{
           value: search,
           onChange: handleSearch,
-          placeholder: "Buscar cliente, código o teléfono"
+          placeholder: "Buscar cliente, código o teléfono",
+          loading: !showEmpty && isSearching,
         }}
         primaryAction={!isReadOnly ? (
           <Button asChild className="h-10 w-10 rounded-full! p-0 sm:h-10 sm:w-auto sm:rounded-md sm:px-4 sm:py-2" aria-label="Nueva suscripción" title="Nueva suscripción">
@@ -334,7 +339,10 @@ export function SubscriptionsListPage() {
               }
             />
           ) : (
-            <div className="space-y-2 sm:space-y-3">
+            <div
+              aria-busy={isUpdating || undefined}
+              className={`space-y-2 sm:space-y-3 transition-opacity ${isUpdating ? 'opacity-60' : ''}`}
+            >
               {visibleSubscriptions.map((sub) => (
                 <div
                   key={sub.id}
@@ -473,7 +481,7 @@ export function SubscriptionsListPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={pageIndex === 0 || isFetchingNextPage}
+                  disabled={pageIndex === 0 || isFetchingNextPage || isUpdating}
                   onClick={() => goToPage(pageIndex - 1)}
                 >
                   Anterior
@@ -482,7 +490,7 @@ export function SubscriptionsListPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={!canGoNext || isFetchingNextPage}
+                  disabled={!canGoNext || isFetchingNextPage || isUpdating}
                   onClick={() => void handleNextPage()}
                 >
                   {isFetchingNextPage && <LoaderCircle className="animate-spin" />}

@@ -582,6 +582,18 @@ export interface Subscription {
   createdAt: string
   createdByUserId?: string
   createdByRole?: UserRole
+  lastNotification?: SubscriptionNotificationState
+}
+
+export type NotificationType = 'reminder' | 'dueDateWarning' | 'suspensionNotice'
+export type NotificationDeliveryStatus = 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
+
+export interface SubscriptionNotificationState {
+  type: NotificationType
+  status: NotificationDeliveryStatus
+  attemptedAt: string
+  updatedAt?: string
+  errorMessage?: string
 }
 
 export interface SchedulerConfig {
@@ -1054,10 +1066,10 @@ export interface EvaluateOverdueResponse {
   evaluatedAt: string
 }
 
-export type NotificationType = 'reminder' | 'suspension-warning' | 'suspended-notice'
-
 export interface NotificationFailure {
   type: NotificationType
+  subscriptionId: string
+  kitNumber: string
   clientName: string
   phone: string
   errorCode?: number

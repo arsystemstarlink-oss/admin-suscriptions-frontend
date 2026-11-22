@@ -6,8 +6,8 @@ import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useUIStore } from '@/stores/ui.store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, SearchX, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock, UserRound } from 'lucide-react'
-import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
+import { AlertTriangle, SearchX, Edit, Play, Pause, Trash2, DollarSign, Phone, Box, ListChecks, Hash, Clock, UserRound, Bell, Info } from 'lucide-react'
+import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, BILLING_PERIOD_STATUS_LABELS, BILLING_PERIOD_STATUS_COLORS, PAYMENT_METHOD_LABELS, isExpiringSoon, getExpiringLabel, STATUS_ERROR, STATUS_INFO, STATUS_SUCCESS } from '@/lib/constants'
 import { getClientFullName, getInitial, hasOlderUnpaidPeriod, canPayAdvance, isAdvancePeriod } from '@/lib/utils'
 import { SubscriptionStatus } from '@/types/api'
 import type { BillingPeriod, BillingPeriodWithDetails, SubscriptionWithDetails } from '@/types/api'
@@ -22,6 +22,29 @@ import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
 import { getErrorMessage, isNotFoundError } from '@/lib/error-handler'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { getNavigationPreview, getNavigationStatePath } from '@/lib/navigation'
+
+const NOTIFICATION_TYPE_LABELS: Record<NonNullable<SubscriptionWithDetails['lastNotification']>['type'], string> = {
+  reminder: 'Recordatorio de pago',
+  dueDateWarning: 'Aviso de vencimiento',
+  suspensionNotice: 'Aviso de suspensión',
+}
+
+const NOTIFICATION_STATUS: Record<
+  NonNullable<SubscriptionWithDetails['lastNotification']>['status'],
+  { label: string; className: string }
+> = {
+  SENT: { label: 'Enviado a WhatsApp', className: STATUS_INFO },
+  DELIVERED: { label: 'Entregado', className: STATUS_SUCCESS },
+  READ: { label: 'Leído', className: STATUS_SUCCESS },
+  FAILED: { label: 'No enviado', className: STATUS_ERROR },
+}
+
+function formatNotificationTime(dateString: string): string {
+  return new Intl.DateTimeFormat('es-VE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(dateString))
+}
 
 export function SubscriptionDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -248,6 +271,58 @@ export function SubscriptionDetailPage() {
         )}
 
       </div>
+
+      <section
+        aria-labelledby="subscription-notification-heading"
+        className="bg-surface text-surface-foreground border border-border rounded-2xl p-3 shadow-sm sm:rounded-3xl sm:p-5"
+      >
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-xl bg-info/10 text-info flex items-center justify-center shrink-0">
+            <Bell className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 id="subscription-notification-heading" className="font-semibold text-foreground">
+              Última notificación automática
+            </h2>
+            {subscription.lastNotification ? (
+              <>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Badge className={NOTIFICATION_STATUS[subscription.lastNotification.status].className}>
+                    {NOTIFICATION_STATUS[subscription.lastNotification.status].label}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {NOTIFICATION_TYPE_LABELS[subscription.lastNotification.type]}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Intento: {formatNotificationTime(subscription.lastNotification.attemptedAt)}
+                </p>
+                {subscription.lastNotification.updatedAt && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Estado actualizado: {formatNotificationTime(subscription.lastNotification.updatedAt)}
+                  </p>
+                )}
+                {subscription.lastNotification.status === 'SENT' && (
+                  <p className="mt-2 text-sm text-info flex items-start gap-1.5">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                    WhatsApp aceptó el envío; la entrega todavía no está confirmada.
+                  </p>
+                )}
+                {subscription.lastNotification.status === 'FAILED' && (
+                  <p className="mt-2 text-sm text-destructive flex items-start gap-1.5">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    {subscription.lastNotification.errorMessage || 'WhatsApp no aceptó el envío.'}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Aún no hay un registro individual. Los avisos anteriores a esta mejora no se pueden reconstruir aquí.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Alerta de Vencimiento Próximo */}
       {subscription.currentPeriod && subscription.currentPeriod.status === 'PENDING' && isExpiringSoon(subscription.currentPeriod.endDate) && (

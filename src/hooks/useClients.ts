@@ -50,6 +50,13 @@ export function useInfiniteClients(params: UseClientsParams, options?: { enabled
         ? { offset: 0, cursor: lastPage.pagination.nextCursor }
         : undefined
     },
+    // Al buscar o filtrar se conserva la lista anterior hasta tener la nueva: evita el
+    // parpadeo a esqueleto. Nunca entre organizaciones, para no mostrar datos de otra.
+    placeholderData: (previous, previousQuery) =>
+      (previousQuery?.queryKey[qk.clients.lists.length] as UseClientsParams | undefined)?.organizationId ===
+      params.organizationId
+        ? previous
+        : undefined,
     ...options,
   })
 }

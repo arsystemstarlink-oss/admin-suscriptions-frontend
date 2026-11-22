@@ -15,17 +15,10 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { PaymentMethodPicker } from '@/components/payment/PaymentMethodPicker'
 import {
   formatCurrency,
   formatDate,
-  PAYMENT_METHOD_OPTIONS,
 } from '@/lib/constants'
 import { getClientFullName, getLocalDateInputValue } from '@/lib/utils'
 import { useDolarRates } from '@/hooks/useExchange'
@@ -34,7 +27,7 @@ import { getRateForSource } from '@/lib/exchange'
 import { BsReference } from '@/components/exchange/BsReference'
 import { PaymentMethod, type SubscriptionWithDetails } from '@/types/api'
 import { getLastPaymentMethod, saveLastPaymentMethod } from '@/lib/payment-method-preference'
-import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, CalendarClock } from 'lucide-react'
+import { CheckCircle, DollarSign, Calendar, AlignLeft, CalendarClock } from 'lucide-react'
 
 const advanceSchema = z.object({
   paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
@@ -169,23 +162,13 @@ export function PayAdvanceSheet({ subscription, open, onOpenChange }: PayAdvance
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="pay-advance-method" className="text-foreground">Método de pago *</Label>
-                    <Select value={watch('paymentMethod')} onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
-                      <SelectTrigger id="pay-advance-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Selecciona método" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_METHOD_OPTIONS
-                          .map(([key, label]) => (
-                            <SelectItem key={key} value={key} className="py-3">
-                              {label}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Label id="pay-advance-method-label" className="text-foreground">Método de pago *</Label>
+                    <PaymentMethodPicker
+                      labelledBy="pay-advance-method-label"
+                      value={watch('paymentMethod')}
+                      onChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}
+                      invalid={!!errors.paymentMethod}
+                    />
                     {errors.paymentMethod && (
                       <p className="text-sm text-destructive font-medium">{errors.paymentMethod.message}</p>
                     )}

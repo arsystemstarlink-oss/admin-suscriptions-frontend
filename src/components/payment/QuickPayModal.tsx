@@ -19,19 +19,12 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { PaymentMethodPicker } from '@/components/payment/PaymentMethodPicker'
 import {
   formatCurrency,
   formatDate,
   SUBSCRIPTION_STATUS_COLORS,
   SUBSCRIPTION_STATUS_LABELS,
-  PAYMENT_METHOD_OPTIONS,
   BILLING_PERIOD_STATUS_COLORS,
   BILLING_PERIOD_STATUS_LABELS,
 } from '@/lib/constants'
@@ -41,7 +34,7 @@ import { useExchangeStore } from '@/stores/exchange.store'
 import { getRateForSource } from '@/lib/exchange'
 import { BsReference } from '@/components/exchange/BsReference'
 import { BillingPeriodStatus, PaymentMethod, type BillingPeriodWithDetails } from '@/types/api'
-import { CheckCircle, DollarSign, Calendar, CreditCard, AlignLeft, AlertTriangle, LoaderCircle, MessageSquare } from 'lucide-react'
+import { CheckCircle, DollarSign, Calendar, AlignLeft, AlertTriangle, LoaderCircle, MessageSquare } from 'lucide-react'
 
 const createPaymentSchema = (minDate: string) =>
   z.object({
@@ -258,23 +251,13 @@ export function QuickPayModal() {
 
                   {/* Método */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="quick-pay-method" className="text-foreground">Método de pago *</Label>
-                    <Select value={watch('paymentMethod')} onValueChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}>
-                      <SelectTrigger id="quick-pay-method" className="h-12" aria-invalid={!!errors.paymentMethod}>
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Selecciona método" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_METHOD_OPTIONS
-                          .map(([key, label]) => (
-                            <SelectItem key={key} value={key} className="py-3">
-                              {label}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <Label id="quick-pay-method-label" className="text-foreground">Método de pago *</Label>
+                    <PaymentMethodPicker
+                      labelledBy="quick-pay-method-label"
+                      value={watch('paymentMethod')}
+                      onChange={(value) => setValue('paymentMethod', value, { shouldValidate: true })}
+                      invalid={!!errors.paymentMethod}
+                    />
                     {errors.paymentMethod && (
                       <p className="text-sm text-destructive font-medium">{errors.paymentMethod.message}</p>
                     )}

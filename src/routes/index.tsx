@@ -34,6 +34,7 @@ import {
   AdminsPage,
   WhatsAppSettingsPage,
   PlatformWhatsAppPage,
+  OrganizationDetailPage,
   SetupPage,
   ChatsPage,
   ConsultaPage,
@@ -260,6 +261,17 @@ export const router = createBrowserRouter(
                   <Suspense fallback={<PageLoader />}>
                     <OrganizationSettingsIndex />
                   </Suspense>
+                ),
+              },
+              {
+                path: ':organizationId',
+                handle: { title: 'Detalle de organización' },
+                element: (
+                  <RoleGuard allowedRoles={['super-admin']}>
+                    <Suspense fallback={<PageLoader />}>
+                      <OrganizationDetailPage />
+                    </Suspense>
+                  </RoleGuard>
                 ),
               },
               {

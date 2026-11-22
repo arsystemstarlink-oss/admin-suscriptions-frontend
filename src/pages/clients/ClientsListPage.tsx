@@ -43,6 +43,7 @@ export function ClientsListPage() {
     isLoading,
     isError,
     isFetching,
+    isPlaceholderData,
     refetch,
     isFetchingNextPage,
     hasNextPage,
@@ -98,6 +99,8 @@ export function ClientsListPage() {
   const prefetchClient = usePrefetchClientDetail(organizationId || undefined)
   const showEmpty = isSuperAdmin && !organizationId
   const hasActiveFilters = Boolean(search || subscriptionStatus || hasOverdue !== undefined)
+  const isUpdating = isPlaceholderData && isFetching
+  const isSearching = search.trim() !== debouncedSearch || isUpdating
 
   return (
     <ListPageLayout
@@ -105,7 +108,9 @@ export function ClientsListPage() {
         value: search,
         onChange: handleSearch,
         placeholder: "Buscar cliente...",
+        loading: !showEmpty && isSearching,
       }}
+      isUpdating={isUpdating}
       filters={!showEmpty ? (
         <>
           <FilterPill

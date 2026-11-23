@@ -5,7 +5,7 @@ import { useOpenOldestUnpaidPeriod } from '@/hooks/useOpenOldestUnpaidPeriod'
 import { useOrganizationDetail } from '@/hooks/useOrganizations'
 import { useUIStore } from '@/stores/ui.store'
 import { useOrganizationStore } from '@/stores/organization.store'
-import { useIsSuperAdmin } from '@/stores/auth.store'
+import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { billingApi } from '@/api/billing.api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -93,6 +93,7 @@ export function ClientDetailPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const isSuperAdmin = useIsSuperAdmin()
+  const userOrganizationSlug = useAuthStore((state) => state.user?.organization?.slug)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { data, isLoading, error, refetch, isFetching } = useClientDetail(id!, organizationId || undefined, {
     enabled: !isSuperAdmin || !!organizationId,
@@ -101,7 +102,7 @@ export function ClientDetailPage() {
     data: organizationData,
     isLoading: isLoadingOrganization,
     isError: organizationError,
-  } = useOrganizationDetail(data?.client.organizationId ?? '')
+  } = useOrganizationDetail(isSuperAdmin ? data?.client.organizationId ?? '' : '')
   const { openQuickPay } = useUIStore()
   const { openOldestUnpaidPeriod, loadingSubscriptionId } = useOpenOldestUnpaidPeriod(organizationId || undefined)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -153,7 +154,7 @@ export function ClientDetailPage() {
   const { client, subscriptions, summary } = data
   const initial = getInitial(client.firstName)
   const returnTo = getNavigationStatePath(location.state, 'from') ?? '/subscriptions/clients'
-  const organizationSlug = organizationData?.organization.slug
+  const organizationSlug = isSuperAdmin ? organizationData?.organization.slug : userOrganizationSlug
   const consultationUrl = organizationSlug
     ? `${window.location.origin}${import.meta.env.BASE_URL}consulta/${encodeURIComponent(organizationSlug)}`
     : null

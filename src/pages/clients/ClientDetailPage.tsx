@@ -26,44 +26,61 @@ import { OrganizationSelectionEmptyState } from '@/components/organizations/Orga
 import type { BillingPeriodWithDetails, SubscriptionWithDetails } from '@/types/api'
 import { getNavigationPreview, getNavigationStatePath } from '@/lib/navigation'
 
+function abbreviatePeriodLabel(periodLabel: string) {
+  return periodLabel
+    .split(/\s*-\s*/)
+    .map((month) => month.trim().slice(0, 3))
+    .join(' - ')
+}
+
 function buildSubscriptionStatusMessage(
   clientName: string,
   subscriptions: SubscriptionWithDetails[],
   periods: BillingPeriodWithDetails[],
 ) {
-  const subscriptionSummaries = subscriptions.map((subscription, index) => {
+  const sortedSubscriptions = [...subscriptions].sort((a, b) => a.billingDay - b.billingDay)
+  const subscriptionSummaries = sortedSubscriptions.map((subscription, index) => {
     const subscriptionPeriods = periods.filter((period) => period.subscriptionId === subscription.id)
     const paidPeriods = subscriptionPeriods.filter((period) => period.status === 'PAID')
     const paidPeriodsWithDate = paidPeriods.filter((period) => period.paidAt)
     const lastPayment = paidPeriodsWithDate
       .sort((a, b) => Date.parse(b.paidAt ?? '') - Date.parse(a.paidAt ?? ''))[0]
       ?? paidPeriods.sort((a, b) => Date.parse(b.endDate) - Date.parse(a.endDate))[0]
-    const overdueAmount = subscriptionPeriods
-      .filter((period) => period.status === 'OVERDUE')
-      .reduce((total, period) => total + period.amount, 0)
-    const pendingAmount = subscriptionPeriods
-      .filter((period) => period.status === 'PENDING')
-      .reduce((total, period) => total + period.amount, 0)
+    const unpaidPeriods = subscriptionPeriods
+      .filter((period) => period.status === 'OVERDUE' || period.status === 'PENDING')
+      .sort((a, b) => Date.parse(b.endDate) - Date.parse(a.endDate))
+    const mostRecentUnpaidPeriod = unpaidPeriods[0]
+    const accountNumber = subscription.accountNumber || subscription.kitNumber
     const lines = [
-      `*Suscripción ${index + 1}*`,
-      `Número de cuenta: ${subscription.accountNumber || subscription.kitNumber}`,
-      `Plan: ${subscription.plan.name} (${formatCurrency(subscription.plan.price)}/mes)`,
-      `Estado: ${SUBSCRIPTION_STATUS_LABELS[subscription.status]}`,
-      lastPayment
-        ? `Último pago: ${formatCurrency(lastPayment.amount)}${lastPayment.periodLabel ? ` · ${lastPayment.periodLabel}` : ''}${lastPayment.paidAt ? ` · ${formatDate(lastPayment.paidAt)}` : ' · fecha no registrada'}`
-        : 'Último pago: Sin pagos registrados',
+      `*Número: ${String(index + 1).padStart(2, '0')}*`,
+      `*Cuenta:* (${accountNumber})`,
+      `*Plan:* ${subscription.plan.name}`,
+      `*Suscripción:* ${SUBSCRIPTION_STATUS_LABELS[subscription.status]}`,
+      `*Corte:* ${subscription.billingDay} DCM`,
     ]
 
-    if (overdueAmount > 0) lines.push(`Saldo vencido: ${formatCurrency(overdueAmount)}`)
-    if (pendingAmount > 0) lines.push(`Saldo pendiente: ${formatCurrency(pendingAmount)}`)
-    if (overdueAmount === 0 && pendingAmount === 0) lines.push('Saldo pendiente: Sin saldo pendiente')
+    if (lastPayment) {
+      const periodLabel = lastPayment.periodLabel
+        ? ` · ${abbreviatePeriodLabel(lastPayment.periodLabel)}`
+        : ''
+      lines.push(`*Últ. pago:* ${formatCurrency(lastPayment.amount)}${periodLabel}`)
+    } else {
+      lines.push('*Últ. pago:* Sin registros')
+    }
+
+    if (mostRecentUnpaidPeriod) {
+      const status = mostRecentUnpaidPeriod.status === 'OVERDUE' ? 'Venc.' : 'Pend.'
+      lines.push(`*${status}* ${abbreviatePeriodLabel(mostRecentUnpaidPeriod.periodLabel)} · *${formatCurrency(mostRecentUnpaidPeriod.amount)}*`)
+    } else {
+      lines.push('*Pend.:* Sin saldo pendiente')
+    }
 
     return lines.join('\n')
   })
 
   return [
-    `*Estado de suscripciones*`,
-    `Cliente: ${clientName}`,
+    '*Estado de Cuenta*',
+    `Nombre: *${clientName}*`,
     '',
     subscriptionSummaries.length > 0
       ? subscriptionSummaries.join('\n\n')

@@ -123,9 +123,12 @@ export function useCreateSubscription() {
 
   return useMutation({
     mutationFn: (data: CreateSubscriptionRequest) => subscriptionsApi.create(data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       qc.invalidateQueries({ queryKey: qk.clients.lists })
+      qc.invalidateQueries({ queryKey: qk.clients.detail(response.subscription.clientId) })
+      qc.invalidateQueries({ queryKey: qk.dashboard.summary })
+      qc.invalidateQueries({ queryKey: qk.dashboard.alerts })
     },
   })
 }
@@ -163,6 +166,7 @@ export function useDeleteSubscription() {
     }: {
       id: string
       organizationId?: string
+      clientId: string
     }) => subscriptionsApi.remove(id, organizationId ?? selectedOrganizationId ?? undefined),
     onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: qk.subscriptions.lists })
@@ -186,16 +190,15 @@ export function useDeleteSubscription() {
       })
       return { previous }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
-      qc.invalidateQueries({ queryKey: qk.clients.lists })
-    },
     onError: (_error, _id, context) => {
       context?.previous.forEach(([queryKey, data]) => qc.setQueryData(queryKey, data))
     },
-    onSettled: () => {
+    onSettled: (_data, _error, variables) => {
       qc.invalidateQueries({ queryKey: qk.subscriptions.lists })
       qc.invalidateQueries({ queryKey: qk.clients.lists })
+      qc.invalidateQueries({ queryKey: qk.clients.detail(variables.clientId) })
+      qc.invalidateQueries({ queryKey: qk.dashboard.summary })
+      qc.invalidateQueries({ queryKey: qk.dashboard.alerts })
     },
   })
 }

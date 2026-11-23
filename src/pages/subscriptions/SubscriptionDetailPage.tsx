@@ -138,6 +138,7 @@ export function SubscriptionDetailPage() {
       await deleteMutation.mutateAsync({
         id,
         organizationId: subscription.organizationId ?? organizationId ?? undefined,
+        clientId: subscription.clientId,
       })
       toast.success('Suscripción eliminada correctamente')
       navigate('/subscriptions')

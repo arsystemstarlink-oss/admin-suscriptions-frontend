@@ -135,11 +135,18 @@ export function SubscriptionDetailPage() {
     if (!id) return
 
     try {
-      await deleteMutation.mutateAsync(id)
+      await deleteMutation.mutateAsync({
+        id,
+        organizationId: subscription.organizationId ?? organizationId ?? undefined,
+      })
       toast.success('Suscripción eliminada correctamente')
       navigate('/subscriptions')
     } catch (err) {
-      toast.error(getErrorMessage(err, 'No se pudo eliminar la suscripción'))
+      const apiMessage =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : null
+      toast.error(apiMessage || getErrorMessage(err, 'No se pudo eliminar la suscripción'))
     }
   }
 

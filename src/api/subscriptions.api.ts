@@ -57,8 +57,10 @@ export const subscriptionsApi = {
     return response.data
   },
 
-  remove: async (id: string): Promise<void> => {
-    await api.delete(`/subscriptions/${id}`)
+  remove: async (id: string, organizationId?: string): Promise<void> => {
+    await api.delete(`/subscriptions/${id}`, {
+      params: organizationId ? { organizationId } : undefined,
+    })
   },
 
   payAdvance: async (

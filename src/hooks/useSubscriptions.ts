@@ -154,10 +154,17 @@ export function useUpdateSubscription() {
 
 export function useDeleteSubscription() {
   const qc = useQueryClient()
+  const selectedOrganizationId = useOrganizationStore((state) => state.selectedOrganizationId)
 
   return useMutation({
-    mutationFn: (id: string) => subscriptionsApi.remove(id),
-    onMutate: async (id) => {
+    mutationFn: ({
+      id,
+      organizationId,
+    }: {
+      id: string
+      organizationId?: string
+    }) => subscriptionsApi.remove(id, organizationId ?? selectedOrganizationId ?? undefined),
+    onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: qk.subscriptions.lists })
       const previous = qc.getQueriesData<SubscriptionCacheData>({ queryKey: qk.subscriptions.lists })
       previous.forEach(([queryKey, data]) => {

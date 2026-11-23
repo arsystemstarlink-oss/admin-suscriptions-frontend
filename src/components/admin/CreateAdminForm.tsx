@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import type { ApiError, CreateAdminRequest, UserRole } from '@/types/api'
+import { isValidInternationalPhone } from '@/lib/phone'
 
 export const NEW_ORG_VALUE = '__new__'
 
@@ -30,7 +31,7 @@ const adminFields = {
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)')
+    .refine((value) => !value || isValidInternationalPhone(value), 'Ingresa un teléfono válido de Venezuela (+58) o Colombia (+57)')
     .optional()
     .or(z.literal('')),
   password: z

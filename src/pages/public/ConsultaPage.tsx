@@ -34,6 +34,7 @@ import { ExchangeRateBar } from '@/components/exchange/ExchangeRateBar'
 import { InstallConsultaButton } from '@/components/public/InstallConsultaButton'
 import { TurnstileWidget } from '@/components/public/TurnstileWidget'
 import { isCaptchaEnabled, TURNSTILE_SITE_KEY } from '@/lib/turnstile'
+import { isValidInternationalPhone } from '@/lib/phone'
 import { BsReference } from '@/components/exchange/BsReference'
 import { useDolarRates } from '@/hooks/useExchange'
 import { useExchangeStore } from '@/stores/exchange.store'
@@ -75,9 +76,7 @@ const lookupSchema = z.object({
   phone: z
     .string()
     .min(1, 'El teléfono es requerido')
-    .refine((v) => v.replace(/\D/g, '').length >= 10, {
-      message: 'Ingresa un teléfono válido de 10 u 11 dígitos.',
-    }),
+    .refine(isValidInternationalPhone, 'Ingresa un teléfono válido de Venezuela (+58) o Colombia (+57)'),
 })
 
 type LookupForm = z.infer<typeof lookupSchema>

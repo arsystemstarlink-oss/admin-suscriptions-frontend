@@ -31,6 +31,7 @@ import { handleApiError } from '@/lib/error-handler'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import type { CreateClientRequest } from '@/types/api'
 import { getNavigationStatePath } from '@/lib/navigation'
+import { isValidInternationalPhone } from '@/lib/phone'
 
 const clientSchema = z.object({
   firstName: z.string().min(1, 'El nombre es requerido'),
@@ -38,7 +39,7 @@ const clientSchema = z.object({
   phone: z
     .string()
     .min(1, 'El teléfono es requerido')
-    .regex(/^\+58\d{10,11}$/, 'Ingresa un teléfono venezolano válido (10-11 dígitos)'),
+    .refine(isValidInternationalPhone, 'Ingresa un teléfono válido de Venezuela (+58) o Colombia (+57)'),
   dniPrefix: z.enum(['V-', 'J-']),
   dniDigits: z
     .string()

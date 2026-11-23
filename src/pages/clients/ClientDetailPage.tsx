@@ -6,12 +6,15 @@ import { useOrganizationDetail } from '@/hooks/useOrganizations'
 import { useUIStore } from '@/stores/ui.store'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
+import { billingApi } from '@/api/billing.api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, SearchX, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check, LoaderCircle } from 'lucide-react'
+import { Edit, Trash2, DollarSign, Phone, Mail, Box, Calendar, AlertTriangle, SearchX, MessageSquare, MapPin, AlignLeft, ShieldAlert, CreditCard, Plus, Link2, Check, LoaderCircle, Copy } from 'lucide-react'
 import { formatCurrency, formatDate, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_STATUS_COLORS, isExpiringSoon, getExpiringLabel } from '@/lib/constants'
 import { getClientFullName, getInitial, canPayCurrentPeriod, canPayAdvance } from '@/lib/utils'
+import { getErrorMessage, isNotFoundError } from '@/lib/error-handler'
+import { toast } from 'sonner'
 import { DeleteClientSheet } from '@/components/modals/DeleteClientSheet'
 import { ClientDebtSummary } from '@/components/clients/ClientDebtSummary'
 import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
@@ -20,9 +23,53 @@ import { EmptyState } from '@/components/design-system/EmptyState'
 import { ErrorState } from '@/components/design-system/ErrorState'
 import { DetailSkeleton } from '@/components/design-system/Skeleton'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
-import { isNotFoundError } from '@/lib/error-handler'
-import type { SubscriptionWithDetails } from '@/types/api'
+import type { BillingPeriodWithDetails, SubscriptionWithDetails } from '@/types/api'
 import { getNavigationPreview, getNavigationStatePath } from '@/lib/navigation'
+
+function buildSubscriptionStatusMessage(
+  clientName: string,
+  subscriptions: SubscriptionWithDetails[],
+  periods: BillingPeriodWithDetails[],
+) {
+  const subscriptionSummaries = subscriptions.map((subscription, index) => {
+    const subscriptionPeriods = periods.filter((period) => period.subscriptionId === subscription.id)
+    const paidPeriods = subscriptionPeriods.filter((period) => period.status === 'PAID')
+    const paidPeriodsWithDate = paidPeriods.filter((period) => period.paidAt)
+    const lastPayment = paidPeriodsWithDate
+      .sort((a, b) => Date.parse(b.paidAt ?? '') - Date.parse(a.paidAt ?? ''))[0]
+      ?? paidPeriods.sort((a, b) => Date.parse(b.endDate) - Date.parse(a.endDate))[0]
+    const overdueAmount = subscriptionPeriods
+      .filter((period) => period.status === 'OVERDUE')
+      .reduce((total, period) => total + period.amount, 0)
+    const pendingAmount = subscriptionPeriods
+      .filter((period) => period.status === 'PENDING')
+      .reduce((total, period) => total + period.amount, 0)
+    const lines = [
+      `*Suscripción ${index + 1}*`,
+      `Número de cuenta: ${subscription.accountNumber || subscription.kitNumber}`,
+      `Plan: ${subscription.plan.name} (${formatCurrency(subscription.plan.price)}/mes)`,
+      `Estado: ${SUBSCRIPTION_STATUS_LABELS[subscription.status]}`,
+      lastPayment
+        ? `Último pago: ${formatCurrency(lastPayment.amount)}${lastPayment.periodLabel ? ` · ${lastPayment.periodLabel}` : ''}${lastPayment.paidAt ? ` · ${formatDate(lastPayment.paidAt)}` : ' · fecha no registrada'}`
+        : 'Último pago: Sin pagos registrados',
+    ]
+
+    if (overdueAmount > 0) lines.push(`Saldo vencido: ${formatCurrency(overdueAmount)}`)
+    if (pendingAmount > 0) lines.push(`Saldo pendiente: ${formatCurrency(pendingAmount)}`)
+    if (overdueAmount === 0 && pendingAmount === 0) lines.push('Saldo pendiente: Sin saldo pendiente')
+
+    return lines.join('\n')
+  })
+
+  return [
+    `*Estado de suscripciones*`,
+    `Cliente: ${clientName}`,
+    '',
+    subscriptionSummaries.length > 0
+      ? subscriptionSummaries.join('\n\n')
+      : 'Este cliente no tiene suscripciones registradas.',
+  ].join('\n')
+}
 
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -43,6 +90,7 @@ export function ClientDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
   const [consultaLinkCopied, setConsultaLinkCopied] = useState(false)
+  const [isCopyingStatus, setIsCopyingStatus] = useState(false)
 
   if (isSuperAdmin && !organizationId) {
     return (
@@ -124,16 +172,38 @@ export function ClientDetailPage() {
     }
   }
 
-  const handleSendConsultationLink = () => {
-    if (!consultationUrl || !client.phone) return
+  const handleCopySubscriptionStatus = async () => {
+    setIsCopyingStatus(true)
 
-    const phone = client.phone.replace(/\D/g, '')
-    const message = `Hola ${getClientFullName(client)}, consulta aquí la información de tu suscripción: ${consultationUrl}`
-    window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-      '_blank',
-      'noopener,noreferrer',
-    )
+    try {
+      const periods: BillingPeriodWithDetails[] = []
+      let offset = 0
+
+      while (true) {
+        const page = await billingApi.list({
+          clientId: client.id,
+          organizationId: client.organizationId,
+          limit: 100,
+          offset,
+        })
+        periods.push(...page.periods)
+        if (!page.pagination.hasMore) break
+
+        const nextOffset = page.pagination.offset + page.pagination.limit
+        if (nextOffset <= offset) {
+          throw new Error('La paginación de períodos de facturación no avanzó.')
+        }
+        offset = nextOffset
+      }
+
+      const message = buildSubscriptionStatusMessage(getClientFullName(client), subscriptions, periods)
+      await navigator.clipboard.writeText(message)
+      toast.success('Estado de suscripciones copiado')
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'No se pudo copiar el estado de las suscripciones. Inténtalo de nuevo.'))
+    } finally {
+      setIsCopyingStatus(false)
+    }
   }
 
   return (
@@ -235,14 +305,14 @@ export function ClientDetailPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={handleSendConsultationLink}
-            disabled={!consultationUrl || isLoadingOrganization || !client.phone}
-            aria-label="Enviar enlace de consulta por WhatsApp"
-            title={!client.phone ? 'El cliente no tiene un teléfono' : 'Enviar enlace de consulta por WhatsApp'}
+            onClick={() => void handleCopySubscriptionStatus()}
+            disabled={isCopyingStatus}
             className="col-span-2 h-10 gap-2 px-2 text-xs sm:h-11 sm:px-3 sm:text-sm"
           >
-            <MessageSquare className="h-4 w-4 shrink-0" />
-            Enviar enlace por WhatsApp
+            {isCopyingStatus
+              ? <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
+              : <Copy className="h-4 w-4 shrink-0" />}
+            {isCopyingStatus ? 'Preparando estado...' : 'Copiar estado para WhatsApp'}
           </Button>
         </div>
         {organizationError && (

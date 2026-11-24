@@ -38,7 +38,7 @@ const subscriptionSchema = z.object({
   planId: z.string().min(1, 'Selecciona un plan'),
   kitNumber: z.string().min(1, 'Ingresa el código del servicio'),
   accountNumber: z.string().optional(),
-  billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 28').max(28, 'Debe ser entre 1 y 28'),
+  billingDay: z.coerce.number().min(1, 'Debe ser entre 1 y 30').max(30, 'Debe ser entre 1 y 30'),
   maxOverduePeriods: z.coerce.number().min(1).max(3).optional(),
   activationDate: z.string().optional(),
   historicalPayments: z.array(z.object({
@@ -430,10 +430,10 @@ export function SubscriptionFormPage() {
                       <DialogContent className="max-w-sm">
                         <DialogHeader>
                           <DialogTitle>Selecciona el día de corte</DialogTitle>
-                          <DialogDescription>Elige un número del 1 al 28.</DialogDescription>
+                          <DialogDescription>Elige un número del 1 al 30.</DialogDescription>
                         </DialogHeader>
                         <div className="grid grid-cols-7 gap-2" role="group" aria-label="Días disponibles">
-                          {Array.from({ length: 28 }, (_, index) => index + 1).map((day) => {
+                          {Array.from({ length: 30 }, (_, index) => index + 1).map((day) => {
                             const isSelected = field.value === day
                             return (
                               <Button

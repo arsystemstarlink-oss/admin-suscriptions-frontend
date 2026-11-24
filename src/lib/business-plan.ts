@@ -55,12 +55,12 @@ export function getOrganizationBillingDay(
     typeof organization?.billingDay === 'number' &&
     Number.isInteger(organization.billingDay)
   ) {
-    return Math.min(Math.max(organization.billingDay, 1), 28)
+    return Math.min(Math.max(organization.billingDay, 1), 30)
   }
   const anchor =
     organization?.createdAt ?? organization?.planExpiresAt ?? organization?.trialEndsAt
   const date = anchor ? new Date(anchor) : new Date()
-  return Math.min(Math.max(date.getUTCDate(), 1), 28)
+  return Math.min(Math.max(date.getUTCDate(), 1), 30)
 }
 
 export const MAX_PREPAID_MONTHS = 12

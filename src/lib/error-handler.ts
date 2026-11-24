@@ -71,7 +71,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INVALID_BILLING_DAY: {
     type: 'field-error',
     field: 'billingDay',
-    message: 'El día de corte debe ser un número entre 1 y 28.',
+    message: 'El día de corte debe ser un número entre 1 y 30.',
   },
   INVALID_PERIOD_STATE: {
     type: 'toast',
@@ -534,7 +534,7 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
   INVALID_SUBSCRIPTION_BILLING_DAY: {
     type: 'field-error',
     field: 'billingDay',
-    message: 'El día de corte debe ser un número entre 1 y 28.',
+    message: 'El día de corte debe ser un número entre 1 y 30.',
   },
   INVALID_SUBSCRIPTION_STATUS: {
     type: 'toast',

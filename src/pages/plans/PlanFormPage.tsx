@@ -87,7 +87,7 @@ export function PlanFormPage() {
       const payload = {
         ...formData,
         ...(!isEdit && organizationId ? { organizationId } : {}),
-        description: formData.description || undefined,
+        description: formData.description?.trim() || '',
       }
 
       if (isEdit && id) {

@@ -16,6 +16,11 @@ const MONTH_NAMES_ES = [
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const MIN_BILLING_CYCLE_DAYS = 28
 
+function clampedBillingDate(year: number, month: number, billingDay: number): Date {
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+  return new Date(Date.UTC(year, month, Math.min(billingDay, lastDay)))
+}
+
 export function parseDateOnly(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1, day))
@@ -36,17 +41,19 @@ export function firstBillingPeriodEnd(activationDate: Date, billingDay: number):
   const month = activationDate.getUTCMonth()
   const day = activationDate.getUTCDate()
   const firstMonth = Date.UTC(year, month, billingDay) <= Date.UTC(year, month, day) ? month + 1 : month
-  const end = new Date(Date.UTC(year, firstMonth, billingDay))
+  const end = clampedBillingDate(year, firstMonth, billingDay)
   const durationDays = (end.getTime() - activationDate.getTime()) / MS_PER_DAY
 
   return durationDays < MIN_BILLING_CYCLE_DAYS
-    ? new Date(Date.UTC(year, firstMonth + 1, billingDay))
+    ? clampedBillingDate(year, firstMonth + 1, billingDay)
     : end
 }
 
 export function nextBillingPeriodEnd(periodStart: Date, billingDay: number): Date {
-  return new Date(
-    Date.UTC(periodStart.getUTCFullYear(), periodStart.getUTCMonth() + 1, billingDay),
+  return clampedBillingDate(
+    periodStart.getUTCFullYear(),
+    periodStart.getUTCMonth() + 1,
+    billingDay,
   )
 }
 

@@ -33,6 +33,7 @@ interface SubscriptionListPage {
 type SubscriptionCacheData =
   | SubscriptionListPage
   | { pages: SubscriptionListPage[]; pageParams: unknown[] }
+  | number
 
 export function useSubscriptions(params?: UseSubscriptionsParams, options?: { enabled?: boolean }) {
   return useQuery({
@@ -172,7 +173,7 @@ export function useDeleteSubscription() {
       await qc.cancelQueries({ queryKey: qk.subscriptions.lists })
       const previous = qc.getQueriesData<SubscriptionCacheData>({ queryKey: qk.subscriptions.lists })
       previous.forEach(([queryKey, data]) => {
-        if (!data) return
+        if (typeof data !== 'object' || data === null) return
         if ('pages' in data) {
           qc.setQueryData(queryKey, {
             ...data,
@@ -181,7 +182,7 @@ export function useDeleteSubscription() {
               subscriptions: page.subscriptions.filter((subscription) => subscription.id !== id),
             })),
           } as SubscriptionCacheData)
-        } else {
+        } else if ('subscriptions' in data) {
           qc.setQueryData(queryKey, {
             ...data,
             subscriptions: data.subscriptions.filter((subscription) => subscription.id !== id),

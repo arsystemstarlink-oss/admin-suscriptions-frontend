@@ -41,7 +41,7 @@ const TEMPLATE_USAGE: Record<WhatsAppTemplateKey, (rules: OrganizationWhatsAppRu
   dueDateWarning: (rules) =>
     rules.dueDateWarningEnabled
       ? { enabled: true, when: 'Se envía el día en que vence el período sin pagar.' }
-      : { enabled: false, when: 'Desactivado en «Cuándo avisar». Aún sirve para los recordatorios manuales del inicio.' },
+      : { enabled: false, when: 'Desactivado en «Cuándo avisar».' },
   suspensionNotice: (rules) =>
     rules.suspensionNoticeEnabled
       ? { enabled: true, when: 'Se envía cuando el servicio pasa a suspendido.' }

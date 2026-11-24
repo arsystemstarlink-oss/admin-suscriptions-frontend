@@ -1,6 +1,6 @@
 import { FinancialSummary } from '@/components/dashboard/FinancialSummary'
 import { KPICards } from '@/components/dashboard/KPICards'
-import { PendingPaymentsWidget, TopDebtorsWidget, ExpiringSoonWidget } from '@/components/dashboard/Widgets'
+import { PendingPaymentsWidget, ExpiringSoonWidget } from '@/components/dashboard/Widgets'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useIsSuperAdmin } from '@/stores/auth.store'
@@ -33,16 +33,13 @@ export function DashboardPage() {
             Requiere atención
           </h2>
           <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
-            Atiende los cobros pendientes, prioriza a quienes tienen deuda y revisa los próximos vencimientos.
+            Atiende los cobros pendientes y revisa los próximos vencimientos.
           </p>
         </div>
 
         <PendingPaymentsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <TopDebtorsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
-          <ExpiringSoonWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
-        </div>
+        <ExpiringSoonWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
       </section>
 
       <section aria-labelledby="dashboard-quick-actions-title" className="space-y-3">

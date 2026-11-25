@@ -795,11 +795,9 @@ function UsageMeter({ usage }: { usage: PlatformWhatsAppSummary['usage'] }) {
 export function WhatsAppPlatformPanel({
   organizationId,
   platform,
-  rules,
 }: {
   organizationId: string
   platform: PlatformWhatsAppSummary
-  rules: OrganizationWhatsAppRules
 }) {
   const exhausted = platform.usage.used >= platform.usage.limit
   const hasTemplate = platform.templates.some((template) => template.contentSid)
@@ -822,34 +820,6 @@ export function WhatsAppPlatformPanel({
       <UsageMeter usage={platform.usage} />
 
       <div className="space-y-3">
-        <StepHeading
-          title="Los mensajes que reciben tus clientes"
-          description="Ya están aprobados por WhatsApp. Si quieres otro texto, cambia a tu propio número."
-        />
-        {platform.templates.map((template) => (
-          <div key={template.key} className="space-y-2 rounded-xl border border-border bg-surface p-3">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-sm font-medium text-foreground">{template.label}</span>
-                {!template.contentSid && (
-                  <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs', TONE_CLASSES.warning)}>
-                    <Clock className="h-3 w-3" />
-                    Aún no disponible
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">{describeTemplateUsage(template.key, rules)?.when}</p>
-            </div>
-            <MessagePreview
-              body={template.body}
-              variables={template.variables}
-              caption="Así lo recibe tu cliente (los datos resaltados son de ejemplo)"
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-3">
         <StepHeading title="Envía una prueba" description="Comprueba en tu teléfono cómo llega el aviso." />
         <WhatsAppTestStep
           organizationId={organizationId}
@@ -857,6 +827,44 @@ export function WhatsAppPlatformPanel({
           disabledReason={testDisabledReason}
         />
       </div>
+    </div>
+  )
+}
+
+export function WhatsAppPlatformTemplates({
+  platform,
+  rules,
+}: {
+  platform: PlatformWhatsAppSummary
+  rules: OrganizationWhatsAppRules
+}) {
+  return (
+    <div className="space-y-3">
+      <StepHeading
+        title="Plantillas de la plataforma"
+        description="Estos mensajes ya están aprobados por WhatsApp y se usan cuando eliges enviar desde el número de la plataforma."
+      />
+      {platform.templates.map((template) => (
+        <div key={template.key} className="space-y-2 rounded-xl border border-border bg-surface p-3">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-medium text-foreground">{template.label}</span>
+              {!template.contentSid && (
+                <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs', TONE_CLASSES.warning)}>
+                  <Clock className="h-3 w-3" />
+                  Aún no disponible
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">{describeTemplateUsage(template.key, rules)?.when}</p>
+          </div>
+          <MessagePreview
+            body={template.body}
+            variables={template.variables}
+            caption="Así lo recibe tu cliente (los datos resaltados son de ejemplo)"
+          />
+        </div>
+      ))}
     </div>
   )
 }

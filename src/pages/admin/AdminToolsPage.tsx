@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -228,6 +229,35 @@ export function AdminToolsPage() {
             </div>
           ) : schedulerConfig ? (
             <>
+              <Tabs defaultValue="schedule" className="space-y-4">
+                <TabsList
+                  aria-label="Secciones de tareas automáticas"
+                  className="grid h-auto w-full grid-cols-3 rounded-xl border border-border-subtle bg-surface-muted p-1 text-muted-foreground"
+                >
+                  <TabsTrigger
+                    value="schedule"
+                    className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+                  >
+                    <Clock aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+                    <span>Programación</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="manual"
+                    className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+                  >
+                    <Zap aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+                    <span>Ejecutar</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="history"
+                    className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+                  >
+                    <History aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+                    <span>Historial</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="schedule" className="mt-4">
               <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
                 <CardHeader className="p-4 sm:p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -316,7 +346,7 @@ export function AdminToolsPage() {
                   >
                         {schedulerConfig.enabled ? 'Desactivar' : 'Activar'}
                       </Button>
-                      <p className="text-sm text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {schedulerConfig.enabled
                           ? 'El sistema evaluará vencimientos automáticamente según el horario configurado'
                           : 'El sistema no ejecutará evaluaciones automáticas. Puedes ejecutarlas manualmente'}
@@ -383,27 +413,44 @@ export function AdminToolsPage() {
                       </p>
                     </div>
 
-                    <div className="border-t border-border pt-5 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-muted-foreground shrink-0" />
-                        <h3 className="font-semibold text-base">Ejecución manual</h3>
-                      </div>
-                    <Button
-                      variant="outline"
-                      onClick={handleRunScheduler}
-                      disabled={runSchedulerMutation.isPending || missingCron}
-                      className="w-full sm:w-auto"
-                    >
-                        {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar ahora'}
-                      </Button>
-                      <p className="text-sm text-xs text-muted-foreground">
-                        Ejecuta la Tarea diaria inmediatamente, sin importar el estado del scheduler
-                      </p>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
+                </TabsContent>
 
+                <TabsContent value="manual" className="mt-4">
+                  <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
+                    <CardHeader className="p-4 sm:p-5">
+                      <div className="flex items-start gap-3 sm:items-center sm:gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 sm:h-14 sm:w-14">
+                          <Zap className="h-5 w-5 text-primary-text sm:h-7 sm:w-7" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl">Ejecución manual</CardTitle>
+                          <CardDescription className="mt-0.5 text-xs sm:text-sm">
+                            Inicia ahora la evaluación de vencimientos, sin esperar al horario diario.
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
+                      <Button
+                        variant="outline"
+                        onClick={handleRunScheduler}
+                        disabled={runSchedulerMutation.isPending || missingCron}
+                        className="w-full sm:w-auto"
+                      >
+                        {runSchedulerMutation.isPending ? 'Ejecutando...' : 'Ejecutar ahora'}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Procesa vencimientos y envía los avisos que correspondan. Esta acción también está disponible
+                        cuando la ejecución automática está desactivada.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="history" className="mt-4">
               <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
                 <CardHeader className="p-4 sm:p-5">
                   <div className="flex items-start gap-3 sm:items-center sm:gap-4 min-w-0">
@@ -431,7 +478,7 @@ export function AdminToolsPage() {
                     />
                   ) : schedulerLogs.logs.length === 0 ? (
                     <div className="py-8 text-center">
-                      <p className="text-sm text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         Sin ejecuciones registradas todavía.
                       </p>
                     </div>
@@ -512,6 +559,8 @@ export function AdminToolsPage() {
                   )}
                 </CardContent>
               </Card>
+                </TabsContent>
+              </Tabs>
             </>
           ) : (
             <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">

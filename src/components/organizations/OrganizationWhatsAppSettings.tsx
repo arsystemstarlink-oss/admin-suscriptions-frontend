@@ -12,11 +12,13 @@ import {
   MessageCircle,
   MessagesSquare,
   Save,
+  Settings2,
   Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ErrorState, FormSkeleton } from '@/components/design-system'
 import {
   useOrganizationWhatsAppConfig,
@@ -31,6 +33,7 @@ import {
   WhatsAppFailuresSection,
   WhatsAppModePicker,
   WhatsAppPlatformPanel,
+  WhatsAppPlatformTemplates,
   WhatsAppTemplatesStep,
   WhatsAppTestStep,
   WhatsAppWebhooksStep,
@@ -618,7 +621,8 @@ function getTemplatesStatus(
   return { state: 'waiting', summary: 'WhatsApp está revisando tus mensajes. Se activan solos.' }
 }
 
-type StepId = 'connection' | 'templates' | 'webhooks' | 'test'
+type StepId = 'connection' | 'webhooks' | 'test'
+type WhatsAppSection = 'settings' | 'templates' | 'failures'
 
 export function OrganizationWhatsAppSettings({
   organizationId,
@@ -650,22 +654,20 @@ export function OrganizationWhatsAppSettings({
 function OwnAccountSteps({
   organizationId,
   config,
+  onOpenTemplates,
 }: {
   organizationId: string
   config: OrganizationWhatsAppConfig
+  onOpenTemplates: () => void
 }) {
   const connectionCheck = useWhatsAppConnectionCheck(organizationId).data
-  const templates = useWhatsAppTemplates(organizationId).data?.templates
   const twilioReady = isTwilioReady(config.twilio)
   const hasActiveTemplate = Object.values(config.templates).some(Boolean)
   // Se abre el primer paso imprescindible que falta; con todo listo, la guía queda plegada.
-  const [openStep, setOpenStep] = useState<StepId | null>(
-    !twilioReady ? 'connection' : config.readiness.ready ? null : 'templates',
-  )
+  const [openStep, setOpenStep] = useState<StepId | null>(!twilioReady ? 'connection' : null)
   const toggle = (step: StepId) => setOpenStep((current) => (current === step ? null : step))
 
   const connectionStatus = getConnectionStatus(config.twilio, connectionCheck)
-  const templatesStatus = getTemplatesStatus(templates, config.rules)
   const webhooksStatus: StepStatus = !config.webhooks
     ? { state: 'optional', summary: 'No disponible todavía en este servidor.' }
     : connectionCheck?.inboundWebhookConnected
@@ -700,18 +702,8 @@ function OwnAccountSteps({
           <ConnectionStep
             organizationId={organizationId}
             config={config}
-            onConnected={() => setOpenStep('templates')}
+            onConnected={onOpenTemplates}
           />
-        </SetupStep>
-        <SetupStep
-          id={stepId('templates')}
-          number={2}
-          title="Aprueba tus mensajes"
-          {...templatesStatus}
-          open={openStep === 'templates'}
-          onToggle={() => toggle('templates')}
-        >
-          <WhatsAppTemplatesStep organizationId={organizationId} twilioReady={twilioReady} rules={config.rules} />
         </SetupStep>
         <SetupStep
           id={stepId('webhooks')}
@@ -757,7 +749,22 @@ function WhatsAppSetupGuide({
     ? 'Mientras falte, las organizaciones que usan el WhatsApp de la plataforma no envían avisos.'
     : usesPlatform
       ? 'Si no quieres esperar, puedes cambiar a tu propio número.'
-      : 'Sigue los pasos de abajo en orden; los dos primeros son imprescindibles.'
+      : 'Completa la conexión en Configuración y envía los mensajes a aprobación en Plantillas.'
+  const [activeSection, setActiveSection] = useState<WhatsAppSection>(() =>
+    isTwilioReady(config.twilio) && !config.readiness.ready ? 'templates' : 'settings',
+  )
+  const [templateSetupOpen, setTemplateSetupOpen] = useState(true)
+  const templatesQuery = useWhatsAppTemplates(isPlatformAccount || !usesPlatform ? organizationId : '')
+  const templatesStatus = getTemplatesStatus(templatesQuery.data?.templates, config.rules)
+  const openTemplates = () => {
+    setActiveSection('templates')
+    setTemplateSetupOpen(true)
+  }
+  const changeSection = (value: string) => {
+    if (value === 'settings' || value === 'templates' || value === 'failures') {
+      setActiveSection(value)
+    }
+  }
 
   return (
     <section
@@ -765,65 +772,123 @@ function WhatsAppSetupGuide({
       className="space-y-5"
       aria-labelledby="organization-whatsapp-title"
     >
-      <div className="flex items-center gap-2">
-        <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <header className="flex items-start gap-3">
+        <MessageCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary-text" />
         <div>
-          <h3 id="organization-whatsapp-title" className="text-sm font-semibold text-foreground">
-            {isPlatformAccount ? 'WhatsApp de la plataforma' : 'Avisos por WhatsApp'}
-          </h3>
-          <p className="text-xs text-muted-foreground">
+          <h2 id="organization-whatsapp-title" className="text-lg font-semibold text-foreground">
+            {isPlatformAccount ? 'WhatsApp de la plataforma' : 'WhatsApp'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
             {isPlatformAccount
-              ? 'La cuenta que envía los avisos de las organizaciones sin número propio. Sus mensajes se cobran a esta cuenta de Twilio.'
-              : `Recordatorios de pago automáticos para los clientes de ${organizationName}.`}
+              ? 'Administra la cuenta que envía avisos para las organizaciones sin número propio.'
+              : `Configura los avisos automáticos para los clientes de ${organizationName}.`}
           </p>
         </div>
-      </div>
+      </header>
 
-      {platform && (
-        <WhatsAppModePicker
-          mode={usesPlatform ? 'platform' : 'own'}
-          pending={modeMutation.isPending}
-          ownReady={isOwnWhatsAppReady(config)}
-          onChange={(mode) => modeMutation.mutate({ id: organizationId, data: { mode } })}
-        />
-      )}
+      <Tabs value={activeSection} onValueChange={changeSection}>
+        <TabsList aria-label="Secciones de WhatsApp" className="grid h-auto w-full grid-cols-3 rounded-xl border border-border-subtle bg-surface-muted p-1 text-muted-foreground">
+          <TabsTrigger
+            value="settings"
+            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+          >
+            <Settings2 aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+            <span>Configuración</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="templates"
+            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+          >
+            <FileCheck aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+            <span>Plantillas</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="failures"
+            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+          >
+            <AlertTriangle aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+            <span>Avisos fallidos</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {config.readiness.ready ? (
-        <div className="flex items-start gap-2 rounded-md border border-success/20 bg-success/10 p-3 text-sm text-success">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            {isPlatformAccount
-              ? 'Todo listo: las organizaciones ya pueden enviar avisos con esta cuenta.'
-              : 'Todo listo: los avisos activados se envían solos a tus clientes.'}
-          </span>
-        </div>
-      ) : (
-        <div className="flex items-start gap-2 rounded-md border border-warning/20 bg-warning/10 p-3 text-sm text-warning">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <div>
-            <p className="font-medium">Los avisos aún no se envían. Falta:</p>
-            <ul className="mt-1 list-inside list-disc">
-              {config.readiness.missing.map((missing) => <li key={missing}>{missing}</li>)}
-            </ul>
-            <p className="mt-1 text-xs">{pendingHint}</p>
-          </div>
-        </div>
-      )}
+        <TabsContent value="settings" forceMount className="mt-4 space-y-5 data-[state=inactive]:hidden">
+          <HowItWorks defaultOpen={!config.readiness.ready} />
+          {platform && (
+            <WhatsAppModePicker
+              mode={usesPlatform ? 'platform' : 'own'}
+              pending={modeMutation.isPending}
+              ownReady={isOwnWhatsAppReady(config)}
+              onChange={(mode) => modeMutation.mutate({ id: organizationId, data: { mode } })}
+            />
+          )}
 
-      {usesPlatform ? (
-        <WhatsAppPlatformPanel organizationId={organizationId} platform={platform} rules={config.rules} />
-      ) : (
-        <OwnAccountSteps organizationId={organizationId} config={config} />
-      )}
+          {config.readiness.ready ? (
+            <div className="flex items-start gap-2 rounded-md border border-success/20 bg-success/10 p-3 text-sm text-success">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {isPlatformAccount
+                  ? 'Todo listo: las organizaciones ya pueden enviar avisos con esta cuenta.'
+                  : 'Todo listo: los avisos activados se envían solos a tus clientes.'}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 rounded-md border border-warning/20 bg-warning/10 p-3 text-sm text-warning">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-medium">Los avisos aún no se envían. Falta:</p>
+                <ul className="mt-1 list-inside list-disc">
+                  {config.readiness.missing.map((missing) => <li key={missing}>{missing}</li>)}
+                </ul>
+                <p className="mt-1 text-xs">{pendingHint}</p>
+              </div>
+            </div>
+          )}
 
-      {!isPlatformAccount && (
-        <div className="border-t border-border pt-4">
-          <RulesSection organizationId={organizationId} config={config} ownAccount={!usesPlatform} />
-        </div>
-      )}
-      <div className="border-t border-border pt-4">
-        <WhatsAppFailuresSection organizationId={organizationId} />
-      </div>
+          {usesPlatform && platform ? (
+            <WhatsAppPlatformPanel organizationId={organizationId} platform={platform} />
+          ) : (
+            <OwnAccountSteps organizationId={organizationId} config={config} onOpenTemplates={openTemplates} />
+          )}
+          {!isPlatformAccount && (
+            <div className="border-t border-border pt-4">
+              <RulesSection organizationId={organizationId} config={config} ownAccount={!usesPlatform} />
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="templates" forceMount className="mt-4 space-y-3 data-[state=inactive]:hidden">
+          {usesPlatform && platform ? (
+            <WhatsAppPlatformTemplates platform={platform} rules={config.rules} />
+          ) : (
+            <>
+              {config.readiness.usingLegacyTemplates && (
+                <p className="rounded-md border border-border bg-surface-muted p-3 text-xs text-muted-foreground">
+                  Las plantillas actuales provienen de la configuración antigua del servidor. Al guardar,
+                  quedarán guardadas explícitamente para esta organización.
+                </p>
+              )}
+              <SetupStep
+                id={`whatsapp-step-templates-${organizationId}`}
+                number={2}
+                title="Aprueba tus mensajes"
+                {...templatesStatus}
+                open={templateSetupOpen}
+                onToggle={() => setTemplateSetupOpen((open) => !open)}
+              >
+                <WhatsAppTemplatesStep
+                  organizationId={organizationId}
+                  twilioReady={isTwilioReady(config.twilio)}
+                  rules={config.rules}
+                />
+              </SetupStep>
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="failures" forceMount className="mt-4 data-[state=inactive]:hidden">
+          <WhatsAppFailuresSection organizationId={organizationId} />
+        </TabsContent>
+      </Tabs>
     </section>
   )
 }

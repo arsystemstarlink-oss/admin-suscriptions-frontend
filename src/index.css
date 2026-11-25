@@ -49,6 +49,7 @@
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-primary-text: hsl(var(--primary-text));
+  --color-exchange-accent: hsl(var(--exchange-accent));
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
@@ -95,6 +96,7 @@
     --primary: 223 68% 25%;
     --primary-foreground: 0 0% 100%;
     --primary-text: 223 68% 25%;
+    --exchange-accent: 142 72% 58%;
     --secondary: 51 92% 49%;
     --secondary-foreground: 224 69% 11%;
     --muted: 220 28% 96%;
@@ -141,6 +143,7 @@
     --primary: 223 68% 32%;
     --primary-foreground: 0 0% 100%;
     --primary-text: 217 91% 75%;
+    --exchange-accent: 142 72% 58%;
     --secondary: 51 92% 49%;
     --secondary-foreground: 224 69% 11%;
     --muted: 223 28% 20%;
@@ -157,9 +160,9 @@
     --input: 223 16% 50%;
     --ring: 223 80% 62%;
     --overlay: 222 47% 3% / 0.7;
-    --header: 223 69% 11%;
+    --header: 223 68% 25%;
     --header-foreground: 214 65% 96%;
-    --header-hover: 223 55% 16%;
+    --header-hover: 223 60% 30%;
     --success: 142 70% 55%;
     --success-foreground: 142 76% 10%;
     --warning: 42 96% 56%;
@@ -189,6 +192,7 @@
     --primary: 224 69% 18%;
     --primary-foreground: 0 0% 100%;
     --primary-text: 224 69% 18%;
+    --exchange-accent: 142 72% 58%;
     --secondary: 45 100% 59%;
     --secondary-foreground: 224 66% 12%;
     --muted: 222 45% 95%;

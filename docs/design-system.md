@@ -53,8 +53,9 @@ surface-muted (inputs, wells interiores, bubbles entrantes)
 |---|---|---|---|
 | `primary` / `primary-foreground` | `223 68% 25%` / blanco | `223 68% 32%` / blanco | Botones y acciones primarias (navy) |
 | `primary-text` | `223 68% 25%` | `217 91% 75%` | Texto e iconos de marca sobre superficies; en dark, `primary` no es legible como texto |
+| `exchange-accent` | `142 72% 58%` | `142 72% 58%` | Acento verde decorativo del selector de tasas, sobre fondo primario |
 | `secondary` / `secondary-foreground` | `51 92% 49%` / `224 69% 11%` | igual | Amarillo de marca; SIEMPRE texto oscuro |
-| `header` / `header-foreground` / `header-hover` | `223 68% 25%` / `214 65% 96%` / `223 60% 30%` | `223 69% 11%` / `214 65% 96%` / `223 55% 16%` | TopBar, header móvil, panel Login/Setup |
+| `header` / `header-foreground` / `header-hover` | `223 68% 25%` / `214 65% 96%` / `223 60% 30%` | `223 68% 25%` / `214 65% 96%` / `223 60% 30%` | TopBar, header móvil, panel Login/Setup; navy de marca constante en ambos temas |
 
 ### Status (par atómico obligatorio)
 

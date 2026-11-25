@@ -27,6 +27,13 @@ export function DashboardPage() {
 
       <FinancialSummary organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
+      <section aria-labelledby="dashboard-quick-actions-title" className="space-y-3">
+        <h2 id="dashboard-quick-actions-title" className="text-lg font-semibold tracking-tight text-foreground">
+          Acciones rápidas
+        </h2>
+        <QuickActions />
+      </section>
+
       <section aria-labelledby="dashboard-priorities-title" className="space-y-4">
         <div>
           <h2 id="dashboard-priorities-title" className="text-lg font-semibold tracking-tight text-foreground">
@@ -40,13 +47,6 @@ export function DashboardPage() {
         <PendingPaymentsWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
 
         <ExpiringSoonWidget organizationId={organizationId ?? undefined} enabled={alertsEnabled} />
-      </section>
-
-      <section aria-labelledby="dashboard-quick-actions-title" className="space-y-3">
-        <h2 id="dashboard-quick-actions-title" className="text-lg font-semibold tracking-tight text-foreground">
-          Acciones rápidas
-        </h2>
-        <QuickActions />
       </section>
 
       <section aria-labelledby="dashboard-summary-title" className="space-y-3">

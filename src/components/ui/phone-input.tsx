@@ -2,12 +2,13 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
-  CO_COUNTRY_CODE,
-  VE_COUNTRY_CODE,
   buildPhoneE164,
   formatPhone,
+  getPhoneDialCode,
   getPhoneCountryCode,
   normalizePhoneDigits,
+  isPhoneCountryCode,
+  PHONE_COUNTRIES,
   type PhoneCountryCode,
 } from '@/lib/phone'
 import {
@@ -47,16 +48,24 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     return (
       <div className="flex gap-2">
-        <Select value={countryCode} onValueChange={(next) => handleCountryChange(next as PhoneCountryCode)}>
+        <Select
+          value={countryCode}
+          onValueChange={(next) => {
+            if (isPhoneCountryCode(next)) handleCountryChange(next)
+          }}
+        >
           <SelectTrigger
-            className={cn('h-12 w-24 shrink-0 px-3', props.disabled && 'cursor-not-allowed')}
-            aria-label="Código de país"
+            className={cn('h-12 w-36 shrink-0 px-2', props.disabled && 'cursor-not-allowed')}
+            aria-label="País y código telefónico"
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={VE_COUNTRY_CODE}>+58 VE</SelectItem>
-            <SelectItem value={CO_COUNTRY_CODE}>+57 CO</SelectItem>
+            {PHONE_COUNTRIES.map((country) => (
+              <SelectItem key={country.code} value={country.code}>
+                {getPhoneDialCode(country.code)} {country.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Input
@@ -67,7 +76,9 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           autoComplete="new-password"
           data-1p-ignore
           data-lpignore="true"
-          placeholder={countryCode === CO_COUNTRY_CODE ? '300-123-4567' : '416-100-56-06'}
+          placeholder={
+            PHONE_COUNTRIES.find((country) => country.code === countryCode)?.placeholder
+          }
           className={cn('min-w-0 flex-1', className)}
           value={formatPhone(nationalDigits, countryCode)}
           onChange={handleChange}

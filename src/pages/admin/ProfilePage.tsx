@@ -44,14 +44,14 @@ import { toast } from 'sonner'
 import { FormGroup } from '@/components/design-system'
 import { NotificationSettings } from '@/pages/admin/NotificationsPage'
 import type { ApiError, OrganizationPlanPaymentReportStatus } from '@/types/api'
-import { isValidInternationalPhone } from '@/lib/phone'
+import { isValidInternationalPhone, PHONE_VALIDATION_MESSAGE } from '@/lib/phone'
 
 const profileSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .refine((value) => !value || isValidInternationalPhone(value), 'Ingresa un teléfono válido de Venezuela (+58) o Colombia (+57)')
+    .refine((value) => !value || isValidInternationalPhone(value), PHONE_VALIDATION_MESSAGE)
     .optional()
     .or(z.literal('')),
   currentPassword: z.string().optional(),

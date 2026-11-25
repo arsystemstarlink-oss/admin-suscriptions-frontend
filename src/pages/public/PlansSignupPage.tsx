@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Check, LoaderCircle, MessageCircle } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { TurnstileWidget } from '@/components/public/TurnstileWidget'
 import { isCaptchaEnabled, TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
@@ -23,6 +24,7 @@ import {
 import { DEFAULT_TRIAL_DAYS, getWhatsAppUrl } from '@/lib/business-plan'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { getErrorHandler } from '@/lib/error-handler'
+import { isValidInternationalPhone, PHONE_VALIDATION_MESSAGE } from '@/lib/phone'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
   ApiError,
@@ -50,7 +52,7 @@ const signupSchema = z
     phone: z
       .string()
       .trim()
-      .regex(/^\+?[\d\s-]{10,16}$/, 'Teléfono inválido')
+      .refine((value) => !value || isValidInternationalPhone(value), PHONE_VALIDATION_MESSAGE)
       .optional()
       .or(z.literal('')),
     method: z.enum(['transferencia', 'usdt']).optional(),
@@ -77,7 +79,7 @@ const quoteSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\+?[\d\s-]{10,16}$/, 'Teléfono inválido')
+    .refine((value) => !value || isValidInternationalPhone(value), PHONE_VALIDATION_MESSAGE)
     .optional()
     .or(z.literal('')),
   estimatedClients: z
@@ -555,12 +557,18 @@ export function PlansSignupPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="quote-phone">Teléfono</Label>
-                      <Input
-                        id="quote-phone"
-                        type="tel"
-                        autoComplete="tel"
-                        placeholder="+58 412 1234567"
-                        {...quoteForm.register('phone')}
+                      <Controller
+                        name="phone"
+                        control={quoteForm.control}
+                        render={({ field }) => (
+                          <PhoneInput
+                            id="quote-phone"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            aria-invalid={!!quoteForm.formState.errors.phone}
+                          />
+                        )}
                       />
                       {quoteForm.formState.errors.phone && (
                         <p className="text-sm text-destructive">
@@ -723,12 +731,18 @@ export function PlansSignupPage() {
                     </div>
                     <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="signup-phone">Teléfono (opcional)</Label>
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        autoComplete="tel"
-                        placeholder="+58 412 1234567"
-                        {...signupForm.register('phone')}
+                      <Controller
+                        name="phone"
+                        control={signupForm.control}
+                        render={({ field }) => (
+                          <PhoneInput
+                            id="signup-phone"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            aria-invalid={!!signupForm.formState.errors.phone}
+                          />
+                        )}
                       />
                       {signupForm.formState.errors.phone && (
                         <p className="text-sm text-destructive">

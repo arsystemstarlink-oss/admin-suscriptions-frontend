@@ -1,80 +1,86 @@
-export const VE_COUNTRY_CODE = '+58'
-export const CO_COUNTRY_CODE = '+57'
-export const PHONE_COUNTRY_CODES = [VE_COUNTRY_CODE, CO_COUNTRY_CODE] as const
-export type PhoneCountryCode = (typeof PHONE_COUNTRY_CODES)[number]
-export const VE_MAX_NATIONAL_DIGITS = 11
+import {
+  AsYouType,
+  getCountryCallingCode,
+  parsePhoneNumberFromString,
+  type CountryCode,
+} from 'libphonenumber-js'
+
+export const PHONE_COUNTRIES = [
+  { code: 'CO', name: 'Colombia', placeholder: '300 123 4567' },
+  { code: 'BR', name: 'Brasil', placeholder: '(11) 91234-5678' },
+  { code: 'AR', name: 'Argentina', placeholder: '011 15-2345-6789' },
+  { code: 'VE', name: 'Venezuela', placeholder: '0412-1234567' },
+  { code: 'BO', name: 'Bolivia', placeholder: '71234567' },
+  { code: 'CL', name: 'Chile', placeholder: '912345678' },
+] as const satisfies readonly { code: CountryCode; name: string; placeholder: string }[]
+
+export type PhoneCountryCode = (typeof PHONE_COUNTRIES)[number]['code']
+
+export const PHONE_VALIDATION_MESSAGE =
+  'Ingresa un teléfono válido para el país seleccionado.'
+
+export function isPhoneCountryCode(value: string): value is PhoneCountryCode {
+  return PHONE_COUNTRIES.some((country) => country.code === value)
+}
+
+export function getPhoneDialCode(countryCode: PhoneCountryCode): string {
+  return `+${getCountryCallingCode(countryCode)}`
+}
 
 export function getPhoneCountryCode(value: string): PhoneCountryCode {
-  const digits = value.replace(/\D/g, '')
-  if (digits.startsWith('57')) return CO_COUNTRY_CODE
-  return VE_COUNTRY_CODE
+  const digits = value.replace(/\D/g, '').replace(/^00/, '')
+  const country = PHONE_COUNTRIES.find((item) =>
+    digits.startsWith(getCountryCallingCode(item.code)),
+  )
+  return country?.code ?? 'VE'
 }
 
 export function normalizePhoneDigits(value: string, countryCode: PhoneCountryCode): string {
-  let digits = value.replace(/\D/g, '')
-  if (digits.startsWith('00')) digits = digits.slice(2)
+  const parsed = parsePhoneNumberFromString(value)
+  if (parsed) return parsed.nationalNumber
 
-  const countryDigits = countryCode.slice(1)
-  if (digits.startsWith(countryDigits)) digits = digits.slice(countryDigits.length)
-  if (digits.startsWith('0')) digits = digits.slice(1)
+  let digits = value.replace(/\D/g, '').replace(/^00/, '')
+  const callingCode = getCountryCallingCode(countryCode)
+  if (digits.startsWith(callingCode)) digits = digits.slice(callingCode.length)
 
-  return digits.slice(0, countryCode === CO_COUNTRY_CODE ? 10 : VE_MAX_NATIONAL_DIGITS)
+  const formatter = new AsYouType(countryCode)
+  formatter.input(digits)
+  return formatter.getNumber()?.nationalNumber ?? digits
 }
 
 export function formatPhone(nationalDigits: string, countryCode: PhoneCountryCode): string {
   if (!nationalDigits) return ''
-  if (countryCode === CO_COUNTRY_CODE) {
-    const groups = [
-      nationalDigits.slice(0, 3),
-      nationalDigits.slice(3, 6),
-      nationalDigits.slice(6, 10),
-    ].filter(Boolean)
-    return groups.join('-')
-  }
-  return formatVenezuelanPhone(nationalDigits)
+
+  const parsed = parsePhoneNumberFromString(nationalDigits, countryCode)
+  if (parsed?.isPossible()) return parsed.formatNational()
+
+  return new AsYouType(countryCode).input(nationalDigits)
 }
 
-export function buildPhoneE164(nationalDigits: string, countryCode: PhoneCountryCode): string {
-  return nationalDigits ? `${countryCode}${nationalDigits}` : ''
+export function buildPhoneE164(nationalNumber: string, countryCode: PhoneCountryCode): string {
+  const input = nationalNumber.trim()
+  if (!input) return ''
+
+  const normalizedInput = input.startsWith('00') ? `+${input.slice(2)}` : input
+  const parsed = parsePhoneNumberFromString(normalizedInput, countryCode)
+  if (parsed) return parsed.number
+
+  const formatter = new AsYouType(countryCode)
+  formatter.input(input)
+  const formattedNumber = formatter.getNumber()
+  if (formattedNumber) return formattedNumber.number
+
+  const digits = input.replace(/\D/g, '')
+  const callingCode = getCountryCallingCode(countryCode)
+  const nationalDigits = digits.startsWith(callingCode)
+    ? digits.slice(callingCode.length)
+    : digits
+  return nationalDigits ? `+${callingCode}${nationalDigits}` : ''
 }
 
 export function isValidInternationalPhone(value: string): boolean {
-  return /^\+58\d{10,11}$/.test(value) || /^\+57\d{10}$/.test(value)
-}
+  if (!value.startsWith('+')) return false
 
-export function normalizeVenezuelanDigits(value: string): string {
-  let digits = value.replace(/\D/g, '')
-  if (digits.startsWith('00')) {
-    digits = digits.slice(2)
-  }
-  if (digits.startsWith('58')) {
-    digits = digits.slice(2)
-  }
-  if (digits.startsWith('0')) {
-    digits = digits.slice(1)
-  }
-  return digits.slice(0, VE_MAX_NATIONAL_DIGITS)
-}
-
-export function formatVenezuelanPhone(nationalDigits: string): string {
-  if (!nationalDigits) return ''
-  if (nationalDigits.length <= 3) return nationalDigits
-
-  const area = nationalDigits.slice(0, 3)
-  const rest = nationalDigits.slice(3)
-  const groups = [area]
-  let cursor = 0
-  for (const size of [3, 2, 2]) {
-    if (cursor >= rest.length) break
-    groups.push(rest.slice(cursor, cursor + size))
-    cursor += size
-  }
-  if (cursor < rest.length) {
-    groups[groups.length - 1] += rest.slice(cursor)
-  }
-  return groups.join('-')
-}
-
-export function buildVenezuelanE164(nationalDigits: string): string {
-  return nationalDigits ? `${VE_COUNTRY_CODE}${nationalDigits}` : ''
+  const parsed = parsePhoneNumberFromString(value)
+  return Boolean(parsed?.isValid() && parsed.country && isPhoneCountryCode(parsed.country))
 }

@@ -24,14 +24,14 @@ import { useDiscardChangesGuard } from '@/components/design-system/useDiscardCha
 import type { Admin, UpdateAdminRequest } from '@/types/api'
 import { getErrorHandler } from '@/lib/error-handler'
 import type { ApiError } from '@/types/api'
-import { isValidInternationalPhone } from '@/lib/phone'
+import { isValidInternationalPhone, PHONE_VALIDATION_MESSAGE } from '@/lib/phone'
 
 const editAdminSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   email: z.string().min(1, 'El correo es requerido').email('Correo inválido'),
   phone: z
     .string()
-    .refine((value) => !value || isValidInternationalPhone(value), 'Ingresa un teléfono válido de Venezuela (+58) o Colombia (+57)')
+    .refine((value) => !value || isValidInternationalPhone(value), PHONE_VALIDATION_MESSAGE)
     .optional()
     .or(z.literal('')),
   newPassword: z

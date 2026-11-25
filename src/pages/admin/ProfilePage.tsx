@@ -30,11 +30,14 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  Bell,
+  CreditCard,
   UserCog,
   ShieldCheck,
-  ChevronDown,
-  ChevronUp,
+  CalendarDays,
+  Clock3,
   LogOut,
   Mail,
   Phone,
@@ -75,6 +78,7 @@ const passwordSchema = z
   })
 
 type PasswordForm = z.infer<typeof passwordSchema>
+type ProfileSection = 'account' | 'security' | 'notifications' | 'plan'
 
 const PLAN_REPORT_STATUS: Record<
   OrganizationPlanPaymentReportStatus,
@@ -93,9 +97,11 @@ export function ProfilePage() {
   const navigate = useNavigate()
   const updateMutation = useUpdateMe()
   const passwordMutation = useChangePassword()
-  const [showDetails, setShowDetails] = useState(false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [isEditingSecurity, setIsEditingSecurity] = useState(false)
+  const [activeSection, setActiveSection] = useState<ProfileSection>(() =>
+    user?.mustChangePassword ? 'security' : 'account',
+  )
   const [showPlanReport, setShowPlanReport] = useState(false)
   const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
   const mustChangePassword = user?.mustChangePassword === true
@@ -104,7 +110,10 @@ export function ProfilePage() {
   )
 
   useEffect(() => {
-    if (mustChangePassword) setIsEditingSecurity(true)
+    if (mustChangePassword) {
+      setIsEditingSecurity(true)
+      setActiveSection('security')
+    }
   }, [mustChangePassword])
 
   const {
@@ -177,6 +186,11 @@ export function ProfilePage() {
   const planCatalogItem = plansData?.plans.find((plan) => plan.key === organization?.plan)
   const planPrice = planCatalogItem?.priceUsdMonthly ?? null
   const recentPlanReports = planReportsData?.reports.slice(0, 3) ?? []
+  const changeSection = (value: string) => {
+    if (value === 'account' || value === 'security' || value === 'notifications' || value === 'plan') {
+      setActiveSection(value)
+    }
+  }
 
   const onProfileSubmit = async (data: ProfileForm) => {
     const emailChanged = data.email.toLowerCase() !== user.email.toLowerCase()
@@ -272,53 +286,62 @@ export function ProfilePage() {
                   </>
                 )}
               </Badge>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={logout}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                title="Cerrar sesión"
                 aria-label="Cerrar sesión"
+                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
-              </button>
+                <span className="hidden sm:inline">Cerrar sesión</span>
+              </Button>
             </div>
           </div>
 
-          <div className="mt-4 pt-4 border-t border-border">
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center justify-between w-full text-left"
-            >
-              <span className="text-sm font-medium text-muted-foreground">Detalles de la cuenta</span>
-              {showDetails ? (
-                <ChevronUp className="h-4 w-4 text-subtle-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-subtle-foreground" />
-              )}
-            </button>
-
-            {showDetails && (
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:items-center sm:p-4 sm:text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Rol</p>
-                  <p className="text-sm font-semibold text-foreground sm:text-base">
-                    {user.role === 'super-admin' ? 'Super Admin' : 'Admin'}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:items-center sm:p-4 sm:text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Miembro desde</p>
-                  <p className="text-sm font-semibold text-foreground sm:text-base">{user.createdAt ? formatDate(user.createdAt) : '—'}</p>
-                </div>
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 text-surface-muted-foreground sm:flex-col sm:items-center sm:p-4 sm:text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Último acceso</p>
-                  <p className="text-sm font-semibold text-foreground sm:text-base">{user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}</p>
-                </div>
-              </div>
-            )}
-          </div>
         </CardContent>
       </Card>
 
+      <Tabs value={activeSection} onValueChange={changeSection}>
+        <TabsList
+          aria-label="Secciones del perfil"
+          className={`grid h-auto w-full ${user.role === 'admin' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} rounded-xl border border-border-subtle bg-surface-muted p-1 text-muted-foreground`}
+        >
+          <TabsTrigger
+            value="account"
+            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+          >
+            <UserCog aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+            <span>Cuenta</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+          >
+            <ShieldCheck aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+            <span>Seguridad</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="notifications"
+            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+          >
+            <Bell aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+            <span>Notificaciones</span>
+          </TabsTrigger>
+          {user.role === 'admin' && (
+            <TabsTrigger
+              value="plan"
+              className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
+            >
+              <CreditCard aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
+              <span>Plan</span>
+            </TabsTrigger>
+          )}
+        </TabsList>
+
       {user.role === 'admin' && (
+        <TabsContent value="plan" forceMount className="mt-4 data-[state=inactive]:hidden">
         <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
           <CardHeader className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
@@ -447,8 +470,10 @@ export function ProfilePage() {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
       )}
 
+      <TabsContent value="account" forceMount className="mt-4 space-y-4 data-[state=inactive]:hidden">
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
@@ -597,6 +622,37 @@ export function ProfilePage() {
 
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardHeader className="p-4 sm:p-5">
+          <h2 className="font-semibold text-lg">Fechas de la cuenta</h2>
+          <p className="text-sm text-muted-foreground">
+            Antigüedad y último acceso registrado.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-2 p-4 pt-0 sm:grid-cols-2 sm:gap-3 sm:p-5 sm:pt-0">
+          <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 sm:p-4">
+            <CalendarDays className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Miembro desde</p>
+              <p className="text-sm font-semibold text-foreground sm:text-base">
+                {user.createdAt ? formatDate(user.createdAt) : '—'}
+              </p>
+            </div>
+          </div>
+          <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border-subtle bg-surface-muted p-3 sm:p-4">
+            <Clock3 className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Último acceso</p>
+              <p className="text-sm font-semibold text-foreground sm:text-base">
+                {user.lastLoginAt ? formatDate(user.lastLoginAt) : '—'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      </TabsContent>
+
+      <TabsContent value="security" forceMount className="mt-4 data-[state=inactive]:hidden">
+      <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
+        <CardHeader className="p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <ShieldCheck className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -691,8 +747,12 @@ export function ProfilePage() {
           </CardContent>
         )}
       </Card>
+      </TabsContent>
 
-      <NotificationSettings />
+      <TabsContent value="notifications" forceMount className="mt-4 data-[state=inactive]:hidden">
+        <NotificationSettings />
+      </TabsContent>
+      </Tabs>
 
       {organization && (
         <OrganizationPlanPaymentReportSheet

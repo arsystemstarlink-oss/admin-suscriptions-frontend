@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useAdmins, useDeleteAdmin } from '@/hooks/useAdmins'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmDialog } from '@/components/design-system'
+import { ConfirmDialog, ErrorState } from '@/components/design-system'
 import { CreateAdminSheet } from '@/components/admin/CreateAdminSheet'
 import { EditAdminSheet } from '@/components/admin/EditAdminSheet'
 import { formatDate } from '@/lib/constants'
 import type { Admin } from '@/types/api'
-import { Edit, Plus, ShieldCheck, Trash2, Users } from 'lucide-react'
+import { ChevronDown, Edit, Plus, Trash2, Users } from 'lucide-react'
 
 interface OrganizationAdminsSectionProps {
   organizationId: string
@@ -22,10 +22,14 @@ export function OrganizationAdminsSection({
   organizationActive,
   adminLimit,
 }: OrganizationAdminsSectionProps) {
+  const [expanded, setExpanded] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null)
   const [deletingAdmin, setDeletingAdmin] = useState<Admin | null>(null)
-  const { data, isLoading } = useAdmins({ organizationId, limit: 100 })
+  const { data, isLoading, isError, isFetching, refetch } = useAdmins(
+    { organizationId, limit: 100 },
+    { enabled: expanded },
+  )
   const deleteMutation = useDeleteAdmin()
   const admins = (data?.admins || []).filter((admin) => admin.role !== 'super-admin')
   const limitReached = admins.length >= adminLimit
@@ -34,89 +38,137 @@ export function OrganizationAdminsSection({
     : limitReached
       ? `El plan permite ${adminLimit} ${adminLimit === 1 ? 'administrador' : 'administradores'}. Cambia de plan para agregar más.`
       : null
-  const addDisabled = isLoading || addBlockedReason !== null
+  const addDisabled = isLoading || isError || addBlockedReason !== null
 
   return (
     <section className="mt-4 border-t border-border-subtle pt-4" aria-label={`Administradores de ${organizationName}`}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={`organization-admins-${organizationId}`}
+        onClick={() => setExpanded((current) => !current)}
+        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg text-left text-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="flex min-w-0 items-center gap-2">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">Administradores</h3>
-          {!isLoading && (
+          <span className="text-sm font-semibold">Administradores</span>
+          {data && (
             <Badge variant="outline" className="text-xs" title={`Límite del plan: ${adminLimit}`}>
               {admins.length} de {adminLimit}
             </Badge>
           )}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCreateOpen(true)}
-          disabled={addDisabled}
-          title={isLoading ? 'Cargando administradores...' : addBlockedReason ?? 'Agregar administrador'}
-        >
-          <Plus className="mr-1.5 h-4 w-4 shrink-0" />
-          Agregar administrador
-        </Button>
-      </div>
+          {!expanded && !data && (
+            <span className="truncate text-xs text-muted-foreground">Ver y gestionar accesos</span>
+          )}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
 
-      {addBlockedReason && (
-        <p className="mb-3 text-xs text-muted-foreground">{addBlockedReason}</p>
-      )}
-
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Cargando administradores...</p>
-      ) : admins.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Esta organización aún no tiene administradores.
-        </p>
-      ) : (
-        <ul className="divide-y divide-border-subtle">
-          {admins.map((admin) => (
-            <li
-              key={admin.id}
-              className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+      <div id={`organization-admins-${organizationId}`} hidden={!expanded}>
+        {expanded && (
+          <div className="pt-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            {addBlockedReason ? (
+              <p className="text-xs text-muted-foreground">{addBlockedReason}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Administra quién puede acceder a esta organización.
+              </p>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateOpen(true)}
+              disabled={addDisabled}
+              title={
+                isLoading
+                  ? 'Cargando administradores...'
+                  : isError
+                    ? 'No se pudo actualizar la lista de administradores'
+                    : addBlockedReason ?? 'Agregar administrador'
+              }
             >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">{admin.name}</p>
-                  <Badge variant="default" className="text-xs">
-                    <ShieldCheck className="mr-1 h-3 w-3 shrink-0" />
-                    Admin
-                  </Badge>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <span>{admin.email}</span>
-                  {admin.phone && <span>{admin.phone}</span>}
-                  {admin.lastLoginAt && (
-                    <span>Último acceso: {formatDate(admin.lastLoginAt)}</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setEditingAdmin(admin)}
-                  title="Editar administrador"
-                  aria-label={`Editar administrador ${admin.name}`}
+              <Plus className="mr-1.5 h-4 w-4 shrink-0" />
+              Agregar administrador
+            </Button>
+          </div>
+
+          {isError && data && (
+            <div
+              role="alert"
+              className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-xs text-warning"
+            >
+              <span>No se pudo actualizar la lista de administradores.</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void refetch()}
+                disabled={isFetching}
+              >
+                {isFetching ? 'Reintentando...' : 'Reintentar'}
+              </Button>
+            </div>
+          )}
+
+          {isError && !data ? (
+            <ErrorState
+              title="No se pudieron cargar los administradores"
+              onRetry={() => void refetch()}
+              isRetrying={isFetching}
+            />
+          ) : isLoading ? (
+            <p role="status" className="text-sm text-muted-foreground">Cargando administradores...</p>
+          ) : admins.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Esta organización aún no tiene administradores.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border-subtle">
+              {admins.map((admin) => (
+                <li
+                  key={admin.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                 >
-                  <Edit className="h-4 w-4 shrink-0" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setDeletingAdmin(admin)}
-                  title="Eliminar administrador"
-                  aria-label={`Eliminar administrador ${admin.name}`}
-                >
-                  <Trash2 className="h-4 w-4 shrink-0 text-destructive" />
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{admin.name}</p>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>{admin.email}</span>
+                      {admin.phone && <span>{admin.phone}</span>}
+                      {admin.lastLoginAt && (
+                        <span>Último acceso: {formatDate(admin.lastLoginAt)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingAdmin(admin)}
+                    >
+                      <Edit className="h-4 w-4 shrink-0" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => setDeletingAdmin(admin)}
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0" />
+                      Eliminar
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          </div>
+        )}
+      </div>
 
       <CreateAdminSheet
         open={createOpen}

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useSearchParams, Navigate, Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { useOrganizations, useDeleteOrganization } from '@/hooks/useOrganizations'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check, ReceiptText, ArrowRight } from 'lucide-react'
+import { Plus, Building2, Edit, Trash2, MessageCircle, MessageCircleOff, Link2, Check, ReceiptText, ArrowRight, MoreHorizontal } from 'lucide-react'
 import { ListPageLayout, ListCard, ConfirmDialog } from '@/components/design-system'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { CreateOrganizationSheet } from '@/components/organizations/CreateOrganizationSheet'
@@ -57,6 +58,7 @@ export function OrganizationsPage() {
     try {
       await navigator.clipboard.writeText(link)
       setCopiedSlug(organization.slug)
+      toast.success('Enlace de consulta copiado')
       setTimeout(() => setCopiedSlug((current) => (current === organization.slug ? null : current)), 2000)
     } catch {
       window.prompt('Copia el enlace de consulta:', link)
@@ -298,53 +300,73 @@ export function OrganizationsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {organization.slug && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleCopyConsultaLink(organization)}
-                  title={`Copiar link de consulta (/consulta/${organization.slug})`}
-                  aria-label={`Copiar link de consulta de ${organization.name}`}
-                >
-                  {copiedSlug === organization.slug ? (
-                    <Check className="h-4 w-4 shrink-0 text-success" />
-                  ) : (
-                    <Link2 className="h-4 w-4 shrink-0" />
-                  )}
-                </Button>
-                )}
                 <Button asChild size="sm" className="shrink-0">
                   <Link to={`/config/organization/${organization.id}`}>
                     Administrar <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setPaymentOrganization(organization)}
-                  title="Registrar pago del plan"
-                  aria-label={`Registrar pago del plan de ${organization.name}`}
-                >
-                  <ReceiptText className="h-4 w-4 shrink-0" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setEditingOrganization(organization)}
-                  title="Editar organización"
-                  aria-label={`Editar organización ${organization.name}`}
-                >
-                  <Edit className="h-4 w-4 shrink-0" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setDeletingOrganization(organization)}
-                  title="Eliminar organización"
-                  aria-label={`Eliminar organización ${organization.name}`}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive shrink-0" />
-                </Button>
+                <details className="relative">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                    <MoreHorizontal aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    <span>Más acciones</span>
+                  </summary>
+                  <div className="absolute right-0 top-full z-30 mt-2 flex min-w-48 flex-col gap-1 rounded-xl border border-border bg-surface-elevated p-2 text-surface-elevated-foreground shadow-sm">
+                    {organization.slug && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full justify-start text-foreground hover:bg-surface-hover"
+                        onClick={(event) => {
+                          event.currentTarget.closest('details')?.removeAttribute('open')
+                          void handleCopyConsultaLink(organization)
+                        }}
+                      >
+                        {copiedSlug === organization.slug ? (
+                          <Check className="h-4 w-4 shrink-0 text-success" />
+                        ) : (
+                          <Link2 className="h-4 w-4 shrink-0" />
+                        )}
+                        Copiar enlace de consulta
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full justify-start text-foreground hover:bg-surface-hover"
+                      onClick={(event) => {
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                        setPaymentOrganization(organization)
+                      }}
+                    >
+                      <ReceiptText className="h-4 w-4 shrink-0" />
+                      Registrar pago
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full justify-start text-foreground hover:bg-surface-hover"
+                      onClick={(event) => {
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                        setEditingOrganization(organization)
+                      }}
+                    >
+                      <Edit className="h-4 w-4 shrink-0" />
+                      Editar organización
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(event) => {
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                        setDeletingOrganization(organization)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0" />
+                      Eliminar organización
+                    </Button>
+                  </div>
+                </details>
               </div>
             </div>
             {adminLimit !== null && (

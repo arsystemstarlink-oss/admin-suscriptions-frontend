@@ -1,27 +1,15 @@
 import { useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useAdmins, useDeleteAdmin } from '@/hooks/useAdmins'
-import { useOrganizations } from '@/hooks/useOrganizations'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { formatLocalDate } from '@/lib/constants'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Users, Edit, Trash2, ShieldCheck, Building2 } from 'lucide-react'
+import { Plus, Users, Edit, Trash2 } from 'lucide-react'
 import { ListPageLayout, ListCard } from '@/components/design-system'
 import { ConfirmDialog } from '@/components/design-system/ConfirmDialog'
-import { FilterPill } from '@/components/design-system/FilterPill'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { CreateAdminSheet } from '@/components/admin/CreateAdminSheet'
 import { EditAdminSheet } from '@/components/admin/EditAdminSheet'
 import type { Admin } from '@/types/api'
-
-const ALL_ORGS_VALUE = '__all__'
 
 export function AdminsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -31,21 +19,11 @@ export function AdminsPage() {
   const [deletingAdmin, setDeletingAdmin] = useState<Admin | null>(null)
   const isSuperAdmin = useIsSuperAdmin()
 
-  const organizationIdFilter = searchParams.get('organizationId') || undefined
-
   const { data, isLoading } = useAdmins({
     search: searchParams.get('search') || undefined,
-    organizationId: organizationIdFilter,
     limit: 50,
     offset: 0,
   })
-
-  const { data: organizationsData } = useOrganizations(
-    { limit: 100 },
-    { enabled: isSuperAdmin },
-  )
-  const organizations = organizationsData?.organizations || []
-  const organizationNameById = new Map(organizations.map((o) => [o.id, o.name]))
 
   const deleteMutation = useDeleteAdmin()
 
@@ -56,16 +34,6 @@ export function AdminsPage() {
       params.set('search', value)
     } else {
       params.delete('search')
-    }
-    setSearchParams(params)
-  }
-
-  const handleOrganizationFilter = (value: string) => {
-    const params = new URLSearchParams(searchParams)
-    if (value === ALL_ORGS_VALUE) {
-      params.delete('organizationId')
-    } else {
-      params.set('organizationId', value)
     }
     setSearchParams(params)
   }
@@ -81,33 +49,19 @@ export function AdminsPage() {
         searchProps={{
           value: search,
           onChange: handleSearch,
-          placeholder: "Buscar por nombre, email o teléfono...",
+          placeholder: 'Buscar por nombre, correo o teléfono...',
         }}
-        filters={
-          <>
-            {isSuperAdmin && (
-              <Select
-                value={organizationIdFilter || ALL_ORGS_VALUE}
-                onValueChange={handleOrganizationFilter}
-              >
-                <SelectTrigger className="w-56 h-9 shrink-0" aria-label="Filtrar por organización">
-                  <SelectValue placeholder="Todas las organizaciones" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_ORGS_VALUE}>Todas las organizaciones</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <FilterPill active={createOpen} onClick={() => setCreateOpen(!createOpen)}>
-              <Plus className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-              Nuevo administrador
-            </FilterPill>
-          </>
+        primaryAction={
+          <Button
+            onClick={() => setCreateOpen(true)}
+            size="icon"
+            className="rounded-full sm:w-auto sm:rounded-md sm:px-4"
+            aria-label="Nuevo administrador"
+            title="Nuevo administrador"
+          >
+            <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Nuevo administrador</span>
+          </Button>
         }
         isLoading={isLoading}
         isEmpty={isEmpty}
@@ -125,28 +79,14 @@ export function AdminsPage() {
           {admins.map((admin) => (
             <ListCard
               key={admin.id}
-              className="md:flex-row md:items-center md:justify-between"
+              className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
             >
               <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-foreground">{admin.name}</p>
-                  <Badge variant="default" className="text-xs">
-                    <ShieldCheck className="h-3 w-3 mr-1 shrink-0" />
-                    Admin
-                  </Badge>
-                </div>
+                <p className="font-medium text-foreground">{admin.name}</p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
                   <span className="font-medium">{admin.email}</span>
                   {admin.phone && (
                     <span className="truncate">{admin.phone}</span>
-                  )}
-                  {isSuperAdmin && (
-                    <span className="inline-flex items-center gap-1 text-xs">
-                      <Building2 className="h-3 w-3 shrink-0" />
-                      {admin.organizationId
-                        ? organizationNameById.get(admin.organizationId) || 'Organización desconocida'
-                        : 'Sin organización'}
-                    </span>
                   )}
                   {admin.lastLoginAt && (
                     <span className="text-xs">
@@ -158,21 +98,20 @@ export function AdminsPage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="icon"
+                  size="sm"
                   onClick={() => setEditingAdmin(admin)}
-                  aria-label={`Editar a ${admin.name}`}
-                  title={`Editar a ${admin.name}`}
                 >
                   <Edit className="h-4 w-4 shrink-0" />
+                  Editar
                 </Button>
                 <Button
                   variant="outline"
-                  size="icon"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => setDeletingAdmin(admin)}
-                  aria-label={`Eliminar a ${admin.name}`}
-                  title={`Eliminar a ${admin.name}`}
                 >
-                  <Trash2 className="h-4 w-4 text-destructive shrink-0" />
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  Eliminar
                 </Button>
               </div>
             </ListCard>

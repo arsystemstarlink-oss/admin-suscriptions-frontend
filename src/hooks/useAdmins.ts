@@ -14,10 +14,11 @@ interface UseAdminsParams {
   organizationId?: string
 }
 
-export function useAdmins(params?: UseAdminsParams) {
+export function useAdmins(params?: UseAdminsParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [...ADMIN_LISTS_KEY, params],
     queryFn: () => adminsApi.list(params),
+    enabled: options?.enabled ?? true,
   })
 }
 

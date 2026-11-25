@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useInfiniteSubscriptions, usePrefetchSubscriptionDetail, useSubscriptionFilterTotals } from '@/hooks/useSubscriptions'
-import { useDashboardAlerts, useDashboardSummary } from '@/hooks/useDashboard'
 import { useOrganizationStore } from '@/stores/organization.store'
 import { useAuthStore, useIsSuperAdmin } from '@/stores/auth.store'
 import { getOrganizationPlanAccess } from '@/lib/business-plan'
 import { Button } from '@/components/ui/button'
-import { Plus, Link2, RotateCcw, Box, Phone, Calendar, DollarSign, AlertTriangle, Clock, LoaderCircle } from 'lucide-react'
+import { Plus, Link2, RotateCcw, Box, Phone, Calendar, DollarSign, AlertTriangle, Clock, LoaderCircle, SlidersHorizontal } from 'lucide-react'
 import { PageToolbar } from '@/components/design-system/PageToolbar'
 import { FilterPill } from '@/components/design-system/FilterPill'
 import { EmptyState } from '@/components/design-system/EmptyState'
@@ -19,24 +18,38 @@ import { PayAdvanceSheet } from '@/components/payment/PayAdvanceSheet'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import type { SubscriptionWithDetails } from '@/types/api'
 
+type SubscriptionQueue = 'upcoming' | 'pending' | 'overdue' | 'active' | 'suspended'
+
+function getSubscriptionQueue(searchParams: URLSearchParams): SubscriptionQueue {
+  const queue = searchParams.get('queue')
+  if (queue === 'upcoming' || queue === 'pending' || queue === 'overdue' || queue === 'active' || queue === 'suspended') {
+    return queue
+  }
+
+  if (searchParams.get('status') === 'SUSPENDED') return 'suspended'
+  if (searchParams.get('hasOverdue') === 'true') return 'overdue'
+  if (searchParams.get('pending') === 'true') return 'pending'
+  if (searchParams.get('expiring') === 'true') return 'upcoming'
+  if (searchParams.get('status') === 'ACTIVE' || searchParams.get('hasOverdue') === 'false') return 'active'
+  return 'upcoming'
+}
+
 export function SubscriptionsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const [search, setSearch] = useState(searchParams.get('search') || '')
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') || '')
   const [advanceSub, setAdvanceSub] = useState<SubscriptionWithDetails | null>(null)
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
   const isSuperAdmin = useIsSuperAdmin()
   const user = useAuthStore((state) => state.user)
   const { isReadOnly } = getOrganizationPlanAccess(user?.role === 'admin' ? user.organization : undefined)
   const organizationId = useOrganizationStore((state) => state.selectedOrganizationId)
   const { openOldestUnpaidPeriod, loadingSubscriptionId: payingId } = useOpenOldestUnpaidPeriod(organizationId ?? undefined)
   const prefetchSubscription = usePrefetchSubscriptionDetail(organizationId ?? undefined)
+  const queue = getSubscriptionQueue(searchParams)
 
   const pageIndex = Math.max(0, (Number.parseInt(searchParams.get('page') ?? '', 10) || 1) - 1)
-  const statusFilter = searchParams.get('status') as 'ACTIVE' | 'SUSPENDED' | null
-  const hasOverdue = searchParams.get('hasOverdue') === 'true' ? true : searchParams.get('hasOverdue') === 'false' ? false : undefined
-  const expiringFilter = searchParams.get('expiring') === 'true'
-  const pendingFilter = searchParams.get('pending') === 'true'
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 300)
@@ -57,10 +70,10 @@ export function SubscriptionsListPage() {
   } = useInfiniteSubscriptions(
     {
       organizationId: organizationId ?? undefined,
-      status: statusFilter ?? undefined,
-      hasOverduePeriods: hasOverdue ?? undefined,
-      expiring: expiringFilter || undefined,
-      pending: pendingFilter || undefined,
+      status: queue === 'suspended' ? 'SUSPENDED' : 'ACTIVE',
+      hasOverduePeriods: queue === 'overdue' ? true : queue === 'upcoming' || queue === 'pending' ? false : undefined,
+      expiring: queue === 'upcoming' || undefined,
+      pending: queue === 'pending' || undefined,
       search: debouncedSearch || undefined,
       limit: 50,
     },
@@ -111,17 +124,20 @@ export function SubscriptionsListPage() {
     setSearchParams(params, { replace: true })
   }
 
-  const handleFilter = (key: string, value: string | null) => {
+  const handleQueue = (nextQueue: SubscriptionQueue) => {
     const params = new URLSearchParams(searchParams)
     params.delete('page')
-    if (value) params.set(key, value)
-    else params.delete(key)
+    params.delete('status')
+    params.delete('hasOverdue')
+    params.delete('expiring')
+    params.delete('pending')
+    params.set('queue', nextQueue)
     setSearchParams(params)
   }
 
   const clearAllFilters = () => {
     setSearch('')
-    setSearchParams({})
+    setSearchParams({ queue: 'upcoming' })
   }
 
   const isExpiringSub = (sub: SubscriptionWithDetails) =>
@@ -132,20 +148,19 @@ export function SubscriptionsListPage() {
 
   // Totales de toda la organización: no dependen de la página ni de los filtros activos.
   const totalsEnabled = !isSuperAdmin || !!organizationId
-  const totalsParams = { organizationId: organizationId ?? undefined }
   const filterTotals = useSubscriptionFilterTotals(organizationId ?? undefined, { enabled: totalsEnabled })
-  const { data: summary } = useDashboardSummary(totalsParams, { enabled: totalsEnabled })
-  const { data: alerts } = useDashboardAlerts(totalsParams, { enabled: totalsEnabled })
-
-  const expiringAmount = alerts
-    ? alerts.expiringSoon.items.filter((item) => item.status !== 'PAID').reduce((sum, item) => sum + item.amount, 0)
-    : undefined
-  const formatMetricAmount = (amount: number | undefined, isPartial = false) =>
-    amount === undefined ? '—' : `${isPartial ? 'Más de ' : ''}${formatCurrency(amount)}`
 
   const visibleSubscriptions = useMemo(
-    () => (pageData?.subscriptions ?? []).filter((sub) => sub.client != null),
-    [pageData],
+    () => {
+      const subscriptions = (pageData?.subscriptions ?? []).filter((sub) => sub.client != null)
+      if (queue !== 'pending') return subscriptions
+      return subscriptions.sort((a, b) => {
+        const aDate = a.nearestPendingDate ? new Date(a.nearestPendingDate).getTime() : Number.MAX_SAFE_INTEGER
+        const bDate = b.nearestPendingDate ? new Date(b.nearestPendingDate).getTime() : Number.MAX_SAFE_INTEGER
+        return aDate - bDate
+      })
+    },
+    [pageData, queue],
   )
 
   const handleNextPage = async () => {
@@ -160,13 +175,13 @@ export function SubscriptionsListPage() {
     }
   }
 
-  const hasActiveFilters = Boolean(search || statusFilter || hasOverdue !== undefined || expiringFilter || pendingFilter)
+  const hasActiveFilters = Boolean(search || queue !== 'upcoming')
   // Resultados del filtro o búsqueda anterior visibles mientras llegan los nuevos.
   const isUpdating = isPlaceholderData && isFetching
   const isSearching = search.trim() !== debouncedSearch || isUpdating
 
   const getCardTone = (sub: SubscriptionWithDetails) => {
-    if (sub.hasDebt) {
+    if (sub.overduePeriods > 0) {
       return 'border-destructive/30 bg-destructive/5 text-surface-foreground'
     }
 
@@ -231,12 +246,23 @@ export function SubscriptionsListPage() {
         ) : undefined}
         filters={!showEmpty ? (
           <>
-            <FilterPill active={statusFilter === 'ACTIVE'} onClick={() => handleFilter('status', statusFilter === 'ACTIVE' ? null : 'ACTIVE')}>
-              Activas
+            <FilterPill active={queue === 'upcoming'} onClick={() => handleQueue('upcoming')}>
+              Cobros próximos
             </FilterPill>
-            <FilterPill active={statusFilter === 'SUSPENDED'} onClick={() => handleFilter('status', statusFilter === 'SUSPENDED' ? null : 'SUSPENDED')}>
-              Suspendidas
+            <FilterPill variant="secondary" active={showMoreFilters} onClick={() => setShowMoreFilters((shown) => !shown)}>
+              <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+              Más filtros
             </FilterPill>
+            {showMoreFilters && (
+              <>
+                <FilterPill active={queue === 'active'} onClick={() => { handleQueue('active'); setShowMoreFilters(false) }}>
+                  Todas las activas
+                </FilterPill>
+                <FilterPill active={queue === 'suspended'} onClick={() => { handleQueue('suspended'); setShowMoreFilters(false) }}>
+                  Suspendidas
+                </FilterPill>
+              </>
+            )}
             {hasActiveFilters && (
               <FilterPill variant="secondary" onClick={clearAllFilters}>
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -257,55 +283,55 @@ export function SubscriptionsListPage() {
         />
       ) : (
         <>
-          {/* Métricas de Cobranza (filtros rápidos) */}
-          <p className="text-xs text-muted-foreground">Totales de la organización. Toca uno para filtrar.</p>
+          {/* Cola de cobranza: próximas primero; vencidas y suspendidas quedan en vistas separadas. */}
+          <p className="text-xs text-muted-foreground">Suscripciones activas de toda la organización. Selecciona una cola para atenderla.</p>
           <div className="-mt-1 grid grid-cols-3 gap-2 sm:-mt-2">
             <button
               type="button"
-              onClick={() => handleFilter('hasOverdue', hasOverdue === true ? null : 'true')}
-              aria-pressed={hasOverdue === true}
-              title={hasOverdue === true ? 'Quitar filtro de vencidos' : 'Ver solo vencidos'}
-              className="rounded-2xl border border-destructive/20 bg-destructive/10 text-destructive p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 data-[active=true]:ring-2 data-[active=true]:ring-destructive/50"
-              data-active={hasOverdue === true}
-            >
-              <span className="flex items-center gap-1 text-xs font-bold">
-                <AlertTriangle className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
-                Vencidos
-              </span>
-              <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.overdue ?? '—'}</span>
-              <span className="text-xs font-medium mt-1 truncate block">{formatMetricAmount(summary?.financial.totalOverdue)}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleFilter('expiring', expiringFilter ? null : 'true')}
-              aria-pressed={expiringFilter}
-              title={expiringFilter ? 'Quitar filtro de por vencer' : 'Ver solo por vencer'}
+              onClick={() => handleQueue('upcoming')}
+              aria-pressed={queue === 'upcoming'}
+              title="Ver períodos pendientes que vencen en los próximos 7 días"
               className="rounded-2xl border border-warning/20 bg-warning/10 text-warning p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning/50 data-[active=true]:ring-2 data-[active=true]:ring-warning/50"
-              data-active={expiringFilter}
+              data-active={queue === 'upcoming'}
             >
               <span className="flex items-center gap-1 text-xs font-bold">
                 <Clock className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
-                Por vencer
+                Por vencer · 7 días
               </span>
               <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.expiring ?? '—'}</span>
-              <span className="text-xs font-medium mt-1 truncate block">{formatMetricAmount(expiringAmount, alerts?.expiringSoon.hasMore)}</span>
+              <span className="text-xs font-medium mt-1 truncate block">suscripciones</span>
             </button>
 
             <button
               type="button"
-              onClick={() => handleFilter('pending', pendingFilter ? null : 'true')}
-              aria-pressed={pendingFilter}
-              title={pendingFilter ? 'Quitar filtro de pendientes' : 'Ver solo pendientes'}
+              onClick={() => handleQueue('pending')}
+              aria-pressed={queue === 'pending'}
+              title="Ver suscripciones activas con períodos pendientes y sin vencidos"
               className="rounded-2xl border border-info/20 bg-info/10 text-info p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info/50 data-[active=true]:ring-2 data-[active=true]:ring-info/50"
-              data-active={pendingFilter}
+              data-active={queue === 'pending'}
             >
               <span className="flex items-center gap-1 text-xs font-bold">
                 <Box className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
                 Pendientes
               </span>
               <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.pending ?? '—'}</span>
-              <span className="text-xs font-medium mt-1 truncate block">{formatMetricAmount(summary?.financial.totalPending)}</span>
+              <span className="text-xs font-medium mt-1 truncate block">sin vencidos</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQueue('overdue')}
+              aria-pressed={queue === 'overdue'}
+              title="Ver suscripciones activas con períodos vencidos"
+              className="rounded-2xl border border-destructive/20 bg-destructive/5 text-destructive p-2.5 min-w-0 text-left cursor-pointer transition-all touch-manipulation hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 data-[active=true]:ring-2 data-[active=true]:ring-destructive/50"
+              data-active={queue === 'overdue'}
+            >
+              <span className="flex items-center gap-1 text-xs font-bold">
+                <AlertTriangle className="hidden h-3.5 w-3.5 shrink-0 min-[400px]:block" />
+                Vencidos
+              </span>
+              <span className="text-xl font-bold mt-1 leading-none block">{filterTotals.overdue ?? '—'}</span>
+              <span className="text-xs font-medium mt-1 truncate block">seguimiento</span>
             </button>
           </div>
 
@@ -313,17 +339,21 @@ export function SubscriptionsListPage() {
           {!data || visibleSubscriptions.length === 0 ? (
             <EmptyState
               icon={<Link2 className="h-16 w-16 text-subtle-foreground" />}
-              title={hasActiveFilters ? 'Sin resultados' : 'Sin suscripciones'}
+              title={hasActiveFilters ? 'Sin resultados' : 'Sin cobros próximos'}
               description={
                 hasActiveFilters
                   ? 'Ninguna suscripción coincide con tu búsqueda o filtros.'
-                  : 'Registra la primera suscripción para empezar a cobrar.'
+                  : 'No hay períodos pendientes que venzan en los próximos 7 días.'
               }
               action={
-                hasActiveFilters ? (
+                hasActiveFilters && !(queue === 'upcoming' && !search) ? (
                   <Button variant="outline" onClick={clearAllFilters}>
                     <RotateCcw className="h-4 w-4 mr-2 shrink-0" />
                     Limpiar filtros
+                  </Button>
+                ) : queue === 'upcoming' && !search ? (
+                  <Button variant="outline" onClick={() => handleQueue('active')}>
+                    Ver todas las activas
                   </Button>
                 ) : !isReadOnly ? (
                   <Button asChild>
@@ -376,7 +406,7 @@ export function SubscriptionsListPage() {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusClass(sub.status)}`}>
                         {SUBSCRIPTION_STATUS_LABELS[sub.status]}
                       </span>
-                      {sub.hasDebt && (
+                      {sub.overduePeriods > 0 && (
                         <span className="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide text-destructive bg-destructive/10">
                           Vencidos
                         </span>

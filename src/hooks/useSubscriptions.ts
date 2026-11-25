@@ -49,7 +49,11 @@ export function useSubscriptions(params?: UseSubscriptionsParams, options?: { en
  * filtro de la lista, así el número coincide con lo que se ve al aplicarlo.
  */
 export function useSubscriptionFilterTotals(organizationId?: string, options?: { enabled?: boolean }) {
-  const filters = [{ hasOverduePeriods: true }, { expiring: true }, { pending: true }]
+  const filters = [
+    { status: 'ACTIVE' as const, hasOverduePeriods: true },
+    { status: 'ACTIVE' as const, expiring: true, hasOverduePeriods: false },
+    { status: 'ACTIVE' as const, pending: true, hasOverduePeriods: false },
+  ]
   const [overdue, expiring, pending] = useQueries({
     queries: filters.map((filter) => ({
       queryKey: [...qk.subscriptions.lists, 'filter-total', { organizationId, ...filter }],
@@ -88,13 +92,22 @@ export function useInfiniteSubscriptions(
         ? { offset: 0, cursor: lastPage.pagination.nextCursor }
         : undefined
     },
-    // Al buscar o filtrar se conserva la lista anterior hasta tener la nueva: la página no
-    // vuelve al esqueleto ni desmonta el buscador. Nunca entre organizaciones.
-    placeholderData: (previous, previousQuery) =>
-      (previousQuery?.queryKey[qk.subscriptions.lists.length] as UseSubscriptionsParams | undefined)
-        ?.organizationId === params.organizationId
+    // Al buscar dentro de la misma cola se conserva la lista mientras llegan resultados.
+    // No se muestran filas de otra cola ni de otra organización.
+    placeholderData: (previous, previousQuery) => {
+      const previousParams = previousQuery?.queryKey[qk.subscriptions.lists.length] as
+        | UseSubscriptionsParams
+        | undefined
+      const sameQueue =
+        previousParams?.status === params.status &&
+        previousParams?.hasOverduePeriods === params.hasOverduePeriods &&
+        previousParams?.expiring === params.expiring &&
+        previousParams?.pending === params.pending
+
+      return previousParams?.organizationId === params.organizationId && sameQueue
         ? previous
-        : undefined,
+        : undefined
+    },
     ...options,
   })
 }

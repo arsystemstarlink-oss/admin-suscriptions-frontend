@@ -41,6 +41,16 @@ export const publicPortalApi = {
 }
 
 export const publicPlansApi = {
+  recordPageVisit: async (data: {
+    sessionId: string
+    source?: string
+    medium?: string
+    campaign?: string
+  }): Promise<{ recorded: boolean }> => {
+    const response = await publicApi.post<{ recorded: boolean }>('/public/page-views', data)
+    return response.data
+  },
+
   getPaymentInstructions: async (): Promise<PublicPaymentInstructions> => {
     const response = await publicApi.get<PublicPaymentInstructions>(
       '/public/payment-instructions',

@@ -55,6 +55,7 @@ export const qk = {
   planQuoteRequests: {
     lists: ['plan-quote-requests', 'list'] as const,
   },
+  pageViews: (days: 7 | 30 | 90) => ['page-views', days] as const,
   organizationPlanPaymentReports: {
     mine: ['organization-plan-payment-reports', 'mine'] as const,
     lists: ['organization-plan-payment-reports', 'list'] as const,

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import '@fontsource-variable/bricolage-grotesque/wght.css'
 import { Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -8,7 +9,25 @@ import {
 } from '@/lib/constants'
 import { getWhatsAppUrl, DEFAULT_TRIAL_DAYS } from '@/lib/business-plan'
 import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
+import { publicPlansApi } from '@/api/public.api'
 import type { BusinessPlanCatalogItem, BusinessPlanKey } from '@/types/api'
+
+const VISIT_SESSION_KEY = 'plan-page-visit-session'
+let fallbackVisitSessionId: string | undefined
+
+function getVisitSessionId(): string {
+  try {
+    const existing = window.sessionStorage.getItem(VISIT_SESSION_KEY)
+    if (existing) return existing
+    const sessionId = window.crypto.randomUUID()
+    window.sessionStorage.setItem(VISIT_SESSION_KEY, sessionId)
+    return sessionId
+  } catch (error) {
+    console.warn('No se pudo usar el almacenamiento de sesión para contar visitas.', error)
+    fallbackVisitSessionId ??= window.crypto.randomUUID()
+    return fallbackVisitSessionId
+  }
+}
 
 const PLAN_CONTENT: Record<
   BusinessPlanKey,
@@ -142,6 +161,18 @@ export function PlansPage() {
   const { data: plansData, isLoading: plansLoading } = useBusinessPlans()
   const plans = plansData?.plans ?? []
   const trialDays = plans.find((plan) => plan.key === 'basico')?.trialDays ?? DEFAULT_TRIAL_DAYS
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    void publicPlansApi.recordPageVisit({
+      sessionId: getVisitSessionId(),
+      source: params.get('utm_source') ?? undefined,
+      medium: params.get('utm_medium') ?? undefined,
+      campaign: params.get('utm_campaign') ?? undefined,
+    }).catch((error: unknown) => {
+      console.warn('No se pudo registrar la visita a /planes.', error)
+    })
+  }, [])
 
   return (
     <div className="plans-page-theme min-h-dvh bg-background text-foreground">
@@ -420,6 +451,9 @@ export function PlansPage() {
             A<span className="text-secondary">|</span>R SYSTEM
           </span>
           <span>Clientes y suscripciones para proveedores de internet</span>
+          <span className="max-w-2xl text-xs">
+            Registramos una visita por sesión al día con su origen y categorías de dispositivo/navegador durante 90 días. No guardamos tu IP ni MAC.
+          </span>
           <Link
             to="/login"
             className="w-fit rounded-sm text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

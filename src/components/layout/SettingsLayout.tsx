@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Outlet } from 'react-router-dom'
 import { PageSubNav, type PageSubNavTab } from '@/components/layout/PageSubNav'
-import { MessagesSquare, User, UserPlus, Building2 } from 'lucide-react'
+import { MessagesSquare, User, UserPlus, Building2, BarChart3 } from 'lucide-react'
 import { useIsSuperAdmin } from '@/stores/auth.store'
 
 // Etiquetas de una sola palabra: en móvil la barra no tiene sitio para dos.
@@ -35,6 +35,14 @@ export function SettingsLayout() {
           label: 'Plataforma',
           title: 'WhatsApp de la plataforma',
           subtitle: 'La cuenta que envía por las organizaciones sin número propio',
+          end: false,
+        },
+        {
+          to: '/config/visits',
+          icon: BarChart3,
+          label: 'Visitas',
+          title: 'Visitas a planes',
+          subtitle: 'Sesiones, origen de llegada y dispositivos de quienes visitan /planes',
           end: false,
         },
       ]

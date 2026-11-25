@@ -43,6 +43,7 @@ import {
   PaymentReportsPage,
   OrganizationPlanReportsPage,
   PlanQuoteRequestsPage,
+  PlanPageViewsPage,
   PageLoader,
   FullPageLoader,
 } from '@/routes/lazy-pages'
@@ -127,6 +128,7 @@ export const router = createBrowserRouter(
           </Suspense>
         ),
       },
+      { path: 'public-visits', element: <Navigate to="/config/visits" replace /> },
       {
         path: 'subscriptions',
         element: (
@@ -305,6 +307,17 @@ export const router = createBrowserRouter(
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
               </Suspense>
+            ),
+          },
+          {
+            path: 'visits',
+            handle: { title: 'Visitas a planes' },
+            element: (
+              <RoleGuard allowedRoles={['super-admin']}>
+                <Suspense fallback={<PageLoader />}>
+                  <PlanPageViewsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {

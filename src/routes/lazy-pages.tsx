@@ -30,6 +30,7 @@ export const PlansSignupPage = lazy(() => import('@/pages/public/PlansSignupPage
 export const PaymentReportsPage = lazy(() => import('@/pages/admin/PaymentReportsPage').then(m => ({ default: m.PaymentReportsPage })))
 export const OrganizationPlanReportsPage = lazy(() => import('@/pages/admin/OrganizationPlanReportsPage').then(m => ({ default: m.OrganizationPlanReportsPage })))
 export const PlanQuoteRequestsPage = lazy(() => import('@/pages/admin/PlanQuoteRequestsPage').then(m => ({ default: m.PlanQuoteRequestsPage })))
+export const PlanPageViewsPage = lazy(() => import('@/pages/admin/PlanPageViewsPage').then(m => ({ default: m.PlanPageViewsPage })))
 
 /** Rutas dentro del layout autenticado: el mismo pulso que usa la página al cargar sus datos. */
 export function PageLoader() {

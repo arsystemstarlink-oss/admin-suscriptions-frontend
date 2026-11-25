@@ -20,6 +20,17 @@ export enum BillingPeriodStatus {
 
 export type UserRole = 'super-admin' | 'admin'
 
+export interface PlanPageViewsResponse {
+  days: 7 | 30 | 90
+  totalVisits: number
+  daily: { date: string; visits: number }[]
+  sources: { label: string; visits: number }[]
+  campaigns: { label: string; visits: number }[]
+  devices: { label: string; visits: number }[]
+  browsers: { label: string; visits: number }[]
+  truncated: boolean
+}
+
 export type BusinessPlanKey = 'basico' | 'pro' | 'negocio' | 'a-medida'
 export type OrganizationPlanStatus = 'prueba' | 'activo' | 'vencido' | 'suspendido'
 

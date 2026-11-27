@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
+import { PageHeader } from '@/components/design-system/PageHeader'
 import { cn } from '@/lib/utils'
 
 export interface PageSubNavTab {
@@ -29,19 +30,8 @@ export function PageSubNav({ tabs, title, subtitle }: PageSubNavProps) {
   const headerSubtitle = subtitle ?? activeTab?.subtitle
 
   return (
-    <div className="sm:space-y-4 md:space-y-6">
-      {(headerTitle || headerSubtitle) && (
-        <div>
-          {headerTitle && (
-            <h1 className="sr-only text-2xl font-bold tracking-tight text-foreground sm:not-sr-only">
-              {headerTitle}
-            </h1>
-          )}
-          {headerSubtitle && (
-            <p className="hidden text-muted-foreground mt-1 text-sm sm:block md:text-base">{headerSubtitle}</p>
-          )}
-        </div>
-      )}
+    <div className="space-y-2 sm:space-y-4 md:space-y-6">
+      <PageHeader title={headerTitle} description={headerSubtitle} />
 
       <nav
         className="flex w-full gap-1 overflow-x-auto rounded-xl bg-surface text-surface-foreground p-1 border border-border no-scrollbar touch-pan-x sm:gap-3 sm:p-2 sm:rounded-2xl"

@@ -198,7 +198,7 @@ export function PlansPage() {
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="hidden rounded-md px-3 py-2 text-sm text-header-foreground hover:bg-header-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary sm:inline-flex"
+                className="inline-flex rounded-md px-3 py-2 text-sm text-header-foreground hover:bg-header-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-header"
               >
                 Iniciar sesión
               </Link>
@@ -238,7 +238,16 @@ export function PlansPage() {
                   <a href="#como">Cómo funciona</a>
                 </Button>
               </div>
-              <p className="mt-4 text-sm text-header-foreground/75">
+              <p className="mt-4 text-sm text-header-foreground/80">
+                ¿Ya tienes una cuenta?{' '}
+                <Link
+                  to="/login"
+                  className="font-semibold text-header-foreground underline underline-offset-4 hover:text-header-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
+                >
+                  Inicia sesión
+                </Link>
+              </p>
+              <p className="mt-2 text-sm text-header-foreground/75">
                 {trialDays} días gratis con el plan Básico.
               </p>
               {whatsappUrl && (

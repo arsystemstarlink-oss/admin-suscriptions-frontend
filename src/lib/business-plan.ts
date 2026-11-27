@@ -1,6 +1,22 @@
-import type { Organization } from '@/types/api'
+import type { Organization, User } from '@/types/api'
 
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000
+
+/**
+ * Destino al aterrizar con sesión abierta. Se decide por el estado de la
+ * suscripción, no solo por haber iniciado sesión:
+ * - super-admin: siempre al panel (gestiona toda la plataforma).
+ * - admin con organización que ya tiene un plan (prueba o pago, incluso vencido):
+ *   al panel, donde puede actuar y renovar.
+ * - admin cuya organización confirma que no tiene plan: a `/planes` para que elija.
+ * - sin datos suficientes (usuario o `organization` sin cargar): al panel, como antes.
+ */
+export function getLandingPath(user: User | null | undefined): string {
+  if (!user || user.role === 'super-admin') return '/dashboard'
+  const organization = user.organization
+  if (!organization) return '/dashboard'
+  return organization.plan ? '/dashboard' : '/planes'
+}
 
 /** Días de prueba del plan Básico cuando el catálogo del backend aún no está disponible. */
 export const DEFAULT_TRIAL_DAYS = 14

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { APP_NAME } from '@/lib/brand'
+import { getLandingPath } from '@/lib/business-plan'
 
 const loginSchema = z.object({
   email: z
@@ -44,10 +45,10 @@ export function LoginPage() {
     from?: { pathname?: string; search?: string; hash?: string }
   } | null)?.from
   const fromPath = from?.pathname
-  const returnTo =
-    fromPath?.startsWith('/') && !fromPath.startsWith('//')
-      ? `${fromPath}${from?.search ?? ''}${from?.hash ?? ''}`
-      : '/dashboard'
+  const hasDeepLink = Boolean(fromPath?.startsWith('/') && !fromPath.startsWith('//'))
+  const returnTo = hasDeepLink
+    ? `${fromPath}${from?.search ?? ''}${from?.hash ?? ''}`
+    : getLandingPath(user)
 
   useEffect(() => {
     if (isAuthenticated) navigate(returnTo, { replace: true })
@@ -103,7 +104,11 @@ export function LoginPage() {
       setUser(response.user)
 
       setShowSuccess(true)
-      const target = response.user.mustChangePassword ? '/config/profile' : returnTo
+      const target = response.user.mustChangePassword
+        ? '/config/profile'
+        : hasDeepLink
+          ? returnTo
+          : getLandingPath(response.user)
       setTimeout(() => {
         navigate(target, { replace: true })
       }, 900)

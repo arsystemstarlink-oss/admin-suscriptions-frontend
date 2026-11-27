@@ -24,9 +24,19 @@ import { OrganizationSelectionEmptyState } from '@/components/organizations/Orga
 import { getNavigationPreview, getNavigationStatePath } from '@/lib/navigation'
 
 const NOTIFICATION_TYPE_LABELS: Record<NonNullable<SubscriptionWithDetails['lastNotification']>['type'], string> = {
-  reminder: 'Recordatorio de pago',
-  dueDateWarning: 'Aviso de vencimiento',
-  suspensionNotice: 'Aviso de suspensión',
+  reminderV2: 'Recordatorio de pago',
+  reminderV2NoButton: 'Recordatorio de pago (sin botón)',
+  dueDateWarningV2: 'Aviso de vencimiento',
+  dueDateWarningV2NoButton: 'Aviso de vencimiento (sin botón)',
+  overdueReminder: 'Recordatorio de deuda vencida',
+  overdueReminderNoButton: 'Recordatorio de deuda vencida (sin botón)',
+  suspensionNoticeV2: 'Aviso de suspensión',
+  suspensionNoticeV2NoButton: 'Aviso de suspensión (sin botón)',
+  paymentConfirmation: 'Confirmación de pago',
+  paymentConfirmationNoButton: 'Confirmación de pago (sin botón)',
+  reminder: 'Recordatorio anterior',
+  dueDateWarning: 'Aviso de vencimiento anterior',
+  suspensionNotice: 'Aviso de suspensión anterior',
 }
 
 const NOTIFICATION_STATUS: Record<

@@ -341,11 +341,24 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
     () => toReminderCandidates(overduePeriodsQuery.data ?? []),
     [overduePeriodsQuery.data],
   )
-  // La plantilla que de verdad se enviará: la central si la organización usa el WhatsApp de la plataforma.
+  // La plantilla que de verdad se enviará: la variante nueva si está activa y, si no, la anterior.
+  const dueTemplateKeys = ['dueDateWarningV2', 'dueDateWarningV2NoButton', 'dueDateWarning'] as const
+  const platformDueTemplate =
+    whatsAppConfig?.mode === 'platform'
+      ? whatsAppConfig.platform?.templates.find(
+          (template) => template.contentSid && (dueTemplateKeys as readonly string[]).includes(template.key),
+        )
+      : undefined
+  const ownDueKey =
+    whatsAppConfig?.mode === 'platform' ? undefined : dueTemplateKeys.find((key) => whatsAppConfig?.templates[key])
+  const reminderTemplateKey =
+    whatsAppConfig?.mode === 'platform' ? platformDueTemplate?.key : ownDueKey
   const reminderTemplateName = (
     whatsAppConfig?.mode === 'platform'
-      ? whatsAppConfig.platform?.templates.find((template) => template.key === 'dueDateWarning')?.contentSid
-      : whatsAppConfig?.templates.dueDateWarning
+      ? platformDueTemplate?.contentSid
+      : ownDueKey
+        ? whatsAppConfig?.templates[ownDueKey]
+        : undefined
   )?.trim()
   const selectedReminderCandidates = reminderCandidates.filter((debtor) =>
     selectedReminderIds.includes(debtor.clientId),
@@ -418,11 +431,13 @@ export function TopDebtorsWidget({ organizationId, enabled }: DashboardWidgetPro
         const overduePeriod = debtor.overduePeriod
         await sendMessage.mutateAsync({
           to: debtor.clientPhone,
-          templateKey: 'dueDateWarning',
+          templateKey: reminderTemplateKey,
           context: {
             clientName: debtor.clientName,
             serviceCode: overduePeriod.subscription.kitNumber,
             dueDate: overduePeriod.endDate.split('T')[0],
+            planName: overduePeriod.plan.name,
+            amount: overduePeriod.amount,
           },
         })
         sent += 1

@@ -1286,24 +1286,43 @@ El scheduler es siempre por organización: no existe una configuración global n
     reminderDaysBefore: number[]; // Solo 3, 5 o 7, sin repetir; [] desactiva recordatorios previos. Otro valor → 400 INVALID_DATA; los guardados antes se ignoran.
     dueDateWarningEnabled: boolean;
     suspensionNoticeEnabled: boolean;
+    overdueReminderEnabled: boolean;      // Default true, también en organizaciones antiguas.
+    paymentConfirmationEnabled: boolean;  // Default true, también en organizaciones antiguas.
   };
-  templates: {
-    reminder?: string;
-    dueDateWarning?: string;
-    suspensionNotice?: string;
-  };
+  // Claves actuales (5 avisos x 2 variantes) y 3 anteriores como respaldo.
+  templates: Partial<Record<
+    | 'reminderV2' | 'reminderV2NoButton'
+    | 'dueDateWarningV2' | 'dueDateWarningV2NoButton'
+    | 'overdueReminder' | 'overdueReminderNoButton'
+    | 'suspensionNoticeV2' | 'suspensionNoticeV2NoButton'
+    | 'paymentConfirmation' | 'paymentConfirmationNoButton'
+    | 'reminder' | 'dueDateWarning' | 'suspensionNotice',
+    string
+  >>;
   readiness: { ready: boolean; missing: string[]; usingLegacyTemplates: boolean };
   mode: 'platform' | 'own'; // Con qué cuenta envía: la de la plataforma (por defecto) o la suya
   platform: {               // null al consultar la propia cuenta de la plataforma
     available: boolean;     // La plataforma tiene su cuenta de Twilio lista
     phoneNumber: string | null;
     usage: { month: string; used: number; limit: number }; // Cupo del mes (YYYY-MM, UTC)
-    templates: { key; label; body; variables: [{ placeholder, description, sample }]; contentSid: string | null }[];
+    templates: {
+      key; label; body; contentSid: string | null;
+      variables: { placeholder; description; sample; scope: 'body' | 'button' }[];
+      maxBodyLength: number;
+      button?: { title: string; sampleUrl: string }; // Variante con botón al portal
+    }[];
   } | null;
+  portal: { slug: string | null; url: string | null }; // Datos para construir el botón
   webhooks: { inbound: string; status: string } | null; // null si BASE_URL no es https
   lastTestAt: string | null; // Último mensaje de prueba enviado desde la configuración (ISO 8601)
 }
 ```
+
+Las plantillas nuevas (`*V2`, `overdueReminder*`, `paymentConfirmation*`) son las 10 que se
+envían a Meta. Las 3 anteriores se conservan como respaldo: `resolveActiveTemplateKey` usa la
+variante con botón si el cliente tiene DNI registrado y el negocio tiene slug, la variante sin
+botón si no, y la anterior solo si ninguna V2 está aprobada. Un SID solo pasa a `templates`
+cuando Meta aprueba la solicitud.
 
 **PUT /api/whatsapp/config**
 ```typescript
@@ -1315,18 +1334,29 @@ El scheduler es siempre por organización: no existe una configuración global n
     phoneNumber?: string | null;
     enabled?: boolean;
   };
-  templates?: {
-    reminder?: string | null;
-    dueDateWarning?: string | null;
-    suspensionNotice?: string | null;
-  };
+  templates?: Partial<Record<
+    | 'reminderV2' | 'reminderV2NoButton'
+    | 'dueDateWarningV2' | 'dueDateWarningV2NoButton'
+    | 'overdueReminder' | 'overdueReminderNoButton'
+    | 'suspensionNoticeV2' | 'suspensionNoticeV2NoButton'
+    | 'paymentConfirmation' | 'paymentConfirmationNoButton'
+    | 'reminder' | 'dueDateWarning' | 'suspensionNotice',
+    string | null
+  >>;
   rules?: {
     reminderDaysBefore?: number[];
     dueDateWarningEnabled?: boolean;
     suspensionNoticeEnabled?: boolean;
+    overdueReminderEnabled?: boolean;
+    paymentConfirmationEnabled?: boolean;
   };
 }
 ```
+
+Las variantes con botón necesitan `PORTAL_BASE_URL` (https, sin barra final). Sin ella,
+solicitarlas responde `503 WHATSAPP_PORTAL_NOT_CONFIGURED`. El botón usa
+`${PORTAL_BASE_URL}/consulta/{{slug}}` y el slug lo inyecta el servidor: nunca se envía desde el
+cliente.
 
 Actualización parcial por organización. Content SID vacío o null elimina esa plantilla.
 La respuesta incluye el mismo estado `readiness` que GET. La configuración WhatsApp
@@ -1354,6 +1384,24 @@ Daily Job continúa procesando períodos y estados, pero no envía los mensajes 
   to: string; 
   templateName: string;
   variables?: Record<string, string> // Variables posicionales: {"1": "valor", "2": "valor"}
+}
+
+// Alternativa: el servidor resuelve el SID, la variante (con/sin botón) y el orden de variables.
+{
+  to: string;
+  templateKey: WhatsAppTemplateKey;
+  context?: {
+    clientName?: string;
+    serviceCode?: string;
+    dueDate?: string;       // ISO; el servidor la formatea para las plantillas nuevas
+    planName?: string;
+    amount?: string | number; // El servidor la formatea con Intl es-VE/USD
+    periodLabel?: string;
+    serviceStatus?: string;
+    coveredUntil?: string;  // ISO
+    daysBefore?: string | number;
+  };
+  // organizationName y portalSlug los inyecta el servidor.
 }
 
 // Response 201
@@ -1630,7 +1678,7 @@ Codigos de planes: `PLAN_READ_ONLY` (403) | `PLAN_NOT_CONFIGURED` (409) | `CLIEN
 
 Codigos multi-tenant: `TENANT_REQUIRED` (403) | `ORGANIZATION_NOT_FOUND` (404) | `CROSS_TENANT_REFERENCE` (403) | `FORBIDDEN_CROSS_TENANT` (403)
 
-Codigos WhatsApp: `WHATSAPP_LIMIT_REACHED` (409) — la organización agotó su cupo mensual de mensajes con la cuenta de la plataforma. `WHATSAPP_NOT_CONFIGURED` (503) — no está disponible la cuenta Twilio que requiere el modo activo. `TWILIO_NUMBER_IN_USE` (409) — el número de WhatsApp ya pertenece a otra organización o cuenta. `TWILIO_NUMBER_AMBIGUOUS` (409) — el número resuelve a varias organizaciones en el webhook.
+Codigos WhatsApp: `WHATSAPP_LIMIT_REACHED` (409) — la organización agotó su cupo mensual de mensajes con la cuenta de la plataforma. `WHATSAPP_NOT_CONFIGURED` (503) — no está disponible la cuenta Twilio que requiere el modo activo. `WHATSAPP_PORTAL_NOT_CONFIGURED` (503) — falta `PORTAL_BASE_URL` para solicitar una plantilla con botón. `TWILIO_NUMBER_IN_USE` (409) — el número de WhatsApp ya pertenece a otra organización o cuenta. `TWILIO_NUMBER_AMBIGUOUS` (409) — el número resuelve a varias organizaciones en el webhook.
 
 Codigos portal/reportes: `PAYMENT_REPORT_NOT_FOUND` (404) | `PAYMENT_REPORT_ALREADY_EXISTS` (409) | `PAYMENT_REPORT_ALREADY_REVIEWED` (409) | `PAYMENT_REPORT_INVALID_STATE` (400)
 
@@ -1644,7 +1692,7 @@ Codigos adelanto: `HAS_UNPAID_PERIODS` (409) | `PERIOD_ALREADY_EXISTS` (409) | `
 - `POST /api/whatsapp/config/webhooks/connect` (sin cuerpo) configura en Twilio la URL de mensajes entrantes del número, conservando el resto de su webhook, y responde como `GET /api/whatsapp/config/connection`. Reemplaza la URL que tuviera el número. Errores: `503 WHATSAPP_NOT_CONFIGURED`, `400 INVALID_DATA` si `BASE_URL` no es https, `400 INVALID_TWILIO_CONFIG` si el número no está en la cuenta, `400 INVALID_TWILIO_CREDENTIALS`, `502 TWILIO_ERROR`.
 - `GET /api/whatsapp/config/templates` devuelve cada plantilla con `{ key, label, defaultBody, variables: [{ placeholder, description, sample }], required, activeContentSid, request }` tras consultar las que están en revisión. `required` indica que una regla activa la envía sola; `sample` es el dato de ejemplo que se usa en la revisión y en el mensaje de prueba. `POST /api/whatsapp/config/templates/:key/submit` con `{ body? }` la crea y la envía a aprobación (`201`, misma respuesta). Errores: `400 INVALID_WHATSAPP_TEMPLATE`, `409 WHATSAPP_TEMPLATE_PENDING`.
 - `POST /api/whatsapp/config/templates/submit-missing` solicita con el texto sugerido las plantillas nunca pedidas. Responde `{ templates, submitted, failed: [{ key, label, message }] }`; `201` si envió alguna, `200` si no faltaba ninguna.
-- `POST /whatsapp/send` acepta `{ to, templateKey, context }` como alternativa a `templateName` + `variables`: el servidor usa el SID activo de la organización y ordena las variables. Errores: `409 WHATSAPP_TEMPLATE_REQUIRED` si no está activa, `400 INVALID_DATA` si la clave no existe o faltan datos.
+- `POST /whatsapp/send` acepta `{ to, templateKey, context }` como alternativa a `templateName` + `variables`: el servidor usa el SID activo de la organización, elige la variante con botón o sin botón según el DNI del cliente y ordena las variables. Errores: `409 WHATSAPP_TEMPLATE_REQUIRED` si no está activa, `400 INVALID_DATA` si la clave no existe o faltan datos.
 - `POST /api/whatsapp/config/test-message` con `{ to }` envía una plantilla activa con datos de ejemplo (`201 { messageSid, templateKey }`) y registra `lastTestAt`. Error: `409 WHATSAPP_TEMPLATE_REQUIRED`.
 - `GET /api/whatsapp/config/failures` devuelve `{ failures: [{ message, errorCode?, count, lastAt, recipients }] }`: envíos fallidos de los últimos 7 días agrupados por causa.
 - **Dos modos de envío.** `mode: 'platform'` (por defecto): los avisos salen por la cuenta de WhatsApp de la plataforma, sin que la organización configure nada, con un cupo mensual de mensajes según su plan (Básico 120, Pro 300, Negocio 600, A medida 4 por cliente contratado). `mode: 'own'`: la organización usa su propia cuenta de Twilio, sin cupo. Una organización sin `whatsappMode` guardado usa `own` si ya tenía Account SID y `platform` si no. En modo `platform`, el bloque `twilio` de la organización describe sus credenciales propias (vacías tras migrar); `platform` describe la cuenta y plantillas efectivamente usadas.

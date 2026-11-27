@@ -34,18 +34,49 @@ interface TemplateUsage {
 }
 
 const TEMPLATE_USAGE: Record<WhatsAppTemplateKey, (rules: OrganizationWhatsAppRules) => TemplateUsage> = {
-  reminder: (rules) =>
-    rules.reminderDaysBefore.length > 0
-      ? { enabled: true, when: `Se envía ${formatReminderDays(rules.reminderDaysBefore)} antes del vencimiento.` }
-      : { enabled: false, when: 'Desactivado: no elegiste días de recordatorio en «Cuándo avisar».' },
-  dueDateWarning: (rules) =>
-    rules.dueDateWarningEnabled
-      ? { enabled: true, when: 'Se envía el día en que vence el período sin pagar.' }
+  reminderV2: (rules) => reminderUsage(rules),
+  reminderV2NoButton: (rules) => reminderUsage(rules),
+  reminder: (rules) => reminderUsage(rules),
+  dueDateWarningV2: (rules) => dueDateUsage(rules),
+  dueDateWarningV2NoButton: (rules) => dueDateUsage(rules),
+  dueDateWarning: (rules) => dueDateUsage(rules),
+  overdueReminder: (rules) =>
+    rules.overdueReminderEnabled
+      ? { enabled: true, when: 'Se envía una vez el primer día en que un período pasa a vencido.' }
       : { enabled: false, when: 'Desactivado en «Cuándo avisar».' },
-  suspensionNotice: (rules) =>
-    rules.suspensionNoticeEnabled
-      ? { enabled: true, when: 'Se envía cuando el servicio pasa a suspendido.' }
+  overdueReminderNoButton: (rules) =>
+    rules.overdueReminderEnabled
+      ? { enabled: true, when: 'Se envía una vez el primer día en que un período pasa a vencido.' }
       : { enabled: false, when: 'Desactivado en «Cuándo avisar».' },
+  suspensionNoticeV2: (rules) => suspensionUsage(rules),
+  suspensionNoticeV2NoButton: (rules) => suspensionUsage(rules),
+  suspensionNotice: (rules) => suspensionUsage(rules),
+  paymentConfirmation: (rules) =>
+    rules.paymentConfirmationEnabled
+      ? { enabled: true, when: 'Se envía al registrar o aprobar un pago.' }
+      : { enabled: false, when: 'Desactivado en «Cuándo avisar».' },
+  paymentConfirmationNoButton: (rules) =>
+    rules.paymentConfirmationEnabled
+      ? { enabled: true, when: 'Se envía al registrar o aprobar un pago.' }
+      : { enabled: false, when: 'Desactivado en «Cuándo avisar».' },
+}
+
+function reminderUsage(rules: OrganizationWhatsAppRules): TemplateUsage {
+  return rules.reminderDaysBefore.length > 0
+    ? { enabled: true, when: `Se envía ${formatReminderDays(rules.reminderDaysBefore)} antes del vencimiento.` }
+    : { enabled: false, when: 'Desactivado: no elegiste días de recordatorio en «Cuándo avisar».' }
+}
+
+function dueDateUsage(rules: OrganizationWhatsAppRules): TemplateUsage {
+  return rules.dueDateWarningEnabled
+    ? { enabled: true, when: 'Se envía el día en que vence el período sin pagar.' }
+    : { enabled: false, when: 'Desactivado en «Cuándo avisar».' }
+}
+
+function suspensionUsage(rules: OrganizationWhatsAppRules): TemplateUsage {
+  return rules.suspensionNoticeEnabled
+    ? { enabled: true, when: 'Se envía cuando el servicio pasa a suspendido.' }
+    : { enabled: false, when: 'Desactivado en «Cuándo avisar».' }
 }
 
 /** `null` para plantillas que el servidor añada y esta versión aún no conozca. */
@@ -61,18 +92,24 @@ export function isTemplateRequired(template: WhatsAppTemplateState, rules: Organ
 const PLACEHOLDER_PATTERN = /\{\{[^{}]*\}\}/g
 
 /** Mismas reglas que aplica el servidor, para avisar antes de enviar a revisión. */
-export function validateTemplateBody(rawBody: string, variables: WhatsAppTemplateState['variables']): string | null {
+export function validateTemplateBody(
+  rawBody: string,
+  variables: WhatsAppTemplateState['variables'],
+  maxBodyLength = MAX_TEMPLATE_BODY_LENGTH,
+): string | null {
   const body = rawBody.trim()
   if (!body) return 'Escribe el texto del mensaje.'
-  if (body.length > MAX_TEMPLATE_BODY_LENGTH) {
-    return `El texto no puede superar ${MAX_TEMPLATE_BODY_LENGTH} caracteres.`
+  if (body.length > maxBodyLength) {
+    return `El texto no puede superar ${maxBodyLength} caracteres.`
   }
+  // La variable del botón no se escribe en el cuerpo: Twilio la resuelve en la URL.
+  const bodyVariables = variables.filter((variable) => variable.scope !== 'button')
   const found = new Set(body.match(PLACEHOLDER_PATTERN) ?? [])
-  const missing = variables.filter((variable) => !found.has(variable.placeholder))
+  const missing = bodyVariables.filter((variable) => !found.has(variable.placeholder))
   if (missing.length > 0) {
     return `Falta incluir ${missing.map((variable) => `${variable.placeholder} (${variable.description})`).join(', ')}.`
   }
-  const expected = new Set(variables.map((variable) => variable.placeholder))
+  const expected = new Set(bodyVariables.map((variable) => variable.placeholder))
   const unknown = [...found].filter((placeholder) => !expected.has(placeholder))
   if (unknown.length > 0) {
     return `Quita ${unknown.join(', ')}: este mensaje solo admite ${[...expected].join(', ')}.`

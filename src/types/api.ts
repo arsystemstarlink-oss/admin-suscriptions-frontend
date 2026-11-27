@@ -53,9 +53,37 @@ export interface OrganizationWhatsAppRules {
   reminderDaysBefore: number[]
   dueDateWarningEnabled: boolean
   suspensionNoticeEnabled: boolean
+  overdueReminderEnabled: boolean
+  paymentConfirmationEnabled: boolean
 }
 
-export type WhatsAppTemplateKey = 'reminder' | 'dueDateWarning' | 'suspensionNotice'
+export type WhatsAppTemplateKey =
+  | 'reminderV2'
+  | 'reminderV2NoButton'
+  | 'dueDateWarningV2'
+  | 'dueDateWarningV2NoButton'
+  | 'overdueReminder'
+  | 'overdueReminderNoButton'
+  | 'suspensionNoticeV2'
+  | 'suspensionNoticeV2NoButton'
+  | 'paymentConfirmation'
+  | 'paymentConfirmationNoButton'
+  | 'reminder'
+  | 'dueDateWarning'
+  | 'suspensionNotice'
+
+/** Las diez plantillas que se piden a Meta (cinco avisos con y sin botón). */
+export type WhatsAppCurrentTemplateKey =
+  | 'reminderV2'
+  | 'reminderV2NoButton'
+  | 'dueDateWarningV2'
+  | 'dueDateWarningV2NoButton'
+  | 'overdueReminder'
+  | 'overdueReminderNoButton'
+  | 'suspensionNoticeV2'
+  | 'suspensionNoticeV2NoButton'
+  | 'paymentConfirmation'
+  | 'paymentConfirmationNoButton'
 
 export type OrganizationWhatsAppTemplates = Partial<Record<WhatsAppTemplateKey, string>>
 
@@ -74,6 +102,8 @@ export interface PlatformWhatsAppSummary {
     body: string
     variables: WhatsAppTemplateState['variables']
     contentSid: string | null
+    maxBodyLength?: number
+    button?: { title: string; sampleUrl: string }
   }[]
 }
 
@@ -93,6 +123,8 @@ export interface OrganizationWhatsAppConfig {
   }
   /** `null` si el servidor no tiene una dirección pública https. */
   webhooks: { inbound: string; status: string } | null
+  /** Datos del portal que abre el botón de las plantillas. */
+  portal?: { slug: string | null; url: string | null }
   /** Último mensaje de prueba enviado desde la configuración. */
   lastTestAt?: string | null
 }
@@ -101,10 +133,19 @@ export interface WhatsAppTemplateState {
   key: WhatsAppTemplateKey
   label: string
   defaultBody: string
-  variables: { placeholder: string; description: string; sample?: string }[]
+  variables: {
+    placeholder: string
+    description: string
+    sample?: string
+    scope?: 'body' | 'button'
+  }[]
   /** Si una regla activa la envía sola. Ausente en servidores anteriores. */
   required?: boolean
   activeContentSid: string | null
+  /** Límite de Twilio para el cuerpo de esta plantilla. */
+  maxBodyLength?: number
+  /** Presente en las variantes con botón al portal. */
+  button?: { title: string; sampleUrl: string }
   request: {
     contentSid: string
     name: string
@@ -596,7 +637,7 @@ export interface Subscription {
   lastNotification?: SubscriptionNotificationState
 }
 
-export type NotificationType = 'reminder' | 'dueDateWarning' | 'suspensionNotice'
+export type NotificationType = WhatsAppTemplateKey
 export type NotificationDeliveryStatus = 'SENT' | 'DELIVERED' | 'READ' | 'FAILED'
 
 export interface SubscriptionNotificationState {
@@ -1209,7 +1250,9 @@ export type ErrorCode =
   | 'INVALID_TWILIO_CREDENTIALS'
   | 'INVALID_WHATSAPP_TEMPLATE'
   | 'WHATSAPP_TEMPLATE_PENDING'
+  | 'WHATSAPP_PLATFORM_CONFLICT'
   | 'WHATSAPP_TEMPLATE_REQUIRED'
+  | 'WHATSAPP_PORTAL_NOT_CONFIGURED'
   | 'WHATSAPP_LIMIT_REACHED'
   | 'PASSWORD_CHANGE_REQUIRED'
   | 'INVITE_NOT_FOUND'
@@ -1268,7 +1311,17 @@ export interface SendMessageRequest {
   variables?: Record<string, string>
   /** Alternativa a `templateName` + `variables`: el servidor resuelve el SID y el orden. */
   templateKey?: WhatsAppTemplateKey
-  context?: { clientName?: string; serviceCode?: string; dueDate?: string }
+  context?: {
+    clientName?: string
+    serviceCode?: string
+    dueDate?: string
+    planName?: string
+    amount?: string | number
+    periodLabel?: string
+    serviceStatus?: string
+    coveredUntil?: string
+    daysBefore?: string | number
+  }
 }
 
 export interface SendMessageResponse {

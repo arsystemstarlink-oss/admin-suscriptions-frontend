@@ -66,12 +66,19 @@ function isTwilioReady(twilio: OrganizationWhatsAppConfig['twilio']): boolean {
   return Boolean(twilio.accountSid && twilio.authTokenConfigured && twilio.phoneNumber && twilio.enabled !== false)
 }
 
+function hasAnyTemplate(config: OrganizationWhatsAppConfig, keys: (keyof OrganizationWhatsAppConfig['templates'])[]): boolean {
+  return keys.some((key) => Boolean(config.templates[key]))
+}
+
 function isOwnWhatsAppReady(config: OrganizationWhatsAppConfig): boolean {
   if (!isTwilioReady(config.twilio)) return false
   return (
-    (config.rules.reminderDaysBefore.length === 0 || Boolean(config.templates.reminder)) &&
-    (!config.rules.dueDateWarningEnabled || Boolean(config.templates.dueDateWarning)) &&
-    (!config.rules.suspensionNoticeEnabled || Boolean(config.templates.suspensionNotice))
+    (config.rules.reminderDaysBefore.length === 0 ||
+      hasAnyTemplate(config, ['reminderV2', 'reminderV2NoButton', 'reminder'])) &&
+    (!config.rules.dueDateWarningEnabled ||
+      hasAnyTemplate(config, ['dueDateWarningV2', 'dueDateWarningV2NoButton', 'dueDateWarning'])) &&
+    (!config.rules.suspensionNoticeEnabled ||
+      hasAnyTemplate(config, ['suspensionNoticeV2', 'suspensionNoticeV2NoButton', 'suspensionNotice']))
   )
 }
 
@@ -453,6 +460,10 @@ function RulesSection({
   )
   const [dueDateWarningEnabled, setDueDateWarningEnabled] = useState(config.rules.dueDateWarningEnabled)
   const [suspensionNoticeEnabled, setSuspensionNoticeEnabled] = useState(config.rules.suspensionNoticeEnabled)
+  const [overdueReminderEnabled, setOverdueReminderEnabled] = useState(config.rules.overdueReminderEnabled !== false)
+  const [paymentConfirmationEnabled, setPaymentConfirmationEnabled] = useState(
+    config.rules.paymentConfirmationEnabled !== false,
+  )
   const [templates, setTemplates] = useState(config.templates)
 
   // Por valor: guardar la conexión devuelve otro objeto y no debe borrar lo que se está editando aquí.
@@ -463,6 +474,8 @@ function RulesSection({
     setReminderDays(rules.reminderDaysBefore.filter((day) => REMINDER_DAY_OPTIONS.includes(day)))
     setDueDateWarningEnabled(rules.dueDateWarningEnabled)
     setSuspensionNoticeEnabled(rules.suspensionNoticeEnabled)
+    setOverdueReminderEnabled(rules.overdueReminderEnabled !== false)
+    setPaymentConfirmationEnabled(rules.paymentConfirmationEnabled !== false)
   }, [savedRules])
   useEffect(() => {
     setTemplates(JSON.parse(savedTemplates))
@@ -479,6 +492,8 @@ function RulesSection({
             .sort((a, b) => b - a),
           dueDateWarningEnabled,
           suspensionNoticeEnabled,
+          overdueReminderEnabled,
+          paymentConfirmationEnabled,
         },
         ...(ownAccount
           ? {
@@ -494,7 +509,9 @@ function RulesSection({
   const schedule = [
     reminderDays.length > 0 && `${formatReminderDays(reminderDays)} antes: recordatorio de pago.`,
     dueDateWarningEnabled && 'El día del vencimiento: aviso de vencimiento.',
+    overdueReminderEnabled && 'El primer día vencido: recordatorio de deuda vencida.',
     suspensionNoticeEnabled && 'Al suspender el servicio: aviso de suspensión.',
+    paymentConfirmationEnabled && 'Al registrar un pago: confirmación de pago.',
   ].filter((line): line is string => Boolean(line))
 
   return (
@@ -519,6 +536,20 @@ function RulesSection({
         onChange={setSuspensionNoticeEnabled}
         title="Aviso al suspender el servicio"
         description="Le avisa al cliente cuando su suscripción pasa de activa a suspendida."
+      />
+      <ToggleRow
+        id={`org-whatsapp-overdue-reminder-${organizationId}`}
+        checked={overdueReminderEnabled}
+        onChange={setOverdueReminderEnabled}
+        title="Recordatorio al primer día vencido"
+        description="Le avisa una vez cuando su período pasa a vencido y la suscripción sigue activa."
+      />
+      <ToggleRow
+        id={`org-whatsapp-payment-confirmation-${organizationId}`}
+        checked={paymentConfirmationEnabled}
+        onChange={setPaymentConfirmationEnabled}
+        title="Confirmación de pago"
+        description="Le confirma al cliente cuando registras o apruebas su pago."
       />
 
       <div className="rounded-xl border border-border-subtle bg-surface-muted p-3" aria-live="polite">
@@ -591,6 +622,14 @@ function getConnectionStatus(
   }
 }
 
+function templateCategory(key: string): string {
+  if (key.startsWith('reminder')) return 'reminder'
+  if (key.startsWith('dueDateWarning')) return 'dueDateWarning'
+  if (key.startsWith('overdueReminder')) return 'overdueReminder'
+  if (key.startsWith('suspensionNotice')) return 'suspensionNotice'
+  return 'paymentConfirmation'
+}
+
 function getTemplatesStatus(
   templates: WhatsAppTemplateState[] | undefined,
   rules: OrganizationWhatsAppConfig['rules'],
@@ -600,14 +639,25 @@ function getTemplatesStatus(
   if (needed.length === 0) {
     return { state: 'optional', summary: 'No tienes avisos automáticos activados en «Cuándo avisar».' }
   }
-  const inactive = needed.filter((template) => !template.activeContentSid)
-  if (inactive.length === 0) {
+  // Basta una variante activa por aviso: con botón o sin botón.
+  const byCategory = new Map<string, WhatsAppTemplateState[]>()
+  for (const template of needed) {
+    const category = templateCategory(template.key)
+    byCategory.set(category, [...(byCategory.get(category) ?? []), template])
+  }
+  const pendingCategories = [...byCategory.values()].filter(
+    (group) => !group.some((template) => template.activeContentSid),
+  )
+  if (pendingCategories.length === 0) {
     return {
       state: 'done',
-      summary: needed.length === 1 ? 'Tu aviso tiene su mensaje aprobado.' : `Tus ${needed.length} avisos tienen su mensaje aprobado.`,
+      summary:
+        byCategory.size === 1
+          ? 'Tu aviso tiene su mensaje aprobado.'
+          : `Tus ${byCategory.size} avisos tienen su mensaje aprobado.`,
     }
   }
-  const statuses = inactive.map(getTemplateDisplayStatus)
+  const statuses = pendingCategories.flatMap((group) => group.map(getTemplateDisplayStatus))
   if (statuses.some((status) => status === 'rejected' || status === 'blocked')) {
     return { state: 'attention', summary: 'WhatsApp no aceptó algún mensaje. Ajusta el texto y vuelve a enviarlo.' }
   }
@@ -837,6 +887,13 @@ function WhatsAppSetupGuide({
                 <p className="mt-1 text-xs">{pendingHint}</p>
               </div>
             </div>
+          )}
+
+          {!isPlatformAccount && config.portal && (!config.portal.slug || !config.portal.url) && (
+            <p className="rounded-md border border-warning/20 bg-warning/10 p-3 text-sm text-warning">
+              El botón «Ver mi cuenta» necesita el enlace público del portal
+              {!config.portal.slug ? ' y el slug de la organización' : ''}. Mientras falte, los avisos salen sin botón.
+            </p>
           )}
 
           {usesPlatform && platform ? (

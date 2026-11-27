@@ -28,7 +28,6 @@ import {
   describeTemplateUsage,
   getTemplateDisplayStatus,
   MAX_TEMPLATE_BODY_LENGTH,
-  PLATFORM_WHATSAPP_ID,
   validateTemplateBody,
 } from '@/lib/whatsapp-setup'
 import { ConfirmDialog } from '@/components/design-system'
@@ -231,6 +230,16 @@ function MessagePreview({
   )
 }
 
+function TemplateButtonPreview({ button }: { button?: { title: string; sampleUrl: string } }) {
+  if (!button) return null
+  return (
+    <div className="rounded-lg border border-border-subtle bg-surface p-2">
+      <span className="block text-sm font-medium text-primary-text">{button.title}</span>
+      <span className="block truncate text-xs text-muted-foreground">{button.sampleUrl}</span>
+    </div>
+  )
+}
+
 function TemplateCard({
   template,
   organizationId,
@@ -254,7 +263,12 @@ function TemplateCard({
 
   const pending = displayStatus === 'pending'
   const showEditor = !pending && (editing || displayStatus !== 'active')
-  const validationError = validateTemplateBody(body, template.variables)
+  const bodyVariables = template.variables.filter((variable) => variable.scope !== 'button')
+  const validationError = validateTemplateBody(
+    body,
+    template.variables,
+    template.maxBodyLength ?? MAX_TEMPLATE_BODY_LENGTH,
+  )
   // Solo se conoce el texto activo si se aprobó desde aquí; un Content SID pegado a mano no lo trae.
   const activeBody =
     template.request?.status === 'approved' && template.request.contentSid === template.activeContentSid
@@ -299,6 +313,7 @@ function TemplateCard({
             variables={template.variables}
             caption="Texto enviado a revisión"
           />
+          <TemplateButtonPreview button={template.button} />
           <p className="text-xs text-muted-foreground">
             WhatsApp suele responder en minutos, a veces tarda hasta un día. Se activará sola al aprobarse: no
             tienes que hacer nada más.
@@ -326,7 +341,10 @@ function TemplateCard({
       {displayStatus === 'active' && !editing && (
         <>
           {activeBody ? (
-            <MessagePreview body={activeBody} variables={template.variables} caption="Así lo recibe tu cliente" />
+            <>
+              <MessagePreview body={activeBody} variables={template.variables} caption="Así lo recibe tu cliente" />
+              <TemplateButtonPreview button={template.button} />
+            </>
           ) : (
             <p className="text-xs text-muted-foreground">
               Usa una plantilla creada directamente en Twilio, por eso no mostramos su texto aquí.
@@ -363,14 +381,14 @@ function TemplateCard({
               value={body}
               onChange={(event) => setBody(event.target.value)}
               rows={4}
-              maxLength={MAX_TEMPLATE_BODY_LENGTH}
+              maxLength={template.maxBodyLength ?? MAX_TEMPLATE_BODY_LENGTH}
               aria-invalid={validationError ? true : undefined}
               aria-describedby={validationError ? errorId : undefined}
               className="w-full resize-y rounded-md border border-input bg-surface-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm"
             />
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">Insertar dato:</span>
-              {template.variables.map((variable) => (
+              {bodyVariables.map((variable) => (
                 <button
                   key={variable.placeholder}
                   type="button"
@@ -383,7 +401,7 @@ function TemplateCard({
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Los códigos como {template.variables[0]?.placeholder ?? '{{1}}'} se reemplazan por el dato real de cada
+              Los códigos como {bodyVariables[0]?.placeholder ?? '{{1}}'} se reemplazan por el dato real de cada
               cliente. Este mensaje debe incluirlos todos.
             </p>
             <p className="text-xs text-muted-foreground">
@@ -402,6 +420,7 @@ function TemplateCard({
             variables={template.variables}
             caption="Así lo recibirá tu cliente (los datos resaltados son de ejemplo)"
           />
+          <TemplateButtonPreview button={template.button} />
 
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -458,15 +477,9 @@ export function WhatsAppTemplatesStep({
         activa sola.
       </p>
       <Notice tone="muted">
-        El recordatorio sugerido ahora incluye el número de kit. Si ya tienes un recordatorio aprobado, envía la nueva
-        versión a aprobación; la anterior seguirá activa hasta que WhatsApp apruebe el cambio.
+        Cada aviso tiene dos variantes: con el botón «Ver mi cuenta» (cliente con DNI) y sin botón
+        (cliente sin DNI). Las nuevas versiones incluyen negocio, plan, monto y fecha.
       </Notice>
-      {organizationId === PLATFORM_WHATSAPP_ID && (
-        <Notice tone="muted">
-          Los textos sugeridos de la plataforma incluyen al final la firma «A|R SYSTEM» y el aviso de notificación
-          automática.
-        </Notice>
-      )}
       {!twilioReady && (
         <Notice tone="muted">Completa primero el paso 1 para poder enviar los mensajes a aprobación.</Notice>
       )}
@@ -863,6 +876,7 @@ export function WhatsAppPlatformTemplates({
             variables={template.variables}
             caption="Así lo recibe tu cliente (los datos resaltados son de ejemplo)"
           />
+          <TemplateButtonPreview button={template.button} />
         </div>
       ))}
     </div>

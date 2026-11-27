@@ -506,10 +506,20 @@ export const BUSINESS_ERROR_HANDLERS: Record<ErrorCode, ErrorHandler> = {
     variant: 'warning',
     message: 'Esta plantilla ya está en revisión.',
   },
+  WHATSAPP_PLATFORM_CONFLICT: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'La cuenta de WhatsApp de la plataforma ya está conectada a otra organización.',
+  },
   WHATSAPP_TEMPLATE_REQUIRED: {
     type: 'toast',
     variant: 'warning',
     message: 'Necesitas al menos una plantilla aprobada.',
+  },
+  WHATSAPP_PORTAL_NOT_CONFIGURED: {
+    type: 'toast',
+    variant: 'warning',
+    message: 'Falta configurar la dirección pública del portal para usar el botón.',
   },
   WHATSAPP_LIMIT_REACHED: {
     type: 'toast',

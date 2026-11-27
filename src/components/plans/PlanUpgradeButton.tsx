@@ -1,3 +1,4 @@
+import { useId, type ComponentProps } from 'react'
 import { getWhatsAppUrl } from '@/lib/business-plan'
 import { getPlanLabel } from '@/lib/business-plan-catalog'
 import { useBusinessPlans } from '@/hooks/useOrganizationPlanPaymentReports'
@@ -8,13 +9,18 @@ interface PlanUpgradeButtonProps {
   organization?: Organization
   className?: string
   label?: string
+  variant?: ComponentProps<typeof Button>['variant']
+  hideWhenUnavailable?: boolean
 }
 
 export function PlanUpgradeButton({
   organization,
   className,
   label = 'Subir de plan',
+  variant,
+  hideWhenUnavailable = false,
 }: PlanUpgradeButtonProps) {
+  const unavailableId = useId()
   const { data: catalogData } = useBusinessPlans()
   const planName = organization?.plan
     ? getPlanLabel(catalogData?.plans, organization.plan)
@@ -24,12 +30,23 @@ export function PlanUpgradeButton({
   )
 
   if (!url) {
+    if (hideWhenUnavailable) {
+      return (
+        <p className="text-sm text-muted-foreground">Cambio de plan: próximamente.</p>
+      )
+    }
     return (
       <div className="space-y-1">
-        <Button type="button" disabled className={className}>
+        <Button
+          type="button"
+          variant={variant}
+          disabled
+          aria-describedby={unavailableId}
+          className={className}
+        >
           {label}
         </Button>
-        <p className="text-xs text-muted-foreground">
+        <p id={unavailableId} className="text-xs text-muted-foreground">
           El contacto para subir de plan todavía no está disponible.
         </p>
       </div>
@@ -37,7 +54,7 @@ export function PlanUpgradeButton({
   }
 
   return (
-    <Button asChild className={className}>
+    <Button asChild variant={variant} className={className}>
       <a href={url} target="_blank" rel="noopener noreferrer">
         {label}
       </a>

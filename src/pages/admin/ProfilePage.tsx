@@ -185,6 +185,17 @@ export function ProfilePage() {
   const planAccess = getOrganizationPlanAccess(organization)
   const planCatalogItem = plansData?.plans.find((plan) => plan.key === organization?.plan)
   const planPrice = planCatalogItem?.priceUsdMonthly ?? null
+  const remainingClients =
+    planAccess.clientCount !== null && planAccess.clientLimit !== null
+      ? Math.max(planAccess.clientLimit - planAccess.clientCount, 0)
+      : null
+  const nearClientLimit =
+    planAccess.usagePercent !== null && planAccess.usagePercent >= PLAN_USAGE_WARNING_PERCENT
+  const planExpiresAt = organization?.planExpiresAt ? Date.parse(organization.planExpiresAt) : NaN
+  const daysToExpiry = Number.isFinite(planExpiresAt)
+    ? Math.ceil((planExpiresAt - Date.now()) / (24 * 60 * 60 * 1000))
+    : null
+  const expiryIsUrgent = daysToExpiry !== null && daysToExpiry >= 0 && daysToExpiry <= 7
   const recentPlanReports = planReportsData?.reports.slice(0, 3) ?? []
   const changeSection = (value: string) => {
     if (value === 'account' || value === 'security' || value === 'notifications' || value === 'plan') {
@@ -322,81 +333,90 @@ export function ProfilePage() {
       {user.role === 'admin' && (
         <TabsContent value="plan" forceMount className="mt-4 data-[state=inactive]:hidden">
         <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
-          <CardHeader className="p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold text-lg">Mi plan</h2>
-              {organization?.planStatus && (
-                <Badge variant="outline" className="text-info bg-info/10 border-info/20">
-                  {ORGANIZATION_PLAN_STATUS_LABELS[organization.planStatus]}
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              El plan incluye todas las funciones y WhatsApp. Solo cambian los límites de clientes y administradores.
+          <CardContent className="space-y-4 p-4 sm:p-5">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Mi plan
             </p>
-          </CardHeader>
-          <CardContent className="space-y-4 p-4 pt-0 sm:p-5 sm:pt-0">
             {organization?.plan ? (
               <>
-                <div>
-                  <p className="text-xl font-semibold">{getPlanLabel(plansData?.plans, organization.plan)}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {plansLoading
-                      ? 'Cargando precio...'
-                      : planPrice === null
-                        ? 'Precio acordado según tus necesidades'
-                        : `${planPrice} USD al mes`}
-                  </p>
-                </div>
-                {planAccess.clientCount !== null && planAccess.clientLimit !== null && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between gap-2 text-sm">
-                      <span>Clientes registrados</span>
-                      <span className="font-medium">
-                        {planAccess.clientCount} de {planAccess.clientLimit}
-                      </span>
-                    </div>
-                    <div
-                      role="progressbar"
-                      aria-label="Uso del límite de clientes"
-                      aria-valuemin={0}
-                      aria-valuemax={planAccess.clientLimit}
-                      aria-valuenow={Math.min(planAccess.clientCount, planAccess.clientLimit)}
-                      className="h-2 overflow-hidden rounded-full bg-surface-muted"
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xl font-semibold">
+                      {getPlanLabel(plansData?.plans, organization.plan)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {plansLoading
+                        ? 'Cargando precio...'
+                        : planPrice === null
+                          ? 'Precio acordado según tus necesidades'
+                          : `${planPrice} USD al mes`}
+                      {organization.planStatus === 'activo' && organization.planExpiresAt && (
+                        <>
+                          {' · '}
+                          <span className={expiryIsUrgent ? 'font-medium text-warning' : undefined}>
+                            Vence el {formatDate(organization.planExpiresAt)}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  {organization.planStatus && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 text-info bg-info/10 border-info/20"
                     >
+                      <span className="mr-1 h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+                      {ORGANIZATION_PLAN_STATUS_LABELS[organization.planStatus]}
+                    </Badge>
+                  )}
+                </div>
+                {planAccess.clientCount !== null &&
+                  planAccess.clientLimit !== null &&
+                  remainingClients !== null && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between gap-2 text-sm">
+                        <span>Clientes registrados</span>
+                        <span className="font-medium tabular-nums">
+                          {planAccess.clientCount} / {planAccess.clientLimit}
+                        </span>
+                      </div>
                       <div
-                        className={`h-full rounded-full ${
-                          planAccess.isAtLimit ? 'bg-warning' : 'bg-primary'
-                        }`}
-                        style={{ width: `${planAccess.usagePercent ?? 0}%` }}
-                      />
-                    </div>
-                    {planAccess.usagePercent !== null &&
-                      planAccess.usagePercent >= PLAN_USAGE_WARNING_PERCENT &&
-                      !planAccess.isAtLimit && (
+                        role="progressbar"
+                        aria-label="Uso del límite de clientes"
+                        aria-valuemin={0}
+                        aria-valuemax={planAccess.clientLimit}
+                        aria-valuenow={Math.min(planAccess.clientCount, planAccess.clientLimit)}
+                        aria-valuetext={`${planAccess.clientCount} de ${planAccess.clientLimit} clientes`}
+                        className="h-2.5 overflow-hidden rounded-full bg-surface-muted"
+                      >
+                        <div
+                          className={`h-full rounded-full ${
+                            nearClientLimit ? 'bg-warning' : 'bg-primary'
+                          }`}
+                          style={{ width: `${planAccess.usagePercent ?? 0}%` }}
+                        />
+                      </div>
+                      {planAccess.isAtLimit ? (
                         <p className="text-sm text-warning">
-                          Estás cerca del límite. Puedes elegir un plan con más espacio cuando lo
-                          necesites.
+                          Llegaste al límite. Tus clientes actuales siguen disponibles, pero no
+                          podrás añadir más hasta elegir otro plan.
+                        </p>
+                      ) : nearClientLimit ? (
+                        <p className="text-sm text-warning">
+                          Estás cerca del límite. Te quedan {remainingClients} clientes disponibles.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Te quedan {remainingClients} clientes disponibles.
                         </p>
                       )}
-                    {planAccess.isAtLimit && (
-                      <p className="text-sm text-warning">
-                        Llegaste al límite. Tus clientes actuales siguen disponibles, pero no podrás
-                        añadir más hasta elegir otro plan.
-                      </p>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
                 {planAccess.trialDaysRemaining !== null && (
                   <p className="text-sm text-muted-foreground">
                     {planAccess.trialDaysRemaining === 0
                       ? 'La prueba gratis venció.'
                       : `Te quedan ${planAccess.trialDaysRemaining} días de prueba gratis.`}
-                  </p>
-                )}
-                {organization.planStatus === 'activo' && organization.planExpiresAt && (
-                  <p className="text-sm text-muted-foreground">
-                    Vence el {formatDate(organization.planExpiresAt)}.
                   </p>
                 )}
                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -407,7 +427,12 @@ export function ProfilePage() {
                   >
                     Reportar pago
                   </Button>
-                  <PlanUpgradeButton organization={organization} className="flex-1" />
+                  <PlanUpgradeButton
+                    organization={organization}
+                    variant="outline"
+                    hideWhenUnavailable
+                    className="flex-1"
+                  />
                 </div>
 
                 {recentPlanReports.length > 0 && (
@@ -441,6 +466,11 @@ export function ProfilePage() {
                     </div>
                   </div>
                 )}
+
+                <p className="text-sm text-muted-foreground">
+                  El plan incluye todas las funciones y WhatsApp. Solo cambian los límites de
+                  clientes y administradores.
+                </p>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">

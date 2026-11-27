@@ -18,8 +18,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ErrorState, FormSkeleton } from '@/components/design-system'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { ErrorState, FormSkeleton, SettingsTabTrigger, SettingsTabsList } from '@/components/design-system'
 import {
   useOrganizationWhatsAppConfig,
   useUpdateOrganizationWhatsAppConfig,
@@ -787,29 +787,24 @@ function WhatsAppSetupGuide({
       </header>
 
       <Tabs value={activeSection} onValueChange={changeSection}>
-        <TabsList aria-label="Secciones de WhatsApp" className="grid h-auto w-full grid-cols-3 rounded-xl border border-border-subtle bg-surface-muted p-1 text-muted-foreground">
-          <TabsTrigger
+        <SettingsTabsList aria-label="Secciones de WhatsApp" className="grid-cols-3">
+          <SettingsTabTrigger
             value="settings"
-            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-          >
-            <Settings2 aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-            <span>Configuración</span>
-          </TabsTrigger>
-          <TabsTrigger
+            icon={Settings2}
+            label="Configuración"
+          />
+          <SettingsTabTrigger
             value="templates"
-            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-          >
-            <FileCheck aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-            <span>Plantillas</span>
-          </TabsTrigger>
-          <TabsTrigger
+            icon={FileCheck}
+            label="Plantillas"
+          />
+          <SettingsTabTrigger
             value="failures"
-            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-          >
-            <AlertTriangle aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-            <span>Avisos fallidos</span>
-          </TabsTrigger>
-        </TabsList>
+            icon={AlertTriangle}
+            label="Avisos fallidos"
+            shortLabel="Fallidos"
+          />
+        </SettingsTabsList>
 
         <TabsContent value="settings" forceMount className="mt-4 space-y-5 data-[state=inactive]:hidden">
           <HowItWorks defaultOpen={!config.readiness.ready} />

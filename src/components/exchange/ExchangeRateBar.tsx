@@ -1,6 +1,6 @@
 import { useDolarRates } from '@/hooks/useExchange';
 import { useExchangeStore } from '@/stores/exchange.store';
-import { formatRate, formatRateUpdatedAt, formatRateUpdatedAtShort } from '@/lib/exchange';
+import { formatRate, formatRateUpdatedAt } from '@/lib/exchange';
 import { cn } from '@/lib/utils';
 import { Landmark, RefreshCw, TrendingUp } from 'lucide-react';
 
@@ -22,7 +22,7 @@ export function ExchangeRateBar({ className }: ExchangeRateBarProps) {
       <div
         role="status"
         className={cn(
-          'flex h-11 items-center justify-center border-b border-border-subtle bg-surface-muted text-xs font-medium text-muted-foreground',
+          'flex h-11 items-center justify-center border-b border-border-subtle bg-surface-muted text-sm font-medium text-muted-foreground',
           className,
         )}
       >
@@ -39,23 +39,32 @@ export function ExchangeRateBar({ className }: ExchangeRateBarProps) {
         onClick={() => refetch()}
         disabled={isFetching}
         className={cn(
-          'flex h-11 w-full items-center justify-center gap-1.5 border-b border-border-subtle bg-surface-muted text-xs font-medium text-muted-foreground',
+          'flex h-11 w-full items-center justify-center gap-1.5 border-b border-border-subtle bg-surface-muted text-sm font-medium text-muted-foreground',
           className,
         )}
       >
-        <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} />
-        Tasa no disponible — toca para reintentar
+        <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} />
+        Sin tasa · Reintentar
       </button>
     );
   }
 
   const items = [
-    { key: 'paralelo', label: 'Paralelo', value: data?.paralelo != null ? formatRate(data.paralelo) : 'N/D' },
-    { key: 'oficial', label: 'BCV', value: data?.oficial != null ? formatRate(data.oficial) : 'N/D' },
+    {
+      key: 'paralelo',
+      label: 'Paralelo',
+      icon: TrendingUp,
+      value: data?.paralelo != null ? formatRate(data.paralelo) : 'N/D',
+    },
+    {
+      key: 'oficial',
+      label: 'BCV',
+      icon: Landmark,
+      value: data?.oficial != null ? formatRate(data.oficial) : 'N/D',
+    },
   ] as const;
 
   const updatedLabel = formatRateUpdatedAt(data?.updatedAt);
-  const updatedShortLabel = formatRateUpdatedAtShort(data?.updatedAt);
 
   return (
     <div
@@ -78,31 +87,39 @@ export function ExchangeRateBar({ className }: ExchangeRateBarProps) {
         </span>
         {items.map((item) => {
           const isActive = source === item.key;
-          const RateIcon = item.key === 'oficial' ? Landmark : TrendingUp;
+          const RateIcon = item.icon;
           return (
             <button
               key={item.key}
               type="button"
               onClick={() => setSource(item.key)}
               aria-pressed={isActive}
-              aria-label={`Usar dólar ${item.label}: Bs ${item.value}`}
+              aria-label={`Usar dólar ${item.label}: ${item.value} Bs`}
               className={cn(
-                'relative z-10 flex h-10 min-w-0 flex-1 flex-col items-start justify-center gap-0 rounded-lg px-2.5 text-left tabular-nums transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'relative z-10 flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 tabular-nums transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 isActive ? 'text-primary-foreground' : 'text-muted-foreground',
               )}
             >
-              <span className="flex items-center gap-1 text-xs font-medium leading-tight">
-                <RateIcon aria-hidden="true" className="h-3 w-3 shrink-0" />
-                {item.label}
+              <RateIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <span className="flex min-w-0 items-baseline gap-1 tabular-nums">
+                <span
+                  className={cn(
+                    'min-w-0 truncate text-base font-bold leading-none',
+                    isActive ? 'text-primary-foreground' : 'text-foreground',
+                  )}
+                >
+                  {item.value}
+                </span>
+                <span
+                  className={cn(
+                    'shrink-0 text-xs font-medium',
+                    isActive ? 'text-primary-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  Bs
+                </span>
               </span>
-              <span
-                className={cn(
-                  'w-full truncate text-sm font-bold leading-tight',
-                  isActive ? 'text-primary-foreground' : 'text-foreground',
-                )}
-              >
-                {item.value}
-              </span>
+              <span className="sr-only">{item.label}</span>
             </button>
           );
         })}
@@ -114,10 +131,9 @@ export function ExchangeRateBar({ className }: ExchangeRateBarProps) {
           disabled={isFetching}
           title={updatedLabel ? `Actualizado: ${updatedLabel}` : 'Actualizar tasa'}
           aria-label={updatedLabel ? `Actualizar tasa. Última actualización: ${updatedLabel}` : 'Actualizar tasa'}
-          className="flex h-10 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground touch-manipulation disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-10 min-w-11 items-center justify-center rounded-lg px-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground touch-manipulation disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <RefreshCw className={cn('h-3 w-3 shrink-0', isFetching && 'animate-spin')} />
-          {updatedShortLabel && <span className="whitespace-nowrap leading-tight">{updatedShortLabel}</span>}
+          <RefreshCw className={cn('h-4 w-4 shrink-0', isFetching && 'animate-spin')} />
         </button>
       </div>
     </div>

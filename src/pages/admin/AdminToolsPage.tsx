@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,7 @@ import { formatDate } from '@/lib/constants'
 import type { NotificationFailure, NotificationType, SchedulerLog } from '@/types/api'
 import { OrganizationSelectionEmptyState } from '@/components/organizations/OrganizationSelectionEmptyState'
 import { ErrorState } from '@/components/design-system/ErrorState'
+import { SettingsTabTrigger, SettingsTabsList } from '@/components/design-system'
 import { Skeleton, ListSkeleton } from '@/components/design-system/Skeleton'
 
 const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
@@ -230,32 +231,18 @@ export function AdminToolsPage() {
           ) : schedulerConfig ? (
             <>
               <Tabs defaultValue="schedule" className="space-y-4">
-                <TabsList
+                <SettingsTabsList
                   aria-label="Secciones de tareas automáticas"
-                  className="grid h-auto w-full grid-cols-3 rounded-xl border border-border-subtle bg-surface-muted p-1 text-muted-foreground"
+                  className="grid-cols-3"
                 >
-                  <TabsTrigger
+                  <SettingsTabTrigger
                     value="schedule"
-                    className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-                  >
-                    <Clock aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-                    <span>Programación</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="manual"
-                    className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-                  >
-                    <Zap aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-                    <span>Ejecutar</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="history"
-                    className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-                  >
-                    <History aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-                    <span>Historial</span>
-                  </TabsTrigger>
-                </TabsList>
+                    icon={Clock}
+                    label="Programación"
+                  />
+                  <SettingsTabTrigger value="manual" icon={Zap} label="Ejecutar" />
+                  <SettingsTabTrigger value="history" icon={History} label="Historial" />
+                </SettingsTabsList>
 
                 <TabsContent value="schedule" className="mt-4">
               <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
@@ -294,37 +281,50 @@ export function AdminToolsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 sm:p-5 sm:pt-0 space-y-5 sm:space-y-6">
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                    <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
-                      <p className="text-xs text-muted-foreground mb-1">Horario</p>
-                      <p className="text-base font-semibold text-foreground">
+                  <div className="grid gap-2 sm:grid-cols-3 sm:gap-4">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted px-3 py-2.5 sm:block sm:p-4">
+                      <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:mb-1">
+                        <Clock aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                        Horario
+                      </p>
+                      <p className="text-sm font-semibold text-foreground sm:text-base">
                         {serverTime
                           ? formatTimeDisplay(serverTime.hour12, serverTime.minute, serverTime.period)
                           : formatTimeDisplay(selectedHour12, selectedMinute, selectedPeriod)}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="hidden text-xs text-muted-foreground sm:mt-1 sm:block">
                         Diario
                       </p>
                     </div>
 
-                    <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
-                      <p className="text-xs text-muted-foreground mb-1">Última ejecución</p>
-                      <p className="text-base font-semibold text-foreground">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted px-3 py-2.5 sm:block sm:p-4">
+                      <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:mb-1">
+                        <History aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                        Última ejecución
+                      </p>
+                      <p className="text-sm font-semibold text-foreground sm:text-base">
                         {schedulerConfig.lastRun ? formatDate(schedulerConfig.lastRun) : 'Nunca'}
                       </p>
                       {schedulerConfig.lastRun && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="hidden text-xs text-muted-foreground sm:mt-1 sm:block">
                           {getTimeAgo(schedulerConfig.lastRun)}
                         </p>
                       )}
                     </div>
 
-                    <div className="p-3 sm:p-4 bg-surface-muted rounded-xl border border-border-subtle">
-                      <p className="text-xs text-muted-foreground mb-1">Estado</p>
-                      <p className="text-base font-semibold text-foreground">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle bg-surface-muted px-3 py-2.5 sm:block sm:p-4">
+                      <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:mb-1">
+                        {schedulerConfig.enabled ? (
+                          <CheckCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-success" />
+                        ) : (
+                          <XCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        Estado
+                      </p>
+                      <p className="text-sm font-semibold text-foreground sm:text-base">
                         {schedulerConfig.enabled ? 'Automático' : 'Manual'}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="hidden text-xs text-muted-foreground sm:mt-1 sm:block">
                         {schedulerConfig.enabled
                           ? 'Por horario'
                           : 'Solo manual'}

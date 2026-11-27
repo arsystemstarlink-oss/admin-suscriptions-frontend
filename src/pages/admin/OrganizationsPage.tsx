@@ -306,9 +306,13 @@ export function OrganizationsPage() {
                   </Link>
                 </Button>
                 <details className="relative">
-                  <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-medium text-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                  <summary
+                    aria-label="Más acciones"
+                    title="Más acciones"
+                    className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-border bg-surface px-2 text-sm font-medium text-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3 [&::-webkit-details-marker]:hidden"
+                  >
                     <MoreHorizontal aria-hidden="true" className="h-4 w-4 shrink-0" />
-                    <span>Más acciones</span>
+                    <span className="hidden sm:inline">Más acciones</span>
                   </summary>
                   <div className="absolute right-0 top-full z-30 mt-2 flex min-w-48 flex-col gap-1 rounded-xl border border-border bg-surface-elevated p-2 text-surface-elevated-foreground shadow-sm">
                     {organization.slug && (

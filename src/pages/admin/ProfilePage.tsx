@@ -30,7 +30,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { EmailInput } from '@/components/ui/email-input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import {
   Bell,
   CreditCard,
@@ -44,7 +44,7 @@ import {
   UserRound,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { FormGroup } from '@/components/design-system'
+import { FormGroup, SettingsTabTrigger, SettingsTabsList } from '@/components/design-system'
 import { NotificationSettings } from '@/pages/admin/NotificationsPage'
 import type { ApiError, OrganizationPlanPaymentReportStatus } from '@/types/api'
 import { isValidInternationalPhone, PHONE_VALIDATION_MESSAGE } from '@/lib/phone'
@@ -261,30 +261,29 @@ export function ProfilePage() {
       )}
       <Card className="bg-surface text-surface-foreground border border-border rounded-2xl shadow-sm">
         <CardContent className="p-4 sm:p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
-                <span className="text-lg sm:text-xl font-bold text-primary-text">{initials}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-lg sm:text-xl truncate">{user.name}</h3>
-                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+          <div className="flex items-center gap-3">
+            <div className="shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 sm:h-14 sm:w-14">
+                <span className="text-lg font-bold text-primary-text sm:text-xl">{initials}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:ml-auto shrink-0">
-              <Badge variant="secondary" className="text-xs">
-                <ShieldCheck className="h-3 w-3 mr-1 shrink-0" />
-                {user.role === 'super-admin' ? (
-                  <>
-                    <span className="hidden sm:inline">Super Admin</span>
-                    <span className="sm:hidden">Super</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Administrador</span>
-                    <span className="sm:hidden">Admin</span>
-                  </>
-                )}
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-lg font-semibold sm:text-xl">{user.name}</h3>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <p className="min-w-0 truncate text-sm text-muted-foreground">{user.email}</p>
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 px-1.5 py-0 text-xs leading-5 sm:hidden"
+                >
+                  <ShieldCheck className="mr-1 h-3 w-3 shrink-0" aria-hidden="true" />
+                  {user.role === 'super-admin' ? 'Super' : 'Admin'}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge variant="secondary" className="hidden text-xs sm:inline-flex">
+                <ShieldCheck className="mr-1 h-3 w-3 shrink-0" aria-hidden="true" />
+                {user.role === 'super-admin' ? 'Super Admin' : 'Administrador'}
               </Badge>
               <Button
                 type="button"
@@ -292,53 +291,33 @@ export function ProfilePage() {
                 size="sm"
                 onClick={logout}
                 aria-label="Cerrar sesión"
-                className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                className="min-w-11 shrink-0 px-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:min-w-0 sm:px-3"
               >
-                <LogOut className="h-4 w-4 shrink-0" />
+                <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="hidden sm:inline">Cerrar sesión</span>
               </Button>
             </div>
           </div>
-
         </CardContent>
       </Card>
 
       <Tabs value={activeSection} onValueChange={changeSection}>
-        <TabsList
+        <SettingsTabsList
           aria-label="Secciones del perfil"
-          className={`grid h-auto w-full ${user.role === 'admin' ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} rounded-xl border border-border-subtle bg-surface-muted p-1 text-muted-foreground`}
+          className={user.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'}
         >
-          <TabsTrigger
-            value="account"
-            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-          >
-            <UserCog aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-            <span>Cuenta</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="security"
-            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-          >
-            <ShieldCheck aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-            <span>Seguridad</span>
-          </TabsTrigger>
-          <TabsTrigger
+          <SettingsTabTrigger value="account" icon={UserCog} label="Cuenta" />
+          <SettingsTabTrigger value="security" icon={ShieldCheck} label="Seguridad" />
+          <SettingsTabTrigger
             value="notifications"
-            className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-          >
-            <Bell aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-            <span>Notificaciones</span>
-          </TabsTrigger>
+            icon={Bell}
+            label="Notificaciones"
+            shortLabel="Avisos"
+          />
           {user.role === 'admin' && (
-            <TabsTrigger
-              value="plan"
-              className="min-h-11 gap-2 rounded-lg px-1 text-xs data-[state=active]:bg-surface data-[state=active]:text-surface-foreground data-[state=active]:shadow-sm sm:px-2 sm:text-sm"
-            >
-              <CreditCard aria-hidden="true" className="hidden h-4 w-4 shrink-0 sm:block" />
-              <span>Plan</span>
-            </TabsTrigger>
+            <SettingsTabTrigger value="plan" icon={CreditCard} label="Plan" />
           )}
-        </TabsList>
+        </SettingsTabsList>
 
       {user.role === 'admin' && (
         <TabsContent value="plan" forceMount className="mt-4 data-[state=inactive]:hidden">
